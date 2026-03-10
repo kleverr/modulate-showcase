@@ -56,6 +56,9 @@ const panelChooseBtnEl = document.getElementById('panel-choose-btn');
 const panelUploadFormatsEl = document.getElementById('panel-upload-formats');
 const panelRecordBtnEl = document.getElementById('panel-record-btn');
 const panelRecordStatusEl = document.getElementById('panel-record-status');
+const panelLiveZoneEl = document.getElementById('panel-live-zone');
+const panelLiveBtnEl = document.getElementById('panel-live-btn');
+const panelLiveStatusEl = document.getElementById('panel-live-status');
 const viewerShellEl = document.getElementById('viewer-shell');
 
 const API_BASE_URL = 'https://modulate-developer-apis.com';
@@ -119,6 +122,18 @@ let recordedChunks = [];
 let recordingStartedAt = 0;
 let recordingTimerId = null;
 let shouldSubmitRecording = false;
+
+// ── Live streaming state ────────────────────────────────────────────────────
+let liveMediaRecorder = null;
+let liveMediaStream = null;
+let liveWebSocket = null;
+let liveRecordingTimerId = null;
+let liveRecordingStartedAt = 0;
+let liveUtterances = [];
+let liveRecordedChunks = [];
+let liveDoneDurationMs = null;
+let liveFileIndex = -1;
+let liveIsActive = false;
 
 // ── Multi-file state ──────────────────────────────────────────────────────────
 const fileTabsBarEl = document.getElementById('file-tabs-bar');
@@ -240,8 +255,14 @@ function setActiveFileIndex(i) {
 
 function removeFile(i) {
   const removedEntry = files[i];
+  if (removedEntry?.liveStreaming && liveIsActive && i === liveFileIndex) {
+    stopLiveTranscription(true);
+    liveFileIndex = -1;
+  }
   if (removedEntry?.audioUrl) URL.revokeObjectURL(removedEntry.audioUrl);
   files.splice(i, 1);
+  if (liveFileIndex > i) liveFileIndex--;
+  else if (liveFileIndex === i) liveFileIndex = -1;
   if (files.length === 0) {
     activeFileIndex = -1;
     latestPayload = null;
@@ -308,7 +329,11 @@ function displayFile(entry) {
   if (entry.status === 'processing') {
     resetMeta(entry.file);
     progressEstimatedMs = entry.estimatedMs;
-    updatePreview({ status: 'processing' });
+    if (entry.liveStreaming && entry.liveUtterances?.length) {
+      renderLiveUtterancePreview(entry.liveUtterances);
+    } else {
+      updatePreview({ status: 'processing' });
+    }
     if (entry.audioUrl) {
       setPlayerSrc(entry);
       audioPlayerWrapEl.hidden = false;
@@ -1699,6 +1724,375 @@ function stopPanelRecording(cancel = false) {
   panelMediaRecorder.stop();
 }
 
+/* ── Live streaming (real-time WebSocket) ── */
+
+function cleanupLiveResources() {
+  clearLiveRecordingTimer();
+  stopLiveMediaTracks();
+  if (liveMediaRecorder && liveMediaRecorder.state === 'recording') {
+    try { liveMediaRecorder.stop(); } catch {}
+  }
+  liveMediaRecorder = null;
+  if (liveWebSocket) {
+    try { liveWebSocket.close(); } catch {}
+    liveWebSocket = null;
+  }
+  liveRecordedChunks = [];
+  liveUtterances = [];
+  liveDoneDurationMs = null;
+}
+
+function stopLiveMediaTracks() {
+  if (liveMediaStream) {
+    liveMediaStream.getTracks().forEach(t => t.stop());
+    liveMediaStream = null;
+  }
+}
+
+function clearLiveRecordingTimer() {
+  if (liveRecordingTimerId) {
+    clearInterval(liveRecordingTimerId);
+    liveRecordingTimerId = null;
+  }
+}
+
+function startLiveRecordingTimer() {
+  liveRecordingStartedAt = Date.now();
+  liveRecordingTimerId = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - liveRecordingStartedAt) / 1000);
+    const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+    const ss = String(elapsed % 60).padStart(2, '0');
+    panelLiveStatusEl.textContent = `Live ${mm}:${ss}`;
+  }, 200);
+}
+
+function updateLiveRecordingUi() {
+  const isRecording = liveMediaRecorder?.state === 'recording';
+  panelLiveBtnEl.classList.toggle('recording', isRecording);
+  panelLiveBtnEl.textContent = isRecording ? 'Stop Live Transcription' : 'Start Live Transcription';
+}
+
+function renderLiveUtterancePreview(utterances) {
+  const previewBody = previewOutputEl;
+  const wasScrolledToBottom =
+    previewBody.scrollHeight - previewBody.scrollTop - previewBody.clientHeight < 40;
+
+  previewOutputEl.textContent = '';
+  const list = document.createElement('div');
+  list.className = 'speaker-preview';
+
+  for (const utterance of utterances) {
+    if (!utterance || typeof utterance !== 'object') continue;
+    const rawText = typeof utterance.text === 'string' ? utterance.text : '';
+    const text = stripSignalTags(rawText).trim();
+    if (!text) continue;
+
+    const row = document.createElement('div');
+    row.className = 'speaker-turn';
+    if (typeof utterance.start_ms === 'number') row.dataset.startMs = utterance.start_ms;
+    if (typeof utterance.start_ms === 'number' && typeof utterance.duration_ms === 'number') {
+      row.dataset.endMs = utterance.start_ms + utterance.duration_ms;
+    }
+
+    const meta = document.createElement('div');
+    meta.className = 'utterance-meta';
+
+    const ts = formatTimestampMs(utterance.start_ms);
+    if (ts) {
+      const timeEl = document.createElement('span');
+      timeEl.className = 'utterance-time';
+      timeEl.textContent = ts;
+      meta.appendChild(timeEl);
+    }
+
+    const speakerRaw = utterance.speaker ?? utterance.speaker_id ?? utterance.speakerId;
+    if (speakerRaw !== undefined && speakerRaw !== null && String(speakerRaw).trim()) {
+      const chip = document.createElement('span');
+      chip.className = 'speaker-chip';
+      chip.textContent = toSpeakerLabel(speakerRaw);
+      meta.appendChild(chip);
+    }
+
+    if (typeof utterance.emotion === 'string' && utterance.emotion.trim()) {
+      const name = utterance.emotion.trim();
+      const color = emotionColor(name);
+      const emotionEl = document.createElement('span');
+      if (color) {
+        emotionEl.className = 'signal-pill emotion';
+        emotionEl.style.background = color + '28';
+        emotionEl.style.color = color;
+      } else {
+        emotionEl.className = 'signal-pill neutral';
+      }
+      emotionEl.textContent = name;
+      meta.appendChild(emotionEl);
+    }
+
+    if (typeof utterance.language === 'string' && utterance.language.trim()) {
+      const langEl = document.createElement('span');
+      langEl.className = 'signal-pill neutral';
+      langEl.textContent = langCodeToName(utterance.language.trim());
+      meta.appendChild(langEl);
+    }
+
+    if (typeof utterance.accent === 'string' && utterance.accent.trim()) {
+      const accentEl = document.createElement('span');
+      accentEl.className = 'signal-pill neutral';
+      accentEl.textContent = utterance.accent.trim() + ' accent';
+      meta.appendChild(accentEl);
+    }
+
+    const bubble = document.createElement('p');
+    bubble.className = 'speaker-bubble';
+    renderTranscriptTextWithMaskedTags(bubble, rawText);
+
+    if (meta.childNodes.length) row.appendChild(meta);
+    row.appendChild(bubble);
+    list.appendChild(row);
+  }
+
+  const liveInd = document.createElement('div');
+  liveInd.className = 'live-indicator';
+  liveInd.textContent = 'Listening...';
+  list.appendChild(liveInd);
+
+  previewOutputEl.appendChild(list);
+
+  if (wasScrolledToBottom && autoscrollEl.checked) {
+    previewOutputEl.scrollTop = previewOutputEl.scrollHeight;
+  }
+}
+
+async function startLiveTranscription() {
+  if (liveIsActive) return;
+  if (!navigator.mediaDevices?.getUserMedia) {
+    panelLiveStatusEl.textContent = 'Microphone not supported';
+    return;
+  }
+
+  // Auto-select streaming model
+  modelEl.value = 'streaming';
+  modelEl.dispatchEvent(new Event('change'));
+
+  const config = MODEL_CONFIG.streaming;
+  const options = getRequestedOptions();
+
+  // Create placeholder file entry
+  const placeholderFile = new File([], `live-${Date.now()}.webm`, { type: 'audio/webm' });
+  const entry = createFileEntry(placeholderFile);
+  entry.model = 'streaming';
+  entry.options = options;
+  entry.liveStreaming = true;
+  entry.liveUtterances = [];
+  entry.status = 'processing';
+
+  const params = new URLSearchParams({
+    api_key: API_KEY,
+    speaker_diarization: String(options.speaker_diarization),
+    emotion_signal: String(options.emotion_signal),
+    accent_signal: String(options.accent_signal),
+    pii_phi_tagging: String(options.pii_phi_tagging),
+  });
+  const wsUrl = `${API_WS_BASE_URL}${config.endpoint}?${params.toString()}`;
+
+  entry.apiCallInfo = {
+    method: 'WebSocket (Live)',
+    url: `${API_WS_BASE_URL}${config.endpoint}`,
+    queryParams: {
+      speaker_diarization: String(options.speaker_diarization),
+      emotion_signal: String(options.emotion_signal),
+      accent_signal: String(options.accent_signal),
+      pii_phi_tagging: String(options.pii_phi_tagging),
+    },
+  };
+
+  // Add to file tabs and switch view
+  files.push(entry);
+  liveFileIndex = files.length - 1;
+  renderFileTabs();
+  setActiveFileIndex(liveFileIndex);
+
+  panelNewUploadEl.hidden = true;
+  viewerShellEl.hidden = false;
+  audioPlayerWrapEl.hidden = true;
+  previewOutputEl.innerHTML = '<div class="live-indicator">Listening...</div>';
+
+  liveIsActive = true;
+  liveUtterances = [];
+  liveRecordedChunks = [];
+  liveDoneDurationMs = null;
+  const startedAt = Date.now();
+
+  resetMeta(placeholderFile);
+  renderCallJson(entry.apiCallInfo);
+
+  try {
+    // Open WebSocket
+    liveWebSocket = new WebSocket(wsUrl);
+    liveWebSocket.binaryType = 'arraybuffer';
+
+    await new Promise((resolve, reject) => {
+      liveWebSocket.addEventListener('open', () => resolve(), { once: true });
+      liveWebSocket.addEventListener('error', () => reject(new Error('WebSocket connection failed')), { once: true });
+    });
+
+    // Handle incoming messages
+    liveWebSocket.addEventListener('message', async (event) => {
+      let payloadText = '';
+      try { payloadText = await readMessageDataAsText(event.data); } catch { return; }
+      if (!payloadText) return;
+      let payload;
+      try { payload = JSON.parse(payloadText); } catch { return; }
+
+      if (payload?.type === 'utterance' && payload.utterance) {
+        liveUtterances.push(payload.utterance);
+        entry.liveUtterances = [...liveUtterances];
+        if (liveFileIndex === activeFileIndex) {
+          renderLiveUtterancePreview(liveUtterances);
+        }
+      } else if (payload?.type === 'done' && typeof payload.duration_ms === 'number') {
+        liveDoneDurationMs = payload.duration_ms;
+      } else if (payload?.type === 'error') {
+        const errMsg = typeof payload.error === 'string' ? payload.error : 'Streaming error';
+        panelLiveStatusEl.textContent = errMsg;
+      }
+    });
+
+    liveWebSocket.addEventListener('error', () => {
+      if (liveIsActive) {
+        panelLiveStatusEl.textContent = 'WebSocket error';
+        stopLiveTranscription(true);
+      }
+    });
+
+    liveWebSocket.addEventListener('close', () => {
+      if (!liveIsActive) return;
+      finalizeLiveTranscription(startedAt, config, options);
+    });
+
+    // Start MediaRecorder
+    liveMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeCandidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
+    const mimeType = mimeCandidates.find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m));
+    liveMediaRecorder = mimeType
+      ? new MediaRecorder(liveMediaStream, { mimeType })
+      : new MediaRecorder(liveMediaStream);
+
+    liveMediaRecorder.addEventListener('dataavailable', (event) => {
+      if (event.data && event.data.size > 0) {
+        liveRecordedChunks.push(event.data);
+        if (liveWebSocket && liveWebSocket.readyState === WebSocket.OPEN) {
+          event.data.arrayBuffer().then(buffer => {
+            if (liveWebSocket && liveWebSocket.readyState === WebSocket.OPEN) {
+              liveWebSocket.send(new Uint8Array(buffer));
+            }
+          });
+        }
+      }
+    });
+
+    liveMediaRecorder.addEventListener('stop', () => {
+      clearLiveRecordingTimer();
+      if (liveWebSocket && liveWebSocket.readyState === WebSocket.OPEN) {
+        liveWebSocket.send('');
+      }
+      stopLiveMediaTracks();
+      liveMediaRecorder = null;
+      updateLiveRecordingUi();
+    });
+
+    liveMediaRecorder.start(250);
+    startLiveRecordingTimer();
+    updateLiveRecordingUi();
+
+  } catch (error) {
+    panelLiveStatusEl.textContent = error instanceof Error ? error.message : 'Failed to start live transcription';
+    liveIsActive = false;
+    cleanupLiveResources();
+    entry.status = 'error';
+    updateTabStatus(liveFileIndex);
+  }
+}
+
+function stopLiveTranscription(cancel = false) {
+  if (!liveIsActive) return;
+
+  if (cancel) {
+    liveIsActive = false;
+    cleanupLiveResources();
+    if (liveFileIndex >= 0 && liveFileIndex < files.length) {
+      files[liveFileIndex].status = 'error';
+      updateTabStatus(liveFileIndex);
+    }
+    updateLiveRecordingUi();
+    panelLiveStatusEl.textContent = '';
+    return;
+  }
+
+  if (liveMediaRecorder && liveMediaRecorder.state === 'recording') {
+    liveMediaRecorder.stop();
+  } else if (liveWebSocket && liveWebSocket.readyState === WebSocket.OPEN) {
+    liveWebSocket.send('');
+  }
+
+  panelLiveStatusEl.textContent = 'Finalizing...';
+}
+
+function finalizeLiveTranscription(startedAt, config, options) {
+  const processingMs = Date.now() - startedAt;
+  liveIsActive = false;
+
+  const entry = files[liveFileIndex];
+  if (!entry) return;
+
+  // Build audio File from accumulated chunks
+  const recorderMime = liveRecordedChunks.length > 0 ? (liveRecordedChunks[0].type || 'audio/webm') : 'audio/webm';
+  const blob = new Blob(liveRecordedChunks, { type: recorderMime });
+  const ext = recorderMime.includes('ogg') ? 'ogg' : recorderMime.includes('wav') ? 'wav' : 'webm';
+  const audioFile = new File([blob], `live-recording-${Date.now()}.${ext}`, { type: recorderMime });
+
+  entry.file = audioFile;
+  entry.audioUrl = URL.createObjectURL(audioFile);
+
+  const durationMs = liveDoneDurationMs ?? getStreamingDurationFromUtterances(liveUtterances);
+  const parsed = {
+    text: liveUtterances.map(u => (typeof u?.text === 'string' ? u.text.trim() : '')).filter(Boolean).join(' '),
+    duration_ms: durationMs,
+    utterances: liveUtterances,
+  };
+  const rawText = JSON.stringify(parsed);
+
+  const payload = normalizeApiResponse({
+    modelKey: 'streaming', file: audioFile, options, config,
+    statusCode: 200, statusText: 'OK', parsed, rawText, processingMs, ok: true,
+  });
+
+  entry.status = liveUtterances.length > 0 ? 'done' : 'error';
+  entry.normalizedResponse = payload;
+  entry.rawPayload = payload;
+  entry.previewText = computePreviewText(payload);
+
+  updateTabStatus(liveFileIndex);
+  if (liveFileIndex === activeFileIndex) {
+    latestPayload = payload;
+    latestPreviewText = entry.previewText;
+    renderJson(payload);
+    updateMetaFromResponse(payload, 'streaming');
+    progressEstimatedMs = null;
+    updatePreview(payload);
+    setPlayerSrc(entry);
+    audioPlayerWrapEl.hidden = false;
+  }
+
+  renderFileTabs();
+  liveRecordedChunks = [];
+  liveUtterances = [];
+  liveDoneDurationMs = null;
+  liveWebSocket = null;
+  panelLiveStatusEl.textContent = '';
+  updateLiveRecordingUi();
+}
+
 const UPLOAD_FORMATS = {
   'batch-fast': 'Opus only · up to 100 MB',
   'batch': 'AAC · AIFF · FLAC · MP3 · MP4 · MOV · OGG · Opus · WAV · WebM · up to 100 MB',
@@ -1917,6 +2311,14 @@ document.getElementById('panel-record-zone').addEventListener('click', () => {
   void startPanelRecording();
 });
 
+panelLiveZoneEl.addEventListener('click', () => {
+  if (liveIsActive) {
+    stopLiveTranscription(false);
+    return;
+  }
+  void startLiveTranscription();
+});
+
 recordToggleBtnEl.addEventListener('click', () => {
   if (!isStreamingModel()) return;
   if (mediaRecorder?.state === 'recording') {
@@ -1987,4 +2389,5 @@ metaModelEl.textContent = toText(modelEl.selectedOptions[0]?.textContent, modelE
 metaOptionsEl.textContent = formatRequestedOptions(getRequestedOptions(), modelEl.value);
 renderJson({});
 renderFileTabs();
+updateLiveRecordingUi();
 
