@@ -6,12 +6,13 @@ const recordStatusEl = document.getElementById('record-status');
 const outputEl = document.getElementById('output');
 const previewOutputEl = document.getElementById('preview-output');
 const copyBtnEl = document.getElementById('copy-btn');
-const tabCallEl = document.getElementById('tab-call');
+const tabCallEl = document.getElementById('right-tab-call');
 const outputCallEl = document.getElementById('output-call');
 const viewerTabButtons = Array.from(document.querySelectorAll('.viewer-tab'));
 const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
 const tabPreviewEl = document.getElementById('tab-preview');
-const tabJsonEl = document.getElementById('tab-json');
+const tabJsonEl = document.getElementById('right-tab-json');
+const rightTabStatsEl = document.getElementById('right-tab-stats');
 const featureNoteEl = document.getElementById('feature-note');
 const optSpeakerDiarizationEl = document.getElementById('opt-speaker-diarization');
 const optEmotionSignalEl = document.getElementById('opt-emotion-signal');
@@ -66,6 +67,7 @@ const LANGUAGE_NAMES = new Intl.DisplayNames(['en'], { type: 'language' });
 function langCodeToName(code) {
   try { return LANGUAGE_NAMES.of(code) || code; } catch { return code; }
 }
+
 
 const EMOTION_COLORS = {
   angry: '#ff3554', contemptuous: '#ff3554', disgusted: '#ff3554', ashamed: '#ff3554',
@@ -189,7 +191,7 @@ function renderFileTabs() {
     newTab.dataset.newTab = 'true';
     newTab.addEventListener('click', () => setActiveFileIndex(-1));
     const newTabName = document.createElement('span');
-    newTabName.textContent = 'New transcription';
+    newTabName.textContent = 'New audio';
     newTab.appendChild(newTabName);
     fileTabsBarEl.appendChild(newTab);
   }
@@ -569,14 +571,22 @@ function formatDurationMs(ms) {
   return `${INT_FMT.format(Math.round(ms))} ms`;
 }
 
+function formatMsToMinSec(ms) {
+  if (typeof ms !== 'number' || !Number.isFinite(ms) || ms < 0) return '—';
+  const totalSec = Math.round(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  if (m > 0) return `${m} m ${s} s`;
+  return `${s} s`;
+}
+
 function formatSecondsFromMs(ms) {
-  if (typeof ms !== 'number' || !Number.isFinite(ms)) return '—';
-  return `${DEC1_FMT.format(ms / 1000)} s`;
+  return formatMsToMinSec(ms);
 }
 
 function formatMinutes(value) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return '—';
-  return `${DEC1_FMT.format(value)} min`;
+  return formatMsToMinSec(value * 60000);
 }
 
 function formatAdaptive(value) {
@@ -603,11 +613,9 @@ function formatProcessingFactor(data) {
     return 'N/A';
   }
 
-  // Use the same 1-decimal values shown in the table to keep factor visually consistent.
-  const shownMinutes = Number((audioDurationMs / 60000).toFixed(1));
-  const shownSeconds = Number((processingMs / 1000).toFixed(1));
-  const durationSecondsForFactor = shownMinutes * 60;
-  const processingSecondsForFactor = shownSeconds > 0 ? shownSeconds : processingMs / 1000;
+  // Use the same rounded-second values shown in the table to keep factor visually consistent.
+  const durationSecondsForFactor = Math.round(audioDurationMs / 1000);
+  const processingSecondsForFactor = Math.round(processingMs / 1000) || (processingMs / 1000);
 
   if (!Number.isFinite(durationSecondsForFactor) || durationSecondsForFactor <= 0) {
     return 'N/A';
@@ -1069,20 +1077,16 @@ function updatePreview(payload) {
   }
 }
 
-let activeViewerTab = 'preview';
+let activeRightTab = 'stats';
 
-function setActiveTab(tabName) {
-  activeViewerTab = tabName;
+function setActiveRightTab(tabName) {
+  activeRightTab = tabName;
 
-  tabPreviewEl.classList.toggle('active', tabName === 'preview');
-  tabJsonEl.classList.toggle('active', tabName === 'json');
+  rightTabStatsEl.classList.toggle('active', tabName === 'stats');
   tabCallEl.classList.toggle('active', tabName === 'call');
+  tabJsonEl.classList.toggle('active', tabName === 'json');
 
   for (const button of viewerTabButtons) {
-    button.classList.toggle('active', button.dataset.tab === tabName);
-  }
-
-  for (const button of tabButtons) {
     button.classList.toggle('active', button.dataset.tab === tabName);
   }
 }
@@ -1730,8 +1734,8 @@ function stopPanelRecording(cancel = false) {
 }
 
 const UPLOAD_FORMATS = {
-  'batch-fast': 'Opus only · up to 100 MB',
-  'batch': 'AAC · AIFF · FLAC · MP3 · MP4 · MOV · OGG · Opus · WAV · WebM · up to 100 MB',
+  'batch-fast': 'Opus only<br>up to 100 MB',
+  'batch': 'AAC · AIFF · FLAC · MP3 · MP4 · MOV · OGG · Opus · WAV · WebM<br>up to 100 MB',
   'streaming': 'AAC · AIFF · FLAC · MP3 · MP4 · MOV · OGG · Opus · WAV · WebM',
 };
 
@@ -1742,7 +1746,7 @@ function updateInputWidgetForModel(modelKey) {
   recordZoneEl.style.display = streaming ? 'grid' : 'none';
 
   if (panelUploadFormatsEl) {
-    panelUploadFormatsEl.textContent = UPLOAD_FORMATS[modelKey] ?? UPLOAD_FORMATS.batch;
+    panelUploadFormatsEl.innerHTML = UPLOAD_FORMATS[modelKey] ?? UPLOAD_FORMATS.batch;
   }
 
   if (!streaming) {
@@ -1850,7 +1854,7 @@ function updateMetaFromResponse(data, fallbackModel) {
   if (isUnsupported('languages')) {
     metaLanguagesEl.textContent = 'N/A';
   } else if (Array.isArray(data?.meta?.languages) && data.meta.languages.length) {
-    metaLanguagesEl.textContent = `${data.meta.languages.join(', ')} (${INT_FMT.format(data.meta.languages.length)} langs)`;
+    metaLanguagesEl.textContent = data.meta.languages.map(c => langCodeToName(c)).join(', ');
   } else if (typeof data?.meta?.languageCount === 'number') {
     metaLanguagesEl.textContent = formatCount(data.meta.languageCount, 'languages');
   } else {
@@ -1896,15 +1900,9 @@ for (const optInput of optionInputs) {
   });
 }
 
-for (const button of tabButtons) {
-  button.addEventListener('click', () => {
-    setActiveTab(button.dataset.tab || 'preview');
-  });
-}
-
 for (const vtab of viewerTabButtons) {
   vtab.addEventListener('click', () => {
-    setActiveTab(vtab.dataset.tab || 'preview');
+    setActiveRightTab(vtab.dataset.tab || 'stats');
   });
 }
 
@@ -1957,23 +1955,15 @@ recordToggleBtnEl.addEventListener('click', () => {
 });
 
 copyBtnEl.addEventListener('click', async () => {
-  let text = '';
-  if (activeViewerTab === 'preview') {
-    text = latestPreviewText || '';
-  } else if (activeViewerTab === 'json') {
-    text = JSON.stringify(latestPayload ?? {}, null, 2);
-  } else if (activeViewerTab === 'call') {
-    const entry = files[activeFileIndex];
-    text = JSON.stringify(entry?.apiCallInfo ?? {}, null, 2);
-  }
+  const text = latestPreviewText || '';
   if (!text) return;
   try {
     await copyTextToClipboard(text);
     copyBtnEl.textContent = 'Copied';
-    setTimeout(() => { copyBtnEl.textContent = 'Copy'; }, 1200);
+    setTimeout(() => { copyBtnEl.textContent = 'Copy transcript'; }, 1200);
   } catch {
     copyBtnEl.textContent = 'Copy failed';
-    setTimeout(() => { copyBtnEl.textContent = 'Copy'; }, 1200);
+    setTimeout(() => { copyBtnEl.textContent = 'Copy transcript'; }, 1200);
   }
 });
 
@@ -1998,23 +1988,33 @@ audioPlayerEl.addEventListener('timeupdate', () => {
 
 
 
-const themeToggleEl = document.getElementById('theme-toggle');
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  themeToggleEl.querySelector('.icon-moon').style.display = theme === 'light' ? '' : 'none';
-  themeToggleEl.querySelector('.icon-sun').style.display = theme === 'dark' ? '' : 'none';
-  localStorage.setItem('demo-theme', theme);
-}
-themeToggleEl.addEventListener('click', () => {
-  applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-});
-applyTheme(localStorage.getItem('demo-theme') || 'light');
 
-setActiveTab('preview');
+setActiveRightTab('stats');
 updateInputWidgetForModel(modelEl.value);
 updateFeatureControlsForModel(modelEl.value);
 metaModelEl.textContent = toText(modelEl.selectedOptions[0]?.textContent, modelEl.value);
 metaOptionsEl.textContent = formatRequestedOptions(getRequestedOptions(), modelEl.value);
 renderJson({});
 renderFileTabs();
+
+// Diarization tooltip on hover
+(function() {
+  const label = document.getElementById('diarization-label');
+  if (!label) return;
+  const tipText = 'Identifies and labels individual speakers in the audio';
+  let tipEl = null;
+  label.addEventListener('mouseenter', () => {
+    if (tipEl) return;
+    tipEl = document.createElement('span');
+    tipEl.className = 'feature-tip';
+    tipEl.textContent = tipText;
+    document.body.appendChild(tipEl);
+    const r = label.getBoundingClientRect();
+    tipEl.style.left = r.left + 'px';
+    tipEl.style.top = (r.bottom + 4) + 'px';
+  });
+  label.addEventListener('mouseleave', () => {
+    if (tipEl) { tipEl.remove(); tipEl = null; }
+  });
+})();
 

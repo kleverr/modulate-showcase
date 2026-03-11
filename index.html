@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <!-- Google tag (gtag.js) -->
@@ -18,14 +18,14 @@
     />
     <style>
       :root {
-        --bg: #120021;
-        --panel: #1a062b;
-        --panel-border: #2d1544;
-        --row-border: rgba(255, 255, 255, 0.07);
-        --text: #efe9ff;
-        --muted: #b9accf;
-        --ok: #40d48e;
-        --fail: #ff6b6b;
+        --bg: #f4effd;
+        --panel: #ffffff;
+        --panel-border: #e0d5f5;
+        --row-border: rgba(0, 0, 0, 0.06);
+        --text: #1a003a;
+        --muted: #828282;
+        --ok: #15915a;
+        --fail: #d42f2f;
       }
 
       * {
@@ -40,7 +40,7 @@
         flex-direction: column;
         font-family: 'DM Sans', 'Segoe UI', sans-serif;
         color: var(--text);
-        background: radial-gradient(circle at 10% -20%, #2a0b48 0, transparent 45%), var(--bg);
+        background: linear-gradient(157deg, rgba(238, 174, 202, 1) 0%, rgba(116, 173, 202, 1) 33%, rgba(170, 96, 204, 1) 66%, rgba(46, 46, 120, 1) 100%);
         padding: 18px;
       }
 
@@ -126,7 +126,7 @@
         font-weight: 600;
         background: var(--panel);
         border-color: var(--panel-border);
-        border-top: 2px solid #8c67ff;
+        border-top: 2px solid #7050c0;
         /* bottom is 1px solid panel bg to merge with panel */
         border-bottom: 1px solid var(--panel);
       }
@@ -148,7 +148,7 @@
       }
 
       .file-tab[data-status="processing"] .file-tab-dot {
-        background: #b89fff;
+        background: #7050c0;
         opacity: 1;
         animation: pulseDot 1.2s infinite ease-in-out;
       }
@@ -196,7 +196,7 @@
         left: 0;
         height: 100%;
         border-radius: 6px 6px 0 0;
-        background: rgba(140, 103, 255, 0.25);
+        background: rgba(112, 80, 192, 0.18);
         width: 0;
         z-index: 0;
       }
@@ -207,15 +207,19 @@
       }
 
       .empty-hint {
-        color: #6a5c85;
+        color: var(--muted);
         font-style: italic;
       }
 
       .audio-player-wrap {
-        padding: 20px 12px 8px;
+        padding: 14px 14px 0;
         display: flex;
-        align-items: center;
-        gap: 10px;
+        flex-direction: column;
+        gap: 0;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--panel);
       }
 
       .audio-player-wrap[hidden] {
@@ -223,25 +227,27 @@
       }
 
       .audio-player-wrap audio {
-        flex: 1;
+        width: 100%;
         height: 36px;
-        color-scheme: dark;
+        color-scheme: light;
+      }
+
+      .player-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 6px 0 8px;
       }
 
       .autoscroll-label {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        color: #b9accf;
-        font-size: 0.8rem;
+        gap: 5px;
+        color: var(--muted);
+        font-size: 0.72rem;
         user-select: none;
         white-space: nowrap;
         cursor: pointer;
-      }
-
-      .autoscroll-label input[type='checkbox'] {
-        accent-color: #8c67ff;
-        margin: 0;
       }
 
       .autoscroll-label.disabled {
@@ -249,24 +255,82 @@
         cursor: help;
       }
 
+      /* macOS-style toggle switch */
+      .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 28px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+      }
+
+      .toggle-track {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.15);
+        border-radius: 8px;
+        transition: background 0.2s ease;
+        cursor: pointer;
+      }
+
+      .toggle-track::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 12px;
+        height: 12px;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      }
+
+      .toggle-switch input:checked + .toggle-track {
+        background: #7050c0;
+      }
+
+      .toggle-switch input:checked + .toggle-track::after {
+        transform: translateX(12px);
+      }
+
       .speaker-turn[data-start-ms] .speaker-bubble {
         cursor: pointer;
       }
 
       .speaker-turn[data-start-ms] .speaker-bubble:hover {
-        border-color: #8a40c0;
-        background: #210d40;
+        border-color: #b090e0;
+        background: #e8deff;
       }
 
       .footer {
         margin-top: auto;
         padding-top: 22px;
-        color: #9f8ebd;
+        color: #f0e8ff;
         font-size: 0.82rem;
         max-width: 1450px;
         width: 100%;
         margin-left: auto;
         margin-right: auto;
+      }
+
+      .footer a {
+        color: inherit;
+        text-decoration-color: rgba(255,255,255,0.35);
+        cursor: pointer;
+        transition: color 0.15s ease;
+      }
+
+      .footer a:hover {
+        color: #fff;
+        text-decoration-color: rgba(255,255,255,0.7);
       }
 
       .panel {
@@ -307,20 +371,22 @@
       }
 
       .model-panel {
-        border: 1px solid var(--panel-border);
-        border-radius: 12px;
-        background: var(--panel);
-        padding: 14px 20px;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        padding: 20px 20px;
         display: grid;
-        grid-template-columns: auto auto;
-        column-gap: 10px;
+        grid-template-columns: auto 1fr;
+        column-gap: 8px;
         row-gap: 10px;
         align-items: center;
         flex: 0 0 auto;
       }
 
       .model-panel select {
-        width: 100%;
+        width: auto;
+        max-width: 100%;
+        justify-self: start;
       }
 
       .model-panel .feature-note {
@@ -336,7 +402,7 @@
       }
 
       .feature-title {
-        color: #bfb2d5;
+        color: var(--text);
         font-size: 0.93rem;
         white-space: nowrap;
       }
@@ -345,7 +411,7 @@
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        color: #e2d9f4;
+        color: var(--text);
         font-size: 0.93rem;
         user-select: none;
         white-space: nowrap;
@@ -354,6 +420,19 @@
       .feature-item.disabled {
         opacity: 0.58;
         cursor: help;
+      }
+
+      .feature-tip {
+        position: absolute;
+        background: #f0e8ff;
+        color: var(--text);
+        font-size: 0.78rem;
+        padding: 5px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 200;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       }
 
       .feature-item input[type='checkbox'] {
@@ -379,9 +458,9 @@
 
       select {
         width: auto;
-        border: 1px solid #463060;
+        border: 1px solid #d0c5e8;
         border-radius: 8px;
-        background: #0f0220;
+        background: #f8f4ff;
         color: var(--text);
         font: inherit;
         padding: 8px 10px;
@@ -390,7 +469,7 @@
 
       .mini-upload {
         flex: none;
-        border: 2px dashed #6a4a90;
+        border: 2px dashed #9070c8;
         border-radius: 10px;
         display: grid;
         align-content: center;
@@ -398,14 +477,14 @@
         gap: 8px;
         cursor: pointer;
         padding: 16px 24px;
-        background: rgba(100, 60, 160, 0.16);
+        background: #e4d8ff;
         transition: background 0.15s ease;
       }
 
       .mini-upload:hover,
       .mini-upload.drag {
-        background: rgba(100, 60, 160, 0.28);
-        border-color: #8c67cc;
+        background: #d4c4f8;
+        border-color: #7050c0;
       }
 
       .mini-upload .hint {
@@ -414,8 +493,8 @@
       }
 
       .mini-upload .btn {
-        border: 1px solid rgba(255, 255, 255, 0.45);
-        color: #fff;
+        border: 1px solid rgba(0,0,0,0.28);
+        color: var(--text);
         background: transparent;
         border-radius: 7px;
         padding: 5px 11px;
@@ -425,24 +504,24 @@
       }
 
       .record-zone .record-btn {
-        border: 1px solid #7db1ff;
+        border: 1px solid #4080d0;
         border-radius: 7px;
-        color: #dcedff;
-        background: #13345d;
+        color: #0a2550;
+        background: #d8e8ff;
         padding: 6px 12px;
         font: inherit;
         cursor: pointer;
       }
 
       .record-zone .record-btn.recording {
-        border-color: #ff7e7e;
-        background: #57222d;
-        color: #ffdada;
+        border-color: #cc4444;
+        background: #ffe0e0;
+        color: #6a1010;
       }
 
       .record-status {
         font-size: 0.8rem;
-        color: #c8bcde;
+        color: var(--muted);
         font-variant-numeric: tabular-nums;
       }
 
@@ -475,11 +554,12 @@
         text-align: left;
         vertical-align: top;
         font-size: 0.92rem;
+        word-break: break-word;
       }
 
       th {
         white-space: nowrap;
-        color: #cdbfe3;
+        color: var(--text);
         font-weight: 600;
       }
 
@@ -501,7 +581,7 @@
       }
 
       .status.processing {
-        color: #d8c6ff;
+        color: #7050c0;
       }
 
       .status .dots {
@@ -538,7 +618,9 @@
       }
 
       .panels-wrapper {
-        display: flex;
+        display: grid;
+        grid-template-columns: 12fr 8fr;
+        flex: 1;
         min-height: 0;
         border: 1px solid var(--panel-border);
         border-radius: 10px;
@@ -546,19 +628,61 @@
         background: var(--panel);
       }
 
-      .panel-output {
-        flex: 8;
+      .panel-left {
+        grid-column: 1;
+        grid-row: 1;
         display: flex;
         flex-direction: column;
         min-height: 0;
-        border-right: 1px solid var(--panel-border);
       }
 
-      .panel-right {
-        flex: 12;
+      .panel-output {
+        grid-column: 2;
+        grid-row: 1;
         display: flex;
         flex-direction: column;
         min-height: 0;
+        border-left: 1px solid var(--panel-border);
+        background: rgba(112, 80, 192, 0.03);
+      }
+
+      .right-panel-tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--panel-border);
+        background: transparent;
+        flex-shrink: 0;
+      }
+
+      .right-tab-panel {
+        display: none;
+        flex: 1;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      .right-tab-panel.active {
+        display: flex;
+      }
+
+      .copy-transcript-btn {
+        border: none;
+        background: none;
+        padding: 0;
+        font: inherit;
+        font-size: 0.72rem;
+        color: var(--muted);
+        text-decoration: underline;
+        text-decoration-color: rgba(26,0,58,0.18);
+        text-underline-offset: 3px;
+        cursor: pointer;
+        margin-left: auto;
+        white-space: nowrap;
+      }
+
+      .copy-transcript-btn:hover {
+        color: var(--text);
+        text-decoration-color: rgba(26,0,58,0.35);
       }
 
       .viewer-shell {
@@ -572,35 +696,23 @@
         min-height: 0;
       }
 
-      .viewer-footer {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 6px 12px;
-        border-top: 1px solid var(--panel-border);
-        flex-shrink: 0;
-        background: rgba(140, 103, 255, 0.08);
-      }
-
-      .viewer-tabs {
-        display: flex;
-        gap: 0;
-        border: 1px solid rgba(90, 170, 200, 0.35);
-        border-radius: 6px;
-        overflow: hidden;
+      .viewer-scroll {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
       }
 
       .viewer-tab {
         border: none;
-        background: transparent;
-        color: var(--text);
+        background: rgba(112, 80, 192, 0.06);
+        color: var(--muted);
         font: inherit;
-        font-size: 0.8rem;
-        padding: 4px 0;
-        width: 88px;
+        font-size: 0.82rem;
+        padding: 8px 0;
+        flex: 1;
         text-align: center;
         cursor: pointer;
-        border-right: 1px solid rgba(90, 170, 200, 0.35);
+        border-right: 1px solid var(--panel-border);
       }
 
       .viewer-tab:last-child {
@@ -609,13 +721,14 @@
 
       .viewer-tab:hover:not(.active) {
         color: var(--text);
-        background: rgba(80, 180, 210, 0.1);
+        background: rgba(112, 80, 192, 0.06);
       }
 
       .viewer-tab.active {
         color: var(--text);
-        background: rgba(80, 180, 210, 0.2);
+        background: transparent;
         font-weight: 600;
+        box-shadow: inset 0 -2px 0 #7050c0;
       }
 
       .tabs-row {
@@ -636,7 +749,7 @@
 
       .tab-btn {
         border: none;
-        color: #a996c6;
+        color: var(--muted);
         background: transparent;
         border-radius: 0;
         padding: 8px 14px;
@@ -651,49 +764,26 @@
       }
 
       .tab-btn:hover:not(.active) {
-        color: #cdbfe3;
+        color: var(--text);
       }
 
       .tab-panel {
         display: none;
-        flex: 1;
-        min-height: 0;
       }
 
       .tab-panel.active {
-        display: flex;
-        flex-direction: column;
+        display: block;
       }
 
       .download-btn {
-        border: 1px solid #5fa6ff;
-        color: #dcedff;
-        background: #132f56;
+        border: 1px solid #4080d0;
+        color: #0a2550;
+        background: #d8e8ff;
         border-radius: 8px;
         padding: 5px 10px;
         font: inherit;
         cursor: pointer;
         margin: 0;
-      }
-
-      .copy-btn {
-        border: none;
-        background: none;
-        padding: 0;
-        font: inherit;
-        font-size: 0.85rem;
-        color: var(--text);
-        text-decoration: underline;
-        text-decoration-color: rgba(239, 233, 255, 0.3);
-        text-underline-offset: 3px;
-        cursor: pointer;
-        margin: 0;
-        margin-left: auto;
-      }
-
-      .copy-btn:hover {
-        color: var(--text);
-        text-decoration-color: rgba(239, 233, 255, 0.5);
       }
 
       .tabs-actions {
@@ -708,7 +798,7 @@
         cursor: not-allowed;
       }
 
-      .copy-btn:disabled {
+      .copy-transcript-btn:disabled {
         opacity: 0.35;
         cursor: not-allowed;
         text-decoration: none;
@@ -719,11 +809,8 @@
         border: none;
         border-radius: 0;
         background: transparent;
-        color: #fff;
+        color: var(--text);
         padding: 24px 14px 14px;
-        flex: 1;
-        min-height: 0;
-        overflow: auto;
         white-space: pre-wrap;
         overflow-wrap: anywhere;
         word-break: break-word;
@@ -750,14 +837,14 @@
       }
 
       .utterance-time {
-        color: #a89abc;
+        color: var(--muted);
         font-size: 0.76rem;
         font-variant-numeric: tabular-nums;
       }
 
       .speaker-chip {
         display: inline-block;
-        color: #b7a7d3;
+        color: var(--muted);
         font-size: 0.72rem;
         font-variant-caps: all-small-caps;
         letter-spacing: 0.06em;
@@ -777,17 +864,17 @@
       }
 
       .signal-pill.neutral {
-        color: #a0a0b0;
-        background: rgba(160, 160, 176, 0.18);
+        color: #777;
+        background: rgba(0,0,0,0.07);
       }
 
       .speaker-bubble {
         margin: 0;
         padding: 9px 11px;
         border-radius: 10px;
-        background: #2b1248;
-        border: 1px solid #583480;
-        color: #fff;
+        background: #f0ebff;
+        border: 1px solid #d5c5ef;
+        color: var(--text);
         font-size: 0.93rem;
         line-height: 1.5;
         white-space: pre-wrap;
@@ -797,8 +884,8 @@
       }
 
       .active-utterance .speaker-bubble {
-        border-color: #c060ff;
-        background: #2a1050;
+        border-color: #9060e0;
+        background: #e8deff;
       }
 
       .pii-token {
@@ -809,19 +896,19 @@
         font: inherit;
         line-height: 1.25;
         color: inherit;
-        background: rgba(255, 255, 255, 0.18);
+        background: rgba(0,0,0,0.08);
         filter: blur(4px);
         cursor: pointer;
         transition: filter 0.12s ease, background-color 0.12s ease;
       }
 
       .pii-token:hover {
-        background: rgba(255, 255, 255, 0.24);
+        background: rgba(0,0,0,0.13);
       }
 
       .pii-token.revealed {
         filter: none;
-        background: rgba(95, 166, 255, 0.24);
+        background: rgba(80,120,230,0.18);
       }
 
       .processing-progress {
@@ -835,7 +922,7 @@
       }
 
       .processing-progress-label {
-        color: #6a5c85;
+        color: var(--muted);
         font-size: 0.82rem;
         font-style: italic;
       }
@@ -844,7 +931,7 @@
         width: 100%;
         max-width: 300px;
         height: 3px;
-        background: rgba(255, 255, 255, 0.07);
+        background: rgba(0,0,0,0.08);
         border-radius: 2px;
         overflow: hidden;
       }
@@ -866,7 +953,7 @@
         display: inline-flex;
         align-items: center;
         gap: 2px;
-        color: #d8c6ff;
+        color: #7050c0;
         font-weight: 600;
       }
 
@@ -888,7 +975,7 @@
         border: none;
         border-radius: 0;
         background: transparent;
-        color: #fff;
+        color: var(--text);
         padding: 24px 14px 14px;
         flex: 1;
         min-height: 0;
@@ -902,23 +989,23 @@
       }
 
       .json-key {
-        color: #7cc0ff;
+        color: #0055cc;
       }
 
       .json-string {
-        color: #58f59a;
+        color: #167a30;
       }
 
       .json-number {
-        color: #ffb347;
+        color: #a05a00;
       }
 
       .json-boolean {
-        color: #ff7ac8;
+        color: #950060;
       }
 
       .json-null {
-        color: #9a7fbf;
+        color: #7060a0;
       }
 
       #viewer-shell[hidden] {
@@ -947,17 +1034,17 @@
         justify-content: center;
         gap: 10px;
         cursor: pointer;
-        border: 2px dashed #4a3070;
+        border: 2px dashed #c0a8e8;
         border-radius: 8px;
-        background: rgba(100, 60, 160, 0.06);
+        background: rgba(100, 60, 160, 0.04);
         transition: background 0.15s ease, border-color 0.15s ease;
         padding: 16px;
       }
 
       .panel-upload-zone.drag,
       .panel-upload-zone:hover {
-        background: rgba(100, 60, 160, 0.16);
-        border-color: #7050a0;
+        background: rgba(100, 60, 160, 0.10);
+        border-color: #9070c8;
       }
 
       .panel-upload-divider {
@@ -991,9 +1078,9 @@
       }
 
       .panel-new-upload .panel-upload-btn {
-        border: 1px solid #8c67ff;
-        color: #e4daff;
-        background: #2a1050;
+        border: 1px solid #9070c8;
+        color: #2a0060;
+        background: #e8dcff;
         border-radius: 7px;
         padding: 7px 18px;
         font: inherit;
@@ -1003,14 +1090,14 @@
       }
 
       .panel-new-upload .panel-upload-btn:hover {
-        background: #381668;
+        background: #dccef8;
       }
 
       .panel-record-btn {
-        border: 1px solid #7db1ff;
+        border: 1px solid #9070c8;
         border-radius: 7px;
-        color: #dcedff;
-        background: #13345d;
+        color: #2a0060;
+        background: #e8dcff;
         padding: 7px 18px;
         font: inherit;
         font-size: 0.9rem;
@@ -1019,18 +1106,18 @@
       }
 
       .panel-record-btn:hover {
-        background: #1a4070;
+        background: #dccef8;
       }
 
       .panel-record-btn.recording {
-        border-color: #ff7e7e;
-        background: #57222d;
-        color: #ffdada;
+        border-color: #cc4444;
+        background: #ffe0e0;
+        color: #6a1010;
         animation: pulseDot 1.2s infinite ease-in-out;
       }
 
       .panel-record-btn.recording:hover {
-        background: #6a2a36;
+        background: #ffd0d0;
       }
 
       .panel-record-status {
@@ -1060,9 +1147,9 @@
         .col-header-right { grid-column: 2; grid-row: 1; }
         .controls-area { grid-column: 1 / -1; grid-row: 2; }
         .panels-area { grid-column: 1 / -1; grid-row: 3; flex: none; min-height: auto; }
-        .panels-wrapper { flex-direction: column; min-height: auto; }
-        .panel-output { flex: none; min-height: auto; border-right: none; border-bottom: 1px solid var(--panel-border); }
-        .panel-right { flex: none; min-height: auto; }
+        .panels-wrapper { grid-template-columns: 1fr; grid-template-rows: auto auto; min-height: auto; }
+        .panel-left { grid-column: 1; grid-row: 1; }
+        .panel-output { grid-column: 1; grid-row: 2; border-left: none; border-top: 1px solid var(--panel-border); }
         .table-wrap { flex: none; overflow: hidden; }
         .viewer-shell { min-height: 420px; }
       }
@@ -1077,99 +1164,6 @@
         }
       }
 
-      /* ── Theme toggle ── */
-      .theme-toggle {
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 4px 6px;
-        color: var(--muted);
-        display: flex;
-        align-items: center;
-        border-radius: 6px;
-        line-height: 1;
-      }
-
-      .theme-toggle:hover { color: var(--text); }
-      .theme-toggle svg { width: 32px; height: 32px; fill: currentColor; }
-
-      /* ── Light theme ── */
-      [data-theme="light"] {
-        --bg: #f4effd;
-        --panel: #ffffff;
-        --panel-border: #e0d5f5;
-        --row-border: rgba(0, 0, 0, 0.06);
-        --text: #1a003a;
-        --muted: #828282;
-        --ok: #15915a;
-        --fail: #d42f2f;
-      }
-
-      [data-theme="light"] body { background: var(--bg); }
-      [data-theme="light"] .panels-wrapper { background: var(--panel); }
-      [data-theme="light"] .tab-btn.active { color: #000; }
-      [data-theme="light"] .empty-hint { color: var(--muted); }
-      [data-theme="light"] .autoscroll-label { color: var(--muted); }
-      [data-theme="light"] .footer { color: var(--muted); }
-      [data-theme="light"] .label { color: var(--text); }
-      [data-theme="light"] .feature-title { color: var(--text); }
-      [data-theme="light"] .feature-item { color: var(--text); }
-      [data-theme="light"] select { border-color: #d0c5e8; background: #f8f4ff; color: var(--text); }
-      [data-theme="light"] .mini-upload { border-color: #9070c8; background: #e4d8ff; }
-      [data-theme="light"] .mini-upload:hover,
-      [data-theme="light"] .mini-upload.drag { border-color: #7050c0; background: #d4c4f8; }
-      [data-theme="light"] .mini-upload .hint { color: var(--text); }
-      [data-theme="light"] .mini-upload .btn { border-color: rgba(0,0,0,0.28); color: var(--text); }
-      [data-theme="light"] .record-zone .record-btn { border-color: #4080d0; color: #0a2550; background: #d8e8ff; }
-      [data-theme="light"] .record-zone .record-btn.recording { border-color: #cc4444; background: #ffe0e0; color: #6a1010; }
-      [data-theme="light"] .record-status { color: var(--muted); }
-      [data-theme="light"] th { color: var(--text); }
-      [data-theme="light"] td { color: var(--text); }
-      [data-theme="light"] .status.processing { color: #7050c0; }
-      [data-theme="light"] .tab-btn { color: var(--muted); }
-      [data-theme="light"] .tab-btn:hover:not(.active) { color: var(--text); }
-      [data-theme="light"] .preview-body { color: var(--text); }
-      [data-theme="light"] .utterance-time { color: var(--muted); }
-      [data-theme="light"] .speaker-chip { color: var(--muted); }
-      [data-theme="light"] .signal-pill.neutral { color: #777; background: rgba(0,0,0,0.07); }
-      [data-theme="light"] .speaker-bubble { background: #f0ebff; border-color: #d5c5ef; color: var(--text); }
-      [data-theme="light"] .speaker-turn[data-start-ms] .speaker-bubble:hover { border-color: #b090e0; background: #e8deff; }
-      [data-theme="light"] .active-utterance .speaker-bubble { border-color: #9060e0; background: #e8deff; }
-      [data-theme="light"] .pii-token { background: rgba(0,0,0,0.08); }
-      [data-theme="light"] .pii-token:hover { background: rgba(0,0,0,0.13); }
-      [data-theme="light"] .pii-token.revealed { background: rgba(80,120,230,0.18); }
-      [data-theme="light"] .processing-progress-label { color: var(--muted); }
-      [data-theme="light"] .progress-bar-wrap { background: rgba(0,0,0,0.08); }
-      [data-theme="light"] .preview-processing { color: #7050c0; }
-      [data-theme="light"] pre { color: var(--text); }
-      [data-theme="light"] .json-key { color: #0055cc; }
-      [data-theme="light"] .json-string { color: #167a30; }
-      [data-theme="light"] .json-number { color: #a05a00; }
-      [data-theme="light"] .json-boolean { color: #950060; }
-      [data-theme="light"] .json-null { color: #7060a0; }
-      [data-theme="light"] .viewer-footer { background: rgba(112, 80, 192, 0.08); }
-      [data-theme="light"] .copy-btn { color: var(--text); text-decoration-color: rgba(26,0,58,0.25); }
-      [data-theme="light"] .copy-btn:hover { text-decoration-color: rgba(26,0,58,0.45); }
-      [data-theme="light"] .viewer-tabs { border-color: rgba(60, 150, 180, 0.35); }
-      [data-theme="light"] .viewer-tab { color: var(--text); border-color: rgba(60, 150, 180, 0.35); }
-      [data-theme="light"] .viewer-tab:hover:not(.active) { color: var(--text); background: rgba(50, 160, 190, 0.08); }
-      [data-theme="light"] .viewer-tab.active { color: var(--text); background: rgba(50, 160, 190, 0.16); }
-      [data-theme="light"] .audio-player-wrap audio { color-scheme: light; }
-      [data-theme="light"] .file-tab { background: rgba(248,244,255,0.7); border-color: #d0c5e8; }
-      [data-theme="light"] .file-tab.active { background: var(--panel); border-color: #d0c5e8; border-top-color: #7050c0; border-bottom-color: var(--panel); }
-      [data-theme="light"] .file-tab:hover:not(.active) { background: var(--panel); border-color: #b09ad8; }
-      [data-theme="light"] .file-tab[data-status="done"] .file-tab-dot { background: var(--ok); }
-      [data-theme="light"] .file-tab[data-status="error"] .file-tab-dot { background: var(--fail); }
-      [data-theme="light"] .file-tab-progress { background: rgba(112, 80, 192, 0.18); }
-      [data-theme="light"] .panel-upload-zone { border-color: #c0a8e8; background: rgba(100, 60, 160, 0.04); }
-      [data-theme="light"] .panel-upload-zone.drag,
-      [data-theme="light"] .panel-upload-zone:hover { background: rgba(100, 60, 160, 0.10); border-color: #9070c8; }
-      [data-theme="light"] .panel-new-upload .panel-upload-btn { border-color: #9070c8; color: #2a0060; background: #e8dcff; }
-      [data-theme="light"] .panel-new-upload .panel-upload-btn:hover { background: #dccef8; }
-      [data-theme="light"] .panel-record-btn { border-color: #4080d0; color: #0a2550; background: #d8e8ff; }
-      [data-theme="light"] .panel-record-btn:hover { background: #c8dcf8; }
-      [data-theme="light"] .panel-record-btn.recording { border-color: #cc4444; background: #ffe0e0; color: #6a1010; }
-      [data-theme="light"] .panel-record-btn.recording:hover { background: #ffd0d0; }
     </style>
   </head>
   <body>
@@ -1179,16 +1173,25 @@
       </div>
 
       <div class="col-header-right">
-        <button id="theme-toggle" class="theme-toggle" type="button" title="Switch theme">
-          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 190"><path fill-rule="evenodd" d="M43.46,120.25C35.37,90,58.69,70.84,81.77,71c-32.87,24.71-2.49,74.59,33.12,59.49C99.32,155.49,53.61,158.11,43.46,120.25Z"/></svg>
-          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 190"><path fill-rule="evenodd" d="M108.09,98.53l16.9-2,.68,7.38L108.84,105ZM98.44,80.76l9.34-8.85,5.13,5.75L102.37,85.4ZM80.13,72.18l3.56-16.76,7,1.78L86,73.84ZM75.6,135.9c-43,.18-40.06-57.69-2.88-57.85C110.62,77.88,111.83,135.74,75.6,135.9ZM72.82,85.5C44,85.62,42.29,129.14,75,129,102.58,128.88,102.18,85.37,72.82,85.5ZM53.15,62l7.59-2.25L64.81,71.4l-5.75,1.94ZM28.88,78.8,32.62,72,46.67,82.12l-2.81,5.5Zm8.7,31-13,1-.2-8.1,12.7,1Zm10.08,21.54L34.84,143.46,30,136.8,43.8,126.64Zm21.64,12.6L68.6,157l-8.72-.92L63.56,143Zm32.06,8.3-7.45,3.57-7.65-15.24,6.5-2.86Zm17.16-24.65-3.44,6.69-12.35-7.93,3-5.31Z"/></svg>
-        </button>
       </div>
 
       <div class="controls-area">
         <div class="controls-row">
+          <div id="record-zone" class="mini-upload record-zone" hidden>
+            <span id="record-status" class="record-status">Ready to record</span>
+            <button id="record-toggle-btn" class="record-btn" type="button">Start recording</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panels-area">
+      <div id="file-tabs-bar" class="file-tabs-bar"></div>
+
+      <div class="panels-wrapper">
+      <section class="panel panel-left">
+        <div id="panel-new-upload" class="panel-new-upload">
           <div class="model-panel">
-            <span class="label">Models:</span>
+            <span class="label">Model:</span>
             <select id="model">
               <option value="batch" selected>Multilingual Transcription</option>
               <option value="batch-fast">English, Fast Transcription</option>
@@ -1196,7 +1199,7 @@
 
             <span class="feature-title">Options:</span>
             <div id="feature-controls" class="feature-controls">
-              <label class="feature-item">
+              <label class="feature-item" id="diarization-label">
                 <input id="opt-speaker-diarization" type="checkbox" checked />
                 <span>Diarization</span>
               </label>
@@ -1215,53 +1218,6 @@
             </div>
             <div id="feature-note" class="feature-note"></div>
           </div>
-
-          <div id="record-zone" class="mini-upload record-zone" hidden>
-            <span id="record-status" class="record-status">Ready to record</span>
-            <button id="record-toggle-btn" class="record-btn" type="button">Start recording</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="panels-area">
-      <div id="file-tabs-bar" class="file-tabs-bar"></div>
-
-      <div class="panels-wrapper">
-      <section class="panel panel-output">
-        <div class="table-wrap">
-          <table>
-            <tr><th>Status</th><td><span id="meta-status" class="status">Waiting</span></td></tr>
-            <tr id="row-failure-type" hidden><th>Failure Type</th><td id="meta-failure-type"></td></tr>
-            <tr id="row-failure-name" hidden><th>Failure Name</th><td id="meta-failure-name"></td></tr>
-            <tr><th>Model</th><td id="meta-model">—</td></tr>
-            <tr><th>Requested Features</th><td id="meta-options">—</td></tr>
-            <tr><th>File Name</th><td id="meta-file-name">—</td></tr>
-            <tr><th>File Type</th><td id="meta-file-type">—</td></tr>
-            <tr><th>File Size</th><td id="meta-file-size">—</td></tr>
-            <tr><th>Audio Duration</th><td id="meta-duration-min">—</td></tr>
-            <tr><th>Processing</th><td id="meta-processing">—</td></tr>
-            <tr><th>Processing Factor</th><td id="meta-rtf">—</td></tr>
-            <tr><th>HTTP</th><td id="meta-http">—</td></tr>
-            <tr><th>Endpoint</th><td id="meta-endpoint">—</td></tr>
-            <tr><th>Request ID</th><td id="meta-request-id">—</td></tr>
-            <tr><th>Rate</th><td id="meta-rate">—</td></tr>
-            <tr><th>Cost</th><td id="meta-cost">—</td></tr>
-            <tr><th>Tokens</th><td id="meta-tokens">—</td></tr>
-            <tr><th>Transcript Chars</th><td id="meta-transcript-chars">—</td></tr>
-            <tr><th>Transcript Words</th><td id="meta-transcript-words">—</td></tr>
-            <tr><th>Utterances</th><td id="meta-utterances">—</td></tr>
-            <tr><th>Speakers</th><td id="meta-speakers">—</td></tr>
-            <tr><th>Languages</th><td id="meta-languages">—</td></tr>
-            <tr><th>Emotions</th><td id="meta-emotions">—</td></tr>
-            <tr><th>Accents</th><td id="meta-accents">—</td></tr>
-            <tr><th>PII/PHI Tags</th><td id="meta-pii-tags">—</td></tr>
-            <tr><th>Response Size</th><td id="meta-response-bytes">—</td></tr>
-          </table>
-        </div>
-      </section>
-
-      <section class="panel panel-right">
-        <div id="panel-new-upload" class="panel-new-upload">
           <div class="panel-upload-zone" id="panel-drop-zone">
             <span class="panel-upload-hint">Drop audio or video files here</span>
             <span id="panel-upload-formats" class="panel-upload-formats"></span>
@@ -1275,41 +1231,74 @@
           </div>
         </div>
         <div id="viewer-shell" class="viewer-shell" hidden>
-          <div id="audio-player-wrap" class="audio-player-wrap" hidden>
-            <audio id="audio-player" controls></audio>
-            <label class="autoscroll-label">
-              <input id="autoscroll" type="checkbox" checked />
-              <span>Autoscroll</span>
-            </label>
-          </div>
-
-          <div id="tab-preview" class="tab-panel active">
-            <div id="preview-output" class="preview-body"></div>
-          </div>
-
-          <div id="tab-json" class="tab-panel">
-            <pre id="output">{}</pre>
-          </div>
-
-          <div id="tab-call" class="tab-panel">
-            <pre id="output-call">{}</pre>
-          </div>
-
-          <div class="viewer-footer">
-            <div class="viewer-tabs">
-              <button class="viewer-tab active" data-tab="preview">Transcript</button>
-              <button class="viewer-tab" data-tab="call">API Call</button>
-              <button class="viewer-tab" data-tab="json">API Response</button>
+          <div class="viewer-scroll">
+            <div id="audio-player-wrap" class="audio-player-wrap" hidden>
+              <audio id="audio-player" controls></audio>
+              <div class="player-toolbar">
+                <label class="autoscroll-label">
+                  <span class="toggle-switch"><input id="autoscroll" type="checkbox" checked /><span class="toggle-track"></span></span>
+                  <span>Autoscroll</span>
+                </label>
+                <button id="copy-btn" class="copy-transcript-btn" type="button">Copy transcript</button>
+              </div>
             </div>
-            <button id="copy-btn" class="copy-btn" type="button">Copy</button>
+            <div id="tab-preview" class="tab-panel active">
+              <div id="preview-output" class="preview-body"></div>
+            </div>
           </div>
+        </div>
+      </section>
+
+      <section class="panel panel-output">
+        <div class="right-panel-tabs">
+          <button class="viewer-tab active" data-tab="stats">Stats</button>
+          <button class="viewer-tab" data-tab="call">API Call</button>
+          <button class="viewer-tab" data-tab="json">API Response</button>
+        </div>
+        <div id="right-tab-stats" class="right-tab-panel active">
+          <div class="table-wrap">
+            <table>
+              <tr><th>Status</th><td><span id="meta-status" class="status">Waiting</span></td></tr>
+              <tr id="row-failure-type" hidden><th>Failure Type</th><td id="meta-failure-type"></td></tr>
+              <tr id="row-failure-name" hidden><th>Failure Name</th><td id="meta-failure-name"></td></tr>
+              <tr><th>Model</th><td id="meta-model">—</td></tr>
+              <tr><th>Requested Features</th><td id="meta-options">—</td></tr>
+              <tr><th>File Name</th><td id="meta-file-name">—</td></tr>
+              <tr><th>File Size</th><td id="meta-file-size">—</td></tr>
+              <tr><th>Audio Duration</th><td id="meta-duration-min">—</td></tr>
+              <tr><th>Processing Time</th><td id="meta-processing">—</td></tr>
+              <tr><th>Processing Factor</th><td id="meta-rtf">—</td></tr>
+              <tr><th>Cost</th><td id="meta-cost">—</td></tr>
+              <tr><th>Rate</th><td id="meta-rate">—</td></tr>
+              <tr><th>Utterances</th><td id="meta-utterances">—</td></tr>
+              <tr><th>Speakers</th><td id="meta-speakers">—</td></tr>
+              <tr><th>Languages</th><td id="meta-languages">—</td></tr>
+              <tr><th>Transcript Words</th><td id="meta-transcript-words">—</td></tr>
+              <tr><th>Transcript Chars</th><td id="meta-transcript-chars">—</td></tr>
+              <tr><th>Emotions</th><td id="meta-emotions">—</td></tr>
+              <tr><th>Accents</th><td id="meta-accents">—</td></tr>
+              <tr><th>PII/PHI Tags</th><td id="meta-pii-tags">—</td></tr>
+              <tr><th>Tokens</th><td id="meta-tokens">—</td></tr>
+              <tr><th>File Type</th><td id="meta-file-type">—</td></tr>
+              <tr><th>HTTP</th><td id="meta-http">—</td></tr>
+              <tr><th>Endpoint</th><td id="meta-endpoint">—</td></tr>
+              <tr><th>Request ID</th><td id="meta-request-id">—</td></tr>
+              <tr><th>Response Size</th><td id="meta-response-bytes">—</td></tr>
+            </table>
+          </div>
+        </div>
+        <div id="right-tab-call" class="right-tab-panel">
+          <pre id="output-call">{}</pre>
+        </div>
+        <div id="right-tab-json" class="right-tab-panel">
+          <pre id="output">{}</pre>
         </div>
       </section>
       </div><!-- end .panels-wrapper -->
       </div><!-- end .panels-area -->
     </main>
     <footer class="footer">
-      <span>&copy; <a href="https://sinelnikov.name" target="_blank" rel="noopener" style="color:inherit;text-decoration-color:rgba(185,172,207,0.4)">Ilya Sinelnikov</a>, 2026 &middot; v1.4 &middot; Updated March 11, 2026 &middot; Powered by <a href="https://modulate.ai" target="_blank" rel="noopener" style="color:inherit;text-decoration-color:rgba(185,172,207,0.4)">Modulate AI</a></span>
+      <span>&copy; <a href="https://sinelnikov.name" target="_blank" rel="noopener">Ilya Sinelnikov</a>, 2026 &middot; v1.4 &middot; Updated March 11, 2026 &middot; Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a></span>
     </footer>
 
     <input id="file" type="file" multiple accept="audio/*,video/*,.aac,.aiff,.flac,.m4a,.mp3,.mp4,.mov,.ogg,.opus,.wav,.webm" />
