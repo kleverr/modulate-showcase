@@ -1040,63 +1040,6 @@
         font-variant-numeric: tabular-nums;
       }
 
-      /* ── Live streaming zone ── */
-      .panel-live-zone {
-        border-color: #50b080;
-        background: rgba(60, 160, 100, 0.06);
-      }
-
-      .panel-live-zone:hover {
-        background: rgba(60, 160, 100, 0.16);
-        border-color: #70d0a0;
-      }
-
-      .panel-live-btn {
-        border: 1px solid #50b080;
-        border-radius: 7px;
-        color: #d0ffe8;
-        background: #134d30;
-        padding: 7px 18px;
-        font: inherit;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: background 0.15s ease, border-color 0.15s ease;
-      }
-
-      .panel-live-btn:hover {
-        background: #1a6040;
-      }
-
-      .panel-live-btn.recording {
-        border-color: #ff7e7e;
-        background: #57222d;
-        color: #ffdada;
-        animation: pulseDot 1.2s infinite ease-in-out;
-      }
-
-      .panel-live-btn.recording:hover {
-        background: #6a2a36;
-      }
-
-      .live-indicator {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        color: #50b080;
-        font-size: 0.82rem;
-        font-weight: 600;
-        padding: 4px 10px;
-      }
-
-      .live-indicator::before {
-        content: '';
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #ff4444;
-        animation: pulseDot 1.2s infinite ease-in-out;
-      }
-
       .file-tab.new-tab {
         width: auto;
         min-width: 130px;
@@ -1227,12 +1170,6 @@
       [data-theme="light"] .panel-record-btn:hover { background: #c8dcf8; }
       [data-theme="light"] .panel-record-btn.recording { border-color: #cc4444; background: #ffe0e0; color: #6a1010; }
       [data-theme="light"] .panel-record-btn.recording:hover { background: #ffd0d0; }
-      [data-theme="light"] .panel-live-zone { border-color: #40a070; background: rgba(60, 160, 100, 0.04); }
-      [data-theme="light"] .panel-live-zone:hover { background: rgba(60, 160, 100, 0.10); border-color: #50b080; }
-      [data-theme="light"] .panel-live-btn { border-color: #40a070; color: #0a3020; background: #d0f0e0; }
-      [data-theme="light"] .panel-live-btn:hover { background: #c0e8d4; }
-      [data-theme="light"] .panel-live-btn.recording { border-color: #cc4444; background: #ffe0e0; color: #6a1010; }
-      [data-theme="light"] .panel-live-btn.recording:hover { background: #ffd0d0; }
     </style>
   </head>
   <body>
@@ -1255,7 +1192,6 @@
             <select id="model">
               <option value="batch" selected>Multilingual</option>
               <option value="batch-fast">English, Fast</option>
-              <option value="streaming">Streaming Multilingual</option>
             </select>
 
             <span class="feature-title">Options:</span>
@@ -1336,12 +1272,6 @@
             <span class="panel-upload-hint">Record from microphone</span>
             <button id="panel-record-btn" class="panel-record-btn" type="button">Start Recording</button>
             <span id="panel-record-status" class="panel-record-status"></span>
-          </div>
-          <div class="panel-upload-divider"><span>or</span></div>
-          <div class="panel-upload-zone panel-live-zone" id="panel-live-zone">
-            <span class="panel-upload-hint">Live transcription</span>
-            <button id="panel-live-btn" class="panel-live-btn" type="button">Start Live Transcription</button>
-            <span id="panel-live-status" class="panel-record-status"></span>
           </div>
         </div>
         <div id="viewer-shell" class="viewer-shell" hidden>
