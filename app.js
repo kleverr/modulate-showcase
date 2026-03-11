@@ -230,6 +230,36 @@ function setActiveFileIndex(i) {
   if (i === -1) {
     panelNewUploadEl.hidden = false;
     viewerShellEl.hidden = true;
+    setStatus('Waiting', '');
+    metaFailureTypeEl.textContent = '';
+    metaFailureNameEl.textContent = '';
+    rowFailureTypeEl.hidden = true;
+    rowFailureNameEl.hidden = true;
+    metaModelEl.textContent = toText(modelEl.selectedOptions[0]?.textContent, modelEl.value);
+    metaOptionsEl.textContent = formatRequestedOptions(getRequestedOptions(), modelEl.value);
+    metaFileNameEl.textContent = '—';
+    metaFileTypeEl.textContent = '—';
+    metaFileSizeEl.textContent = '—';
+    metaDurationMinEl.textContent = '—';
+    metaProcessingEl.textContent = '—';
+    metaRtfEl.textContent = '—';
+    metaHttpEl.textContent = '—';
+    metaEndpointEl.textContent = '—';
+    metaRequestIdEl.textContent = '—';
+    metaRateEl.textContent = '—';
+    metaCostEl.textContent = '—';
+    metaTokensEl.textContent = '—';
+    metaTranscriptCharsEl.textContent = '—';
+    metaTranscriptWordsEl.textContent = '—';
+    metaUtterancesEl.textContent = '—';
+    metaSpeakersEl.textContent = '—';
+    metaLanguagesEl.textContent = '—';
+    metaEmotionsEl.textContent = '—';
+    metaAccentsEl.textContent = '—';
+    metaPiiTagsEl.textContent = '—';
+    metaResponseBytesEl.textContent = '—';
+    latestPayload = null;
+    latestPreviewText = '';
   } else {
     panelNewUploadEl.hidden = true;
     viewerShellEl.hidden = false;
