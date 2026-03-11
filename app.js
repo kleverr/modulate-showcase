@@ -63,7 +63,7 @@ const viewerShellEl = document.getElementById('viewer-shell');
 
 const API_BASE_URL = 'https://modulate-developer-apis.com';
 const API_WS_BASE_URL = API_BASE_URL.replace(/^https:\/\//i, 'wss://').replace(/^http:\/\//i, 'ws://');
-const API_KEY = '30b0ea76-da9d-424f-9fd7-423bc74a1184';
+const API_KEY = '93885c34-3996-4708-b958-aef99f034da2';
 
 const LANGUAGE_NAMES = new Intl.DisplayNames(['en'], { type: 'language' });
 function langCodeToName(code) {
