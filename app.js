@@ -237,7 +237,7 @@ function setActiveFileIndex(i) {
     metaFailureNameEl.textContent = '';
     rowFailureTypeEl.hidden = true;
     rowFailureNameEl.hidden = true;
-    metaModelEl.textContent = toText(modelEl.selectedOptions[0]?.textContent, modelEl.value);
+    metaModelEl.textContent = toText(MODEL_CONFIG[modelEl.value]?.fullName, modelEl.value);
     metaOptionsEl.textContent = formatRequestedOptions(getRequestedOptions(), modelEl.value);
     metaFileNameEl.textContent = '—';
     metaFileTypeEl.textContent = '—';
@@ -1733,11 +1733,16 @@ function stopPanelRecording(cancel = false) {
   panelMediaRecorder.stop();
 }
 
-const UPLOAD_FORMATS = {
-  'batch-fast': 'Opus only<br>up to 100 MB',
-  'batch': 'AAC · AIFF · FLAC · MP3 · MP4 · MOV · OGG · Opus · WAV · WebM<br>up to 100 MB',
-  'streaming': 'AAC · AIFF · FLAC · MP3 · MP4 · MOV · OGG · Opus · WAV · WebM',
+const UPLOAD_FORMATS_RAW = {
+  'batch-fast': { formats: ['Opus'], note: 'up to 100 MB' },
+  'batch': { formats: ['AAC', 'AIFF', 'FLAC', 'MP3', 'MP4', 'MOV', 'OGG', 'Opus', 'WAV', 'WebM'], note: 'up to 100 MB' },
+  'streaming': { formats: ['AAC', 'AIFF', 'FLAC', 'MP3', 'MP4', 'MOV', 'OGG', 'Opus', 'WAV', 'WebM'], note: '' },
 };
+function formatUploadFormats(key) {
+  const { formats, note } = UPLOAD_FORMATS_RAW[key] || UPLOAD_FORMATS_RAW.batch;
+  const tags = formats.map(f => `<span>${f}</span>`).join(' ');
+  return note ? `${tags}<br>${note}` : tags;
+}
 
 function updateInputWidgetForModel(modelKey) {
   const streaming = isStreamingModel(modelKey);
@@ -1746,7 +1751,7 @@ function updateInputWidgetForModel(modelKey) {
   recordZoneEl.style.display = streaming ? 'grid' : 'none';
 
   if (panelUploadFormatsEl) {
-    panelUploadFormatsEl.innerHTML = UPLOAD_FORMATS[modelKey] ?? UPLOAD_FORMATS.batch;
+    panelUploadFormatsEl.innerHTML = formatUploadFormats(modelKey);
   }
 
   if (!streaming) {
@@ -1764,7 +1769,7 @@ function resetMeta(file) {
   metaFailureNameEl.textContent = '';
   rowFailureTypeEl.hidden = true;
   rowFailureNameEl.hidden = true;
-  metaModelEl.textContent = toText(modelEl.selectedOptions[0]?.textContent, modelEl.value);
+  metaModelEl.textContent = toText(MODEL_CONFIG[modelKey]?.fullName, modelKey);
   metaOptionsEl.textContent = formatRequestedOptions(options, modelKey);
   metaFileNameEl.textContent = file?.name || '—';
   metaFileTypeEl.textContent = deriveClientFileType(file);
@@ -1890,7 +1895,7 @@ function updateMetaFromResponse(data, fallbackModel) {
 modelEl.addEventListener('change', () => {
   updateInputWidgetForModel(modelEl.value);
   updateFeatureControlsForModel(modelEl.value);
-  metaModelEl.textContent = toText(modelEl.selectedOptions[0]?.textContent, modelEl.value);
+  metaModelEl.textContent = toText(MODEL_CONFIG[modelEl.value]?.fullName, modelEl.value);
   metaOptionsEl.textContent = formatRequestedOptions(getRequestedOptions(), modelEl.value);
 });
 
@@ -1992,7 +1997,7 @@ audioPlayerEl.addEventListener('timeupdate', () => {
 setActiveRightTab('stats');
 updateInputWidgetForModel(modelEl.value);
 updateFeatureControlsForModel(modelEl.value);
-metaModelEl.textContent = toText(modelEl.selectedOptions[0]?.textContent, modelEl.value);
+metaModelEl.textContent = toText(MODEL_CONFIG[modelEl.value]?.fullName, modelEl.value);
 metaOptionsEl.textContent = formatRequestedOptions(getRequestedOptions(), modelEl.value);
 renderJson({});
 renderFileTabs();

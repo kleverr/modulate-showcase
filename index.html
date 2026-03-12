@@ -40,7 +40,7 @@
         flex-direction: column;
         font-family: 'DM Sans', 'Segoe UI', sans-serif;
         color: var(--text);
-        background: linear-gradient(157deg, rgba(238, 174, 202, 1) 0%, rgba(116, 173, 202, 1) 33%, rgba(170, 96, 204, 1) 66%, rgba(46, 46, 120, 1) 100%);
+        background: linear-gradient(134deg, rgba(232, 218, 255, 1) 0%, rgba(163, 191, 250, 1) 20%, rgba(118, 171, 247, 1) 40%, rgba(157, 128, 230, 1) 60%, rgba(192, 132, 214, 1) 80%, rgba(139, 92, 195, 1) 100%);
         padding: 18px;
       }
 
@@ -1036,14 +1036,14 @@
         cursor: pointer;
         border: 2px dashed #c0a8e8;
         border-radius: 8px;
-        background: rgba(100, 60, 160, 0.04);
+        background: linear-gradient(160deg, rgba(255,255,255,0.6) 0%, rgba(230, 220, 248, 0.25) 100%);
         transition: background 0.15s ease, border-color 0.15s ease;
         padding: 16px;
       }
 
       .panel-upload-zone.drag,
       .panel-upload-zone:hover {
-        background: rgba(100, 60, 160, 0.10);
+        background: linear-gradient(160deg, rgba(255,255,255,0.7) 0%, rgba(220, 205, 245, 0.4) 100%);
         border-color: #9070c8;
       }
 
@@ -1066,15 +1066,25 @@
 
       .panel-new-upload .panel-upload-hint {
         font-size: 0.95rem;
-        color: var(--muted);
+        color: var(--text);
+        font-weight: 500;
       }
 
       .panel-new-upload .panel-upload-formats {
-        font-size: 0.8rem;
+        font-size: 0.72rem;
         color: var(--muted);
-        opacity: 0.7;
         text-align: center;
-        line-height: 1.5;
+        line-height: 1.8;
+        letter-spacing: 0.02em;
+      }
+
+      .panel-new-upload .panel-upload-formats span {
+        display: inline-block;
+        background: rgba(100, 60, 160, 0.07);
+        border: 1px solid rgba(160, 130, 210, 0.25);
+        border-radius: 4px;
+        padding: 1px 7px;
+        margin: 2px 1px;
       }
 
       .panel-new-upload .panel-upload-btn {
