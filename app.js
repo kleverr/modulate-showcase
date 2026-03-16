@@ -59,9 +59,61 @@ const panelRecordBtnEl = document.getElementById('panel-record-btn');
 const panelRecordStatusEl = document.getElementById('panel-record-status');
 const viewerShellEl = document.getElementById('viewer-shell');
 
-const API_BASE_URL = 'https://modulate-developer-apis.com';
-const API_WS_BASE_URL = API_BASE_URL.replace(/^https:\/\//i, 'wss://').replace(/^http:\/\//i, 'ws://');
-const API_KEY = '93885c34-3996-4708-b958-aef99f034da2';
+const API_BASE_URL = '';  // same-origin proxy
+const API_WS_BASE_URL = `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}`;
+
+// ── Rate limiting state ──────────────────────────────────────────────────────
+let usageRemaining = null;
+let usageLimit = null;
+
+async function fetchUsage() {
+  try {
+    const res = await fetch('/api/usage');
+    if (res.ok) {
+      const data = await res.json();
+      usageRemaining = data.remaining;
+      usageLimit = data.limit;
+      updateUsageUI();
+    }
+  } catch { /* ignore */ }
+}
+
+function updateUsageUI() {
+  const counterEl = document.getElementById('usage-counter');
+  const remainingEl = document.getElementById('usage-remaining');
+  const limitEl = document.getElementById('usage-limit');
+  const overlayEl = document.getElementById('rate-limit-overlay');
+  if (!counterEl) return;
+
+  remainingEl.textContent = usageRemaining ?? '--';
+  limitEl.textContent = usageLimit ?? '--';
+
+  counterEl.classList.remove('warning', 'exhausted');
+  if (usageRemaining !== null) {
+    if (usageRemaining <= 0) {
+      counterEl.classList.add('exhausted');
+      if (overlayEl) overlayEl.hidden = false;
+      disableUploadControls(true);
+    } else {
+      if (overlayEl) overlayEl.hidden = true;
+      disableUploadControls(false);
+      if (usageRemaining <= 3) counterEl.classList.add('warning');
+    }
+  }
+}
+
+function disableUploadControls(disabled) {
+  const panelDrop = document.getElementById('panel-drop-zone');
+  const panelChoose = document.getElementById('panel-choose-btn');
+  const panelRecord = document.getElementById('panel-record-btn');
+  const miniUpload = document.querySelector('.mini-upload:not(.record-zone)');
+  if (panelDrop) panelDrop.style.pointerEvents = disabled ? 'none' : '';
+  if (panelDrop) panelDrop.style.opacity = disabled ? '0.45' : '';
+  if (panelChoose) panelChoose.disabled = disabled;
+  if (panelRecord) panelRecord.disabled = disabled;
+  if (miniUpload) miniUpload.style.pointerEvents = disabled ? 'none' : '';
+  if (miniUpload) miniUpload.style.opacity = disabled ? '0.45' : '';
+}
 
 const LANGUAGE_NAMES = new Intl.DisplayNames(['en'], { type: 'language' });
 function langCodeToName(code) {
@@ -455,7 +507,7 @@ async function runWithFileAtIndex(i) {
       ? `${API_WS_BASE_URL}${config.endpoint}`
       : `${API_BASE_URL}${config.endpoint}`,
     headers: {
-      'X-API-Key': API_KEY,
+      'X-API-Key': '(server-side)',
     },
     body: config.mode === 'streaming' ? undefined : {
       type: 'multipart/form-data',
@@ -491,10 +543,11 @@ async function runWithFileAtIndex(i) {
     }
   };
 
-  if (!API_KEY) {
+  // Check rate limit before starting
+  if (usageRemaining !== null && usageRemaining <= 0) {
     const processingMs = Date.now() - startedAt;
-    const payload = normalizeApiResponse({ modelKey: model, file, options, config, statusCode: 401, statusText: 'Missing API Key', parsed: { message: 'Missing API key in app.js' }, rawText: '{"message":"Missing API key in app.js"}', processingMs, ok: false });
-    payload.error = { type: 'Configuration Error', message: 'Missing API key in app.js', detail: 'Set API_KEY before deploying.' };
+    const payload = normalizeApiResponse({ modelKey: model, file, options, config, statusCode: 429, statusText: 'Rate Limit Exceeded', parsed: { message: 'Transcription limit reached. Please try again later.' }, rawText: '{"message":"Rate limit exceeded"}', processingMs, ok: false });
+    payload.error = { type: 'Rate Limit', message: 'Transcription limit reached. Please try again later.', detail: `Maximum ${usageLimit} transcriptions per hour.` };
     finalize(payload, 'error');
     fileEl.value = '';
     return;
@@ -505,8 +558,19 @@ async function runWithFileAtIndex(i) {
       ? await requestStreamingTranscription({ file, options, config })
       : await requestBatchTranscription({ file, options, config });
     const processingMs = Date.now() - startedAt;
+
+    // Handle 429 from server
+    if (transport.statusCode === 429) {
+      const payload = normalizeApiResponse({ modelKey: model, file, options, config, statusCode: 429, statusText: 'Rate Limit Exceeded', parsed: transport.parsed, rawText: transport.rawText, processingMs, ok: false });
+      payload.error = { type: 'Rate Limit', message: transport.parsed?.message || 'Transcription limit reached.', detail: 'Please try again later.' };
+      finalize(payload, 'error');
+      fetchUsage();
+      return;
+    }
+
     const payload = normalizeApiResponse({ modelKey: model, file, options, config, statusCode: transport.statusCode, statusText: transport.statusText, parsed: transport.parsed, rawText: transport.rawText, processingMs, ok: transport.ok });
     finalize(payload, payload.success ? 'done' : 'error');
+    fetchUsage();
   } catch (error) {
     const processingMs = Date.now() - startedAt;
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -1363,7 +1427,6 @@ async function requestBatchTranscription({ file, options, config }) {
 
   const response = await fetch(`${API_BASE_URL}${config.endpoint}`, {
     method: 'POST',
-    headers: { 'X-API-Key': API_KEY },
     body: formData,
   });
 
@@ -1388,7 +1451,6 @@ async function requestStreamingTranscription({ file, options, config }) {
   const audioBuffer = new Uint8Array(await file.arrayBuffer());
 
   const params = new URLSearchParams({
-    api_key: API_KEY,
     speaker_diarization: String(options.speaker_diarization),
     emotion_signal: String(options.emotion_signal),
     accent_signal: String(options.accent_signal),
@@ -2023,3 +2085,5 @@ renderFileTabs();
   });
 })();
 
+// Fetch usage on page load
+fetchUsage();

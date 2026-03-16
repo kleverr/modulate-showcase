@@ -3,9 +3,19 @@ primary_region = 'iad'
 
 [build]
 
+[mounts]
+  source = "data"
+  destination = "/data"
+
 [http_service]
   internal_port = 8080
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
+
+[env]
+  RATE_LIMIT_MAX = "10"
+  RATE_LIMIT_WINDOW_MINUTES = "60"
+  MAX_FILE_SIZE_MB = "100"
+  DB_PATH = "/data/rate-limit.db"

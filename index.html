@@ -1130,6 +1130,51 @@
         background: #ffd0d0;
       }
 
+      .usage-counter {
+        text-align: center;
+        font-size: 0.78rem;
+        color: var(--muted);
+        padding: 6px 0 2px;
+      }
+
+      .usage-counter.warning {
+        color: #b86e00;
+      }
+
+      .usage-counter.exhausted {
+        color: var(--fail);
+        font-weight: 600;
+      }
+
+      .rate-limit-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.85);
+        border-radius: 8px;
+        z-index: 10;
+        padding: 20px;
+      }
+
+      .rate-limit-overlay[hidden] {
+        display: none !important;
+      }
+
+      .rate-limit-overlay p {
+        text-align: center;
+        color: var(--fail);
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      .panel-upload-zone {
+        position: relative;
+      }
+
       .panel-record-status {
         font-size: 0.8rem;
         color: var(--muted);
@@ -1228,7 +1273,13 @@
             </div>
             <div id="feature-note" class="feature-note"></div>
           </div>
+          <div id="usage-counter" class="usage-counter">
+            <span id="usage-remaining">--</span> / <span id="usage-limit">--</span> transcriptions remaining
+          </div>
           <div class="panel-upload-zone" id="panel-drop-zone">
+            <div id="rate-limit-overlay" class="rate-limit-overlay" hidden>
+              <p>Transcription limit reached.<br>Please try again later.</p>
+            </div>
             <span class="panel-upload-hint">Drop audio or video files here</span>
             <span id="panel-upload-formats" class="panel-upload-formats"></span>
             <button id="panel-choose-btn" class="panel-upload-btn" type="button">Choose Files…</button>
@@ -1312,6 +1363,6 @@
     </footer>
 
     <input id="file" type="file" multiple accept="audio/*,video/*,.aac,.aiff,.flac,.m4a,.mp3,.mp4,.mov,.ogg,.opus,.wav,.webm" />
-    <script type="module" src="./app.js"></script>
+    <script type="module" src="./app.js?v=2"></script>
   </body>
 </html>

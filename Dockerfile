@@ -1,5 +1,7 @@
-FROM nginx:alpine
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY index.html /usr/share/nginx/html/
-COPY app.js /usr/share/nginx/html/
+FROM node:20-alpine
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --production
+COPY server.js db.js index.html app.js ./
 EXPOSE 8080
+CMD ["node", "server.js"]
