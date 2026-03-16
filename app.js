@@ -48,6 +48,10 @@ const metaEmotionsEl = document.getElementById('meta-emotions');
 const metaAccentsEl = document.getElementById('meta-accents');
 const metaPiiTagsEl = document.getElementById('meta-pii-tags');
 const metaResponseBytesEl = document.getElementById('meta-response-bytes');
+const metaPrimaryLabelEl = document.getElementById('meta-primary-label');
+const metaMusicPctEl = document.getElementById('meta-music-pct');
+const metaSpeechPctEl = document.getElementById('meta-speech-pct');
+const metaFrameCountEl = document.getElementById('meta-frame-count');
 const audioPlayerWrapEl = document.getElementById('audio-player-wrap');
 const audioPlayerEl = document.getElementById('audio-player');
 const autoscrollEl = document.getElementById('autoscroll');
@@ -61,6 +65,7 @@ const viewerShellEl = document.getElementById('viewer-shell');
 
 const API_BASE_URL = 'https://modulate-developer-apis.com';
 const API_WS_BASE_URL = API_BASE_URL.replace(/^https:\/\//i, 'wss://').replace(/^http:\/\//i, 'ws://');
+const MUSIC_API_BASE_URL = 'http://100.52.6.30:8080';
 const API_KEY = '93885c34-3996-4708-b958-aef99f034da2';
 
 const LANGUAGE_NAMES = new Intl.DisplayNames(['en'], { type: 'language' });
@@ -108,6 +113,14 @@ const MODEL_CONFIG = {
     speedFactor: null,
     unsupported: new Set(),
   },
+  'music-detection': {
+    fullName: 'music-detection-v1',
+    endpoint: '/MusicDetection',
+    ratePerHourUsd: null,
+    mode: 'music-detection',
+    speedFactor: 5,
+    unsupported: new Set(['utterances', 'speakers', 'languages', 'emotions', 'accents', 'pii_tags', 'options', 'tokens', 'cost', 'rate', 'transcript_words', 'transcript_chars']),
+  },
 };
 
 let latestPayload = null;
@@ -144,6 +157,10 @@ function createFileEntry(file) {
 }
 
 function computePreviewText(payload) {
+  if (payload?.isMusicDetection) {
+    const m = payload.meta;
+    return `Primary: ${m?.primaryLabel || 'unknown'}\nMusic: ${m?.musicPct ?? '—'}%\nSpeech: ${m?.speechPct ?? '—'}%`;
+  }
   const utterances = Array.isArray(payload?.result?.utterances) ? payload.result.utterances : [];
   if (utterances.length) return buildTranscriptCopyFromUtterances(utterances);
   return extractTranscriptText(payload) || '';
@@ -301,6 +318,7 @@ function displayFile(entry) {
   if (!entry) return;
 
   if (entry.status === 'pending') {
+    updateStatsRowVisibility(entry.model);
     metaStatusEl.textContent = 'Waiting';
     metaStatusEl.className = 'status';
     rowFailureTypeEl.hidden = true;
@@ -442,18 +460,22 @@ async function runWithFileAtIndex(i) {
 
   // Build API call info for the "Show API Call" tab
   const callFormFields = {};
-  callFormFields.upload_file = `(binary) ${file.name} — ${(file.size / 1024).toFixed(1)} KB, ${file.type || 'unknown type'}`;
-  if (config.mode !== 'streaming' && config.endpoint !== '/api/velma-2-stt-batch-english-vfast') {
-    callFormFields.speaker_diarization = String(options.speaker_diarization);
-    callFormFields.emotion_signal = String(options.emotion_signal);
-    callFormFields.accent_signal = String(options.accent_signal);
-    callFormFields.pii_phi_tagging = String(options.pii_phi_tagging);
+  const isMusicDetection = config.mode === 'music-detection';
+  if (isMusicDetection) {
+    callFormFields.file = `(binary) ${file.name} — ${(file.size / 1024).toFixed(1)} KB, ${file.type || 'unknown type'}`;
+  } else {
+    callFormFields.upload_file = `(binary) ${file.name} — ${(file.size / 1024).toFixed(1)} KB, ${file.type || 'unknown type'}`;
+    if (config.mode !== 'streaming' && config.endpoint !== '/api/velma-2-stt-batch-english-vfast') {
+      callFormFields.speaker_diarization = String(options.speaker_diarization);
+      callFormFields.emotion_signal = String(options.emotion_signal);
+      callFormFields.accent_signal = String(options.accent_signal);
+      callFormFields.pii_phi_tagging = String(options.pii_phi_tagging);
+    }
   }
+  const apiBaseForCall = isMusicDetection ? MUSIC_API_BASE_URL : (config.mode === 'streaming' ? API_WS_BASE_URL : API_BASE_URL);
   entry.apiCallInfo = {
     method: config.mode === 'streaming' ? 'WebSocket' : 'POST',
-    url: config.mode === 'streaming'
-      ? `${API_WS_BASE_URL}${config.endpoint}`
-      : `${API_BASE_URL}${config.endpoint}`,
+    url: `${apiBaseForCall}${config.endpoint}`,
     headers: {
       'X-API-Key': API_KEY,
     },
@@ -501,17 +523,27 @@ async function runWithFileAtIndex(i) {
   }
 
   try {
-    const transport = config.mode === 'streaming'
-      ? await requestStreamingTranscription({ file, options, config })
-      : await requestBatchTranscription({ file, options, config });
+    let transport;
+    if (isMusicDetection) {
+      transport = await requestMusicDetection({ file, config });
+    } else if (config.mode === 'streaming') {
+      transport = await requestStreamingTranscription({ file, options, config });
+    } else {
+      transport = await requestBatchTranscription({ file, options, config });
+    }
     const processingMs = Date.now() - startedAt;
-    const payload = normalizeApiResponse({ modelKey: model, file, options, config, statusCode: transport.statusCode, statusText: transport.statusText, parsed: transport.parsed, rawText: transport.rawText, processingMs, ok: transport.ok });
+    const payload = isMusicDetection
+      ? normalizeMusicDetectionResponse({ file, config, statusCode: transport.statusCode, statusText: transport.statusText, parsed: transport.parsed, rawText: transport.rawText, processingMs, ok: transport.ok })
+      : normalizeApiResponse({ modelKey: model, file, options, config, statusCode: transport.statusCode, statusText: transport.statusText, parsed: transport.parsed, rawText: transport.rawText, processingMs, ok: transport.ok });
     finalize(payload, payload.success ? 'done' : 'error');
   } catch (error) {
     const processingMs = Date.now() - startedAt;
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const payload = normalizeApiResponse({ modelKey: model, file, options, config, statusCode: null, statusText: config.mode === 'streaming' ? 'Streaming Error' : 'Network Error', parsed: { message: errorMessage }, rawText: JSON.stringify({ message: errorMessage }), processingMs, ok: false });
-    payload.error = { type: config.mode === 'streaming' ? 'Streaming Error' : 'Network Error', message: errorMessage, detail: config.mode === 'streaming' ? 'WebSocket streaming failed.' : 'Request failed.' };
+    const errorLabel = isMusicDetection ? 'Music Detection Error' : (config.mode === 'streaming' ? 'Streaming Error' : 'Network Error');
+    const payload = isMusicDetection
+      ? normalizeMusicDetectionResponse({ file, config, statusCode: null, statusText: errorLabel, parsed: { message: errorMessage }, rawText: JSON.stringify({ message: errorMessage }), processingMs, ok: false })
+      : normalizeApiResponse({ modelKey: model, file, options, config, statusCode: null, statusText: config.mode === 'streaming' ? 'Streaming Error' : 'Network Error', parsed: { message: errorMessage }, rawText: JSON.stringify({ message: errorMessage }), processingMs, ok: false });
+    payload.error = { type: errorLabel, message: errorMessage, detail: isMusicDetection ? 'Music Detection request failed.' : (config.mode === 'streaming' ? 'WebSocket streaming failed.' : 'Request failed.') };
     finalize(payload, 'error');
   } finally {
     fileEl.value = '';
@@ -543,6 +575,23 @@ const BATCH_ONLY_TOOLTIP = 'Available in Batch or Streaming model.';
 const UNSUPPORTED_BY_MODEL = Object.fromEntries(
   Object.entries(MODEL_CONFIG).map(([modelKey, config]) => [modelKey, config.unsupported || new Set()]),
 );
+
+// Row IDs that only apply to transcription models
+const TRANSCRIPTION_ROW_IDS = ['row-options', 'row-cost', 'row-rate', 'row-utterances', 'row-speakers', 'row-languages', 'row-transcript-words', 'row-transcript-chars', 'row-emotions', 'row-accents', 'row-pii-tags', 'row-tokens'];
+// Row IDs that only apply to music detection
+const MUSIC_DETECTION_ROW_IDS = ['row-primary-label', 'row-music-pct', 'row-speech-pct', 'row-frame-count'];
+
+function updateStatsRowVisibility(modelKey) {
+  const isMD = modelKey === 'music-detection';
+  for (const id of TRANSCRIPTION_ROW_IDS) {
+    const el = document.getElementById(id);
+    if (el) el.hidden = isMD;
+  }
+  for (const id of MUSIC_DETECTION_ROW_IDS) {
+    const el = document.getElementById(id);
+    if (el) el.hidden = !isMD;
+  }
+}
 
 function toText(value, fallback = '—') {
   if (value === null || value === undefined || value === '') return fallback;
@@ -748,6 +797,20 @@ function getRequestedOptions() {
 }
 
 function updateFeatureControlsForModel(modelKey) {
+  const isMusicDetection = modelKey === 'music-detection';
+  const featureControlsEl = document.getElementById('feature-controls');
+  const featureTitleEl = document.querySelector('.feature-title');
+
+  if (isMusicDetection) {
+    if (featureControlsEl) featureControlsEl.style.display = 'none';
+    if (featureTitleEl) featureTitleEl.style.display = 'none';
+    if (featureNoteEl) featureNoteEl.textContent = '';
+    return;
+  }
+
+  if (featureControlsEl) featureControlsEl.style.display = '';
+  if (featureTitleEl) featureTitleEl.style.display = '';
+
   const supportsOptions = modelKey !== 'batch-fast';
 
   for (const input of optionInputs) {
@@ -772,7 +835,7 @@ function updateFeatureControlsForModel(modelKey) {
 }
 
 function formatRequestedOptions(options, modelKey) {
-  if (modelKey === 'batch-fast') return 'N/A';
+  if (modelKey === 'batch-fast' || modelKey === 'music-detection') return 'N/A';
 
   const opts = options || getRequestedOptions();
   const on = [
@@ -1059,6 +1122,12 @@ function updatePreview(payload) {
     return;
   }
 
+  if (payload?.isMusicDetection && payload.success) {
+    latestPreviewText = computePreviewText(payload);
+    renderMusicDetectionPreview(payload);
+    return;
+  }
+
   const utterances = Array.isArray(payload?.result?.utterances) ? payload.result.utterances : [];
 
   if (utterances.length) {
@@ -1075,6 +1144,47 @@ function updatePreview(payload) {
   } else {
     previewOutputEl.innerHTML = payload?.success ? 'No transcript returned.' : '<span class="empty-hint">Drop a file above to transcribe it.</span>';
   }
+}
+
+function renderMusicDetectionPreview(payload) {
+  const frames = payload?.meta?.frames || [];
+  const primaryLabel = payload?.meta?.primaryLabel || 'unknown';
+  const musicPct = payload?.meta?.musicPct;
+  const speechPct = payload?.meta?.speechPct;
+  const durationS = payload?.meta?.audioDurationMs ? (payload.meta.audioDurationMs / 1000).toFixed(1) : null;
+
+  let html = '<div class="music-detection-summary">';
+  html += '<div class="md-summary-card">';
+  html += `<span class="md-primary-label ${primaryLabel}">${primaryLabel}</span>`;
+  html += '<span class="md-pct-group">';
+  html += `<span>Music: <span class="md-pct-value">${typeof musicPct === 'number' ? DEC1_FMT.format(musicPct) + '%' : '—'}</span></span>`;
+  html += `<span>Speech: <span class="md-pct-value">${typeof speechPct === 'number' ? DEC1_FMT.format(speechPct) + '%' : '—'}</span></span>`;
+  html += '</span>';
+  html += '</div>';
+
+  if (frames.length) {
+    html += '<div class="md-timeline-section">';
+    html += '<div class="md-timeline-label"><span>0s</span>' + (durationS ? `<span>${durationS}s</span>` : '') + '</div>';
+    html += '<div class="md-timeline">';
+    for (const frame of frames) {
+      const mH = Math.round(frame.music_prob * 100);
+      const sH = Math.round(frame.speech_prob * 100);
+      const title = `${frame.start_time_s.toFixed(2)}s – music: ${(frame.music_prob * 100).toFixed(1)}%, speech: ${(frame.speech_prob * 100).toFixed(1)}%`;
+      html += `<div class="md-frame" title="${title}">`;
+      html += `<div class="md-frame-music" style="height:${mH}%"></div>`;
+      html += `<div class="md-frame-speech" style="height:${sH}%"></div>`;
+      html += '</div>';
+    }
+    html += '</div>';
+    html += '<div class="md-legend">';
+    html += '<span><span class="md-legend-dot" style="background:rgba(112,80,192,0.7)"></span>Music</span>';
+    html += '<span><span class="md-legend-dot" style="background:rgba(21,145,90,0.6)"></span>Speech</span>';
+    html += '</div>';
+    html += '</div>';
+  }
+
+  html += '</div>';
+  previewOutputEl.innerHTML = html;
 }
 
 let activeRightTab = 'stats';
@@ -1339,6 +1449,58 @@ function normalizeApiResponse({ modelKey, file, options, config, statusCode, sta
   return payload;
 }
 
+function normalizeMusicDetectionResponse({ file, config, statusCode, statusText, parsed, rawText, processingMs, ok }) {
+  const durationS = typeof parsed?.duration_s === 'number' ? parsed.duration_s : null;
+  const durationMs = durationS !== null ? durationS * 1000 : null;
+
+  const payload = {
+    success: !!ok,
+    failure: !ok,
+    model: 'music-detection',
+    modelFullName: config.fullName,
+    isMusicDetection: true,
+    options: {},
+    meta: {
+      fileName: file?.name || 'upload.audio',
+      fileMimeType: file?.type || null,
+      fileSizeBytes: typeof file?.size === 'number' ? file.size : null,
+      fileSizeMb: typeof file?.size === 'number' ? toFixedNumber(file.size / (1024 * 1024), 3) : null,
+      responseBytes: typeof rawText === 'string' ? rawText.length : null,
+      audioDurationMs: durationMs,
+      audioMinutes: durationMs !== null ? toFixedNumber(durationMs / 60000, 3) : null,
+      requestId: null,
+      primaryLabel: parsed?.primary_label || null,
+      musicPct: parsed?.music_pct ?? null,
+      speechPct: parsed?.speech_pct ?? null,
+      frameCount: Array.isArray(parsed?.frames) ? parsed.frames.length : null,
+      frames: parsed?.frames || [],
+    },
+    speed: {
+      processingMs,
+      audioDurationMs: durationMs,
+      realtimeFactor: durationMs && durationMs > 0 ? Number((processingMs / durationMs).toFixed(3)) : null,
+    },
+    cost: { currency: 'USD', ratePerHourUsd: null, ratePerMinuteUsd: null, estimatedUsd: null, tokens: null },
+    api: {
+      baseUrl: MUSIC_API_BASE_URL,
+      endpoint: config.endpoint,
+      statusCode,
+      statusText,
+    },
+    result: parsed,
+  };
+
+  if (!ok) {
+    payload.error = {
+      type: statusCode ? `HTTP ${statusCode}` : 'Request Failure',
+      message: 'Music Detection API request failed.',
+      detail: parsed,
+    };
+  }
+
+  return payload;
+}
+
 async function readMessageDataAsText(data) {
   if (typeof data === 'string') return data;
   if (data instanceof ArrayBuffer) {
@@ -1362,6 +1524,33 @@ async function requestBatchTranscription({ file, options, config }) {
   }
 
   const response = await fetch(`${API_BASE_URL}${config.endpoint}`, {
+    method: 'POST',
+    headers: { 'X-API-Key': API_KEY },
+    body: formData,
+  });
+
+  const rawText = await response.text();
+  let parsed = {};
+  try {
+    parsed = rawText ? JSON.parse(rawText) : {};
+  } catch {
+    parsed = { raw: rawText };
+  }
+
+  return {
+    ok: response.ok,
+    statusCode: response.status,
+    statusText: response.statusText,
+    parsed,
+    rawText,
+  };
+}
+
+async function requestMusicDetection({ file, config }) {
+  const formData = new FormData();
+  formData.append('file', file, file.name || 'upload.audio');
+
+  const response = await fetch(`${MUSIC_API_BASE_URL}${config.endpoint}`, {
     method: 'POST',
     headers: { 'X-API-Key': API_KEY },
     body: formData,
@@ -1737,6 +1926,7 @@ const UPLOAD_FORMATS_RAW = {
   'batch-fast': { formats: ['Opus'], note: 'up to 100 MB' },
   'batch': { formats: ['AAC', 'AIFF', 'FLAC', 'MP3', 'MP4', 'MOV', 'OGG', 'Opus', 'WAV', 'WebM'], note: 'up to 100 MB' },
   'streaming': { formats: ['AAC', 'AIFF', 'FLAC', 'MP3', 'MP4', 'MOV', 'OGG', 'Opus', 'WAV', 'WebM'], note: '' },
+  'music-detection': { formats: ['AAC', 'FLAC', 'M4A', 'MP3', 'MP4', 'OGG', 'Opus', 'WAV'], note: 'recommended 2–30s' },
 };
 function formatUploadFormats(key) {
   const { formats, note } = UPLOAD_FORMATS_RAW[key] || UPLOAD_FORMATS_RAW.batch;
@@ -1764,6 +1954,7 @@ function resetMeta(file) {
   const modelKey = modelEl.value;
   const options = getRequestedOptions();
   const supportsSignals = modelKey !== 'batch-fast';
+  updateStatsRowVisibility(modelKey);
   setStatus('Processing', 'processing');
   metaFailureTypeEl.textContent = '';
   metaFailureNameEl.textContent = '';
@@ -1792,12 +1983,18 @@ function resetMeta(file) {
   metaAccentsEl.textContent = supportsSignals && options.accent_signal ? '—' : 'N/A';
   metaPiiTagsEl.textContent = supportsSignals && options.pii_phi_tagging ? '—' : 'N/A';
   metaResponseBytesEl.textContent = '—';
+  // Music detection fields
+  if (metaPrimaryLabelEl) metaPrimaryLabelEl.textContent = '—';
+  if (metaMusicPctEl) metaMusicPctEl.textContent = '—';
+  if (metaSpeechPctEl) metaSpeechPctEl.textContent = '—';
+  if (metaFrameCountEl) metaFrameCountEl.textContent = '—';
 }
 
 function updateMetaFromResponse(data, fallbackModel) {
   const processingText = formatSecondsFromMs(data?.speed?.processingMs);
   const factor = formatProcessingFactor(data);
   const modelKey = data?.model || fallbackModel;
+  updateStatsRowVisibility(modelKey);
   const isUnsupported = (field) => UNSUPPORTED_BY_MODEL[modelKey]?.has(field);
   const options = data?.options || getRequestedOptions();
   const diarizationEnabled = !isUnsupported('speakers') && !!options.speaker_diarization;
@@ -1889,12 +2086,21 @@ function updateMetaFromResponse(data, fallbackModel) {
   if (metaTranscriptWordsEl.textContent === '—') {
     metaTranscriptWordsEl.textContent = 'N/A';
   }
+
+  // Music detection fields
+  if (data?.isMusicDetection) {
+    if (metaPrimaryLabelEl) metaPrimaryLabelEl.textContent = toText(data?.meta?.primaryLabel);
+    if (metaMusicPctEl) metaMusicPctEl.textContent = typeof data?.meta?.musicPct === 'number' ? `${DEC1_FMT.format(data.meta.musicPct)}%` : '—';
+    if (metaSpeechPctEl) metaSpeechPctEl.textContent = typeof data?.meta?.speechPct === 'number' ? `${DEC1_FMT.format(data.meta.speechPct)}%` : '—';
+    if (metaFrameCountEl) metaFrameCountEl.textContent = typeof data?.meta?.frameCount === 'number' ? INT_FMT.format(data.meta.frameCount) : '—';
+  }
 }
 
 
 modelEl.addEventListener('change', () => {
   updateInputWidgetForModel(modelEl.value);
   updateFeatureControlsForModel(modelEl.value);
+  updateStatsRowVisibility(modelEl.value);
   metaModelEl.textContent = toText(MODEL_CONFIG[modelEl.value]?.fullName, modelEl.value);
   metaOptionsEl.textContent = formatRequestedOptions(getRequestedOptions(), modelEl.value);
 });
