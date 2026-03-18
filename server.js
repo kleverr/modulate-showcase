@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const multer = require('multer');
@@ -30,8 +31,28 @@ const upload = multer({
   limits: { fileSize: MAX_FILE_SIZE_MB * 1024 * 1024 },
 });
 
+// Only trust fly-client-ip when running on Fly.io (FLY_APP_NAME is set by the platform).
+// Without this check, anyone can send a fake fly-client-ip header to bypass rate limits.
+const IS_FLY = !!process.env.FLY_APP_NAME;
+
 function getClientIp(req) {
-  return req.headers['fly-client-ip'] || req.ip;
+  if (IS_FLY) {
+    return req.headers['fly-client-ip'] || req.ip;
+  }
+  return req.ip;
+}
+
+function getClientIpFromSocket(req) {
+  if (IS_FLY) {
+    return req.headers['fly-client-ip'] || req.socket.remoteAddress;
+  }
+  return req.socket.remoteAddress;
+}
+
+// Sanitize filenames to prevent header injection in upstream multipart requests.
+function sanitizeFilename(name) {
+  if (!name) return 'upload';
+  return name.replace(/["\r\n\\]/g, '_').slice(0, 255);
 }
 
 // ── Allowed proxy targets (prevent open proxy) ──────────────────────────────
@@ -52,7 +73,23 @@ app.get('/api/usage', (req, res) => {
 });
 
 // ── Batch proxy ──────────────────────────────────────────────────────────────
-app.post('/api/velma-2-stt-batch*', upload.single('upload_file'), async (req, res) => {
+// ── Multer error handler (clean message instead of stack trace) ──────────
+function handleUpload(req, res, next) {
+  upload.single('upload_file')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({
+          error: 'File too large',
+          message: `Maximum file size is ${MAX_FILE_SIZE_MB} MB.`,
+        });
+      }
+      return res.status(400).json({ error: 'Upload failed', message: err.message });
+    }
+    next();
+  });
+}
+
+app.post('/api/velma-2-stt-batch*', handleUpload, async (req, res) => {
   const endpoint = req.path;
   if (!ALLOWED_ENDPOINTS.has(endpoint)) {
     return res.status(404).json({ error: 'Unknown endpoint' });
@@ -74,7 +111,8 @@ app.post('/api/velma-2-stt-batch*', upload.single('upload_file'), async (req, re
   }
 
   // Record the request before proxying to prevent concurrent bypass
-  insertRequest(ip, endpoint, req.file.originalname, req.file.size);
+  const safeFilename = sanitizeFilename(req.file.originalname);
+  insertRequest(ip, endpoint, safeFilename, req.file.size);
 
   try {
     // Rebuild FormData for upstream
@@ -84,7 +122,7 @@ app.post('/api/velma-2-stt-batch*', upload.single('upload_file'), async (req, re
     // File part
     parts.push(
       `--${boundary}\r\n` +
-      `Content-Disposition: form-data; name="upload_file"; filename="${req.file.originalname}"\r\n` +
+      `Content-Disposition: form-data; name="upload_file"; filename="${safeFilename}"\r\n` +
       `Content-Type: ${req.file.mimetype || 'application/octet-stream'}\r\n\r\n`
     );
     parts.push(req.file.buffer);
@@ -158,7 +196,7 @@ server.on('upgrade', (req, socket, head) => {
   }
 
   // Rate limit check
-  const ip = req.headers['fly-client-ip'] || req.socket.remoteAddress;
+  const ip = getClientIpFromSocket(req);
   const recentCount = countRecentByIp(ip, RATE_LIMIT_WINDOW_MINUTES);
   if (recentCount >= RATE_LIMIT_MAX) {
     socket.write(
