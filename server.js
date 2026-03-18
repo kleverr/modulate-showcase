@@ -59,7 +59,13 @@ function sanitizeFilename(name) {
 const ALLOWED_ENDPOINTS = new Set([
   '/api/velma-2-stt-batch',
   '/api/velma-2-stt-batch-english-vfast',
+  '/api/velma-2-synthetic-voice-detection',
 ]);
+
+// Per-endpoint upstream base URL overrides (defaults to API_BASE_URL)
+const ENDPOINT_BASE_URL = {
+  '/api/velma-2-synthetic-voice-detection': 'http://54.147.23.177:8080',
+};
 
 // ── Usage endpoint ───────────────────────────────────────────────────────────
 app.get('/api/usage', (req, res) => {
@@ -89,7 +95,7 @@ function handleUpload(req, res, next) {
   });
 }
 
-app.post('/api/velma-2-stt-batch*', handleUpload, async (req, res) => {
+app.post('/api/:path(*)', handleUpload, async (req, res) => {
   const endpoint = req.path;
   if (!ALLOWED_ENDPOINTS.has(endpoint)) {
     return res.status(404).json({ error: 'Unknown endpoint' });
@@ -145,7 +151,8 @@ app.post('/api/velma-2-stt-batch*', handleUpload, async (req, res) => {
     const bodyParts = parts.map(p => typeof p === 'string' ? Buffer.from(p) : p);
     const body = Buffer.concat(bodyParts);
 
-    const upstreamRes = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const baseUrl = ENDPOINT_BASE_URL[endpoint] || API_BASE_URL;
+    const upstreamRes = await fetch(`${baseUrl}${endpoint}`, {
       method: 'POST',
       headers: {
         'X-API-Key': API_KEY,

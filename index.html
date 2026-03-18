@@ -393,6 +393,10 @@
         grid-column: 1 / -1;
       }
 
+      .feature-controls[hidden] {
+        display: none !important;
+      }
+
       .feature-controls {
         display: flex;
         flex-wrap: nowrap;
@@ -970,6 +974,107 @@
         animation-delay: 0.4s;
       }
 
+      /* ── Detection score gauge ────────────────────────────────── */
+      .detection-score-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px 30px;
+        gap: 6px;
+        min-height: 260px;
+      }
+
+      .detection-gauge-wrap {
+        position: relative;
+        width: 160px;
+        height: 95px;
+      }
+
+      .detection-gauge {
+        width: 100%;
+        height: auto;
+      }
+
+      .detection-score-value {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        line-height: 1;
+      }
+
+      .detection-score-label {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin-top: 4px;
+      }
+
+      .detection-score-sublabel {
+        font-size: 0.82rem;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .detection-score-duration {
+        font-size: 0.82rem;
+        color: var(--muted);
+        margin-top: 8px;
+      }
+
+      .detection-frames-wrap {
+        width: 100%;
+        max-width: 380px;
+        margin-top: 20px;
+      }
+
+      .detection-frames-title {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 6px;
+      }
+
+      .detection-frames-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+      }
+
+      .detection-frames-table th {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        font-weight: 600;
+        padding: 4px 8px;
+        border-bottom: 1px solid var(--panel-border);
+      }
+
+      .detection-frames-table td {
+        padding: 5px 8px;
+        border-bottom: 1px solid var(--row-border);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .detection-frame-bar-bg {
+        width: 100%;
+        height: 6px;
+        background: #e8e0f0;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      .detection-frame-bar {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.3s ease;
+      }
+
       pre {
         margin: 0;
         border: none;
@@ -1250,6 +1355,7 @@
             <select id="model">
               <option value="batch" selected>Multilingual Transcription</option>
               <option value="batch-fast">English, Fast Transcription</option>
+              <option value="deepfake">Deepfake Detection (Beta)</option>
             </select>
 
             <span class="feature-title">Options:</span>
@@ -1323,7 +1429,8 @@
               <tr id="row-failure-type" hidden><th>Failure Type</th><td id="meta-failure-type"></td></tr>
               <tr id="row-failure-name" hidden><th>Failure Name</th><td id="meta-failure-name"></td></tr>
               <tr><th>Model</th><td id="meta-model">—</td></tr>
-              <tr><th>Requested Features</th><td id="meta-options">—</td></tr>
+              <tr id="row-detection-score" hidden><th>Detection Score</th><td id="meta-detection-score">—</td></tr>
+              <tr id="row-options"><th>Requested Features</th><td id="meta-options">—</td></tr>
               <tr><th>File Name</th><td id="meta-file-name">—</td></tr>
               <tr><th>File Size</th><td id="meta-file-size">—</td></tr>
               <tr><th>Audio Duration</th><td id="meta-duration-min">—</td></tr>
@@ -1331,15 +1438,15 @@
               <tr><th>Processing Factor</th><td id="meta-rtf">—</td></tr>
               <tr><th>Cost</th><td id="meta-cost">—</td></tr>
               <tr><th>Rate</th><td id="meta-rate">—</td></tr>
-              <tr><th>Utterances</th><td id="meta-utterances">—</td></tr>
-              <tr><th>Speakers</th><td id="meta-speakers">—</td></tr>
-              <tr><th>Languages</th><td id="meta-languages">—</td></tr>
-              <tr><th>Transcript Words</th><td id="meta-transcript-words">—</td></tr>
-              <tr><th>Transcript Chars</th><td id="meta-transcript-chars">—</td></tr>
-              <tr><th>Emotions</th><td id="meta-emotions">—</td></tr>
-              <tr><th>Accents</th><td id="meta-accents">—</td></tr>
-              <tr><th>PII/PHI Tags</th><td id="meta-pii-tags">—</td></tr>
-              <tr><th>Tokens</th><td id="meta-tokens">—</td></tr>
+              <tr id="row-utterances"><th>Utterances</th><td id="meta-utterances">—</td></tr>
+              <tr id="row-speakers"><th>Speakers</th><td id="meta-speakers">—</td></tr>
+              <tr id="row-languages"><th>Languages</th><td id="meta-languages">—</td></tr>
+              <tr id="row-transcript-words"><th>Transcript Words</th><td id="meta-transcript-words">—</td></tr>
+              <tr id="row-transcript-chars"><th>Transcript Chars</th><td id="meta-transcript-chars">—</td></tr>
+              <tr id="row-emotions"><th>Emotions</th><td id="meta-emotions">—</td></tr>
+              <tr id="row-accents"><th>Accents</th><td id="meta-accents">—</td></tr>
+              <tr id="row-pii-tags"><th>PII/PHI Tags</th><td id="meta-pii-tags">—</td></tr>
+              <tr id="row-tokens"><th>Tokens</th><td id="meta-tokens">—</td></tr>
               <tr><th>File Type</th><td id="meta-file-type">—</td></tr>
               <tr><th>HTTP</th><td id="meta-http">—</td></tr>
               <tr><th>Endpoint</th><td id="meta-endpoint">—</td></tr>

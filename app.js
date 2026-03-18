@@ -48,6 +48,8 @@ const metaEmotionsEl = document.getElementById('meta-emotions');
 const metaAccentsEl = document.getElementById('meta-accents');
 const metaPiiTagsEl = document.getElementById('meta-pii-tags');
 const metaResponseBytesEl = document.getElementById('meta-response-bytes');
+const metaDetectionScoreEl = document.getElementById('meta-detection-score');
+const rowDetectionScoreEl = document.getElementById('row-detection-score');
 const audioPlayerWrapEl = document.getElementById('audio-player-wrap');
 const audioPlayerEl = document.getElementById('audio-player');
 const autoscrollEl = document.getElementById('autoscroll');
@@ -141,6 +143,7 @@ const MODEL_CONFIG = {
     endpoint: '/api/velma-2-stt-batch-english-vfast',
     ratePerHourUsd: 0.025,
     mode: 'batch',
+    type: 'stt',
     speedFactor: 250,
     unsupported: new Set(['utterances', 'speakers', 'languages', 'emotions', 'accents', 'pii_tags', 'options']),
   },
@@ -149,6 +152,7 @@ const MODEL_CONFIG = {
     endpoint: '/api/velma-2-stt-batch',
     ratePerHourUsd: 0.03,
     mode: 'batch',
+    type: 'stt',
     speedFactor: 10,
     unsupported: new Set(),
   },
@@ -157,8 +161,18 @@ const MODEL_CONFIG = {
     endpoint: '/api/velma-2-stt-streaming',
     ratePerHourUsd: null,
     mode: 'streaming',
+    type: 'stt',
     speedFactor: null,
     unsupported: new Set(),
+  },
+  deepfake: {
+    fullName: 'velma-2-synthetic-voice-detection',
+    endpoint: '/api/velma-2-synthetic-voice-detection',
+    ratePerHourUsd: 0.001,
+    mode: 'batch',
+    type: 'detection',
+    speedFactor: 10,
+    unsupported: new Set(['utterances', 'speakers', 'languages', 'emotions', 'accents', 'pii_tags', 'options']),
   },
 };
 
@@ -196,6 +210,10 @@ function createFileEntry(file) {
 }
 
 function computePreviewText(payload) {
+  if (payload?.modelType === 'detection') {
+    const score = payload?.meta?.detectionScore;
+    return typeof score === 'number' ? `avg_synthetic_voice_prob: ${(score * 100).toFixed(1)}%` : '';
+  }
   const utterances = Array.isArray(payload?.result?.utterances) ? payload.result.utterances : [];
   if (utterances.length) return buildTranscriptCopyFromUtterances(utterances);
   return extractTranscriptText(payload) || '';
@@ -495,7 +513,7 @@ async function runWithFileAtIndex(i) {
   // Build API call info for the "Show API Call" tab
   const callFormFields = {};
   callFormFields.upload_file = `(binary) ${file.name} — ${(file.size / 1024).toFixed(1)} KB, ${file.type || 'unknown type'}`;
-  if (config.mode !== 'streaming' && config.endpoint !== '/api/velma-2-stt-batch-english-vfast') {
+  if (config.type === 'stt' && config.mode !== 'streaming' && !config.unsupported.has('options')) {
     callFormFields.speaker_diarization = String(options.speaker_diarization);
     callFormFields.emotion_signal = String(options.emotion_signal);
     callFormFields.accent_signal = String(options.accent_signal);
@@ -772,7 +790,11 @@ function syntaxHighlightJson(jsonText) {
 }
 
 function renderJson(payload) {
-  const pretty = JSON.stringify(payload, null, 2);
+  // For detection models, show only the raw API response — no wrapper fields
+  const displayPayload = payload?.modelType === 'detection' && payload?.result
+    ? payload.result
+    : payload;
+  const pretty = JSON.stringify(displayPayload, null, 2);
   outputEl.innerHTML = syntaxHighlightJson(pretty);
 
   latestPayload = payload;
@@ -812,7 +834,14 @@ function getRequestedOptions() {
 }
 
 function updateFeatureControlsForModel(modelKey) {
-  const supportsOptions = modelKey !== 'batch-fast';
+  const config = MODEL_CONFIG[modelKey];
+  const isDetection = config?.type === 'detection';
+  const supportsOptions = !isDetection && !config?.unsupported?.has('options');
+
+  const featureControlsEl = document.getElementById('feature-controls');
+  const featureTitleEl = document.querySelector('.feature-title');
+  if (featureControlsEl) featureControlsEl.hidden = isDetection;
+  if (featureTitleEl) featureTitleEl.hidden = isDetection;
 
   for (const input of optionInputs) {
     input.disabled = !supportsOptions;
@@ -832,7 +861,32 @@ function updateFeatureControlsForModel(modelKey) {
     }
   }
 
+  // Hide copy transcript and autoscroll for detection models
+  if (copyBtnEl) copyBtnEl.hidden = isDetection;
+
   if (featureNoteEl) featureNoteEl.textContent = '';
+
+  // Update stats table row visibility
+  updateStatsRowVisibility(modelKey);
+}
+
+// Rows that only apply to STT models
+const STT_ONLY_ROW_IDS = [
+  'row-options', 'row-utterances', 'row-speakers', 'row-languages',
+  'row-transcript-words', 'row-transcript-chars', 'row-emotions',
+  'row-accents', 'row-pii-tags', 'row-tokens',
+];
+
+function updateStatsRowVisibility(modelKey) {
+  const config = MODEL_CONFIG[modelKey];
+  const isDetection = config?.type === 'detection';
+
+  for (const id of STT_ONLY_ROW_IDS) {
+    const row = document.getElementById(id);
+    if (row) row.hidden = isDetection;
+  }
+
+  if (rowDetectionScoreEl) rowDetectionScoreEl.hidden = !isDetection;
 }
 
 function formatRequestedOptions(options, modelKey) {
@@ -1100,6 +1154,68 @@ function renderUtterancePreview(utterances) {
   previewOutputEl.appendChild(list);
 }
 
+function renderDetectionPreview(score, durationMs, frames) {
+  previewOutputEl.innerHTML = '';
+  const card = document.createElement('div');
+  card.className = 'detection-score-card';
+
+  // Composite score gauge — avg_synthetic_voice_prob returned directly by the model
+  let gaugeHtml = '';
+  if (typeof score === 'number') {
+    const pct = Math.max(0, Math.min(100, score * 100));
+    const hue = (1 - score) * 120; // 120=green (real) → 0=red (synthetic)
+    const color = `hsl(${hue}, 75%, 45%)`;
+    const label = score >= 0.7 ? 'Likely Synthetic' : score <= 0.3 ? 'Likely Real' : 'Uncertain';
+    gaugeHtml =
+      `<div class="detection-gauge-wrap">` +
+        `<svg class="detection-gauge" viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">` +
+          `<path d="M 10 65 A 50 50 0 0 1 110 65" fill="none" stroke="#e8e0f0" stroke-width="8" stroke-linecap="round"/>` +
+          `<path d="M 10 65 A 50 50 0 0 1 110 65" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${pct * 1.57} 157"/>` +
+        `</svg>` +
+        `<div class="detection-score-value" style="color:${color}">${pct.toFixed(1)}%</div>` +
+      `</div>` +
+      `<div class="detection-score-label" style="color:${color}">${label}</div>` +
+      `<div class="detection-score-sublabel">avg_synthetic_voice_prob</div>`;
+  }
+
+  const durationText = typeof durationMs === 'number' ? formatSecondsFromMs(durationMs) : null;
+
+  let framesHtml = '';
+  if (Array.isArray(frames) && frames.length) {
+    const rows = frames.map(f => {
+      const fPct = (f.synthetic_voice_prob * 100).toFixed(1);
+      const fHue = (1 - f.synthetic_voice_prob) * 120;
+      const fColor = `hsl(${fHue}, 75%, 45%)`;
+      const start = f.start_time_s?.toFixed(1) ?? '?';
+      const end = f.end_time_s?.toFixed(1) ?? '?';
+      return `<tr>` +
+        `<td>${start}s – ${end}s</td>` +
+        `<td><div class="detection-frame-bar-bg"><div class="detection-frame-bar" style="width:${fPct}%;background:${fColor}"></div></div></td>` +
+        `<td style="color:${fColor};font-weight:600">${fPct}%</td>` +
+        `</tr>`;
+    }).join('');
+    framesHtml =
+      `<div class="detection-frames-wrap">` +
+        `<div class="detection-frames-title">Per-Segment Analysis</div>` +
+        `<table class="detection-frames-table">` +
+          `<thead><tr><th>Time</th><th>Confidence</th><th>Score</th></tr></thead>` +
+          `<tbody>${rows}</tbody>` +
+        `</table>` +
+      `</div>`;
+  }
+
+  card.innerHTML =
+    gaugeHtml +
+    (durationText ? `<div class="detection-score-duration">Audio Duration: ${durationText}</div>` : '') +
+    framesHtml;
+
+  if (!gaugeHtml && !framesHtml && !durationText) {
+    card.innerHTML = '<span class="empty-hint">No detection data returned.</span>';
+  }
+
+  previewOutputEl.appendChild(card);
+}
+
 function updatePreview(payload) {
   if (payload?.status === 'processing') {
     latestPreviewText = '';
@@ -1119,6 +1235,18 @@ function updatePreview(payload) {
     } else {
       previewOutputEl.innerHTML =
         '<span class="preview-processing">Processing<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>';
+    }
+    return;
+  }
+
+  // Detection model — render avg_synthetic_voice_prob gauge + per-segment frames
+  if (payload?.modelType === 'detection') {
+    const score = payload?.meta?.detectionScore;
+    latestPreviewText = typeof score === 'number' ? `avg_synthetic_voice_prob: ${(score * 100).toFixed(1)}%` : '';
+    if (payload?.success) {
+      renderDetectionPreview(score, payload?.meta?.audioDurationMs, payload?.meta?.detectionFrames);
+    } else {
+      previewOutputEl.innerHTML = '<span class="empty-hint">Detection failed. See Stats tab for details.</span>';
     }
     return;
   }
@@ -1334,7 +1462,9 @@ function normalizeApiResponse({ modelKey, file, options, config, statusCode, sta
   const durationMs =
     typeof parsed?.duration_ms === 'number'
       ? parsed.duration_ms
-      : findFirstNumericValueByKey(parsed, ['duration_ms', 'audio_duration_ms', 'durationMs']);
+      : typeof parsed?.duration_s === 'number'
+        ? parsed.duration_s * 1000
+        : findFirstNumericValueByKey(parsed, ['duration_ms', 'audio_duration_ms', 'durationMs']);
   const audioMinutes = durationMs !== null && durationMs !== undefined ? toFixedNumber(durationMs / 60000, 3) : null;
   const transcriptMeta = extractTranscriptMeta(parsed);
   const tokens = extractTokenUsage(parsed);
@@ -1350,10 +1480,13 @@ function normalizeApiResponse({ modelKey, file, options, config, statusCode, sta
     failure: !ok,
     model: modelKey,
     modelFullName: config.fullName,
-    options: {
-      ...options,
-      appliedByModel: modelKey !== 'batch-fast',
-    },
+    modelType: config.type,
+    ...(config.type !== 'detection' ? {
+      options: {
+        ...options,
+        appliedByModel: !config.unsupported.has('options'),
+      },
+    } : {}),
     meta: {
       fileName: file?.name || 'upload.audio',
       fileMimeType: file?.type || null,
@@ -1369,6 +1502,10 @@ function normalizeApiResponse({ modelKey, file, options, config, statusCode, sta
       speakerCount: transcriptMeta.speakerCount,
       languageCount: transcriptMeta.languageCount,
       languages: transcriptMeta.languages,
+      detectionScore: typeof parsed?.avg_synthetic_voice_prob === 'number'
+        ? parsed.avg_synthetic_voice_prob
+        : typeof parsed?.score === 'number' ? parsed.score : null,
+      detectionFrames: Array.isArray(parsed?.frames) ? parsed.frames : null,
     },
     speed: {
       processingMs,
@@ -1418,7 +1555,7 @@ async function requestBatchTranscription({ file, options, config }) {
   const formData = new FormData();
   formData.append('upload_file', file, file.name || 'upload.audio');
 
-  if (config.mode !== 'streaming' && config.endpoint !== '/api/velma-2-stt-batch-english-vfast') {
+  if (config.type === 'stt' && config.mode !== 'streaming' && !config.unsupported.has('options')) {
     formData.append('speaker_diarization', String(options.speaker_diarization));
     formData.append('emotion_signal', String(options.emotion_signal));
     formData.append('accent_signal', String(options.accent_signal));
@@ -1799,6 +1936,7 @@ const UPLOAD_FORMATS_RAW = {
   'batch-fast': { formats: ['Opus'], note: 'up to 100 MB' },
   'batch': { formats: ['AAC', 'AIFF', 'FLAC', 'MP3', 'MP4', 'MOV', 'OGG', 'Opus', 'WAV', 'WebM'], note: 'up to 100 MB' },
   'streaming': { formats: ['AAC', 'AIFF', 'FLAC', 'MP3', 'MP4', 'MOV', 'OGG', 'Opus', 'WAV', 'WebM'], note: '' },
+  'deepfake': { formats: ['AAC', 'AIFF', 'FLAC', 'MOV', 'MP3', 'MP4', 'OGG', 'Opus', 'WAV', 'WebM'], note: 'up to 100 MB' },
 };
 function formatUploadFormats(key) {
   const { formats, note } = UPLOAD_FORMATS_RAW[key] || UPLOAD_FORMATS_RAW.batch;
@@ -1854,6 +1992,8 @@ function resetMeta(file) {
   metaAccentsEl.textContent = supportsSignals && options.accent_signal ? '—' : 'N/A';
   metaPiiTagsEl.textContent = supportsSignals && options.pii_phi_tagging ? '—' : 'N/A';
   metaResponseBytesEl.textContent = '—';
+  if (metaDetectionScoreEl) metaDetectionScoreEl.textContent = '—';
+  updateStatsRowVisibility(modelKey);
 }
 
 function updateMetaFromResponse(data, fallbackModel) {
@@ -1938,6 +2078,19 @@ function updateMetaFromResponse(data, fallbackModel) {
       : 'N/A';
 
   metaResponseBytesEl.textContent = formatResponseBytes(data?.meta?.responseBytes);
+
+  // Detection score
+  if (metaDetectionScoreEl) {
+    const score = data?.meta?.detectionScore;
+    if (data?.modelType === 'detection' && typeof score === 'number') {
+      metaDetectionScoreEl.textContent = `${(score * 100).toFixed(1)}%`;
+    } else {
+      metaDetectionScoreEl.textContent = '—';
+    }
+  }
+
+  // Update row visibility for model type
+  updateStatsRowVisibility(modelKey);
 
   if (metaRequestIdEl.textContent === '—' || !metaRequestIdEl.textContent) {
     metaRequestIdEl.textContent = 'N/A';
