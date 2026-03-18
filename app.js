@@ -890,7 +890,8 @@ function updateStatsRowVisibility(modelKey) {
 }
 
 function formatRequestedOptions(options, modelKey) {
-  if (modelKey === 'batch-fast') return 'N/A';
+  const cfg = MODEL_CONFIG[modelKey];
+  if (cfg?.type === 'detection' || cfg?.unsupported?.has('options')) return 'N/A';
 
   const opts = options || getRequestedOptions();
   const on = [
