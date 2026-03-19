@@ -8,13 +8,13 @@
 **Context:** The deepfake model PR added `type: 'detection'` to MODEL_CONFIG. Existing models need `type: 'stt'` added and all conditionals updated. Search for `batch-fast` and `velma-2-stt-batch-english-vfast` in app.js to find all sites.
 **Depends on:** Deepfake model PR must land first.
 
-## Calibrate deepfake detection score thresholds with Modulate
-**What:** Confirm the threshold values (currently ≥0.7 = "Likely Synthetic", ≤0.3 = "Likely Real") with the Modulate team.
-**Why:** The engineer noted the model is "very decisive" and snaps to 0% or 100% due to calibration issues. Current thresholds are reasonable defaults but may need adjustment based on Modulate's guidance.
-**Pros:** More accurate user-facing labels, fewer confused users.
+## Fine-tune deepfake verdict thresholds with Modulate
+**What:** Validate the current verdict thresholds (≥2 segments >95% OR ≥3 >92% OR ≥5 >90% = deepfake) with the Modulate team.
+**Why:** These thresholds were designed around the model's calibration behavior (scores snap to 0% or 100%). Real-world testing may require adjustment.
+**Pros:** More accurate verdicts, fewer false positives/negatives.
 **Cons:** May need to revisit if Modulate changes calibration approach.
-**Context:** Labels are implemented in `renderDetectionPreview()` in app.js. The gauge shows color-coded labels: red (synthetic), green (real), yellow (uncertain). The engineer suggested a rolling average for frame-level smoothing — that decision is pending.
-**Depends on:** Guidance from Modulate engineering on calibration and rolling average approach.
+**Context:** Verdict logic is in `renderDetectionPreview()` in app.js. Weighted triangle smoothing (window=5) is applied for the curve overlay. The gauge was replaced with a histogram chart + threshold-based verdict in v1.6.1.
+**Depends on:** Feedback from Modulate engineering after testing with diverse audio samples.
 
 ## Switch deepfake API upstream to HTTPS
 **What:** Replace `http://54.147.23.177:8080` with an HTTPS domain endpoint for the deepfake detection API.

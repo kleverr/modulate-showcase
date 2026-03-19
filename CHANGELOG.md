@@ -2,6 +2,23 @@
 
 All notable changes to the Modulate Developer API Demo.
 
+## [1.6.1.0] - 2026-03-19
+
+### Changed
+- Replaced detection gauge with Tufte-style histogram chart showing per-segment raw scores as colored bars with smoothed curve overlay
+- Added threshold-based verdict title: "Deepfake Detected" (red) or "No Deepfake" (green) based on raw segment scores
+- Added weighted triangle smoothing (window=5) to handle model calibration artifacts
+- Added playhead sync with interpolated position and live data label showing time and score
+- Added click-to-seek on chart bars and hover tooltips with raw/smoothed scores
+- Per-segment table redesigned as compact inline rows with fixed-width confidence bars
+- X-axis uses human-readable time format (1m 32s)
+- Autoscroll toggle hidden when deepfake model is selected
+- Chart and verdict positioned tight against audio player; segment table has breathing room below chart
+
+### Removed
+- Old avg_synthetic_voice_prob gauge and "Likely Synthetic/Real" labels
+- Audio duration display from detection preview (player already shows it)
+
 ## [1.6.0.0] - 2026-03-18
 
 ### Added
