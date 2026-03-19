@@ -212,7 +212,7 @@ function createFileEntry(file) {
 function computePreviewText(payload) {
   if (payload?.modelType === 'detection') {
     const score = payload?.meta?.detectionScore;
-    return typeof score === 'number' ? `avg_synthetic_voice_prob: ${(score * 100).toFixed(1)}%` : '';
+    return typeof score === 'number' ? `avg synthetic_voice_prob: ${(score * 100).toFixed(1)}%` : '';
   }
   const utterances = Array.isArray(payload?.result?.utterances) ? payload.result.utterances : [];
   if (utterances.length) return buildTranscriptCopyFromUtterances(utterances);
@@ -1160,7 +1160,7 @@ function renderDetectionPreview(score, durationMs, frames) {
   const card = document.createElement('div');
   card.className = 'detection-score-card';
 
-  // Composite score gauge — avg_synthetic_voice_prob returned directly by the model
+  // Composite score gauge — avg_synthetic_voice_prob (from API or computed from frames)
   let gaugeHtml = '';
   if (typeof score === 'number') {
     const pct = Math.max(0, Math.min(100, score * 100));
@@ -1176,7 +1176,7 @@ function renderDetectionPreview(score, durationMs, frames) {
         `<div class="detection-score-value" style="color:${color}">${pct.toFixed(1)}%</div>` +
       `</div>` +
       `<div class="detection-score-label" style="color:${color}">${label}</div>` +
-      `<div class="detection-score-sublabel">avg_synthetic_voice_prob</div>`;
+      `<div class="detection-score-sublabel">avg synthetic_voice_prob</div>`;
   }
 
   const durationText = typeof durationMs === 'number' ? formatSecondsFromMs(durationMs) : null;
@@ -1187,10 +1187,13 @@ function renderDetectionPreview(score, durationMs, frames) {
       const fPct = (f.synthetic_voice_prob * 100).toFixed(1);
       const fHue = (1 - f.synthetic_voice_prob) * 120;
       const fColor = `hsl(${fHue}, 75%, 45%)`;
-      const start = f.start_time_s?.toFixed(1) ?? '?';
-      const end = f.end_time_s?.toFixed(1) ?? '?';
+      // Support both ms and s field names from the API
+      const startMs = f.start_time_ms ?? (f.start_time_s != null ? f.start_time_s * 1000 : null);
+      const endMs = f.end_time_ms ?? (f.end_time_s != null ? f.end_time_s * 1000 : null);
+      const startLabel = startMs != null ? `${(startMs / 1000).toFixed(1)}s` : '?';
+      const endLabel = endMs != null ? `${(endMs / 1000).toFixed(1)}s` : '?';
       return `<tr>` +
-        `<td>${start}s – ${end}s</td>` +
+        `<td>${startLabel} – ${endLabel}</td>` +
         `<td><div class="detection-frame-bar-bg"><div class="detection-frame-bar" style="width:${fPct}%;background:${fColor}"></div></div></td>` +
         `<td style="color:${fColor};font-weight:600">${fPct}%</td>` +
         `</tr>`;
@@ -1240,10 +1243,10 @@ function updatePreview(payload) {
     return;
   }
 
-  // Detection model — render avg_synthetic_voice_prob gauge + per-segment frames
+  // Detection model — render avg score gauge + per-segment frames
   if (payload?.modelType === 'detection') {
     const score = payload?.meta?.detectionScore;
-    latestPreviewText = typeof score === 'number' ? `avg_synthetic_voice_prob: ${(score * 100).toFixed(1)}%` : '';
+    latestPreviewText = typeof score === 'number' ? `avg synthetic_voice_prob: ${(score * 100).toFixed(1)}%` : '';
     if (payload?.success) {
       renderDetectionPreview(score, payload?.meta?.audioDurationMs, payload?.meta?.detectionFrames);
     } else {
@@ -1505,7 +1508,9 @@ function normalizeApiResponse({ modelKey, file, options, config, statusCode, sta
       languages: transcriptMeta.languages,
       detectionScore: typeof parsed?.avg_synthetic_voice_prob === 'number'
         ? parsed.avg_synthetic_voice_prob
-        : typeof parsed?.score === 'number' ? parsed.score : null,
+        : Array.isArray(parsed?.frames) && parsed.frames.length > 0
+          ? parsed.frames.reduce((sum, f) => sum + (f.synthetic_voice_prob || 0), 0) / parsed.frames.length
+          : null,
       detectionFrames: Array.isArray(parsed?.frames) ? parsed.frames : null,
     },
     speed: {
