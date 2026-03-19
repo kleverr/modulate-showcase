@@ -863,6 +863,10 @@ function updateFeatureControlsForModel(modelKey) {
 
   // Hide copy transcript and autoscroll for detection models
   if (copyBtnEl) copyBtnEl.hidden = isDetection;
+  if (autoscrollEl) {
+    const autoscrollLabel = autoscrollEl.closest('.autoscroll-label');
+    if (autoscrollLabel) autoscrollLabel.hidden = isDetection;
+  }
 
   if (featureNoteEl) featureNoteEl.textContent = '';
 
@@ -1155,69 +1159,232 @@ function renderUtterancePreview(utterances) {
   previewOutputEl.appendChild(list);
 }
 
+// ── Smoothing: weighted average with window=5 ──────────────────────────────
+function smoothFrameScores(frames, windowSize = 5) {
+  if (!frames || frames.length <= 1) return frames.map(f => ({ ...f, smoothed: f.synthetic_voice_prob }));
+  const half = Math.floor(windowSize / 2);
+  return frames.map((f, i) => {
+    let sum = 0, weight = 0;
+    for (let j = -half; j <= half; j++) {
+      const idx = i + j;
+      if (idx < 0 || idx >= frames.length) continue;
+      // Triangle weighting: center frame has highest weight
+      const w = half + 1 - Math.abs(j);
+      sum += frames[idx].synthetic_voice_prob * w;
+      weight += w;
+    }
+    return { ...f, smoothed: weight > 0 ? sum / weight : f.synthetic_voice_prob };
+  });
+}
+
+// ── Heatmap color helper ───────────────────────────────────────────────────
+function scoreToColor(score) {
+  const hue = (1 - score) * 120; // 120=green → 0=red
+  return `hsl(${hue}, 80%, 45%)`;
+}
+
+// Store current detection data for playback sync
+let currentDetectionData = null;
+
 function renderDetectionPreview(score, durationMs, frames) {
   previewOutputEl.innerHTML = '';
   const card = document.createElement('div');
   card.className = 'detection-score-card';
 
-  // Composite score gauge — avg_synthetic_voice_prob (from API or computed from frames)
-  let gaugeHtml = '';
-  if (typeof score === 'number') {
-    const pct = Math.max(0, Math.min(100, score * 100));
-    const hue = (1 - score) * 120; // 120=green (real) → 0=red (synthetic)
-    const color = `hsl(${hue}, 75%, 45%)`;
-    const label = score >= 0.7 ? 'Likely Synthetic' : score <= 0.3 ? 'Likely Real' : 'Uncertain';
-    gaugeHtml =
-      `<div class="detection-gauge-wrap">` +
-        `<svg class="detection-gauge" viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">` +
-          `<path d="M 10 65 A 50 50 0 0 1 110 65" fill="none" stroke="#e8e0f0" stroke-width="8" stroke-linecap="round"/>` +
-          `<path d="M 10 65 A 50 50 0 0 1 110 65" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${pct * 1.57} 157"/>` +
-        `</svg>` +
-        `<div class="detection-score-value" style="color:${color}">${pct.toFixed(1)}%</div>` +
-      `</div>` +
-      `<div class="detection-score-label" style="color:${color}">${label}</div>` +
-      `<div class="detection-score-sublabel">avg synthetic_voice_prob</div>`;
-  }
-
-  const durationText = typeof durationMs === 'number' ? formatSecondsFromMs(durationMs) : null;
-
-  let framesHtml = '';
-  if (Array.isArray(frames) && frames.length) {
-    const rows = frames.map(f => {
-      const fPct = (f.synthetic_voice_prob * 100).toFixed(1);
-      const fHue = (1 - f.synthetic_voice_prob) * 120;
-      const fColor = `hsl(${fHue}, 75%, 45%)`;
-      // Support both ms and s field names from the API
-      const startMs = f.start_time_ms ?? (f.start_time_s != null ? f.start_time_s * 1000 : null);
-      const endMs = f.end_time_ms ?? (f.end_time_s != null ? f.end_time_s * 1000 : null);
-      const startLabel = startMs != null ? `${(startMs / 1000).toFixed(1)}s` : '?';
-      const endLabel = endMs != null ? `${(endMs / 1000).toFixed(1)}s` : '?';
-      return `<tr>` +
-        `<td>${startLabel} – ${endLabel}</td>` +
-        `<td><div class="detection-frame-bar-bg"><div class="detection-frame-bar" style="width:${fPct}%;background:${fColor}"></div></div></td>` +
-        `<td style="color:${fColor};font-weight:600">${fPct}%</td>` +
-        `</tr>`;
-    }).join('');
-    framesHtml =
-      `<div class="detection-frames-wrap">` +
-        `<div class="detection-frames-title">Per-Segment Analysis</div>` +
-        `<table class="detection-frames-table">` +
-          `<thead><tr><th>Time</th><th>Confidence</th><th>Score</th></tr></thead>` +
-          `<tbody>${rows}</tbody>` +
-        `</table>` +
-      `</div>`;
-  }
-
-  card.innerHTML =
-    gaugeHtml +
-    (durationText ? `<div class="detection-score-duration">Audio Duration: ${durationText}</div>` : '') +
-    framesHtml;
-
-  if (!gaugeHtml && !framesHtml && !durationText) {
+  if (!Array.isArray(frames) || !frames.length) {
     card.innerHTML = '<span class="empty-hint">No detection data returned.</span>';
+    previewOutputEl.appendChild(card);
+    currentDetectionData = null;
+    return;
   }
+
+  // Normalize frame times to ms
+  const normalizedFrames = frames.map(f => ({
+    ...f,
+    startMs: f.start_time_ms ?? (f.start_time_s != null ? f.start_time_s * 1000 : 0),
+    endMs: f.end_time_ms ?? (f.end_time_s != null ? f.end_time_s * 1000 : 0),
+  }));
+
+  // Smooth scores
+  const smoothed = smoothFrameScores(normalizedFrames);
+  const totalDurationMs = durationMs || Math.max(...smoothed.map(f => f.endMs));
+
+  // Store for playback sync
+  currentDetectionData = { smoothed, totalDurationMs };
+
+  // ── Verdict: threshold-based on raw scores ─────────────────────────────
+  const raw = smoothed.map(f => f.synthetic_voice_prob);
+  const above95 = raw.filter(s => s >= 0.95).length;
+  const above92 = raw.filter(s => s >= 0.92).length;
+  const above90 = raw.filter(s => s >= 0.90).length;
+  const isDeepfake = above95 >= 2 || above92 >= 3 || above90 >= 5;
+  const verdictHtml = isDeepfake
+    ? `<div class="det-title det-title-fake">Deepfake Detected</div>`
+    : `<div class="det-title det-title-real">No Deepfake</div>`;
+
+  // ── Build chart container ──────────────────────────────────────────────
+  card.innerHTML =
+    verdictHtml +
+    `<div class="det-chart-wrap">` +
+      `<div class="det-chart-y-axis">` +
+        `<span>100%</span><span>50%</span><span>0%</span>` +
+      `</div>` +
+      `<div class="det-chart-area">` +
+        `<canvas class="det-chart-canvas"></canvas>` +
+        `<div class="det-chart-playhead"><span class="det-playhead-label"></span></div>` +
+        `<div class="det-chart-tooltip"></div>` +
+      `</div>` +
+    `</div>` +
+    `<div class="det-chart-times"></div>` +
+    `<div class="det-segment-details">` +
+      `<div class="det-segment-table-wrap"></div>` +
+    `</div>`;
 
   previewOutputEl.appendChild(card);
+
+  // ── Draw on canvas ─────────────────────────────────────────────────────
+  const canvas = card.querySelector('.det-chart-canvas');
+  const chartArea = card.querySelector('.det-chart-area');
+  const dpr = window.devicePixelRatio || 1;
+
+  function drawChart() {
+    const rect = chartArea.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const n = smoothed.length;
+    // Tufte: no gaps between bars — data-ink ratio maximized
+    const barW = w / n;
+    // 100% score = full chart height so y-axis labels stay accurate
+    const maxBarH = h;
+    const minBarH = 3; // minimum height so 0% scores remain visible
+
+    // ── Histogram bars (raw values, colored by raw score) ────────────────
+    smoothed.forEach((f, i) => {
+      const x = i * barW;
+      const rawH = Math.max(minBarH, f.synthetic_voice_prob * maxBarH);
+      const hue = (1 - f.synthetic_voice_prob) * 120;
+      ctx.fillStyle = `hsla(${hue}, 70%, 48%, 0.5)`;
+      ctx.fillRect(x, h - rawH, barW, rawH);
+    });
+
+    // ── Smoothed curve: thin, barely visible — Tufte "smallest effective difference"
+    if (n >= 2) {
+      const points = smoothed.map((f, i) => ({
+        x: i * barW + barW / 2,
+        y: h - Math.max(minBarH, f.smoothed * maxBarH),
+      }));
+
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[Math.max(0, i - 1)];
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        const p3 = points[Math.min(points.length - 1, i + 2)];
+        const tension = 0.35;
+        ctx.bezierCurveTo(
+          p1.x + (p2.x - p0.x) * tension, p1.y + (p2.y - p0.y) * tension,
+          p2.x - (p3.x - p1.x) * tension, p2.y - (p3.y - p1.y) * tension,
+          p2.x, p2.y
+        );
+      }
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.38)';
+      ctx.lineWidth = 1.2;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    }
+
+    // Store bar geometry for hit-testing
+    canvas._barW = barW;
+    canvas._barGap = 0;
+    canvas._chartH = h;
+    canvas._chartW = w;
+    canvas._maxBarH = maxBarH;
+  }
+
+  // Initial draw + redraw on resize
+  requestAnimationFrame(drawChart);
+  const resizeObserver = new ResizeObserver(() => requestAnimationFrame(drawChart));
+  resizeObserver.observe(chartArea);
+
+  // ── Time labels (1m 32s format) ────────────────────────────────────────
+  function fmtTime(sec) {
+    const s = Math.round(sec);
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return rem === 0 ? `${m}m` : `${m}m ${rem}s`;
+  }
+  const totalS = totalDurationMs / 1000;
+  const timesEl = card.querySelector('.det-chart-times');
+  const labels = [0];
+  if (totalS > 20) labels.push(totalS / 4, totalS / 2, totalS * 3 / 4);
+  else if (totalS > 8) labels.push(totalS / 2);
+  labels.push(totalS);
+  timesEl.innerHTML = labels.map(s => `<span>${fmtTime(s)}</span>`).join('');
+
+  // ── Hover + click interaction ──────────────────────────────────────────
+  const tooltip = card.querySelector('.det-chart-tooltip');
+
+  chartArea.addEventListener('mousemove', (e) => {
+    const rect = chartArea.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const barW = canvas._barW || 10;
+    const barGap = canvas._barGap || 1;
+    const idx = Math.floor(mx / (barW + barGap));
+    if (idx < 0 || idx >= smoothed.length) { tooltip.style.opacity = '0'; return; }
+    const f = smoothed[idx];
+    const rawPct = (f.synthetic_voice_prob * 100).toFixed(1);
+    const smoothPct = (f.smoothed * 100).toFixed(1);
+    const startS = (f.startMs / 1000).toFixed(1);
+    const endS = (f.endMs / 1000).toFixed(1);
+    tooltip.innerHTML =
+      `<strong>${startS}s – ${endS}s</strong><br>` +
+      `Raw: ${rawPct}% &nbsp; Smoothed: ${smoothPct}%`;
+    tooltip.style.opacity = '1';
+    const tooltipX = idx * (barW + barGap) + barW / 2;
+    tooltip.style.left = `${Math.max(0, Math.min(tooltipX - 60, (canvas._chartW || 300) - 140))}px`;
+  });
+
+  chartArea.addEventListener('mouseleave', () => { tooltip.style.opacity = '0'; });
+
+  chartArea.addEventListener('click', (e) => {
+    const rect = chartArea.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const barW = canvas._barW || 10;
+    const barGap = canvas._barGap || 1;
+    const idx = Math.floor(mx / (barW + barGap));
+    if (idx < 0 || idx >= smoothed.length || !audioPlayerEl) return;
+    audioPlayerEl.currentTime = smoothed[idx].startMs / 1000;
+    if (audioPlayerEl.paused) audioPlayerEl.play();
+  });
+
+  // ── Per-segment rows — tight inline layout, no table gaps ──────────────
+  const tableWrap = card.querySelector('.det-segment-table-wrap');
+  const rows = smoothed.map(f => {
+    const rawPct = (f.synthetic_voice_prob * 100).toFixed(1);
+    const fColor = scoreToColor(f.synthetic_voice_prob);
+    const startS = (f.startMs / 1000).toFixed(1);
+    const endS = (f.endMs / 1000).toFixed(1);
+    return `<div class="det-row">` +
+      `<span class="det-row-time">${startS}s–${endS}s</span>` +
+      `<span class="det-row-bar"><span style="width:${rawPct}%;background:${fColor}"></span></span>` +
+      `<span class="det-row-pct" style="color:${fColor}">${rawPct}%</span>` +
+      `</div>`;
+  }).join('');
+  tableWrap.innerHTML =
+    `<div class="det-segment-header">` +
+      `<span>Time</span>` +
+      `<span>Confidence</span>` +
+      `<span>Score</span>` +
+    `</div>` + rows;
 }
 
 function updatePreview(payload) {
@@ -2195,8 +2362,9 @@ copyBtnEl.addEventListener('click', async () => {
 
 audioPlayerEl.addEventListener('timeupdate', () => {
   const currentMs = audioPlayerEl.currentTime * 1000;
+
+  // ── STT utterance highlighting ─────────────────────────────────────────
   const turns = Array.from(previewOutputEl.querySelectorAll('.speaker-turn[data-start-ms]'));
-  // Keep the last utterance that has already started (sticky during silence)
   let newActive = null;
   for (const turn of turns) {
     if (Number(turn.dataset.startMs) <= currentMs) newActive = turn;
@@ -2208,6 +2376,42 @@ audioPlayerEl.addEventListener('timeupdate', () => {
     activeUtteranceEl = newActive;
     if (autoscrollEl.checked) {
       newActive.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  // ── Detection chart playhead sync ───────────────────────────────────────
+  if (currentDetectionData) {
+    const { smoothed, totalDurationMs } = currentDetectionData;
+    const playhead = previewOutputEl.querySelector('.det-chart-playhead');
+    const canvas = previewOutputEl.querySelector('.det-chart-canvas');
+    if (playhead && canvas && totalDurationMs > 0) {
+      // Map current time to the bar position, not just percentage of width
+      const barW = canvas._barW || 10;
+      const barGap = canvas._barGap || 1;
+      const n = smoothed.length;
+      // Find which frame we're in
+      let activeIdx = 0;
+      for (let i = 0; i < n; i++) {
+        const midMs = (smoothed[i].startMs + smoothed[i].endMs) / 2;
+        if (currentMs >= smoothed[i].startMs) activeIdx = i;
+      }
+      // Interpolate position within the active frame
+      const f = smoothed[activeIdx];
+      const frameFrac = Math.min(1, Math.max(0, (currentMs - f.startMs) / (f.endMs - f.startMs)));
+      const barStart = activeIdx * (barW + barGap);
+      const xPos = barStart + barW * frameFrac;
+      playhead.style.left = `${xPos}px`;
+      playhead.style.display = 'block';
+
+      // Update data label at top of playhead
+      const label = playhead.querySelector('.det-playhead-label');
+      if (label) {
+        const rawPct = (f.synthetic_voice_prob * 100).toFixed(0);
+        const smoothPct = (f.smoothed * 100).toFixed(0);
+        const timeS = (currentMs / 1000).toFixed(1);
+        label.textContent = `${timeS}s · ${rawPct}%`;
+        label.style.color = scoreToColor(f.synthetic_voice_prob);
+      }
     }
   }
 });
