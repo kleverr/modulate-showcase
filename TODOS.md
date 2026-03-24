@@ -16,10 +16,10 @@
 **Context:** Verdict logic is in `renderDetectionPreview()` in app.js. Weighted triangle smoothing (window=5) is applied for the curve overlay. The gauge was replaced with a histogram chart + threshold-based verdict in v1.6.1.
 **Depends on:** Feedback from Modulate engineering after testing with diverse audio samples.
 
-## Switch deepfake API upstream to HTTPS
-**What:** Replace `http://54.147.23.177:8080` with an HTTPS domain endpoint for the deepfake detection API.
-**Why:** Audio files are currently sent unencrypted over the internet to a bare IP address. The STT models use HTTPS via `modulate-developer-apis.com`.
-**Pros:** Security improvement — audio data encrypted in transit. Production-ready.
-**Cons:** Blocked on Modulate providing the HTTPS endpoint.
-**Context:** server.js line 67, `ENDPOINT_BASE_URL` map. The HTTP endpoint was provided by the Modulate engineering team for initial integration. Consider making this configurable via env var (`DEEPFAKE_API_BASE_URL`) as an interim step.
-**Depends on:** Modulate providing HTTPS-enabled endpoint for velma-2-synthetic-voice-detection.
+## Use API's synthetic_voice boolean for verdict logic
+**What:** Explore replacing the custom threshold-based verdict logic with the `synthetic_voice` boolean returned per-frame by the Velma-2 API.
+**Why:** The API now returns a `synthetic_voice: true/false` per frame alongside `confidence`. The current UI computes its own verdict via threshold logic on confidence scores (≥2 frames >95% OR ≥3 >92% OR ≥5 >90%). Using the API's classification could simplify this and stay in sync with model improvements.
+**Pros:** Single source of truth for deepfake verdict, simpler code, automatically benefits from model calibration updates.
+**Cons:** Less control over verdict sensitivity, may need to validate that the API's boolean aligns with desired UX behavior.
+**Context:** Verdict logic is in `renderDetectionPreview()` in app.js (~line 1215). The new API response schema returns `frames[].synthetic_voice` (boolean) + `frames[].confidence` (float). Could count `synthetic_voice: true` frames vs total to derive an overall verdict.
+**Depends on:** Understanding how the model sets the `synthetic_voice` boolean threshold internally (ask Modulate).

@@ -1,6 +1,38 @@
 # Changelog
 
-All notable changes to the Modulate Developer API Demo.
+All notable changes to the Modulate Models Playground.
+
+## [1.7.0] - 2026-03-23
+
+### Added
+- Deepfake streaming detection model (velma-2-synthetic-voice-detection-streaming) with real-time analysis
+- Live PCM streaming via Web Audio API: frames render every 4 seconds while recording
+- Per-frame `synthetic_voice` boolean and `confidence` display with certainty-based labels
+- Verdict tags (Synthetic/Real) with certainty percentage in segment table
+- Stop recording button embedded in chart area during live detection
+- `noindex, nofollow` meta tag to prevent search indexing
+
+### Changed
+- Renamed app to "Modulate Models Playground" (was "Modulate Developer API Demo")
+- Deepfake batch endpoint updated to `/api/velma-2-synthetic-voice-detection-batch` with IP override
+- Response field `synthetic_voice_prob` renamed to `confidence` throughout (new API schema)
+- Detection score display reframed: shows "Real/Synthetic (N% certain)" instead of raw probability
+- Verdict logic uses API's `synthetic_voice` boolean (≥2 frames = deepfake), with threshold fallback
+- Segment table columns reordered: Time | Verdict | Certainty (removed confidence bar)
+- Streaming detection UI: single record zone in main panel, no separate top widget
+- WebSocket proxy preserves text/binary frame types (fixes browser receiving JSON as Blob)
+- WebSocket proxy buffers client messages until upstream connects (fixes race condition)
+- Cost updated to $0.25/hour for batch deepfake detection
+- `isStreamingModel()` uses `config.mode` instead of hardcoded model key
+
+### Fixed
+- WebSocket streaming detection hangs: resolve on `done`/`error` message instead of waiting for close
+- Live detection finalization: calls `updatePreview` to render final chart and populate stats
+- Recording stop: sends end-of-stream signal before cleaning up media tracks
+
+### Removed
+- `avg_synthetic_voice_prob` field handling (removed from new API)
+- HTTPS migration TODO (resolved: batch uses IP override, streaming uses IP override)
 
 ## [1.6.1.0] - 2026-03-19
 

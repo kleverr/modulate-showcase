@@ -167,11 +167,20 @@ const MODEL_CONFIG = {
   },
   deepfake: {
     fullName: 'velma-2-synthetic-voice-detection',
-    endpoint: '/api/velma-2-synthetic-voice-detection',
-    ratePerHourUsd: 0.001,
+    endpoint: '/api/velma-2-synthetic-voice-detection-batch',
+    ratePerHourUsd: 0.25,
     mode: 'batch',
     type: 'detection',
     speedFactor: 10,
+    unsupported: new Set(['utterances', 'speakers', 'languages', 'emotions', 'accents', 'pii_tags', 'options']),
+  },
+  'deepfake-streaming': {
+    fullName: 'velma-2-synthetic-voice-detection-streaming',
+    endpoint: '/api/velma-2-synthetic-voice-detection-streaming',
+    ratePerHourUsd: null,
+    mode: 'streaming',
+    type: 'detection',
+    speedFactor: null,
     unsupported: new Set(['utterances', 'speakers', 'languages', 'emotions', 'accents', 'pii_tags', 'options']),
   },
 };
@@ -212,7 +221,7 @@ function createFileEntry(file) {
 function computePreviewText(payload) {
   if (payload?.modelType === 'detection') {
     const score = payload?.meta?.detectionScore;
-    return typeof score === 'number' ? `avg synthetic_voice_prob: ${(score * 100).toFixed(1)}%` : '';
+    return typeof score === 'number' ? formatConfidenceLabel(score) : '';
   }
   const utterances = Array.isArray(payload?.result?.utterances) ? payload.result.utterances : [];
   if (utterances.length) return buildTranscriptCopyFromUtterances(utterances);
@@ -572,8 +581,20 @@ async function runWithFileAtIndex(i) {
   }
 
   try {
+    // For streaming detection, render frames live as they arrive
+    const onStreamingFrame = (config.type === 'detection' && config.mode === 'streaming')
+      ? (frames, durationMs) => {
+          if (i === activeFileIndex) {
+            const score = frames.length > 0
+              ? frames.reduce((sum, f) => sum + (f.confidence || 0), 0) / frames.length
+              : null;
+            renderDetectionPreview(score, durationMs, frames);
+          }
+        }
+      : null;
+
     const transport = config.mode === 'streaming'
-      ? await requestStreamingTranscription({ file, options, config })
+      ? await requestStreamingTranscription({ file, options, config, onStreamingFrame })
       : await requestBatchTranscription({ file, options, config });
     const processingMs = Date.now() - startedAt;
 
@@ -597,7 +618,7 @@ async function runWithFileAtIndex(i) {
     finalize(payload, 'error');
   } finally {
     fileEl.value = '';
-    if (model === 'streaming' && mediaRecorder?.state !== 'recording') {
+    if (isStreamingModel(model) && mediaRecorder?.state !== 'recording') {
       recordStatusEl.textContent = 'Ready to record';
     }
   }
@@ -1161,7 +1182,7 @@ function renderUtterancePreview(utterances) {
 
 // ── Smoothing: weighted average with window=5 ──────────────────────────────
 function smoothFrameScores(frames, windowSize = 5) {
-  if (!frames || frames.length <= 1) return frames.map(f => ({ ...f, smoothed: f.synthetic_voice_prob }));
+  if (!frames || frames.length <= 1) return frames.map(f => ({ ...f, smoothed: f.confidence }));
   const half = Math.floor(windowSize / 2);
   return frames.map((f, i) => {
     let sum = 0, weight = 0;
@@ -1170,17 +1191,29 @@ function smoothFrameScores(frames, windowSize = 5) {
       if (idx < 0 || idx >= frames.length) continue;
       // Triangle weighting: center frame has highest weight
       const w = half + 1 - Math.abs(j);
-      sum += frames[idx].synthetic_voice_prob * w;
+      sum += frames[idx].confidence * w;
       weight += w;
     }
-    return { ...f, smoothed: weight > 0 ? sum / weight : f.synthetic_voice_prob };
+    return { ...f, smoothed: weight > 0 ? sum / weight : f.confidence };
   });
 }
 
 // ── Heatmap color helper ───────────────────────────────────────────────────
+// confidence is P(synthetic): 0=definitely real, 1=definitely synthetic, 0.5=uncertain
 function scoreToColor(score) {
   const hue = (1 - score) * 120; // 120=green → 0=red
   return `hsl(${hue}, 80%, 45%)`;
+}
+
+// Certainty: how far from the 0.5 decision boundary (0%=uncertain, 100%=certain)
+function confidenceToCertainty(confidence) {
+  return Math.abs(confidence - 0.5) * 2;
+}
+
+function formatConfidenceLabel(confidence) {
+  const certaintyPct = (confidenceToCertainty(confidence) * 100).toFixed(0);
+  if (confidence >= 0.5) return `Synthetic (${certaintyPct}% certain)`;
+  return `Real (${certaintyPct}% certain)`;
 }
 
 // Store current detection data for playback sync
@@ -1212,12 +1245,20 @@ function renderDetectionPreview(score, durationMs, frames) {
   // Store for playback sync
   currentDetectionData = { smoothed, totalDurationMs };
 
-  // ── Verdict: threshold-based on raw scores ─────────────────────────────
-  const raw = smoothed.map(f => f.synthetic_voice_prob);
-  const above95 = raw.filter(s => s >= 0.95).length;
-  const above92 = raw.filter(s => s >= 0.92).length;
-  const above90 = raw.filter(s => s >= 0.90).length;
-  const isDeepfake = above95 >= 2 || above92 >= 3 || above90 >= 5;
+  // ── Verdict: use API's synthetic_voice boolean when available ───────────
+  const hasBooleans = smoothed.some(f => typeof f.synthetic_voice === 'boolean');
+  let isDeepfake;
+  if (hasBooleans) {
+    const syntheticCount = smoothed.filter(f => f.synthetic_voice === true).length;
+    isDeepfake = syntheticCount >= 2;
+  } else {
+    // Fallback: threshold-based on confidence scores
+    const raw = smoothed.map(f => f.confidence);
+    const above95 = raw.filter(s => s >= 0.95).length;
+    const above92 = raw.filter(s => s >= 0.92).length;
+    const above90 = raw.filter(s => s >= 0.90).length;
+    isDeepfake = above95 >= 2 || above92 >= 3 || above90 >= 5;
+  }
   const verdictHtml = isDeepfake
     ? `<div class="det-title det-title-fake">Deepfake Detected</div>`
     : `<div class="det-title det-title-real">No Deepfake</div>`;
@@ -1268,8 +1309,8 @@ function renderDetectionPreview(score, durationMs, frames) {
     // ── Histogram bars (raw values, colored by raw score) ────────────────
     smoothed.forEach((f, i) => {
       const x = i * barW;
-      const rawH = Math.max(minBarH, f.synthetic_voice_prob * maxBarH);
-      const hue = (1 - f.synthetic_voice_prob) * 120;
+      const rawH = Math.max(minBarH, f.confidence * maxBarH);
+      const hue = (1 - f.confidence) * 120;
       ctx.fillStyle = `hsla(${hue}, 70%, 48%, 0.5)`;
       ctx.fillRect(x, h - rawH, barW, rawH);
     });
@@ -1341,13 +1382,11 @@ function renderDetectionPreview(score, durationMs, frames) {
     const idx = Math.floor(mx / (barW + barGap));
     if (idx < 0 || idx >= smoothed.length) { tooltip.style.opacity = '0'; return; }
     const f = smoothed[idx];
-    const rawPct = (f.synthetic_voice_prob * 100).toFixed(1);
-    const smoothPct = (f.smoothed * 100).toFixed(1);
     const startS = (f.startMs / 1000).toFixed(1);
     const endS = (f.endMs / 1000).toFixed(1);
     tooltip.innerHTML =
       `<strong>${startS}s – ${endS}s</strong><br>` +
-      `Raw: ${rawPct}% &nbsp; Smoothed: ${smoothPct}%`;
+      formatConfidenceLabel(f.confidence);
     tooltip.style.opacity = '1';
     const tooltipX = idx * (barW + barGap) + barW / 2;
     tooltip.style.left = `${Math.max(0, Math.min(tooltipX - 60, (canvas._chartW || 300) - 140))}px`;
@@ -1369,21 +1408,24 @@ function renderDetectionPreview(score, durationMs, frames) {
   // ── Per-segment rows — tight inline layout, no table gaps ──────────────
   const tableWrap = card.querySelector('.det-segment-table-wrap');
   const rows = smoothed.map(f => {
-    const rawPct = (f.synthetic_voice_prob * 100).toFixed(1);
-    const fColor = scoreToColor(f.synthetic_voice_prob);
+    const fColor = scoreToColor(f.confidence);
     const startS = (f.startMs / 1000).toFixed(1);
     const endS = (f.endMs / 1000).toFixed(1);
+    const certaintyPct = (confidenceToCertainty(f.confidence) * 100).toFixed(0);
+    const verdictTag = f.confidence >= 0.5
+      ? `<span class="det-row-verdict det-verdict-fake">Synthetic</span>`
+      : `<span class="det-row-verdict det-verdict-real">Real</span>`;
     return `<div class="det-row">` +
       `<span class="det-row-time">${startS}s–${endS}s</span>` +
-      `<span class="det-row-bar"><span style="width:${rawPct}%;background:${fColor}"></span></span>` +
-      `<span class="det-row-pct" style="color:${fColor}">${rawPct}%</span>` +
+      verdictTag +
+      `<span class="det-row-pct" style="color:${fColor}">${certaintyPct}%</span>` +
       `</div>`;
   }).join('');
   tableWrap.innerHTML =
     `<div class="det-segment-header">` +
       `<span>Time</span>` +
-      `<span>Confidence</span>` +
-      `<span>Score</span>` +
+      `<span>Verdict</span>` +
+      `<span>Certainty</span>` +
     `</div>` + rows;
 }
 
@@ -1413,7 +1455,7 @@ function updatePreview(payload) {
   // Detection model — render avg score gauge + per-segment frames
   if (payload?.modelType === 'detection') {
     const score = payload?.meta?.detectionScore;
-    latestPreviewText = typeof score === 'number' ? `avg synthetic_voice_prob: ${(score * 100).toFixed(1)}%` : '';
+    latestPreviewText = typeof score === 'number' ? formatConfidenceLabel(score) : '';
     if (payload?.success) {
       renderDetectionPreview(score, payload?.meta?.audioDurationMs, payload?.meta?.detectionFrames);
     } else {
@@ -1673,11 +1715,9 @@ function normalizeApiResponse({ modelKey, file, options, config, statusCode, sta
       speakerCount: transcriptMeta.speakerCount,
       languageCount: transcriptMeta.languageCount,
       languages: transcriptMeta.languages,
-      detectionScore: typeof parsed?.avg_synthetic_voice_prob === 'number'
-        ? parsed.avg_synthetic_voice_prob
-        : Array.isArray(parsed?.frames) && parsed.frames.length > 0
-          ? parsed.frames.reduce((sum, f) => sum + (f.synthetic_voice_prob || 0), 0) / parsed.frames.length
-          : null,
+      detectionScore: Array.isArray(parsed?.frames) && parsed.frames.length > 0
+        ? parsed.frames.reduce((sum, f) => sum + (f.confidence || 0), 0) / parsed.frames.length
+        : null,
       detectionFrames: Array.isArray(parsed?.frames) ? parsed.frames : null,
     },
     speed: {
@@ -1757,15 +1797,16 @@ async function requestBatchTranscription({ file, options, config }) {
   };
 }
 
-async function requestStreamingTranscription({ file, options, config }) {
+async function requestStreamingTranscription({ file, options, config, onStreamingFrame }) {
   const audioBuffer = new Uint8Array(await file.arrayBuffer());
 
-  const params = new URLSearchParams({
-    speaker_diarization: String(options.speaker_diarization),
-    emotion_signal: String(options.emotion_signal),
-    accent_signal: String(options.accent_signal),
-    pii_phi_tagging: String(options.pii_phi_tagging),
-  });
+  const params = new URLSearchParams();
+  if (config.type !== 'detection') {
+    params.set('speaker_diarization', String(options.speaker_diarization));
+    params.set('emotion_signal', String(options.emotion_signal));
+    params.set('accent_signal', String(options.accent_signal));
+    params.set('pii_phi_tagging', String(options.pii_phi_tagging));
+  }
 
   const wsUrl = `${API_WS_BASE_URL}${config.endpoint}?${params.toString()}`;
 
@@ -1775,6 +1816,7 @@ async function requestStreamingTranscription({ file, options, config }) {
     let streamError = null;
     let doneDurationMs = null;
     const utterances = [];
+    const detectionFrames = [];
 
     const ws = new WebSocket(wsUrl);
 
@@ -1788,6 +1830,24 @@ async function requestStreamingTranscription({ file, options, config }) {
       settled = true;
       reject(error);
     };
+
+    function resolveWithCurrentData() {
+      let parsed;
+      if (config.type === 'detection') {
+        const durationMs = doneDurationMs ?? (detectionFrames.length > 0
+          ? Math.max(...detectionFrames.map(f => f.end_time_ms || 0))
+          : null);
+        parsed = { frames: detectionFrames, duration_ms: durationMs };
+      } else {
+        const durationMs = doneDurationMs ?? getStreamingDurationFromUtterances(utterances);
+        parsed = {
+          text: utterances.map(u => (typeof u?.text === 'string' ? u.text.trim() : '')).filter(Boolean).join(' '),
+          duration_ms: durationMs,
+          utterances,
+        };
+      }
+      settleResolve({ ok: true, statusCode: 200, statusText: 'OK', parsed, rawText: JSON.stringify(parsed) });
+    }
 
     ws.addEventListener('open', () => {
       opened = true;
@@ -1816,10 +1876,25 @@ async function requestStreamingTranscription({ file, options, config }) {
 
       if (payload?.type === 'utterance' && payload.utterance && typeof payload.utterance === 'object') {
         utterances.push(payload.utterance);
-      } else if (payload?.type === 'done' && typeof payload.duration_ms === 'number') {
-        doneDurationMs = payload.duration_ms;
+      } else if (payload?.type === 'frame' && payload.frame && typeof payload.frame.confidence === 'number') {
+        detectionFrames.push(payload.frame);
+        if (onStreamingFrame) {
+          const estDuration = Math.max(...detectionFrames.map(f => f.end_time_ms || 0));
+          onStreamingFrame(detectionFrames, estDuration);
+        }
+      } else if (payload?.type === 'done') {
+        doneDurationMs = typeof payload.duration_ms === 'number' ? payload.duration_ms : null;
+        resolveWithCurrentData();
+        ws.close();
       } else if (payload?.type === 'error') {
-        streamError = typeof payload.error === 'string' ? payload.error : 'Streaming transcription error';
+        streamError = typeof payload.error === 'string' ? payload.error : 'Streaming error';
+        // If we already have frames, resolve with what we have instead of failing
+        if (detectionFrames.length > 0) {
+          resolveWithCurrentData();
+        } else {
+          settleReject(new Error(streamError));
+        }
+        ws.close();
       }
     });
 
@@ -1836,41 +1911,24 @@ async function requestStreamingTranscription({ file, options, config }) {
         return;
       }
 
-      if (streamError) {
+      if (streamError && detectionFrames.length === 0 && utterances.length === 0) {
         settleReject(new Error(streamError));
         return;
       }
 
-      if (event.code !== 1000 && event.code !== 1005) {
+      if (event.code !== 1000 && event.code !== 1005 && detectionFrames.length === 0 && utterances.length === 0) {
         const reason = event.reason ? ` ${event.reason}` : '';
         settleReject(new Error(`Streaming connection closed unexpectedly (${event.code})${reason}`));
         return;
       }
 
-      const durationMs = doneDurationMs ?? getStreamingDurationFromUtterances(utterances);
-      const parsed = {
-        text: utterances
-          .map((utterance) => (typeof utterance?.text === 'string' ? utterance.text.trim() : ''))
-          .filter(Boolean)
-          .join(' '),
-        duration_ms: durationMs,
-        utterances,
-      };
-      const rawText = JSON.stringify(parsed);
-
-      settleResolve({
-        ok: true,
-        statusCode: 200,
-        statusText: 'OK',
-        parsed,
-        rawText,
-      });
+      resolveWithCurrentData();
     });
   });
 }
 
 function isStreamingModel(modelKey = modelEl.value) {
-  return modelKey === 'streaming';
+  return MODEL_CONFIG[modelKey]?.mode === 'streaming';
 }
 
 function stopMediaTracks() {
@@ -1896,6 +1954,12 @@ function startRecordingTimer() {
     const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
     const ss = String(elapsedSec % 60).padStart(2, '0');
     recordStatusEl.textContent = `Recording ${mm}:${ss}`;
+    const panelRecordStatusEl = document.getElementById('panel-record-status');
+    if (panelRecordStatusEl && isLiveDetectionModel()) {
+      panelRecordStatusEl.textContent = `Recording ${mm}:${ss}`;
+    }
+    const liveTimerEl = document.getElementById('live-record-timer');
+    if (liveTimerEl) liveTimerEl.textContent = `${mm}:${ss}`;
   }, 200);
 }
 
@@ -1906,6 +1970,15 @@ function updateRecordingUiState() {
   if (!isRecording) {
     recordStatusEl.textContent = 'Ready to record';
   }
+  // Also update panel record button for live detection mode
+  const panelRecordBtn = document.getElementById('panel-record-btn');
+  const panelRecordStatusEl = document.getElementById('panel-record-status');
+  if (panelRecordBtn && isLiveDetectionModel()) {
+    panelRecordBtn.textContent = isRecording ? 'Stop Recording' : 'Start Recording';
+  }
+  if (panelRecordStatusEl && isLiveDetectionModel()) {
+    panelRecordStatusEl.textContent = isRecording ? recordStatusEl.textContent : '';
+  }
 }
 
 function createRecordedFileFromChunks() {
@@ -1913,6 +1986,54 @@ function createRecordedFileFromChunks() {
   const blob = new Blob(recordedChunks, { type: mimeType });
   const ext = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('wav') ? 'wav' : 'webm';
   return new File([blob], `mic-recording-${Date.now()}.${ext}`, { type: mimeType });
+}
+
+// ── Live streaming detection state ──────────────────────────────────────────
+let liveDetectionWs = null;
+let liveDetectionFrames = [];
+let liveDetectionStartedAt = null;
+
+function isLiveDetectionModel(modelKey = modelEl.value) {
+  const config = MODEL_CONFIG[modelKey];
+  return config?.mode === 'streaming' && config?.type === 'detection';
+}
+
+function finalizeLiveDetection() {
+  if (!liveDetectionStartedAt) return;
+  const processingMs = Date.now() - liveDetectionStartedAt;
+  const modelKey = modelEl.value;
+  const config = MODEL_CONFIG[modelKey];
+  const framesCopy = [...liveDetectionFrames];
+  const durationMs = framesCopy.length > 0
+    ? Math.max(...framesCopy.map(f => f.end_time_ms || 0))
+    : null;
+  const parsed = { frames: framesCopy, duration_ms: durationMs };
+  const rawText = JSON.stringify(parsed);
+  const file = files[activeFileIndex]?.file;
+  const options = getRequestedOptions();
+  const payload = normalizeApiResponse({
+    modelKey, file, options, config,
+    statusCode: 200, statusText: 'OK', parsed, rawText, processingMs, ok: true,
+  });
+
+  const entry = files[activeFileIndex];
+  if (entry) {
+    entry.status = 'done';
+    entry.normalizedResponse = payload;
+    entry.rawPayload = payload;
+    entry.previewText = computePreviewText(payload);
+    updateTabStatus(activeFileIndex);
+  }
+  latestPayload = payload;
+  latestPreviewText = entry?.previewText || '';
+  renderJson(payload);
+  updateMetaFromResponse(payload, modelKey);
+  progressEstimatedMs = null;
+  updatePreview(payload);
+  recordStatusEl.textContent = 'Ready to record';
+
+  liveDetectionStartedAt = null;
+  liveDetectionFrames = [];
 }
 
 async function startRecording() {
@@ -1932,37 +2053,210 @@ async function startRecording() {
     recordedChunks = [];
     shouldSubmitRecording = true;
 
-    mediaRecorder.addEventListener('dataavailable', (event) => {
-      if (event.data && event.data.size > 0) {
-        recordedChunks.push(event.data);
-      }
-    });
+    // ── Live detection: stream raw PCM via Web Audio API ───────────────
+    if (isLiveDetectionModel()) {
+      const config = MODEL_CONFIG[modelEl.value];
+      const wsUrl = `${API_WS_BASE_URL}${config.endpoint}`;
+      liveDetectionWs = new WebSocket(wsUrl);
+      liveDetectionWs.binaryType = 'arraybuffer';
+      liveDetectionFrames = [];
+      liveDetectionStartedAt = Date.now();
 
-    mediaRecorder.addEventListener('stop', () => {
-      clearRecordingTimer();
-      updateRecordingUiState();
-
-      const submit = shouldSubmitRecording;
-      shouldSubmitRecording = false;
-      stopMediaTracks();
-      mediaRecorder = null;
-
-      if (!submit) {
-        recordedChunks = [];
-        return;
-      }
-
-      const recordedFile = createRecordedFileFromChunks();
-      recordedChunks = [];
-      if (recordedFile.size <= 0) {
-        recordStatusEl.textContent = 'No audio captured';
-        return;
-      }
-      recordStatusEl.textContent = 'Processing recording...';
-      // Reset files for recording (single-file streaming flow)
+      // Set up a placeholder file entry so the UI has something to show
+      const placeholderFile = new File([], `mic-recording-${Date.now()}.webm`, { type: mimeType || 'audio/webm' });
       files = []; activeFileIndex = -1;
-      addFiles([recordedFile]);
-    });
+      files.push({
+        file: placeholderFile,
+        model: modelEl.value,
+        options: getRequestedOptions(),
+        status: 'processing',
+        audioUrl: null,
+      });
+      activeFileIndex = 0;
+      renderFileTabs();
+      panelNewUploadEl.hidden = true;
+      viewerShellEl.hidden = false;
+      audioPlayerWrapEl.hidden = true;
+      // Keep top record zone hidden — stop button goes in the preview area
+      metaModelEl.textContent = config.fullName;
+      setStatus('Recording', 'processing');
+
+      // Show stop button + waiting message in the preview area
+      previewOutputEl.innerHTML =
+        '<div class="detection-score-card">' +
+          '<div class="live-detection-controls">' +
+            '<button id="live-stop-btn" class="record-btn recording" type="button">Stop recording</button>' +
+            '<span id="live-record-timer" class="record-status"></span>' +
+          '</div>' +
+          '<div class="det-title" style="color:var(--muted)">Waiting for first 4s window...</div>' +
+        '</div>';
+      document.getElementById('live-stop-btn')?.addEventListener('click', () => stopRecording());
+
+      // Set up raw PCM capture via AudioContext (16kHz mono int16 LE)
+      const audioCtx = new AudioContext({ sampleRate: 16000 });
+      const source = audioCtx.createMediaStreamSource(mediaStream);
+      const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+      // Silence node to prevent mic echo through speakers
+      const silencer = audioCtx.createGain();
+      silencer.gain.value = 0;
+
+      processor.onaudioprocess = (e) => {
+        if (liveDetectionWs?.readyState === WebSocket.OPEN) {
+          const float32 = e.inputBuffer.getChannelData(0);
+          const int16 = new Int16Array(float32.length);
+          for (let i = 0; i < float32.length; i++) {
+            int16[i] = Math.max(-32768, Math.min(32767, Math.round(float32[i] * 32767)));
+          }
+          liveDetectionWs.send(int16.buffer);
+        }
+      };
+      source.connect(processor);
+      processor.connect(silencer);
+      silencer.connect(audioCtx.destination);
+
+      // Store for cleanup
+      liveDetectionWs._audioCtx = audioCtx;
+      liveDetectionWs._processor = processor;
+      liveDetectionWs._source = source;
+
+      liveDetectionWs.addEventListener('message', async (event) => {
+        let text = '';
+        try {
+          if (typeof event.data === 'string') {
+            text = event.data;
+          } else if (event.data instanceof Blob) {
+            text = await event.data.text();
+          } else if (event.data instanceof ArrayBuffer) {
+            text = new TextDecoder().decode(event.data);
+          }
+        } catch { return; }
+        if (!text) return;
+        let msg;
+        try { msg = JSON.parse(text); } catch { return; }
+
+        if (msg?.type === 'frame' && msg.frame && typeof msg.frame.confidence === 'number') {
+          liveDetectionFrames.push(msg.frame);
+          const estDuration = Math.max(...liveDetectionFrames.map(f => f.end_time_ms || 0));
+          const score = liveDetectionFrames.reduce((s, f) => s + f.confidence, 0) / liveDetectionFrames.length;
+          renderDetectionPreview(score, estDuration, liveDetectionFrames);
+          // Re-inject stop button above chart during live recording
+          if (mediaRecorder?.state === 'recording') {
+            const card = previewOutputEl.querySelector('.detection-score-card');
+            if (card && !card.querySelector('#live-stop-btn')) {
+              const controls = document.createElement('div');
+              controls.className = 'live-detection-controls';
+              controls.innerHTML =
+                '<button id="live-stop-btn" class="record-btn recording" type="button">Stop recording</button>' +
+                '<span id="live-record-timer" class="record-status"></span>';
+              card.insertBefore(controls, card.firstChild);
+              controls.querySelector('#live-stop-btn').addEventListener('click', () => stopRecording());
+            }
+          }
+          setStatus(`Recording — ${liveDetectionFrames.length} chunks analyzed`, 'processing');
+        } else if (msg?.type === 'done') {
+          finalizeLiveDetection();
+          liveDetectionWs?.close();
+          liveDetectionWs = null;
+        } else if (msg?.type === 'error') {
+          if (liveDetectionFrames.length > 0) {
+            finalizeLiveDetection();
+          } else {
+            setStatus('Error', 'error');
+            previewOutputEl.innerHTML = `<span class="empty-hint">Streaming error: ${msg.error || 'Unknown'}</span>`;
+          }
+          liveDetectionWs?.close();
+          liveDetectionWs = null;
+        }
+      });
+
+      liveDetectionWs.addEventListener('error', () => {
+        if (liveDetectionFrames.length > 0) finalizeLiveDetection();
+        else setStatus('Error', 'error');
+        liveDetectionWs = null;
+      });
+
+      liveDetectionWs.addEventListener('close', () => {
+        if (liveDetectionStartedAt && liveDetectionFrames.length > 0) finalizeLiveDetection();
+        liveDetectionWs = null;
+      });
+
+      // Keep MediaRecorder running in parallel for playback file
+      mediaRecorder.addEventListener('dataavailable', (event) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunks.push(event.data);
+        }
+      });
+
+      mediaRecorder.addEventListener('stop', () => {
+        clearRecordingTimer();
+        updateRecordingUiState();
+
+        // 1. Stop sending PCM
+        if (liveDetectionWs?._processor) {
+          liveDetectionWs._processor.disconnect();
+          liveDetectionWs._source.disconnect();
+        }
+
+        // 2. Signal end of stream, then close
+        if (liveDetectionWs?.readyState === WebSocket.OPEN) {
+          liveDetectionWs.send('');
+          liveDetectionWs.close();
+        }
+
+        // 3. Clean up
+        stopMediaTracks();
+        if (liveDetectionWs?._audioCtx) liveDetectionWs._audioCtx.close().catch(() => {});
+        liveDetectionWs = null;
+
+        // 4. Build playback file
+        const recordedFile = createRecordedFileFromChunks();
+        recordedChunks = [];
+        if (files[activeFileIndex]) {
+          files[activeFileIndex].file = recordedFile;
+          files[activeFileIndex].audioUrl = URL.createObjectURL(recordedFile);
+          setPlayerSrc(files[activeFileIndex]);
+          audioPlayerWrapEl.hidden = false;
+        }
+        mediaRecorder = null;
+
+        // 5. Finalize immediately with whatever frames we have
+        finalizeLiveDetection();
+      });
+
+    } else {
+      // ── Standard STT streaming: record then send ──────────────────────
+      mediaRecorder.addEventListener('dataavailable', (event) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunks.push(event.data);
+        }
+      });
+
+      mediaRecorder.addEventListener('stop', () => {
+        clearRecordingTimer();
+        updateRecordingUiState();
+
+        const submit = shouldSubmitRecording;
+        shouldSubmitRecording = false;
+        stopMediaTracks();
+        mediaRecorder = null;
+
+        if (!submit) {
+          recordedChunks = [];
+          return;
+        }
+
+        const recordedFile = createRecordedFileFromChunks();
+        recordedChunks = [];
+        if (recordedFile.size <= 0) {
+          recordStatusEl.textContent = 'No audio captured';
+          return;
+        }
+        recordStatusEl.textContent = 'Processing recording...';
+        // Reset files for recording (single-file streaming flow)
+        files = []; activeFileIndex = -1;
+        addFiles([recordedFile]);
+      });
+    }
 
     mediaRecorder.start(200);
     startRecordingTimer();
@@ -1974,6 +2268,19 @@ async function startRecording() {
 }
 
 function stopRecording(cancel = false) {
+  // Clean up live detection WS on cancel
+  if (cancel && liveDetectionWs) {
+    if (liveDetectionWs._processor) {
+      liveDetectionWs._processor.disconnect();
+      liveDetectionWs._source.disconnect();
+      liveDetectionWs._audioCtx.close();
+    }
+    liveDetectionWs.close();
+    liveDetectionWs = null;
+    liveDetectionStartedAt = null;
+    liveDetectionFrames = [];
+  }
+
   if (!mediaRecorder || mediaRecorder.state !== 'recording') {
     if (cancel) {
       shouldSubmitRecording = false;
@@ -2110,6 +2417,7 @@ const UPLOAD_FORMATS_RAW = {
   'batch': { formats: ['AAC', 'AIFF', 'FLAC', 'MP3', 'MP4', 'MOV', 'OGG', 'Opus', 'WAV', 'WebM'], note: 'up to 100 MB' },
   'streaming': { formats: ['AAC', 'AIFF', 'FLAC', 'MP3', 'MP4', 'MOV', 'OGG', 'Opus', 'WAV', 'WebM'], note: '' },
   'deepfake': { formats: ['AAC', 'AIFF', 'FLAC', 'MOV', 'MP3', 'MP4', 'OGG', 'Opus', 'WAV', 'WebM'], note: 'up to 100 MB' },
+  'deepfake-streaming': { formats: [], note: 'Record from microphone' },
 };
 function formatUploadFormats(key) {
   const { formats, note } = UPLOAD_FORMATS_RAW[key] || UPLOAD_FORMATS_RAW.batch;
@@ -2119,9 +2427,49 @@ function formatUploadFormats(key) {
 
 function updateInputWidgetForModel(modelKey) {
   const streaming = isStreamingModel(modelKey);
+  const liveDetection = isLiveDetectionModel(modelKey);
+  const panelRecordZone = document.getElementById('panel-record-zone');
+  const panelDivider = document.querySelector('.panel-upload-divider');
+  const panelRecordBtn = document.getElementById('panel-record-btn');
+  const panelRecordStatusEl = document.getElementById('panel-record-status');
 
-  recordZoneEl.hidden = !streaming;
-  recordZoneEl.style.display = streaming ? 'grid' : 'none';
+  // For live detection streaming: hide top record widget, hide drop zone,
+  // make the panel record zone the sole input with a big prominent button
+  if (liveDetection) {
+    recordZoneEl.hidden = true;
+    recordZoneEl.style.display = 'none';
+    panelDropZoneEl.style.display = 'none';
+    if (panelDivider) panelDivider.style.display = 'none';
+    if (panelRecordZone) {
+      panelRecordZone.hidden = false;
+      panelRecordZone.style.minHeight = '180px';
+      panelRecordZone.style.justifyContent = 'center';
+    }
+    if (panelRecordBtn) {
+      panelRecordBtn.textContent = 'Start Recording';
+      panelRecordBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (mediaRecorder?.state === 'recording') {
+          stopRecording();
+        } else {
+          startRecording();
+        }
+      };
+    }
+    if (panelRecordStatusEl) panelRecordStatusEl.textContent = '';
+  } else {
+    // Restore normal layout
+    panelDropZoneEl.style.display = '';
+    if (panelDivider) panelDivider.style.display = '';
+    if (panelRecordZone) {
+      panelRecordZone.style.minHeight = '';
+      panelRecordZone.style.justifyContent = '';
+      if (panelRecordBtn) panelRecordBtn.onclick = null;
+    }
+
+    recordZoneEl.hidden = !streaming;
+    recordZoneEl.style.display = streaming ? 'grid' : 'none';
+  }
 
   if (panelUploadFormatsEl) {
     panelUploadFormatsEl.innerHTML = formatUploadFormats(modelKey);
@@ -2256,7 +2604,7 @@ function updateMetaFromResponse(data, fallbackModel) {
   if (metaDetectionScoreEl) {
     const score = data?.meta?.detectionScore;
     if (data?.modelType === 'detection' && typeof score === 'number') {
-      metaDetectionScoreEl.textContent = `${(score * 100).toFixed(1)}%`;
+      metaDetectionScoreEl.textContent = formatConfidenceLabel(score);
     } else {
       metaDetectionScoreEl.textContent = '—';
     }
@@ -2406,11 +2754,10 @@ audioPlayerEl.addEventListener('timeupdate', () => {
       // Update data label at top of playhead
       const label = playhead.querySelector('.det-playhead-label');
       if (label) {
-        const rawPct = (f.synthetic_voice_prob * 100).toFixed(0);
-        const smoothPct = (f.smoothed * 100).toFixed(0);
+        const certaintyPct = (confidenceToCertainty(f.confidence) * 100).toFixed(0);
         const timeS = (currentMs / 1000).toFixed(1);
-        label.textContent = `${timeS}s · ${rawPct}%`;
-        label.style.color = scoreToColor(f.synthetic_voice_prob);
+        label.textContent = `${timeS}s · ${f.confidence >= 0.5 ? 'Syn' : 'Real'} ${certaintyPct}%`;
+        label.style.color = scoreToColor(f.confidence);
       }
     }
   }

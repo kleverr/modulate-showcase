@@ -59,12 +59,13 @@ function sanitizeFilename(name) {
 const ALLOWED_ENDPOINTS = new Set([
   '/api/velma-2-stt-batch',
   '/api/velma-2-stt-batch-english-vfast',
-  '/api/velma-2-synthetic-voice-detection',
+  '/api/velma-2-synthetic-voice-detection-batch',
 ]);
 
 // Per-endpoint upstream base URL overrides (defaults to API_BASE_URL)
 const ENDPOINT_BASE_URL = {
-  '/api/velma-2-synthetic-voice-detection': 'http://54.147.23.177:8080',
+  '/api/velma-2-synthetic-voice-detection-batch': 'http://54.147.23.177:8080',
+  '/api/velma-2-synthetic-voice-detection-streaming': 'http://54.147.23.177:8080',
 };
 
 // ── Usage endpoint ───────────────────────────────────────────────────────────
@@ -155,7 +156,7 @@ app.post('/api/:path(*)', handleUpload, async (req, res) => {
     const upstreamRes = await fetch(`${baseUrl}${endpoint}`, {
       method: 'POST',
       headers: {
-        'X-API-Key': API_KEY,
+        'X-API-KEY': API_KEY,
         'Content-Type': `multipart/form-data; boundary=${boundary}`,
       },
       body,
@@ -197,7 +198,12 @@ const wss = new WebSocketServer({ noServer: true });
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
 
-  if (url.pathname !== '/api/velma-2-stt-streaming') {
+  const ALLOWED_WS_PATHS = new Set([
+    '/api/velma-2-stt-streaming',
+    '/api/velma-2-synthetic-voice-detection-streaming',
+  ]);
+
+  if (!ALLOWED_WS_PATHS.has(url.pathname)) {
     socket.destroy();
     return;
   }
@@ -216,27 +222,38 @@ server.on('upgrade', (req, socket, head) => {
   }
 
   // Record request before proxying
-  insertRequest(ip, '/api/velma-2-stt-streaming', null, null);
+  insertRequest(ip, url.pathname, null, null);
 
   wss.handleUpgrade(req, socket, head, (clientWs) => {
     // Build upstream URL with API key and client's params
     const upstreamParams = new URLSearchParams(url.searchParams);
     upstreamParams.set('api_key', API_KEY);
-    const upstreamUrl = `${API_WS_BASE_URL}/api/velma-2-stt-streaming?${upstreamParams.toString()}`;
+    const wsBaseOverride = ENDPOINT_BASE_URL[url.pathname]
+      ? ENDPOINT_BASE_URL[url.pathname].replace(/^https:\/\//i, 'wss://').replace(/^http:\/\//i, 'ws://')
+      : API_WS_BASE_URL;
+    const upstreamUrl = `${wsBaseOverride}${url.pathname}?${upstreamParams.toString()}`;
 
     const upstreamWs = new WebSocket(upstreamUrl);
+    const pendingMessages = [];
 
-    upstreamWs.on('open', () => {
-      clientWs.on('message', (data) => {
-        if (upstreamWs.readyState === WebSocket.OPEN) {
-          upstreamWs.send(data);
-        }
-      });
+    clientWs.on('message', (data) => {
+      if (upstreamWs.readyState === WebSocket.OPEN) {
+        upstreamWs.send(data);
+      } else {
+        pendingMessages.push(data);
+      }
     });
 
-    upstreamWs.on('message', (data) => {
+    upstreamWs.on('open', () => {
+      for (const msg of pendingMessages) {
+        upstreamWs.send(msg);
+      }
+      pendingMessages.length = 0;
+    });
+
+    upstreamWs.on('message', (data, isBinary) => {
       if (clientWs.readyState === WebSocket.OPEN) {
-        clientWs.send(data);
+        clientWs.send(data, { binary: isBinary });
       }
     });
 
