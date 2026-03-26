@@ -171,7 +171,7 @@ const MODEL_CONFIG = {
     ratePerHourUsd: 0.25,
     mode: 'batch',
     type: 'detection',
-    speedFactor: 10,
+    speedFactor: 80,
     unsupported: new Set(['utterances', 'speakers', 'languages', 'emotions', 'accents', 'pii_tags', 'options']),
   },
   'deepfake-streaming': {
@@ -914,7 +914,8 @@ function updateStatsRowVisibility(modelKey) {
     if (row) row.hidden = isDetection;
   }
 
-  if (rowDetectionScoreEl) rowDetectionScoreEl.hidden = !isDetection;
+  // Detection score row is no longer shown — verdict is in the preview chart
+  if (rowDetectionScoreEl) rowDetectionScoreEl.hidden = true;
 }
 
 function formatRequestedOptions(options, modelKey) {
