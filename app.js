@@ -185,6 +185,9 @@ const MODEL_CONFIG = {
   },
 };
 
+const MAX_RECORDING_MS = 5 * 60 * 1000; // 5-minute hard cap on recording
+const WS_STREAM_TIMEOUT_MS = 5 * 60 * 1000; // 5-minute hard cap on WebSocket streams
+
 let latestPayload = null;
 let playerCurrentSrc = '';
 let activeUtteranceEl = null;
@@ -196,6 +199,7 @@ let recordedChunks = [];
 let recordingStartedAt = 0;
 let recordingTimerId = null;
 let shouldSubmitRecording = false;
+let recordingMaxTimerId = null;
 
 // ── Multi-file state ──────────────────────────────────────────────────────────
 const fileTabsBarEl = document.getElementById('file-tabs-bar');
@@ -221,7 +225,9 @@ function createFileEntry(file) {
 function computePreviewText(payload) {
   if (payload?.modelType === 'detection') {
     const score = payload?.meta?.detectionScore;
-    return typeof score === 'number' ? formatConfidenceLabel(score) : '';
+    if (score && typeof score === 'object') return formatConfidenceLabel(score.synthetic, score.confidence);
+    if (typeof score === 'number') return formatConfidenceLabel(score);
+    return '';
   }
   const utterances = Array.isArray(payload?.result?.utterances) ? payload.result.utterances : [];
   if (utterances.length) return buildTranscriptCopyFromUtterances(utterances);
@@ -585,10 +591,7 @@ async function runWithFileAtIndex(i) {
     const onStreamingFrame = (config.type === 'detection' && config.mode === 'streaming')
       ? (frames, durationMs) => {
           if (i === activeFileIndex) {
-            const score = frames.length > 0
-              ? frames.reduce((sum, f) => sum + (f.confidence || 0), 0) / frames.length
-              : null;
-            renderDetectionPreview(score, durationMs, frames);
+            renderDetectionPreview(null, durationMs, frames);
           }
         }
       : null;
@@ -1199,20 +1202,42 @@ function smoothFrameScores(frames, windowSize = 5) {
 }
 
 // ── Heatmap color helper ───────────────────────────────────────────────────
-// confidence is P(synthetic): 0=definitely real, 1=definitely synthetic, 0.5=uncertain
-function scoreToColor(score) {
-  const hue = (1 - score) * 120; // 120=green → 0=red
-  return `hsl(${hue}, 80%, 45%)`;
+// Maps (synthetic_voice, confidence) to a color.
+// Uses exponential ramp so 90% is visually distinct from 100%.
+function scoreToColor(isSynthetic, confidence) {
+  // Exponential ramp: spread out high-confidence values
+  // pow(conf, 0.4) makes 0.9→0.96, 1.0→1.0 more distinguishable
+  const t = Math.pow(confidence, 0.4);
+  if (isSynthetic) {
+    // Red channel: lightness goes from 65% (low conf) to 38% (high conf)
+    const l = 65 - t * 27;
+    return `hsl(4, 80%, ${l}%)`;
+  } else {
+    const l = 65 - t * 27;
+    return `hsl(145, 65%, ${l}%)`;
+  }
 }
 
-// Certainty: how far from the 0.5 decision boundary (0%=uncertain, 100%=certain)
-function confidenceToCertainty(confidence) {
-  return Math.abs(confidence - 0.5) * 2;
+// Legacy: convert old-format P(synthetic) confidence to new-format fields
+function legacyToNewFormat(f) {
+  if (typeof f.synthetic_voice === 'boolean') return f;
+  return {
+    ...f,
+    synthetic_voice: f.confidence >= 0.5,
+    confidence: Math.abs(f.confidence - 0.5) * 2,
+  };
 }
 
-function formatConfidenceLabel(confidence) {
-  const certaintyPct = (confidenceToCertainty(confidence) * 100).toFixed(0);
-  if (confidence >= 0.5) return `Synthetic (${certaintyPct}% certain)`;
+function formatConfidenceLabel(isSyntheticOrScore, confidence) {
+  // New format: (boolean, number)
+  if (typeof isSyntheticOrScore === 'boolean') {
+    const pct = (confidence * 100).toFixed(0);
+    return isSyntheticOrScore ? `Synthetic (${pct}%)` : `Real (${pct}%)`;
+  }
+  // Legacy format: single P(synthetic) score
+  const score = isSyntheticOrScore;
+  const certaintyPct = (Math.abs(score - 0.5) * 2 * 100).toFixed(0);
+  if (score >= 0.5) return `Synthetic (${certaintyPct}% certain)`;
   return `Real (${certaintyPct}% certain)`;
 }
 
@@ -1231,34 +1256,25 @@ function renderDetectionPreview(score, durationMs, frames) {
     return;
   }
 
-  // Normalize frame times to ms
-  const normalizedFrames = frames.map(f => ({
-    ...f,
-    startMs: f.start_time_ms ?? (f.start_time_s != null ? f.start_time_s * 1000 : 0),
-    endMs: f.end_time_ms ?? (f.end_time_s != null ? f.end_time_s * 1000 : 0),
-  }));
+  // Normalize frame times to ms and convert legacy format
+  const normalizedFrames = frames.map(f => {
+    const nf = legacyToNewFormat(f);
+    return {
+      ...nf,
+      startMs: nf.start_time_ms ?? (nf.start_time_s != null ? nf.start_time_s * 1000 : 0),
+      endMs: nf.end_time_ms ?? (nf.end_time_s != null ? nf.end_time_s * 1000 : 0),
+    };
+  });
 
-  // Smooth scores
+  // Smooth scores (confidence is now 0-1 certainty, not P(synthetic))
   const smoothed = smoothFrameScores(normalizedFrames);
   const totalDurationMs = durationMs || Math.max(...smoothed.map(f => f.endMs));
 
   // Store for playback sync
   currentDetectionData = { smoothed, totalDurationMs };
 
-  // ── Verdict: use API's synthetic_voice boolean when available ───────────
-  const hasBooleans = smoothed.some(f => typeof f.synthetic_voice === 'boolean');
-  let isDeepfake;
-  if (hasBooleans) {
-    const syntheticCount = smoothed.filter(f => f.synthetic_voice === true).length;
-    isDeepfake = syntheticCount >= 2;
-  } else {
-    // Fallback: threshold-based on confidence scores
-    const raw = smoothed.map(f => f.confidence);
-    const above95 = raw.filter(s => s >= 0.95).length;
-    const above92 = raw.filter(s => s >= 0.92).length;
-    const above90 = raw.filter(s => s >= 0.90).length;
-    isDeepfake = above95 >= 2 || above92 >= 3 || above90 >= 5;
-  }
+  // ── Verdict: deepfake if ANY clip is synthetic with 90%+ confidence ────
+  const isDeepfake = smoothed.some(f => f.synthetic_voice && f.confidence >= 0.90);
   const verdictHtml = isDeepfake
     ? `<div class="det-title det-title-fake">Deepfake Detected</div>`
     : `<div class="det-title det-title-real">No Deepfake</div>`;
@@ -1306,12 +1322,13 @@ function renderDetectionPreview(score, durationMs, frames) {
     const maxBarH = h;
     const minBarH = 3; // minimum height so 0% scores remain visible
 
-    // ── Histogram bars (raw values, colored by raw score) ────────────────
+    // ── Histogram bars (confidence height, colored by verdict) ──────────
     smoothed.forEach((f, i) => {
       const x = i * barW;
       const rawH = Math.max(minBarH, f.confidence * maxBarH);
-      const hue = (1 - f.confidence) * 120;
-      ctx.fillStyle = `hsla(${hue}, 70%, 48%, 0.5)`;
+      const color = scoreToColor(f.synthetic_voice, f.confidence);
+      // Parse hsl to add alpha
+      ctx.fillStyle = color.replace('hsl(', 'hsla(').replace(')', ', 0.55)');
       ctx.fillRect(x, h - rawH, barW, rawH);
     });
 
@@ -1386,7 +1403,7 @@ function renderDetectionPreview(score, durationMs, frames) {
     const endS = (f.endMs / 1000).toFixed(1);
     tooltip.innerHTML =
       `<strong>${startS}s – ${endS}s</strong><br>` +
-      formatConfidenceLabel(f.confidence);
+      formatConfidenceLabel(f.synthetic_voice, f.confidence);
     tooltip.style.opacity = '1';
     const tooltipX = idx * (barW + barGap) + barW / 2;
     tooltip.style.left = `${Math.max(0, Math.min(tooltipX - 60, (canvas._chartW || 300) - 140))}px`;
@@ -1405,27 +1422,27 @@ function renderDetectionPreview(score, durationMs, frames) {
     if (audioPlayerEl.paused) audioPlayerEl.play();
   });
 
-  // ── Per-segment rows — tight inline layout, no table gaps ──────────────
+  // ── Per-segment rows — two columns side by side ────────────────────────
   const tableWrap = card.querySelector('.det-segment-table-wrap');
   const rows = smoothed.map(f => {
-    const fColor = scoreToColor(f.confidence);
+    const fColor = scoreToColor(f.synthetic_voice, f.confidence);
     const startS = (f.startMs / 1000).toFixed(1);
     const endS = (f.endMs / 1000).toFixed(1);
-    const certaintyPct = (confidenceToCertainty(f.confidence) * 100).toFixed(0);
-    const verdictTag = f.confidence >= 0.5
+    const pct = (f.confidence * 100).toFixed(0);
+    const verdictTag = f.synthetic_voice
       ? `<span class="det-row-verdict det-verdict-fake">Synthetic</span>`
       : `<span class="det-row-verdict det-verdict-real">Real</span>`;
     return `<div class="det-row">` +
       `<span class="det-row-time">${startS}s–${endS}s</span>` +
       verdictTag +
-      `<span class="det-row-pct" style="color:${fColor}">${certaintyPct}%</span>` +
+      `<span class="det-row-pct" style="color:${fColor}">${pct}%</span>` +
       `</div>`;
   }).join('');
   tableWrap.innerHTML =
     `<div class="det-segment-header">` +
       `<span>Time</span>` +
       `<span>Verdict</span>` +
-      `<span>Certainty</span>` +
+      `<span>Confidence</span>` +
     `</div>` + rows;
 }
 
@@ -1455,7 +1472,11 @@ function updatePreview(payload) {
   // Detection model — render avg score gauge + per-segment frames
   if (payload?.modelType === 'detection') {
     const score = payload?.meta?.detectionScore;
-    latestPreviewText = typeof score === 'number' ? formatConfidenceLabel(score) : '';
+    if (score && typeof score === 'object') {
+      latestPreviewText = formatConfidenceLabel(score.synthetic, score.confidence);
+    } else {
+      latestPreviewText = typeof score === 'number' ? formatConfidenceLabel(score) : '';
+    }
     if (payload?.success) {
       renderDetectionPreview(score, payload?.meta?.audioDurationMs, payload?.meta?.detectionFrames);
     } else {
@@ -1716,7 +1737,17 @@ function normalizeApiResponse({ modelKey, file, options, config, statusCode, sta
       languageCount: transcriptMeta.languageCount,
       languages: transcriptMeta.languages,
       detectionScore: Array.isArray(parsed?.frames) && parsed.frames.length > 0
-        ? parsed.frames.reduce((sum, f) => sum + (f.confidence || 0), 0) / parsed.frames.length
+        ? (() => {
+            // New format: synthetic_voice boolean + confidence
+            const fs = parsed.frames.map(legacyToNewFormat);
+            const hasSynthetic = fs.some(f => f.synthetic_voice && f.confidence >= 0.90);
+            if (hasSynthetic) {
+              const maxConf = Math.max(...fs.filter(f => f.synthetic_voice).map(f => f.confidence));
+              return { synthetic: true, confidence: maxConf };
+            }
+            const avgConf = fs.reduce((s, f) => s + f.confidence, 0) / fs.length;
+            return { synthetic: false, confidence: avgConf };
+          })()
         : null,
       detectionFrames: Array.isArray(parsed?.frames) ? parsed.frames : null,
     },
@@ -1823,13 +1854,26 @@ async function requestStreamingTranscription({ file, options, config, onStreamin
     const settleResolve = (payload) => {
       if (settled) return;
       settled = true;
+      clearTimeout(wsTimeoutId);
       resolve(payload);
     };
     const settleReject = (error) => {
       if (settled) return;
       settled = true;
+      clearTimeout(wsTimeoutId);
       reject(error);
     };
+
+    // Hard timeout: close WS and resolve with whatever we have after 5 min
+    const wsTimeoutId = setTimeout(() => {
+      if (settled) return;
+      if (detectionFrames.length > 0 || utterances.length > 0) {
+        resolveWithCurrentData();
+      } else {
+        settleReject(new Error('Streaming timed out after 5 minutes'));
+      }
+      ws.close();
+    }, WS_STREAM_TIMEOUT_MS);
 
     function resolveWithCurrentData() {
       let parsed;
@@ -1944,23 +1988,40 @@ function clearRecordingTimer() {
     clearInterval(recordingTimerId);
     recordingTimerId = null;
   }
+  if (recordingMaxTimerId) {
+    clearTimeout(recordingMaxTimerId);
+    recordingMaxTimerId = null;
+  }
 }
 
 function startRecordingTimer() {
   clearRecordingTimer();
   recordingStartedAt = Date.now();
+  const maxSec = Math.floor(MAX_RECORDING_MS / 1000);
+  const maxMm = String(Math.floor(maxSec / 60)).padStart(2, '0');
+  const maxSs = String(maxSec % 60).padStart(2, '0');
+  const maxLabel = `${maxMm}:${maxSs}`;
   recordingTimerId = setInterval(() => {
     const elapsedSec = Math.floor((Date.now() - recordingStartedAt) / 1000);
     const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
     const ss = String(elapsedSec % 60).padStart(2, '0');
-    recordStatusEl.textContent = `Recording ${mm}:${ss}`;
+    const label = `Recording ${mm}:${ss} / ${maxLabel}`;
+    recordStatusEl.textContent = label;
     const panelRecordStatusEl = document.getElementById('panel-record-status');
     if (panelRecordStatusEl && isLiveDetectionModel()) {
-      panelRecordStatusEl.textContent = `Recording ${mm}:${ss}`;
+      panelRecordStatusEl.textContent = label;
     }
     const liveTimerEl = document.getElementById('live-record-timer');
-    if (liveTimerEl) liveTimerEl.textContent = `${mm}:${ss}`;
+    if (liveTimerEl) liveTimerEl.textContent = `${mm}:${ss} / ${maxLabel}`;
   }, 200);
+
+  // Hard cap: auto-stop after MAX_RECORDING_MS
+  clearTimeout(recordingMaxTimerId);
+  recordingMaxTimerId = setTimeout(() => {
+    if (mediaRecorder?.state === 'recording') {
+      stopRecording(false);
+    }
+  }, MAX_RECORDING_MS);
 }
 
 function updateRecordingUiState() {
@@ -2137,8 +2198,7 @@ async function startRecording() {
         if (msg?.type === 'frame' && msg.frame && typeof msg.frame.confidence === 'number') {
           liveDetectionFrames.push(msg.frame);
           const estDuration = Math.max(...liveDetectionFrames.map(f => f.end_time_ms || 0));
-          const score = liveDetectionFrames.reduce((s, f) => s + f.confidence, 0) / liveDetectionFrames.length;
-          renderDetectionPreview(score, estDuration, liveDetectionFrames);
+          renderDetectionPreview(null, estDuration, liveDetectionFrames);
           // Re-inject stop button above chart during live recording
           if (mediaRecorder?.state === 'recording') {
             const card = previewOutputEl.querySelector('.detection-score-card');
@@ -2603,7 +2663,9 @@ function updateMetaFromResponse(data, fallbackModel) {
   // Detection score
   if (metaDetectionScoreEl) {
     const score = data?.meta?.detectionScore;
-    if (data?.modelType === 'detection' && typeof score === 'number') {
+    if (data?.modelType === 'detection' && score && typeof score === 'object') {
+      metaDetectionScoreEl.textContent = formatConfidenceLabel(score.synthetic, score.confidence);
+    } else if (data?.modelType === 'detection' && typeof score === 'number') {
       metaDetectionScoreEl.textContent = formatConfidenceLabel(score);
     } else {
       metaDetectionScoreEl.textContent = '—';
@@ -2754,10 +2816,10 @@ audioPlayerEl.addEventListener('timeupdate', () => {
       // Update data label at top of playhead
       const label = playhead.querySelector('.det-playhead-label');
       if (label) {
-        const certaintyPct = (confidenceToCertainty(f.confidence) * 100).toFixed(0);
+        const pct = (f.confidence * 100).toFixed(0);
         const timeS = (currentMs / 1000).toFixed(1);
-        label.textContent = `${timeS}s · ${f.confidence >= 0.5 ? 'Syn' : 'Real'} ${certaintyPct}%`;
-        label.style.color = scoreToColor(f.confidence);
+        label.textContent = `${timeS}s · ${f.synthetic_voice ? 'Syn' : 'Real'} ${pct}%`;
+        label.style.color = scoreToColor(f.synthetic_voice, f.confidence);
       }
     }
   }

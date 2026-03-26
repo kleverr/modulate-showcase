@@ -236,6 +236,15 @@ server.on('upgrade', (req, socket, head) => {
     const upstreamWs = new WebSocket(upstreamUrl);
     const pendingMessages = [];
 
+    // Hard timeout: close both sides after 5 minutes to prevent zombie connections
+    const WS_PROXY_TIMEOUT_MS = 5 * 60 * 1000;
+    const proxyTimeout = setTimeout(() => {
+      if (clientWs.readyState === WebSocket.OPEN) clientWs.close(1000, 'Timeout');
+      if (upstreamWs.readyState === WebSocket.OPEN) upstreamWs.close();
+    }, WS_PROXY_TIMEOUT_MS);
+
+    const clearProxyTimeout = () => clearTimeout(proxyTimeout);
+
     clientWs.on('message', (data) => {
       if (upstreamWs.readyState === WebSocket.OPEN) {
         upstreamWs.send(data);
@@ -258,12 +267,14 @@ server.on('upgrade', (req, socket, head) => {
     });
 
     upstreamWs.on('close', (code, reason) => {
+      clearProxyTimeout();
       if (clientWs.readyState === WebSocket.OPEN) {
         clientWs.close(code, reason);
       }
     });
 
     upstreamWs.on('error', (err) => {
+      clearProxyTimeout();
       console.error('Upstream WS error:', err.message);
       if (clientWs.readyState === WebSocket.OPEN) {
         clientWs.close(1011, 'Upstream error');
@@ -271,12 +282,14 @@ server.on('upgrade', (req, socket, head) => {
     });
 
     clientWs.on('close', () => {
+      clearProxyTimeout();
       if (upstreamWs.readyState === WebSocket.OPEN) {
         upstreamWs.close();
       }
     });
 
     clientWs.on('error', (err) => {
+      clearProxyTimeout();
       console.error('Client WS error:', err.message);
       if (upstreamWs.readyState === WebSocket.OPEN) {
         upstreamWs.close();

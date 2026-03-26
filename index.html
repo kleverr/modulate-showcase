@@ -990,7 +990,7 @@
         font-size: 0.95rem;
         font-weight: 700;
         letter-spacing: -0.01em;
-        margin: 0 0 1px;
+        margin: 0 0 8px;
       }
       .det-title-fake { color: hsl(0, 75%, 45%); }
       .det-title-real { color: hsl(120, 60%, 38%); }
@@ -1094,8 +1094,8 @@
         gap: 5px;
       }
       .det-segment-header span:first-child { width: 90px; flex-shrink: 0; }
-      .det-segment-header span:nth-child(2) { min-width: 55px; }
-      .det-segment-header span:last-child { min-width: 38px; text-align: right; }
+      .det-segment-header span:nth-child(2) { width: 60px; flex-shrink: 0; text-align: center; }
+      .det-segment-header span:last-child { min-width: 50px; text-align: right; }
 
       .det-row {
         display: flex;
@@ -1103,6 +1103,7 @@
         font-size: 0.75rem;
         line-height: 1.4;
         font-variant-numeric: tabular-nums;
+        gap: 5px;
       }
       .det-row-time {
         width: 90px;
@@ -1125,13 +1126,15 @@
       }
       .det-row-pct {
         font-weight: 600;
-        min-width: 38px;
+        min-width: 50px;
         text-align: right;
       }
       .det-row-verdict {
         font-size: 0.65rem;
         font-weight: 600;
-        margin-left: 6px;
+        width: 60px;
+        flex-shrink: 0;
+        text-align: center;
         padding: 0 4px;
         border-radius: 3px;
         white-space: nowrap;
