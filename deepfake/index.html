@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Velma Deepfake Detect | Modulate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Tokens ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  font-size: 100%;
+
+  --text-color:    rgb(30, 30, 35);
+  --text-caption:  rgb(120, 120, 140);
+  --text-inverted: rgb(242, 242, 246);
+  --bg:            #ffffff;
+  --bg-surface:    rgb(245, 245, 248);
+  --bg-accent:     rgb(20, 20, 50);
+  --bg-hover:      rgb(40, 95, 235);
+  --ui-border:     rgb(220, 220, 230);
+  --ui-success:    rgb(21, 207, 135);
+  --ui-error:      rgb(255, 53, 84);
+  --purple:        rgb(124, 58, 237);
+  --purple-light:  rgb(196, 167, 255);
+
+  --radius-s:  0.3rem;
+  --radius-m:  0.5rem;
+  --radius-l:  0.75rem;
+  --radius-xl: 1rem;
+
+  --space-xxs: 0.3rem;
+  --space-xs:  0.7rem;
+  --space-s:   0.9rem;
+  --space-m:   1.2rem;
+  --space-l:   2.4rem;
+  --space-xl:  4.8rem;
+
+  --font-xs:   0.8rem;
+  --font-s:    0.9rem;
+  --font-m:    1rem;
+  --font-l:    1.125rem;
+  --font-xl:   1.25rem;
+  --font-xxl:  1.5rem;
+
+  --hover-in:  0s;
+  --hover-out: 0.3s ease;
+}
+
+body {
+  font-family: "Inter", -apple-system, "Segoe UI", sans-serif;
+  color: var(--text-color);
+  background: var(--bg);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Layout Shell ────────────────────────────────────────────────────── */
+.page {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 var(--space-m);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+.header {
+  padding: var(--space-m) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+  color: var(--text-color);
+}
+
+.header-logo svg { height: 1.4rem; width: auto; flex-shrink: 0; }
+
+.header-wordmark {
+  font-size: var(--font-s);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.file-input { display: none; }
+
+/* ── Analysis Progress Overlay ───────────────────────────────────────── */
+.analysis-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-m);
+}
+
+.analysis-overlay.visible { display: flex; }
+
+.analysis-overlay h3 {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--bg-accent);
+}
+
+.analysis-overlay p {
+  font-size: var(--font-s);
+  color: var(--text-caption);
+}
+
+.progress-track {
+  width: 320px;
+  height: 6px;
+  background: var(--ui-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--purple);
+  border-radius: 3px;
+  transition: width 0.3s linear;
+}
+
+/* ── Action bar: upload dropzone + record ────────────────────────────── */
+.results-actions {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-l);
+}
+
+.results-action {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.4rem;
+  font-size: var(--font-s);
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-color);
+  background: var(--bg-surface);
+  border: 1.5px solid var(--ui-border);
+  border-radius: var(--radius-m);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+.results-action:hover {
+  border-color: var(--purple-light);
+  background: color-mix(in srgb, var(--purple) 4%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--purple) 8%, transparent);
+}
+
+.results-action svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--purple);
+  flex-shrink: 0;
+}
+
+/* Upload action is also a dropzone — bigger */
+.results-action-upload {
+  padding: 0.7rem 1.8rem;
+}
+
+.results-action-upload.drag-over {
+  border-color: var(--purple);
+  background: color-mix(in srgb, var(--purple) 8%, transparent);
+}
+
+.results-action-disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
+.soon-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-caption);
+  background: var(--ui-border);
+  padding: 0.1rem 0.4rem;
+  border-radius: 2rem;
+  line-height: 1.3;
+}
+
+.results-action .file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* ── Results Layout ─────────────────────────────────────────────────── */
+.results-section {
+  margin-bottom: var(--space-xl);
+}
+
+.results-layout {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: var(--space-l);
+  align-items: start;
+}
+
+.results-main { min-width: 0; }
+
+.results-filename {
+  font-size: var(--font-xxl);
+  font-weight: 700;
+  color: var(--bg-accent);
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-m);
+  word-break: break-word;
+}
+
+/* Audio Player — sticky */
+.results-player {
+  width: 100%;
+  margin-bottom: var(--space-l);
+  border-radius: var(--radius-m);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+  padding: var(--space-xs) 0;
+}
+
+.results-player audio {
+  width: 100%;
+  height: 44px;
+  border-radius: var(--radius-m);
+}
+
+/* Histogram */
+.histogram-section {
+  margin-bottom: var(--space-l);
+}
+
+.histogram-label {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-xs);
+}
+
+.histogram {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 120px;
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.histo-bar {
+  flex: 1;
+  min-width: 0;
+  border-radius: 3px 3px 0 0;
+  cursor: pointer;
+  position: relative;
+  transition: opacity 0.15s;
+}
+
+.histo-bar:hover { opacity: 0.8; z-index: 10; }
+
+.histo-bar.synthetic { background: var(--ui-error); }
+.histo-bar.authentic { background: var(--ui-success); }
+
+.histo-bar.active {
+  outline: 2px solid var(--bg-accent);
+  outline-offset: 1px;
+}
+
+.histo-bar-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-accent);
+  color: var(--text-inverted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.histo-bar:hover .histo-bar-tooltip { display: block; }
+
+.histogram-legend {
+  display: flex;
+  gap: var(--space-m);
+  margin-top: var(--space-xs);
+  font-size: var(--font-xs);
+  color: var(--text-caption);
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.legend-dot.synthetic { background: var(--ui-error); }
+.legend-dot.authentic { background: var(--ui-success); }
+
+/* Results Table */
+.results-table-section {
+  margin-bottom: var(--space-m);
+}
+
+.results-table-label {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-xs);
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-s);
+}
+
+.results-table th {
+  text-align: left;
+  font-weight: 600;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 2px solid var(--bg-accent);
+  color: var(--bg-accent);
+  font-size: var(--font-xs);
+}
+
+.results-table td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--ui-border);
+  color: var(--text-color);
+}
+
+.results-table tbody tr {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.results-table tbody tr:hover { background: var(--bg-surface); }
+.results-table tbody tr.active { background: color-mix(in srgb, var(--purple) 6%, transparent); }
+
+.verdict-pill {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 2rem;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.verdict-pill.synthetic {
+  background: color-mix(in srgb, var(--ui-error) 12%, transparent);
+  color: var(--ui-error);
+}
+
+.verdict-pill.authentic {
+  background: color-mix(in srgb, var(--ui-success) 12%, transparent);
+  color: rgb(10, 150, 95);
+}
+
+/* Confidence bar in table */
+.confidence-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.confidence-bar-track {
+  flex: 1;
+  height: 4px;
+  background: var(--ui-border);
+  border-radius: 2px;
+  overflow: hidden;
+  max-width: 80px;
+}
+
+.confidence-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.confidence-bar-fill.synthetic { background: var(--ui-error); }
+.confidence-bar-fill.authentic { background: var(--ui-success); }
+
+/* Overall Verdict */
+.results-verdict {
+  text-align: center;
+  padding: var(--space-l) var(--space-m);
+  position: sticky;
+  top: 0;
+}
+
+.verdict-ring {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  margin: 0 auto;
+  position: relative;
+  gap: 0.15rem;
+}
+
+.verdict-ring.synthetic {
+  background: color-mix(in srgb, var(--ui-error) 6%, transparent);
+  box-shadow: 0 0 0 3px var(--ui-error), 0 0 50px color-mix(in srgb, var(--ui-error) 12%, transparent);
+}
+
+.verdict-ring.authentic {
+  background: color-mix(in srgb, var(--ui-success) 6%, transparent);
+  box-shadow: 0 0 0 3px var(--ui-success), 0 0 50px color-mix(in srgb, var(--ui-success) 12%, transparent);
+}
+
+.verdict-ring-icon {
+  width: 2.2rem;
+  height: 2.2rem;
+}
+
+.verdict-ring.synthetic .verdict-ring-icon { color: var(--ui-error); }
+.verdict-ring.authentic .verdict-ring-icon { color: var(--ui-success); }
+
+.verdict-ring-label {
+  font-size: var(--font-xl);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.verdict-ring.synthetic .verdict-ring-label { color: var(--ui-error); }
+.verdict-ring.authentic .verdict-ring-label { color: rgb(10, 150, 95); }
+
+.verdict-ring-count {
+  font-size: var(--font-xs);
+  font-weight: 500;
+  line-height: 1.3;
+  margin-top: 0.1rem;
+}
+
+.verdict-ring.synthetic .verdict-ring-count { color: color-mix(in srgb, var(--ui-error) 70%, var(--text-color)); }
+.verdict-ring.authentic .verdict-ring-count { color: var(--text-caption); }
+
+/* Verdict links */
+.verdict-links {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  margin-top: var(--space-s);
+}
+
+.verdict-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--text-caption);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.verdict-link:hover { color: var(--purple); }
+.verdict-link svg { width: 0.85rem; height: 0.85rem; }
+
+/* Modal */
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-backdrop.visible { display: flex; }
+
+.modal {
+  background: var(--bg);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  max-width: 640px;
+  width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-m) var(--space-m) var(--space-s);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.modal-header h3 {
+  font-size: var(--font-l);
+  font-weight: 700;
+  color: var(--bg-accent);
+}
+
+.modal-close {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--bg-surface);
+  border-radius: var(--radius-m);
+  cursor: pointer;
+  color: var(--text-caption);
+  transition: background 0.15s;
+}
+
+.modal-close:hover { background: var(--ui-border); }
+.modal-close svg { width: 1rem; height: 1rem; }
+
+.modal-body {
+  padding: var(--space-m);
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Stats table */
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-s);
+}
+
+.stats-table tr.stats-group-row td {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: var(--space-m) 0 0.3rem;
+  border-bottom: none;
+  text-align: left;
+}
+
+.stats-table tr.stats-group-row:first-child td {
+  padding-top: 0;
+}
+
+.stats-table td {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ui-border) 50%, transparent);
+  vertical-align: baseline;
+}
+
+.stats-table .stats-label {
+  color: var(--text-caption);
+  font-weight: 500;
+  padding-right: var(--space-m);
+  white-space: nowrap;
+}
+
+.stats-table .stats-value {
+  font-weight: 600;
+  color: var(--bg-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* JSON modal */
+.json-container {
+  position: relative;
+}
+
+.json-pre {
+  background: var(--bg-surface);
+  border-radius: var(--radius-m);
+  padding: var(--space-m);
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--text-color);
+  max-height: 60vh;
+}
+
+.json-key { color: rgb(124, 58, 237); }
+.json-string { color: rgb(21, 150, 100); }
+.json-number { color: rgb(40, 95, 235); }
+.json-bool { color: rgb(220, 80, 50); }
+.json-null { color: var(--text-caption); }
+.json-brace { color: var(--text-caption); }
+
+.json-copy-btn {
+  position: absolute;
+  top: var(--space-xs);
+  right: var(--space-xs);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.7rem;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-color);
+  background: var(--bg);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.json-copy-btn:hover { background: var(--ui-border); }
+.json-copy-btn svg { width: 0.8rem; height: 0.8rem; }
+
+/* Error toast */
+.error-toast {
+  display: none;
+  position: fixed;
+  bottom: var(--space-l);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ui-error);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-m);
+  font-size: var(--font-s);
+  font-weight: 500;
+  z-index: 200;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.error-toast.visible { display: block; }
+
+/* ── Footer ──────────────────────────────────────────────────────────── */
+.footer {
+  padding: var(--space-m) 0 var(--space-l);
+  text-align: center;
+  font-size: var(--font-xs);
+  color: var(--text-caption);
+  border-top: 1px solid var(--ui-border);
+}
+
+.footer a {
+  color: var(--text-caption);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--text-caption) 30%, transparent);
+  text-underline-offset: 0.15em;
+  transition: color var(--hover-out);
+}
+
+.footer a:hover {
+  color: var(--bg-hover);
+  transition-duration: var(--hover-in);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .results-layout { grid-template-columns: 1fr; }
+  .results-verdict { position: static; }
+  .verdict-ring { width: 160px; height: 160px; }
+  .results-actions { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Header -->
+  <header class="header">
+    <a href="/" class="header-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 219.6 264.66"><defs><linearGradient id="mg" x1="28.58" y1="232.87" x2="183.79" y2="47.91" gradientUnits="userSpaceOnUse"><stop offset=".02" stop-color="#12113d"/><stop offset=".1" stop-color="#141041"/><stop offset=".2" stop-color="#1c104f"/><stop offset=".3" stop-color="#291065"/><stop offset=".4" stop-color="#3b0f84"/><stop offset=".44" stop-color="#430f92"/><stop offset=".47" stop-color="#4b108f"/><stop offset=".52" stop-color="#621688"/><stop offset=".58" stop-color="#871e7c"/><stop offset=".65" stop-color="#ba2a6c"/><stop offset=".73" stop-color="#fb3958"/><stop offset=".8" stop-color="#fb4557"/><stop offset=".93" stop-color="#fb6556"/><stop offset="1" stop-color="#fc7856"/></linearGradient></defs><path fill="url(#mg)" d="M164.41,146.92l46.78-14.88-2.46-8.22-46.74,14.87c.99,2.66,1.8,5.41,2.42,8.23ZM145.35,114.38l47.74-58.65-6.56-5.52-47.95,58.91c2.38,1.6,4.65,3.36,6.78,5.26ZM198.33,158.26l-.19-8.58-32.96,1.28c.42,2.79.64,5.65.67,8.56l32.48-1.27ZM160.7,184.81l32.46,10.56,2.79-8.11-32.36-10.53c-.78,2.78-1.74,5.48-2.88,8.08ZM179.8,124.57l-4.03-7.57-19.25,10.64c1.51,2.42,2.86,4.95,4.03,7.57l19.25-10.64ZM183.73,88.07l-35.07,29.5c1.99,2.06,3.83,4.25,5.51,6.57l34.97-29.41-5.41-6.66ZM213.29,170.9l-47.53-7.24c-.16,2.89-.53,5.74-1.07,8.51l47.17,7.19,1.43-8.46ZM135.07,106.96l18.84-41.61-7.75-3.67-18.8,41.53c2.67,1.07,5.25,2.33,7.72,3.75ZM73.03,107.44L20.76,30.23l-7.18,4.69,52.41,77.42c2.22-1.79,4.57-3.43,7.04-4.91ZM158.86,188.64c-.5.95-1.04,1.87-1.59,2.78-.32.54-.64,1.08-.98,1.61-.4.62-.81,1.24-1.23,1.85-11.06,16.07-29.55,26.63-50.54,26.63-33.89,0-61.36-27.47-61.36-61.36,0-17.55,7.38-33.37,19.2-44.56l-.02-.02c.14-.13.27-.28.41-.41L7.1,55.48l-6.37,5.74,26.6,28.54C10.38,108.33,0,133.01,0,160.14c0,57.72,46.79,104.52,104.52,104.52,37.64,0,70.6-19.91,89-49.75l22.22,10.74,3.86-7.66-60.74-29.35ZM84.99,101.95l-29.4-67.27-7.92,3.3,29.39,67.25c2.55-1.27,5.19-2.37,7.92-3.28ZM97.53,99.18L79.42,0l-8.46,1.4,18.13,99.32c2.74-.71,5.56-1.22,8.44-1.54ZM104.47,98.78c2.1,0,4.17.11,6.21.31l-.19-61.1-8.58-.12.19,60.96c.79-.03,1.57-.06,2.37-.06ZM132.31,64.67l-8.3-2.16-9.01,37.18c2.85.49,5.63,1.17,8.33,2.04l8.99-37.07Z"/></svg>
+      <span class="header-wordmark">Modulate</span>
+    </a>
+  </header>
+
+  <!-- Results (always visible — shows demo by default) -->
+  <section class="results-section" id="results-section">
+    <!-- Action bar: upload dropzone + record -->
+    <div class="results-actions">
+      <div class="results-action results-action-upload" id="results-upload-action">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span>Drop a file or click to upload</span>
+        <input type="file" class="file-input" id="results-file-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.mp4,.mov,.webm,.opus">
+      </div>
+      <div class="results-action results-action-disabled" id="results-record-action">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <span>Start recording</span>
+        <span class="soon-badge">soon</span>
+      </div>
+    </div>
+
+    <div class="results-layout">
+      <div class="results-main">
+        <h2 class="results-filename" id="results-filename"></h2>
+
+        <div class="results-player">
+          <audio controls id="results-audio"></audio>
+        </div>
+
+        <div class="histogram-section">
+          <div class="histogram-label">Detection confidence per segment</div>
+          <div class="histogram" id="histogram"></div>
+          <div class="histogram-legend">
+            <span><span class="legend-dot authentic"></span>Authentic</span>
+            <span><span class="legend-dot synthetic"></span>Deepfake</span>
+          </div>
+        </div>
+
+        <div class="results-table-section">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Verdict</th>
+                <th>Confidence</th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <aside class="results-verdict" id="results-verdict">
+        <div class="verdict-ring" id="verdict-ring">
+          <div class="verdict-ring-icon" id="verdict-icon"></div>
+          <div class="verdict-ring-label" id="verdict-label"></div>
+          <div class="verdict-ring-count" id="verdict-count"></div>
+        </div>
+        <div class="verdict-links">
+          <button class="verdict-link" id="btn-show-stats">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Full Statistics
+          </button>
+          <button class="verdict-link" id="btn-show-json">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            JSON Response
+          </button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a> &middot; &copy; 2026 Modulate, Inc.
+  </footer>
+
+</div>
+
+<!-- Stats Modal -->
+<div class="modal-backdrop" id="stats-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Detection Statistics</h3>
+      <button class="modal-close" id="stats-modal-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div id="stats-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- JSON Modal -->
+<div class="modal-backdrop" id="json-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>API Response</h3>
+      <button class="modal-close" id="json-modal-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="json-container">
+        <button class="json-copy-btn" id="json-copy-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy
+        </button>
+        <pre class="json-pre" id="json-pre"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Analysis Progress Overlay -->
+<div class="analysis-overlay" id="analysis-overlay">
+  <h3 id="analysis-title">Analyzing audio&hellip;</h3>
+  <p id="analysis-status">Detecting synthetic voice across all segments</p>
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+  <p id="analysis-eta" style="font-size:var(--font-xs);color:var(--text-caption);"></p>
+</div>
+
+<!-- Error Toast -->
+<div class="error-toast" id="error-toast"></div>
+
+<script src="/deepfake/deepfake.js"></script>
+</body>
+</html>
