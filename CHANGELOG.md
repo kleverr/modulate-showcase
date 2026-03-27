@@ -2,6 +2,21 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [1.7.3] - 2026-03-27
+
+### Added
+- Standalone deepfake detection demo page at `/deepfake` with batch analysis UI
+- File upload with drag-and-drop, progress bar (estimated from audio duration / processing speed)
+- Results view: audio player (sticky on scroll), confidence histogram, frame-by-frame table
+- Overall verdict badge (Deepfake/Authentic) with robot icon and segment count
+- Clickable histogram bars and table rows to seek audio player to that segment
+- Playback tracking: active segment highlights in histogram and table during audio playback
+- Desaturated histogram bar colors for lower-confidence segments
+- Full Statistics modal with grouped detection, audio, performance, and request metadata
+- JSON Response modal with syntax highlighting and copy button
+- Pre-loaded demo file (AIAgentFrustration.mp3) with cached API response for instant page load
+- Verdict algorithm: deepfake if ≥1 frame >99% confidence or ≥2 frames >90% confidence
+
 ## [1.7.0] - 2026-03-23
 
 ### Added
