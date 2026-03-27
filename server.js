@@ -187,6 +187,11 @@ app.use(express.static(path.join(__dirname), {
   },
 }));
 
+// ── Deepfake landing page ────────────────────────────────────────────────────
+app.get('/deepfake', (req, res) => {
+  res.sendFile(path.join(__dirname, 'deepfake', 'index.html'));
+});
+
 // SPA fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
