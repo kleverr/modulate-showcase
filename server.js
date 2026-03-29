@@ -178,6 +178,15 @@ app.post('/api/:path(*)', handleUpload, async (req, res) => {
   }
 });
 
+// ── SPA routes (before static so /deepfake serves main page, not deepfake/) ──
+app.get('/transcription', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/deepfake', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // ── Static files ─────────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname), {
   index: 'index.html',
@@ -186,11 +195,6 @@ app.use(express.static(path.join(__dirname), {
     res.setHeader('Cache-Control', 'no-cache');
   },
 }));
-
-// ── Deepfake landing page ────────────────────────────────────────────────────
-app.get('/deepfake', (req, res) => {
-  res.sendFile(path.join(__dirname, 'deepfake', 'index.html'));
-});
 
 // SPA fallback
 app.get('*', (req, res) => {
@@ -237,6 +241,7 @@ server.on('upgrade', (req, socket, head) => {
       ? ENDPOINT_BASE_URL[url.pathname].replace(/^https:\/\//i, 'wss://').replace(/^http:\/\//i, 'ws://')
       : API_WS_BASE_URL;
     const upstreamUrl = `${wsBaseOverride}${url.pathname}?${upstreamParams.toString()}`;
+    console.log('WS proxy connecting to:', upstreamUrl.replace(/api_key=[^&]+/, 'api_key=***'));
 
     const upstreamWs = new WebSocket(upstreamUrl);
     const pendingMessages = [];
