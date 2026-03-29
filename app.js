@@ -1,2862 +1,1360 @@
-const modelEl = document.getElementById('model');
-const fileEl = document.getElementById('file');
-const recordZoneEl = document.getElementById('record-zone');
-const recordToggleBtnEl = document.getElementById('record-toggle-btn');
-const recordStatusEl = document.getElementById('record-status');
-const outputEl = document.getElementById('output');
-const previewOutputEl = document.getElementById('preview-output');
-const copyBtnEl = document.getElementById('copy-btn');
-const tabCallEl = document.getElementById('right-tab-call');
-const outputCallEl = document.getElementById('output-call');
-const viewerTabButtons = Array.from(document.querySelectorAll('.viewer-tab'));
-const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
-const tabPreviewEl = document.getElementById('tab-preview');
-const tabJsonEl = document.getElementById('right-tab-json');
-const rightTabStatsEl = document.getElementById('right-tab-stats');
-const featureNoteEl = document.getElementById('feature-note');
-const optSpeakerDiarizationEl = document.getElementById('opt-speaker-diarization');
-const optEmotionSignalEl = document.getElementById('opt-emotion-signal');
-const optAccentSignalEl = document.getElementById('opt-accent-signal');
-const optPiiPhiTaggingEl = document.getElementById('opt-pii-phi-tagging');
-const optionInputs = [optSpeakerDiarizationEl, optEmotionSignalEl, optAccentSignalEl, optPiiPhiTaggingEl];
+// ── Unified App — Deepfake Detection + Transcription ──────────────────────────
+(function () {
+  'use strict';
 
-const metaStatusEl = document.getElementById('meta-status');
-const metaFailureTypeEl = document.getElementById('meta-failure-type');
-const metaFailureNameEl = document.getElementById('meta-failure-name');
-const rowFailureTypeEl = document.getElementById('row-failure-type');
-const rowFailureNameEl = document.getElementById('row-failure-name');
-const metaModelEl = document.getElementById('meta-model');
-const metaOptionsEl = document.getElementById('meta-options');
-const metaFileNameEl = document.getElementById('meta-file-name');
-const metaFileTypeEl = document.getElementById('meta-file-type');
-const metaFileSizeEl = document.getElementById('meta-file-size');
-const metaDurationMinEl = document.getElementById('meta-duration-min');
-const metaProcessingEl = document.getElementById('meta-processing');
-const metaRtfEl = document.getElementById('meta-rtf');
-const metaHttpEl = document.getElementById('meta-http');
-const metaEndpointEl = document.getElementById('meta-endpoint');
-const metaRequestIdEl = document.getElementById('meta-request-id');
-const metaRateEl = document.getElementById('meta-rate');
-const metaCostEl = document.getElementById('meta-cost');
-const metaTokensEl = document.getElementById('meta-tokens');
-const metaTranscriptCharsEl = document.getElementById('meta-transcript-chars');
-const metaTranscriptWordsEl = document.getElementById('meta-transcript-words');
-const metaUtterancesEl = document.getElementById('meta-utterances');
-const metaSpeakersEl = document.getElementById('meta-speakers');
-const metaLanguagesEl = document.getElementById('meta-languages');
-const metaEmotionsEl = document.getElementById('meta-emotions');
-const metaAccentsEl = document.getElementById('meta-accents');
-const metaPiiTagsEl = document.getElementById('meta-pii-tags');
-const metaResponseBytesEl = document.getElementById('meta-response-bytes');
-const metaDetectionScoreEl = document.getElementById('meta-detection-score');
-const rowDetectionScoreEl = document.getElementById('row-detection-score');
-const audioPlayerWrapEl = document.getElementById('audio-player-wrap');
-const audioPlayerEl = document.getElementById('audio-player');
-const autoscrollEl = document.getElementById('autoscroll');
-const panelNewUploadEl = document.getElementById('panel-new-upload');
-const panelDropZoneEl = document.getElementById('panel-drop-zone');
-const panelChooseBtnEl = document.getElementById('panel-choose-btn');
-const panelUploadFormatsEl = document.getElementById('panel-upload-formats');
-const panelRecordBtnEl = document.getElementById('panel-record-btn');
-const panelRecordStatusEl = document.getElementById('panel-record-status');
-const viewerShellEl = document.getElementById('viewer-shell');
+  // ── Constants ───────────────────────────────────────────────────────────────
+  const SPEED_FACTOR = 90;
+  const MIN_PROGRESS_MS = 1500;
 
-const API_BASE_URL = '';  // same-origin proxy
-const API_WS_BASE_URL = `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}`;
+  const DEMO_AUDIO_URL = '/deepfake/demo.mp3';
+  const DEMO_STT_AUDIO_URL = '/demo-stt.mp3';
+  const DEMO_DATA = {"filename":"AIAgentFrustration.mp3","frames":[{"start_time_ms":128,"end_time_ms":4128,"synthetic_voice":true,"confidence":0.9138},{"start_time_ms":2128,"end_time_ms":6128,"synthetic_voice":true,"confidence":0.8433},{"start_time_ms":4128,"end_time_ms":8128,"synthetic_voice":false,"confidence":0.9556},{"start_time_ms":6128,"end_time_ms":10128,"synthetic_voice":false,"confidence":0.9817},{"start_time_ms":8128,"end_time_ms":12128,"synthetic_voice":false,"confidence":0.9716},{"start_time_ms":10128,"end_time_ms":14128,"synthetic_voice":false,"confidence":0.9586},{"start_time_ms":12128,"end_time_ms":16128,"synthetic_voice":false,"confidence":0.9471},{"start_time_ms":14128,"end_time_ms":18128,"synthetic_voice":false,"confidence":0.7827},{"start_time_ms":16128,"end_time_ms":20128,"synthetic_voice":false,"confidence":0.9744},{"start_time_ms":18128,"end_time_ms":22128,"synthetic_voice":false,"confidence":0.9902},{"start_time_ms":20128,"end_time_ms":24128,"synthetic_voice":false,"confidence":0.9877},{"start_time_ms":22128,"end_time_ms":26128,"synthetic_voice":false,"confidence":0.9385},{"start_time_ms":24128,"end_time_ms":28128,"synthetic_voice":true,"confidence":0.8605},{"start_time_ms":26128,"end_time_ms":30128,"synthetic_voice":false,"confidence":0.9087},{"start_time_ms":28128,"end_time_ms":32128,"synthetic_voice":true,"confidence":0.893},{"start_time_ms":30128,"end_time_ms":34128,"synthetic_voice":true,"confidence":0.8789},{"start_time_ms":32128,"end_time_ms":36128,"synthetic_voice":false,"confidence":0.9579},{"start_time_ms":34128,"end_time_ms":38128,"synthetic_voice":false,"confidence":0.9877},{"start_time_ms":36128,"end_time_ms":40128,"synthetic_voice":false,"confidence":0.9809},{"start_time_ms":38128,"end_time_ms":42128,"synthetic_voice":false,"confidence":0.8412},{"start_time_ms":40128,"end_time_ms":44128,"synthetic_voice":true,"confidence":0.9087},{"start_time_ms":42128,"end_time_ms":46128,"synthetic_voice":true,"confidence":0.7459},{"start_time_ms":44128,"end_time_ms":48128,"synthetic_voice":false,"confidence":0.9698},{"start_time_ms":46128,"end_time_ms":50128,"synthetic_voice":false,"confidence":0.9736},{"start_time_ms":48128,"end_time_ms":52128,"synthetic_voice":false,"confidence":0.886},{"start_time_ms":50128,"end_time_ms":54128,"synthetic_voice":false,"confidence":0.8334},{"start_time_ms":52128,"end_time_ms":56128,"synthetic_voice":true,"confidence":0.6924},{"start_time_ms":54128,"end_time_ms":58128,"synthetic_voice":true,"confidence":0.8332},{"start_time_ms":56128,"end_time_ms":60128,"synthetic_voice":false,"confidence":0.9713},{"start_time_ms":58128,"end_time_ms":62128,"synthetic_voice":false,"confidence":0.9679},{"start_time_ms":60128,"end_time_ms":64128,"synthetic_voice":false,"confidence":0.7557},{"start_time_ms":62128,"end_time_ms":66128,"synthetic_voice":false,"confidence":0.9603},{"start_time_ms":64128,"end_time_ms":68128,"synthetic_voice":false,"confidence":0.987},{"start_time_ms":66128,"end_time_ms":70128,"synthetic_voice":false,"confidence":0.9654},{"start_time_ms":68128,"end_time_ms":72128,"synthetic_voice":true,"confidence":0.6191},{"start_time_ms":70128,"end_time_ms":74128,"synthetic_voice":false,"confidence":0.9001},{"start_time_ms":72128,"end_time_ms":76128,"synthetic_voice":false,"confidence":0.9887},{"start_time_ms":74128,"end_time_ms":78128,"synthetic_voice":false,"confidence":0.9793},{"start_time_ms":76128,"end_time_ms":80128,"synthetic_voice":false,"confidence":0.8836},{"start_time_ms":78128,"end_time_ms":82128,"synthetic_voice":true,"confidence":0.85},{"start_time_ms":80128,"end_time_ms":84128,"synthetic_voice":false,"confidence":0.9704},{"start_time_ms":82128,"end_time_ms":86128,"synthetic_voice":false,"confidence":0.9747},{"start_time_ms":84128,"end_time_ms":88128,"synthetic_voice":false,"confidence":0.607},{"start_time_ms":86128,"end_time_ms":90128,"synthetic_voice":true,"confidence":0.924},{"start_time_ms":88128,"end_time_ms":92128,"synthetic_voice":false,"confidence":0.9397},{"start_time_ms":90128,"end_time_ms":94128,"synthetic_voice":false,"confidence":0.9882},{"start_time_ms":92128,"end_time_ms":96128,"synthetic_voice":false,"confidence":0.9757},{"start_time_ms":94128,"end_time_ms":97568,"synthetic_voice":false,"confidence":0.935}],"duration_ms":97698};
 
-// ── Rate limiting state ──────────────────────────────────────────────────────
-let usageRemaining = null;
-let usageLimit = null;
+  const DEMO_STT_DATA = {"duration_ms":268680,"utterances":[{"text":"You've reached home-supply-plus.com customer support. Can you provide your name and account email?","start_ms":900,"duration_ms":4260,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"You better be a real person because I'm sick and tired of you people passing me off.","start_ms":5820,"duration_ms":3720,"speaker":2,"language":"en","emotion":"Frustrated","accent":"American"},{"text":"I am a real person, sir. Can I have your name and account email?","start_ms":10200,"duration_ms":2880,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"My name's <pii:firstname>John</pii:firstname> <pii:lastname>Sampson</pii:lastname>, and my account email is <pii:username>jsampson, J-S-A-M-S-O-N</pii:username> at yahoo.com.","start_ms":13560,"duration_ms":8040,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"Thank you, <pii:firstname>John</pii:firstname>. What can I assist you with today?","start_ms":23220,"duration_ms":2880,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Listen to me? Let me tell you something. You better be helpful, 'cause there's a lot riding on this for me and your people who have wasted my time. Do you know how long I've been waiting for this order? I mean, my backyard trawler was a total nightmare because of you people.","start_ms":27060,"duration_ms":13020,"speaker":2,"language":"en","emotion":"Frustrated","accent":"American"},{"text":"I'm sorry to hear that, sir. Can you give me the order number for the sofa?","start_ms":40380,"duration_ms":3480,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"I might as well have it memorized by now, but it's tattooed on me somewhere, the number <pii:phone>002-257-8938</pii:phone>. I was supposed to have those extra chairs from you guys a week ago\u2014no one had anywhere to sit. I mean, what are you guys doing over there? A circus? A clown show? Come on.","start_ms":45240,"duration_ms":18540,"speaker":2,"language":"en","emotion":"Frustrated","accent":"American"},{"text":"I'm sorry, sir. Let me check on that order for you.","start_ms":65520,"duration_ms":2220,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Check on it? You better get me those chairs as soon as humanly possible, or I'm going to sue your company for false advertising. I mean, it's been a week and a half already. Two-day delivery my ass. Those chairs have been stolen by pirates and sank to the bottom of the <pii:country>Atlantic Ocean</pii:country> at this point. Come on.","start_ms":69000,"duration_ms":16500,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"I'm sorry, sir, it looks like they're still on their way for you, but it's been delayed.","start_ms":87600,"duration_ms":3900,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Where from where? Seriously, from <pii:workplace_address>Siberia</pii:workplace_address>? What kind of scam operations are you guys running here? I mean, are you smuggling them across international borders? Do you find them with a treasure map? Where are those chairs?","start_ms":91740,"duration_ms":13140,"speaker":2,"language":"en","emotion":"Frustrated","accent":"American"},{"text":"I'm sorry, sir, it looks like intense rains have caused some roads to flood, so we have had a delay with many packages.","start_ms":105840,"duration_ms":6960,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Christ, if I wanted them shipped from the rainforest, I would've ordered them from Amazon, you nitwit! How much time does it take to load up some chairs, drive a fucking truck, and put them on my porch? Isn't your warehouse down the street? I paid for expedited delivery. Is that a complete fucking scam, or is that part of your problem?","start_ms":115080,"duration_ms":16260,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"No, sir. Usually, they deliver these things on time. It's just we've had some extreme weather in your area.","start_ms":133020,"duration_ms":5820,"speaker":1,"language":"en","emotion":"Concerned","accent":"British"},{"text":"What kind of fucking hurricane was it? I didn't say hurricane fuck up my chairs in the news, did you? You need to be giving me my chairs today, or I'm suing your company and tagging your name in the lawsuit. What's your name?","start_ms":139260,"duration_ms":12180,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"I'm sorry, sir. My name is <pii:firstname>Fred</pii:firstname>.","start_ms":152460,"duration_ms":1920,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Well, <pii:firstname>Alfred</pii:firstname>, that's the name I'm writing the complaint when I rip your company a goddamn new asshole in court. What a fucking joke. Two-day shipping, all-day customer service, total fucking scam.","start_ms":155580,"duration_ms":11580,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"I'm sorry, sir. Is there any information I can give to help you give you some assurance?","start_ms":168900,"duration_ms":5880,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Fuck insurance, fuck this, and fuck you. You can give me my fucking chairs, or you can sue me in court after I get my refund.","start_ms":175500,"duration_ms":7260,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"I understand this has been frustrating, sir, and I'm hoping we can resolve this issue for you as soon as possible. It would be helpful if you could calm down so that we can.","start_ms":184380,"duration_ms":8520,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"What the fuck do you mean calm down? I've been so compliant with you people and now you want me to calm down? What a terrible fucking attitude from a complete fucking shit-brained idiot of a person. In what world do you think it's only okay to imply I'm overreacting? You people made this problem when you didn't deliver my fucking chairs and now you're blaming me for it?","start_ms":193020,"duration_ms":19140,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"It was out of our control, sir.","start_ms":214260,"duration_ms":1740,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Yeah, right. Out of your control, my ass. Apparently, people have always been lazy good-for-nothing shit-brained fuck-wits on idiot sandwich time right from the goddamn beginning.","start_ms":218220,"duration_ms":11760,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"I'm sorry, sir. I can issue you a credit on your account for the inconvenience.","start_ms":231600,"duration_ms":5100,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Are you even fucking listening to me, you ham-headed fart mouth? I swear this court citation is gonna be so fucking satisfying. What the fuck do you think a \"credit on my account\" is gonna do for me, <pii:firstname>Fred</pii:firstname>? Is it gonna get me my fucking chairs on my fucking porch? Absolutely not. Your ass is grass, <pii:firstname>Fred</pii:firstname>, and I'm the lawnmower. You know what? This is fucking useless. You're fucking useless, and I'm sick and fucking tired of it. See you in court, motherfucker. Goodbye.","start_ms":236820,"duration_ms":31860,"speaker":2,"language":"en","emotion":"Angry","accent":"American"}]};
 
-async function fetchUsage() {
-  try {
-    const res = await fetch('/api/usage');
-    if (res.ok) {
-      const data = await res.json();
-      usageRemaining = data.remaining;
-      usageLimit = data.limit;
-      updateUsageUI();
-    }
-  } catch { /* ignore */ }
-}
+  // ── Mode State ──────────────────────────────────────────────────────────────
+  let currentMode = 'transcription'; // 'deepfake' | 'transcription'
 
-function updateUsageUI() {
-  const counterEl = document.getElementById('usage-counter');
-  const remainingEl = document.getElementById('usage-remaining');
-  const limitEl = document.getElementById('usage-limit');
-  const overlayEl = document.getElementById('rate-limit-overlay');
-  if (!counterEl) return;
+  // ── DOM refs ────────────────────────────────────────────────────────────────
+  const overlay       = document.getElementById('analysis-overlay');
+  const progressFill  = document.getElementById('progress-fill');
+  const analysisTitle = document.getElementById('analysis-title');
+  const analysisStatus = document.getElementById('analysis-status');
+  const errorToast    = document.getElementById('error-toast');
 
-  remainingEl.textContent = usageRemaining ?? '--';
-  limitEl.textContent = usageLimit ?? '--';
+  const resultsFilename = document.getElementById('results-filename');
+  const resultsAudio  = document.getElementById('results-audio');
+  const histogram     = document.getElementById('histogram');
+  const resultsTbody  = document.getElementById('results-tbody');
+  const verdictRing   = document.getElementById('verdict-ring');
+  const verdictIcon   = document.getElementById('verdict-icon');
+  const verdictLabel  = document.getElementById('verdict-label');
+  const verdictCount  = document.getElementById('verdict-count');
 
-  counterEl.classList.remove('warning', 'exhausted');
-  if (usageRemaining !== null) {
-    if (usageRemaining <= 0) {
-      counterEl.classList.add('exhausted');
-      if (overlayEl) overlayEl.hidden = false;
-      disableUploadControls(true);
+  const uploadAction  = document.getElementById('results-upload-action');
+  const fileInput     = document.getElementById('results-file-input');
+  const recordAction  = document.getElementById('results-record-action');
+  const histoTooltip  = document.getElementById('histo-tooltip');
+  const sttChart      = document.getElementById('stt-chart');
+
+  // Mode toggle
+  const modeRadios    = document.querySelectorAll('input[name="mode"]');
+  const deepfakeContent = document.getElementById('deepfake-content');
+  const transcriptContainer = document.getElementById('transcript-container');
+  const transcriptList = document.getElementById('transcript-list');
+  const resultsVerdict = document.getElementById('results-verdict');
+  const resultsSidebar = document.getElementById('results-sidebar');
+  const sttOptions    = document.getElementById('stt-options');
+
+  // Modals
+  const statsModal    = document.getElementById('stats-modal');
+  const statsModalTitle = document.getElementById('stats-modal-title');
+  const statsGrid     = document.getElementById('stats-grid');
+  const jsonModal     = document.getElementById('json-modal');
+  const jsonPre       = document.getElementById('json-pre');
+  const jsonCopyBtn   = document.getElementById('json-copy-btn');
+
+  // ── State ───────────────────────────────────────────────────────────────────
+  let audioObjectUrl = null;
+  let progressTimer = null;
+  let currentData = null;
+  let currentMeta = {};
+  let currentFrames = [];
+  let playbackTracker = null;
+
+  // Transcription state
+  let sttUtterances = [];
+  let sttPartial = null;
+  let sttData = null;
+
+  // ── Mobile layout ───────────────────────────────────────────────────────────
+  const resultsLayout   = document.querySelector('.results-layout');
+  const resultsMain     = document.querySelector('.results-main');
+  const histogramSection = document.querySelector('.histogram-section');
+
+  function applyMobileLayout(isMobile) {
+    if (!resultsVerdict || !resultsLayout || !resultsMain || !histogramSection) return;
+    if (currentMode !== 'deepfake') return;
+    if (isMobile) {
+      resultsMain.insertBefore(resultsVerdict, histogramSection);
     } else {
-      if (overlayEl) overlayEl.hidden = true;
-      disableUploadControls(false);
-      if (usageRemaining <= 3) counterEl.classList.add('warning');
+      resultsLayout.appendChild(resultsVerdict);
     }
   }
-}
 
-function disableUploadControls(disabled) {
-  const panelDrop = document.getElementById('panel-drop-zone');
-  const panelChoose = document.getElementById('panel-choose-btn');
-  const panelRecord = document.getElementById('panel-record-btn');
-  const miniUpload = document.querySelector('.mini-upload:not(.record-zone)');
-  if (panelDrop) panelDrop.style.pointerEvents = disabled ? 'none' : '';
-  if (panelDrop) panelDrop.style.opacity = disabled ? '0.45' : '';
-  if (panelChoose) panelChoose.disabled = disabled;
-  if (panelRecord) panelRecord.disabled = disabled;
-  if (miniUpload) miniUpload.style.pointerEvents = disabled ? 'none' : '';
-  if (miniUpload) miniUpload.style.opacity = disabled ? '0.45' : '';
-}
+  const mobileQuery = window.matchMedia('(max-width: 768px)');
+  applyMobileLayout(mobileQuery.matches);
+  mobileQuery.addEventListener('change', e => applyMobileLayout(e.matches));
 
-const LANGUAGE_NAMES = new Intl.DisplayNames(['en'], { type: 'language' });
-function langCodeToName(code) {
-  try { return LANGUAGE_NAMES.of(code) || code; } catch { return code; }
-}
+  // ── Mode Switching ──────────────────────────────────────────────────────────
+  function switchMode(mode, pushUrl) {
+    currentMode = mode;
+    const isDeepfake = mode === 'deepfake';
 
-
-const EMOTION_COLORS = {
-  angry: '#ff3554', contemptuous: '#ff3554', disgusted: '#ff3554', ashamed: '#ff3554',
-  afraid: '#b464c8', anxious: '#b464c8', stressed: '#b464c8',
-  surprised: '#b464c8', frustrated: '#b464c8',
-  excited: '#ff7850', hopeful: '#ff7850', proud: '#ff7850', curious: '#ff7850', amused: '#ff7850',
-  sad: '#0078c8', disappointed: '#0078c8', bored: '#0078c8',
-  tired: '#0078c8', concerned: '#0078c8', confused: '#0078c8',
-  calm: '#6e8cbe', confident: '#6e8cbe', interested: '#6e8cbe',
-  neutral: '#5a5a6e', unknown: '#5a5a6e',
-};
-function emotionColor(name) {
-  return EMOTION_COLORS[name.toLowerCase()] || null;
-}
-
-const MODEL_CONFIG = {
-  'batch-fast': {
-    fullName: 'velma-2-stt-batch-english-vfast',
-    endpoint: '/api/velma-2-stt-batch-english-vfast',
-    ratePerHourUsd: 0.025,
-    mode: 'batch',
-    type: 'stt',
-    speedFactor: 250,
-    unsupported: new Set(['utterances', 'speakers', 'languages', 'emotions', 'accents', 'pii_tags', 'options']),
-  },
-  batch: {
-    fullName: 'velma-2-stt-batch',
-    endpoint: '/api/velma-2-stt-batch',
-    ratePerHourUsd: 0.03,
-    mode: 'batch',
-    type: 'stt',
-    speedFactor: 10,
-    unsupported: new Set(),
-  },
-  streaming: {
-    fullName: 'velma-2-stt-streaming',
-    endpoint: '/api/velma-2-stt-streaming',
-    ratePerHourUsd: null,
-    mode: 'streaming',
-    type: 'stt',
-    speedFactor: null,
-    unsupported: new Set(),
-  },
-  deepfake: {
-    fullName: 'velma-2-synthetic-voice-detection',
-    endpoint: '/api/velma-2-synthetic-voice-detection-batch',
-    ratePerHourUsd: 0.25,
-    mode: 'batch',
-    type: 'detection',
-    speedFactor: 80,
-    unsupported: new Set(['utterances', 'speakers', 'languages', 'emotions', 'accents', 'pii_tags', 'options']),
-  },
-  'deepfake-streaming': {
-    fullName: 'velma-2-synthetic-voice-detection-streaming',
-    endpoint: '/api/velma-2-synthetic-voice-detection-streaming',
-    ratePerHourUsd: null,
-    mode: 'streaming',
-    type: 'detection',
-    speedFactor: null,
-    unsupported: new Set(['utterances', 'speakers', 'languages', 'emotions', 'accents', 'pii_tags', 'options']),
-  },
-};
-
-const MAX_RECORDING_MS = 5 * 60 * 1000; // 5-minute hard cap on recording
-const WS_STREAM_TIMEOUT_MS = 5 * 60 * 1000; // 5-minute hard cap on WebSocket streams
-
-let latestPayload = null;
-let playerCurrentSrc = '';
-let activeUtteranceEl = null;
-let latestPreviewText = '';
-let progressEstimatedMs = null;
-let mediaRecorder = null;
-let mediaStream = null;
-let recordedChunks = [];
-let recordingStartedAt = 0;
-let recordingTimerId = null;
-let shouldSubmitRecording = false;
-let recordingMaxTimerId = null;
-
-// ── Multi-file state ──────────────────────────────────────────────────────────
-const fileTabsBarEl = document.getElementById('file-tabs-bar');
-let files = [];       // FileEntry[]
-let activeFileIndex = -1;
-
-function createFileEntry(file) {
-  return {
-    file,
-    status: 'pending',    // 'pending' | 'processing' | 'done' | 'error'
-    estimatedMs: null,
-    audioUrl: null,
-    savedTime: 0,
-    normalizedResponse: null,
-    rawPayload: null,
-    apiCallInfo: null,
-    previewText: '',
-    model: modelEl.value,
-    options: getRequestedOptions(),
-  };
-}
-
-function computePreviewText(payload) {
-  if (payload?.modelType === 'detection') {
-    const score = payload?.meta?.detectionScore;
-    if (score && typeof score === 'object') return formatConfidenceLabel(score.synthetic, score.confidence);
-    if (typeof score === 'number') return formatConfidenceLabel(score);
-    return '';
-  }
-  const utterances = Array.isArray(payload?.result?.utterances) ? payload.result.utterances : [];
-  if (utterances.length) return buildTranscriptCopyFromUtterances(utterances);
-  return extractTranscriptText(payload) || '';
-}
-
-function renderFileTabs() {
-  fileTabsBarEl.innerHTML = '';
-  files.forEach((entry, i) => {
-    const tab = document.createElement('button');
-    tab.type = 'button';
-    tab.className = 'file-tab' + (i === activeFileIndex ? ' active' : '');
-    tab.dataset.status = entry.status;
-    tab.addEventListener('click', () => setActiveFileIndex(i));
-
-    const dot = document.createElement('span');
-    dot.className = 'file-tab-dot';
-
-    const name = document.createElement('span');
-    name.className = 'file-tab-name';
-    const fn = entry.file.name;
-    name.textContent = fn.length > 16 ? fn.slice(0, 15) + '…' : fn;
-    name.title = fn;
-
-    const close = document.createElement('span');
-    close.className = 'file-tab-close';
-    close.textContent = '×';
-    close.title = 'Remove';
-    close.addEventListener('click', (e) => { e.stopPropagation(); removeFile(i); });
-
-    const progress = document.createElement('div');
-    progress.className = 'file-tab-progress';
-    if (entry.status === 'processing' && entry.estimatedMs) {
-      const dur = (entry.estimatedMs / 1000).toFixed(1);
-      progress.style.animation = `progress-fill ${dur}s cubic-bezier(0.25,0.46,0.45,0.94) forwards`;
+    // Update URL
+    const targetPath = isDeepfake ? '/deepfake' : '/transcription';
+    if (pushUrl !== false && location.pathname !== targetPath) {
+      history.pushState({ mode: mode }, '', targetPath);
     }
-    // done/error: no fill — tab returns to normal background
 
-    tab.append(progress, dot, name, close);
-    fileTabsBarEl.appendChild(tab);
+    deepfakeContent.style.display = isDeepfake ? '' : 'none';
+    resultsVerdict.style.display = isDeepfake ? '' : 'none';
+    transcriptContainer.classList.toggle('visible', !isDeepfake);
+    resultsSidebar.classList.toggle('visible', !isDeepfake);
+    sttOptions.classList.toggle('visible', !isDeepfake);
+
+    // Streaming not available for transcription yet
+    if (recordAction) {
+      recordAction.classList.toggle('disabled-soon', !isDeepfake);
+      const span = recordAction.querySelector('span');
+      span.textContent = isDeepfake ? 'Start streaming' : 'Start streaming (Soon)';
+    }
+
+    if (isRecording) stopRecording();
+
+    if (isDeepfake) {
+      currentMeta = {
+        fileSize: 1.87 * 1024 * 1024,
+        fileType: 'audio/mpeg',
+        httpStatus: 200,
+        httpStatusText: 'OK',
+        responseSize: 4.2 * 1024,
+        processingMs: 2660,
+      };
+      renderDeepfakeResults(DEMO_DATA, DEMO_AUDIO_URL);
+      applyMobileLayout(mobileQuery.matches);
+    } else {
+      // Load STT demo with same audio file
+      sttData = DEMO_STT_DATA;
+      currentData = DEMO_STT_DATA;
+      sttUtterances = DEMO_STT_DATA.utterances || [];
+      sttPartial = null;
+      currentMeta = {
+        fileSize: 1.87 * 1024 * 1024,
+        fileType: 'audio/mpeg',
+        httpStatus: 200,
+        httpStatusText: 'OK',
+        responseSize: JSON.stringify(DEMO_STT_DATA).length,
+        processingMs: 2660,
+      };
+      resultsFilename.textContent = 'Irate_Caller_Final.mp3';
+      resultsAudio.src = DEMO_STT_AUDIO_URL;
+      renderTranscript();
+    }
+  }
+
+  modeRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      if (radio.checked) switchMode(radio.value);
+    });
   });
-  if (files.length < 5) {
-    const newTab = document.createElement('button');
-    newTab.type = 'button';
-    newTab.className = 'file-tab new-tab' + (activeFileIndex === -1 ? ' active' : '');
-    newTab.dataset.newTab = 'true';
-    newTab.addEventListener('click', () => setActiveFileIndex(-1));
-    const newTabName = document.createElement('span');
-    newTabName.textContent = 'New audio';
-    newTab.appendChild(newTabName);
-    fileTabsBarEl.appendChild(newTab);
-  }
-}
 
-function updateTabStatus(i) {
-  const tab = fileTabsBarEl.querySelectorAll('.file-tab')[i];
-  if (!tab) return;
-  const entry = files[i];
-  if (!entry) return;
-  tab.dataset.status = entry.status;
-  const progress = tab.querySelector('.file-tab-progress');
-  if (!progress) return;
-  if (entry.status === 'processing' && entry.estimatedMs) {
-    const dur = (entry.estimatedMs / 1000).toFixed(1);
-    progress.style.animation = `progress-fill ${dur}s cubic-bezier(0.25,0.46,0.45,0.94) forwards`;
-  } else if (entry.status !== 'processing') {
-    progress.style.animation = 'none';
-    progress.style.width = '0';
-  }
-}
+  // ── STT Options Helper ──────────────────────────────────────────────────────
+  const optFast = document.getElementById('opt-fast');
+  const optDiarization = document.getElementById('opt-diarization');
+  const optEmotion = document.getElementById('opt-emotion');
+  const optAccent = document.getElementById('opt-accent');
+  const optPii = document.getElementById('opt-pii');
+  const richOpts = [optDiarization, optEmotion, optAccent, optPii];
 
-function setActiveFileIndex(i) {
-  if (activeFileIndex >= 0 && files[activeFileIndex] && !audioPlayerWrapEl.hidden) {
-    files[activeFileIndex].savedTime = audioPlayerEl.currentTime;
-  }
-  activeFileIndex = i;
-  // Update active class in-place so processing animations are not interrupted
-  let fileIdx = 0;
-  for (const t of fileTabsBarEl.querySelectorAll('.file-tab')) {
-    if (t.dataset.newTab) {
-      t.classList.toggle('active', i === -1);
-    } else {
-      t.classList.toggle('active', fileIdx === i);
-      fileIdx++;
-    }
-  }
-  if (i === -1) {
-    panelNewUploadEl.hidden = false;
-    viewerShellEl.hidden = true;
-    setStatus('Waiting', '');
-    metaFailureTypeEl.textContent = '';
-    metaFailureNameEl.textContent = '';
-    rowFailureTypeEl.hidden = true;
-    rowFailureNameEl.hidden = true;
-    metaModelEl.textContent = toText(MODEL_CONFIG[modelEl.value]?.fullName, modelEl.value);
-    metaOptionsEl.textContent = formatRequestedOptions(getRequestedOptions(), modelEl.value);
-    metaFileNameEl.textContent = '—';
-    metaFileTypeEl.textContent = '—';
-    metaFileSizeEl.textContent = '—';
-    metaDurationMinEl.textContent = '—';
-    metaProcessingEl.textContent = '—';
-    metaRtfEl.textContent = '—';
-    metaHttpEl.textContent = '—';
-    metaEndpointEl.textContent = '—';
-    metaRequestIdEl.textContent = '—';
-    metaRateEl.textContent = '—';
-    metaCostEl.textContent = '—';
-    metaTokensEl.textContent = '—';
-    metaTranscriptCharsEl.textContent = '—';
-    metaTranscriptWordsEl.textContent = '—';
-    metaUtterancesEl.textContent = '—';
-    metaSpeakersEl.textContent = '—';
-    metaLanguagesEl.textContent = '—';
-    metaEmotionsEl.textContent = '—';
-    metaAccentsEl.textContent = '—';
-    metaPiiTagsEl.textContent = '—';
-    metaResponseBytesEl.textContent = '—';
-    latestPayload = null;
-    latestPreviewText = '';
-  } else {
-    panelNewUploadEl.hidden = true;
-    viewerShellEl.hidden = false;
-    stopPanelRecording(true);
-    displayFile(files[i]);
-  }
-}
+  optFast.addEventListener('change', () => {
+    if (optFast.checked) richOpts.forEach(cb => { cb.checked = false; });
+  });
+  richOpts.forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) optFast.checked = false;
+    });
+  });
 
-function removeFile(i) {
-  const removedEntry = files[i];
-  if (removedEntry?.audioUrl) URL.revokeObjectURL(removedEntry.audioUrl);
-  files.splice(i, 1);
-  if (files.length === 0) {
-    activeFileIndex = -1;
-    latestPayload = null;
-    latestPreviewText = '';
-    audioPlayerWrapEl.hidden = true;
-    renderFileTabs();
-    panelNewUploadEl.hidden = false;
-    viewerShellEl.hidden = true;
-  } else {
-    if (activeFileIndex >= files.length) activeFileIndex = files.length - 1;
-    else if (activeFileIndex > i) activeFileIndex--;
-    renderFileTabs();
-    if (activeFileIndex === -1) {
-      panelNewUploadEl.hidden = false;
-      viewerShellEl.hidden = true;
-    } else {
-      panelNewUploadEl.hidden = true;
-      viewerShellEl.hidden = false;
-      displayFile(files[activeFileIndex]);
-    }
-  }
-}
+  function isFastMode() { return optFast.checked; }
 
-function displayFile(entry) {
-  if (!entry) return;
-
-  if (entry.status === 'pending') {
-    metaStatusEl.textContent = 'Waiting';
-    metaStatusEl.className = 'status';
-    rowFailureTypeEl.hidden = true;
-    rowFailureNameEl.hidden = true;
-    metaFileNameEl.textContent = entry.file.name;
-    metaFileSizeEl.textContent = formatMb(entry.file.size);
-    metaFileTypeEl.textContent = deriveClientFileType(entry.file);
-    metaModelEl.textContent = '—';
-    metaOptionsEl.textContent = '—';
-    metaDurationMinEl.textContent = '—';
-    metaProcessingEl.textContent = '—';
-    metaRtfEl.textContent = '—';
-    metaHttpEl.textContent = '—';
-    metaEndpointEl.textContent = '—';
-    metaRequestIdEl.textContent = '—';
-    metaRateEl.textContent = '—';
-    metaCostEl.textContent = '—';
-    metaTokensEl.textContent = '—';
-    metaTranscriptCharsEl.textContent = '—';
-    metaTranscriptWordsEl.textContent = '—';
-    metaUtterancesEl.textContent = '—';
-    metaSpeakersEl.textContent = '—';
-    metaLanguagesEl.textContent = '—';
-    metaEmotionsEl.textContent = '—';
-    metaAccentsEl.textContent = '—';
-    metaPiiTagsEl.textContent = '—';
-    metaResponseBytesEl.textContent = '—';
-    previewOutputEl.innerHTML = '<span class="empty-hint">Queued — will start processing shortly…</span>';
-    audioPlayerWrapEl.hidden = true;
-    latestPayload = null;
-    latestPreviewText = '';
-    renderJson({});
-    renderCallJson(entry.apiCallInfo);
-    return;
+  function getSttOptions() {
+    return {
+      speaker_diarization: optDiarization.checked,
+      emotion_signal: optEmotion.checked,
+      accent_signal: optAccent.checked,
+      pii_phi_tagging: optPii.checked,
+    };
   }
 
-  if (entry.status === 'processing') {
-    resetMeta(entry.file);
-    progressEstimatedMs = entry.estimatedMs;
-    updatePreview({ status: 'processing' });
-    if (entry.audioUrl) {
-      setPlayerSrc(entry);
-      audioPlayerWrapEl.hidden = false;
-    } else {
-      audioPlayerWrapEl.hidden = true;
-    }
-    latestPayload = null;
-    latestPreviewText = '';
-    renderJson({ status: 'processing', file: { name: entry.file.name }, model: entry.model });
-    renderCallJson(entry.apiCallInfo);
-    return;
+  // Speed factor for transcription: all 4 checked = 8x, just diarization = 20x, any 3 = 15x
+  function getSttSpeedFactor() {
+    if (isFastMode()) return 60; // vfast model is ~60x realtime
+    const opts = getSttOptions();
+    const count = [opts.emotion_signal, opts.accent_signal, opts.pii_phi_tagging].filter(Boolean).length;
+    if (count >= 3) return 8;
+    if (count >= 2) return 15;
+    if (count >= 1) return 15;
+    return 20;
   }
 
-  // done or error
-  const p = entry.normalizedResponse;
-  latestPayload = entry.rawPayload;
-  latestPreviewText = entry.previewText;
-  renderJson(entry.rawPayload);
-  renderCallJson(entry.apiCallInfo);
-  updateMetaFromResponse(p, entry.model);
-  progressEstimatedMs = null;
-  updatePreview(p);
-  if (entry.audioUrl) {
-    setPlayerSrc(entry);
-    audioPlayerWrapEl.hidden = false;
-  } else {
-    audioPlayerWrapEl.hidden = true;
-  }
-}
+  // ── Upload action: click + drag-and-drop ──────────────────────────────────
+  if (uploadAction && fileInput) {
+    uploadAction.addEventListener('click', (e) => {
+      if (e.target !== fileInput) fileInput.click();
+    });
 
-function setPlayerSrc(entry) {
-  // Skip reload only when the same URL is already loaded (metadata available).
-  // If readyState < HAVE_METADATA the previous load was interrupted (rapid tab
-  // switching cancels in-flight loads), so we must reload even if the URL matches.
-  if (playerCurrentSrc === entry.audioUrl && audioPlayerEl.readyState >= 1) return;
-  playerCurrentSrc = entry.audioUrl;
-  audioPlayerEl.src = entry.audioUrl;
-  audioPlayerEl.load(); // explicit load() ensures the browser actually starts
-  if (entry.savedTime > 0) {
-    const savedT = entry.savedTime;
-    const targetUrl = entry.audioUrl;
-    audioPlayerEl.addEventListener('loadedmetadata', function onMeta() {
-      audioPlayerEl.removeEventListener('loadedmetadata', onMeta);
-      if (playerCurrentSrc === targetUrl) audioPlayerEl.currentTime = savedT;
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        if (currentMode === 'deepfake') {
+          startDeepfakeAnalysis(fileInput.files[0]);
+        } else {
+          startTranscriptionBatch(fileInput.files[0]);
+        }
+        fileInput.value = '';
+      }
+    });
+
+    let dragCtr = 0;
+    uploadAction.addEventListener('dragenter', (e) => { e.preventDefault(); dragCtr++; uploadAction.classList.add('drag-over'); });
+    uploadAction.addEventListener('dragleave', (e) => { e.preventDefault(); dragCtr--; if (dragCtr <= 0) { dragCtr = 0; uploadAction.classList.remove('drag-over'); } });
+    uploadAction.addEventListener('dragover', (e) => e.preventDefault());
+    uploadAction.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragCtr = 0;
+      uploadAction.classList.remove('drag-over');
+      if (e.dataTransfer.files.length > 0) {
+        if (currentMode === 'deepfake') startDeepfakeAnalysis(e.dataTransfer.files[0]);
+        else startTranscriptionBatch(e.dataTransfer.files[0]);
+      }
     });
   }
-}
 
-function addFiles(fileList) {
-  const toAdd = Array.from(fileList);
-  if (!toAdd.length) return;
+  // ── Live Recording State ───────────────────────────────────────────────────
+  let isRecording = false;
+  let mediaStream = null;
+  let audioContext = null;
+  let scriptProcessor = null;
+  let recordingWs = null;
+  let liveFrames = [];
+  let recordingStartTime = 0;
+  let mediaRecorder = null;
+  let recordedChunks = [];
 
-  if (files.length >= 5) {
-    const replaceIdx = activeFileIndex >= 0 ? activeFileIndex : 0;
-    const currentName = files[replaceIdx]?.file.name ?? 'the current tab';
-    const shortName = currentName.length > 40 ? currentName.slice(0, 39) + '…' : currentName;
-    const ok = window.confirm(`All 5 slots are in use.\n\nReplace "${shortName}" with the new file?`);
-    if (!ok) return;
-    files[replaceIdx] = createFileEntry(toAdd[0]);
-    renderFileTabs();
-    setActiveFileIndex(replaceIdx);
-    processAllFiles();
-    return;
+  if (recordAction) {
+    recordAction.addEventListener('click', () => {
+      if (recordAction.classList.contains('disabled-soon')) return;
+      if (isRecording) {
+        stopRecording();
+      } else {
+        if (currentMode === 'deepfake') startDeepfakeRecording();
+        else startTranscriptionRecording();
+      }
+    });
   }
 
-  const remaining = 5 - files.length;
-  const toAddSliced = toAdd.slice(0, remaining);
-  const firstNewIndex = files.length;
-  toAddSliced.forEach(f => files.push(createFileEntry(f)));
-  renderFileTabs();
-  if (activeFileIndex < 0) setActiveFileIndex(firstNewIndex);
-  processAllFiles();
-}
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── DEEPFAKE MODE ─────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
 
-function processAllFiles() {
-  files.forEach((entry, i) => {
-    if (entry.status === 'pending') void runWithFileAtIndex(i);
-  });
-}
+  async function startDeepfakeAnalysis(file) {
+    const durationMs = await getAudioDuration(file);
+    showOverlay(file.name, 'Detecting synthetic voice across all segments');
+    const estimatedMs = Math.max(MIN_PROGRESS_MS, (durationMs / SPEED_FACTOR));
+    startProgress(estimatedMs);
 
-async function runWithFileAtIndex(i) {
-  const entry = files[i];
-  if (!entry || entry.status !== 'pending') return;
+    try {
+      const startedAt = Date.now();
+      const { data, meta } = await uploadAndAnalyze(file, '/api/velma-2-synthetic-voice-detection-batch');
+      const processingMs = Date.now() - startedAt;
+      await finishProgress();
+      hideOverlay();
 
-  const { file } = entry;
-  const model = entry.model;
-  const config = MODEL_CONFIG[model] || MODEL_CONFIG.batch;
-  const options = entry.options;
-  const startedAt = Date.now();
+      if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
+      audioObjectUrl = URL.createObjectURL(file);
 
-  // Probe duration for progress estimate
-  if (config.speedFactor) {
-    const dur = await probeFileDuration(file).catch(() => null);
-    if (dur && Number.isFinite(dur)) entry.estimatedMs = dur / config.speedFactor;
-  }
+      currentMeta = {
+        fileSize: file.size,
+        fileType: file.type || file.name.split('.').pop().toUpperCase(),
+        httpStatus: meta.httpStatus,
+        httpStatusText: meta.httpStatusText,
+        responseSize: meta.responseSize,
+        processingMs: processingMs,
+      };
 
-  // Create audio URL upfront
-  if (!entry.audioUrl) entry.audioUrl = URL.createObjectURL(file);
-
-  // Build API call info for the "Show API Call" tab
-  const callFormFields = {};
-  callFormFields.upload_file = `(binary) ${file.name} — ${(file.size / 1024).toFixed(1)} KB, ${file.type || 'unknown type'}`;
-  if (config.type === 'stt' && config.mode !== 'streaming' && !config.unsupported.has('options')) {
-    callFormFields.speaker_diarization = String(options.speaker_diarization);
-    callFormFields.emotion_signal = String(options.emotion_signal);
-    callFormFields.accent_signal = String(options.accent_signal);
-    callFormFields.pii_phi_tagging = String(options.pii_phi_tagging);
-  }
-  entry.apiCallInfo = {
-    method: config.mode === 'streaming' ? 'WebSocket' : 'POST',
-    url: config.mode === 'streaming'
-      ? `${API_WS_BASE_URL}${config.endpoint}`
-      : `${API_BASE_URL}${config.endpoint}`,
-    headers: {
-      'X-API-Key': '(server-side)',
-    },
-    body: config.mode === 'streaming' ? undefined : {
-      type: 'multipart/form-data',
-      fields: callFormFields,
-    },
-  };
-
-  entry.status = 'processing';
-  updateTabStatus(i);
-  if (i === activeFileIndex) {
-    resetMeta(file);
-    progressEstimatedMs = entry.estimatedMs;
-    updatePreview({ status: 'processing' });
-    setPlayerSrc(entry);
-    audioPlayerWrapEl.hidden = false;
-    renderJson({ status: 'processing', file: { name: file.name }, model, options });
-    renderCallJson(entry.apiCallInfo);
-  }
-
-  const finalize = (payload, status) => {
-    entry.status = status;
-    entry.normalizedResponse = payload;
-    entry.rawPayload = payload;
-    entry.previewText = computePreviewText(payload);
-    updateTabStatus(i);
-    if (i === activeFileIndex) {
-      latestPayload = payload;
-      latestPreviewText = entry.previewText;
-      renderJson(payload);
-      updateMetaFromResponse(payload, model);
-      progressEstimatedMs = null;
-      updatePreview(payload);
+      renderDeepfakeResults(data, audioObjectUrl);
+    } catch (err) {
+      stopProgress();
+      hideOverlay();
+      showError(err.message || 'Analysis failed. Please try again.');
     }
-  };
-
-  // Check rate limit before starting
-  if (usageRemaining !== null && usageRemaining <= 0) {
-    const processingMs = Date.now() - startedAt;
-    const payload = normalizeApiResponse({ modelKey: model, file, options, config, statusCode: 429, statusText: 'Rate Limit Exceeded', parsed: { message: 'Transcription limit reached. Please try again later.' }, rawText: '{"message":"Rate limit exceeded"}', processingMs, ok: false });
-    payload.error = { type: 'Rate Limit', message: 'Transcription limit reached. Please try again later.', detail: `Maximum ${usageLimit} transcriptions per hour.` };
-    finalize(payload, 'error');
-    fileEl.value = '';
-    return;
   }
 
-  try {
-    // For streaming detection, render frames live as they arrive
-    const onStreamingFrame = (config.type === 'detection' && config.mode === 'streaming')
-      ? (frames, durationMs) => {
-          if (i === activeFileIndex) {
-            renderDetectionPreview(null, durationMs, frames);
+  function startDeepfakeRecording() {
+    startRecordingCommon('/api/velma-2-synthetic-voice-detection-streaming', (msg) => {
+      if (msg?.type === 'frame' && msg.frame && typeof msg.frame.confidence === 'number') {
+        liveFrames.push(msg.frame);
+        renderDeepfakeLiveResults();
+      } else if (msg?.type === 'done') {
+        stopRecording();
+      } else if (msg?.type === 'error') {
+        showError('Streaming error: ' + (msg.error || 'Unknown'));
+        if (liveFrames.length > 0) stopRecording();
+        else cleanupRecording();
+      }
+    }, () => {
+      resultsFilename.textContent = 'Live Recording';
+      resultsAudio.removeAttribute('src');
+      resultsAudio.load();
+      if (audioObjectUrl) { URL.revokeObjectURL(audioObjectUrl); audioObjectUrl = null; }
+      currentData = null;
+
+      verdictRing.className = 'verdict-ring pending';
+      verdictIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:100%;height:100%"><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>';
+      verdictLabel.textContent = 'Listening';
+      verdictCount.textContent = 'No segments';
+
+      histogram.innerHTML = '';
+      const placeholderBar = document.createElement('div');
+      placeholderBar.className = 'histo-bar';
+      placeholderBar.style.height = '40%';
+      placeholderBar.style.background = 'var(--ui-border)';
+      histogram.appendChild(placeholderBar);
+
+      resultsTbody.innerHTML = '';
+      const placeholderRow = document.createElement('tr');
+      placeholderRow.style.color = 'var(--text-caption)';
+      const tdTime = document.createElement('td');
+      tdTime.textContent = '0:00 \u2013 \u2026';
+      const tdVerdict = document.createElement('td');
+      const pill = document.createElement('span');
+      pill.className = 'verdict-pill';
+      pill.style.background = 'var(--ui-border)';
+      pill.style.color = 'var(--text-caption)';
+      pill.textContent = 'Pending';
+      tdVerdict.appendChild(pill);
+      const tdConf = document.createElement('td');
+      tdConf.textContent = '\u2014';
+      placeholderRow.appendChild(tdTime);
+      placeholderRow.appendChild(tdVerdict);
+      placeholderRow.appendChild(tdConf);
+      resultsTbody.appendChild(placeholderRow);
+
+      window.scrollTo(0, 0);
+    });
+  }
+
+  function renderDeepfakeLiveResults() {
+    if (!liveFrames.length) return;
+    const durationMs = Date.now() - recordingStartTime;
+    currentData = { filename: 'Live Recording', frames: liveFrames, duration_ms: durationMs };
+    resultsFilename.textContent = 'Live Recording';
+    currentFrames = liveFrames;
+
+    const synFrames = liveFrames.filter(f => f.synthetic_voice);
+    const highConf99 = synFrames.filter(f => f.confidence > 0.99).length;
+    const highConf90 = synFrames.filter(f => f.confidence > 0.90).length;
+    const isSynthetic = highConf99 >= 1 || highConf90 >= 2;
+
+    renderVerdict(isSynthetic, synFrames.length, liveFrames.length);
+    renderHistogram(liveFrames);
+    renderTable(liveFrames);
+  }
+
+  function renderDeepfakeResults(data, audioSrc) {
+    currentData = data;
+    resultsFilename.textContent = data.filename || 'Audio file';
+    resultsAudio.src = audioSrc;
+
+    const frames = data.frames || [];
+    currentFrames = frames;
+
+    const synFrames = frames.filter(f => f.synthetic_voice);
+    const highConf99 = synFrames.filter(f => f.confidence > 0.99).length;
+    const highConf90 = synFrames.filter(f => f.confidence > 0.90).length;
+    const isSynthetic = highConf99 >= 1 || highConf90 >= 2;
+
+    renderVerdict(isSynthetic, synFrames.length, frames.length);
+    renderHistogram(frames);
+    renderTable(frames);
+    setupPlaybackTracking(frames);
+    window.scrollTo(0, 0);
+  }
+
+  function renderVerdict(isSynthetic, syntheticCount, totalCount) {
+    verdictRing.className = 'verdict-ring ' + (isSynthetic ? 'synthetic' : 'authentic');
+
+    verdictIcon.innerHTML = isSynthetic
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="14" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.5" fill="currentColor" stroke="none"/><line x1="12" y1="4" x2="12" y2="8"/><circle cx="12" cy="3" r="1"/><line x1="2" y1="13" x2="4" y2="13"/><line x1="20" y1="13" x2="22" y2="13"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+
+    verdictLabel.textContent = isSynthetic ? 'Deepfake' : 'Authentic';
+    verdictCount.textContent = syntheticCount + '/' + totalCount + ' deepfake segments';
+  }
+
+  function renderHistogram(frames) {
+    histogram.innerHTML = '';
+    if (!frames.length) return;
+
+    const squaresRow = document.createElement('div');
+    squaresRow.className = 'histo-squares';
+
+    frames.forEach((frame, i) => {
+      const bar = document.createElement('div');
+      bar.className = 'histo-bar ' + (frame.synthetic_voice ? 'synthetic' : 'authentic');
+      const alpha = confidenceToOpacity(frame.confidence);
+      const rgb = frame.synthetic_voice ? '255,53,84' : '21,207,135';
+      bar.style.background = 'rgba(' + rgb + ',' + alpha + ')';
+
+      const verdictWord = frame.synthetic_voice ? 'Deepfake' : 'Authentic';
+      const verdictColor = frame.synthetic_voice ? 'rgb(255,53,84)' : 'rgb(21,207,135)';
+      const tooltipHtml =
+        formatMs(frame.start_time_ms) + ' \u2013 ' + formatMs(frame.end_time_ms) +
+        ' <span style="color:' + verdictColor + '">\u00B7 <span style="font-weight:700">' + verdictWord + '</span>' +
+        ' \u00B7 ' + (frame.confidence * 100).toFixed(0) + '%</span>';
+
+      bar.addEventListener('mouseenter', () => {
+        const rect = bar.getBoundingClientRect();
+        histoTooltip.innerHTML = tooltipHtml;
+        histoTooltip.style.display = 'block';
+        histoTooltip.style.top = (rect.top - 6) + 'px';
+        histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
+        histoTooltip.style.transform = 'translate(-50%, -100%)';
+      });
+      bar.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
+      bar.addEventListener('click', () => seekTo(frame.start_time_ms, i));
+      squaresRow.appendChild(bar);
+    });
+    histogram.appendChild(squaresRow);
+
+    const axisRow = document.createElement('div');
+    axisRow.className = 'histo-axis';
+    frames.forEach((frame, i) => {
+      const tick = document.createElement('div');
+      tick.className = 'histo-tick';
+      if (i % 5 === 0) tick.textContent = formatSecCompact(frame.start_time_ms);
+      axisRow.appendChild(tick);
+    });
+    histogram.appendChild(axisRow);
+  }
+
+  function renderTable(frames) {
+    resultsTbody.innerHTML = '';
+    frames.forEach((frame, i) => {
+      const tr = document.createElement('tr');
+      tr.dataset.index = i;
+
+      const tdTime = document.createElement('td');
+      tdTime.textContent = formatMs(frame.start_time_ms) + ' \u2013 ' + formatMs(frame.end_time_ms);
+
+      const tdVerdict = document.createElement('td');
+      const pill = document.createElement('span');
+      pill.className = 'verdict-pill ' + (frame.synthetic_voice ? 'synthetic' : 'authentic');
+      pill.textContent = frame.synthetic_voice ? 'Deepfake' : 'Authentic';
+      tdVerdict.appendChild(pill);
+
+      const tdConf = document.createElement('td');
+      const confWrap = document.createElement('div');
+      confWrap.className = 'confidence-cell';
+      const confTrack = document.createElement('div');
+      confTrack.className = 'confidence-bar-track';
+      const confFill = document.createElement('div');
+      confFill.className = 'confidence-bar-fill ' + (frame.synthetic_voice ? 'synthetic' : 'authentic');
+      confFill.style.width = (frame.confidence * 100) + '%';
+      confTrack.appendChild(confFill);
+      const confText = document.createElement('span');
+      confText.textContent = (frame.confidence * 100).toFixed(1) + '%';
+      confWrap.appendChild(confTrack);
+      confWrap.appendChild(confText);
+      tdConf.appendChild(confWrap);
+
+      tr.appendChild(tdTime);
+      tr.appendChild(tdVerdict);
+      tr.appendChild(tdConf);
+      tr.addEventListener('click', () => seekTo(frame.start_time_ms, i));
+      resultsTbody.appendChild(tr);
+    });
+  }
+
+  function seekTo(startMs, index) {
+    if (resultsAudio) {
+      resultsAudio.currentTime = startMs / 1000;
+      resultsAudio.play().catch(() => {});
+    }
+    histogram.querySelectorAll('.histo-bar').forEach((bar, i) => bar.classList.toggle('active', i === index));
+    resultsTbody.querySelectorAll('tr').forEach((row, i) => row.classList.toggle('active', i === index));
+  }
+
+  function setupPlaybackTracking(frames) {
+    if (playbackTracker) cancelAnimationFrame(playbackTracker);
+    const bars = histogram.querySelectorAll('.histo-bar');
+    const rows = resultsTbody.querySelectorAll('tr');
+
+    function tick() {
+      if (resultsAudio.paused) { playbackTracker = requestAnimationFrame(tick); return; }
+      const currentMs = resultsAudio.currentTime * 1000;
+      // Find the last frame whose start_time_ms <= currentMs (handles overlapping frames)
+      let activeIdx = -1;
+      for (let i = frames.length - 1; i >= 0; i--) {
+        if (currentMs >= frames[i].start_time_ms && currentMs < frames[i].end_time_ms) { activeIdx = i; break; }
+      }
+      bars.forEach((bar, i) => bar.classList.toggle('active', i === activeIdx));
+      rows.forEach((row, i) => row.classList.toggle('active', i === activeIdx));
+      playbackTracker = requestAnimationFrame(tick);
+    }
+    playbackTracker = requestAnimationFrame(tick);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── TRANSCRIPTION MODE ────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async function startTranscriptionBatch(file) {
+    const durationMs = await getAudioDuration(file);
+    showOverlay(file.name, 'Transcribing audio');
+    const speedFactor = getSttSpeedFactor();
+    const estimatedMs = Math.max(MIN_PROGRESS_MS, (durationMs / speedFactor));
+    startProgress(estimatedMs);
+
+    try {
+      const startedAt = Date.now();
+      const fast = isFastMode();
+      const endpoint = fast ? '/api/velma-2-stt-batch-english-vfast' : '/api/velma-2-stt-batch';
+      const opts = fast ? {} : getSttOptions();
+      const { data, meta } = await uploadAndAnalyze(file, endpoint, opts);
+      const processingMs = Date.now() - startedAt;
+      await finishProgress();
+      hideOverlay();
+
+      if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
+      audioObjectUrl = URL.createObjectURL(file);
+
+      currentMeta = {
+        fileSize: file.size,
+        fileType: file.type || file.name.split('.').pop().toUpperCase(),
+        httpStatus: meta.httpStatus,
+        httpStatusText: meta.httpStatusText,
+        responseSize: meta.responseSize,
+        processingMs: processingMs,
+      };
+
+      // vfast returns { text, duration_ms } — wrap into utterance format
+      if (fast && !data.utterances && data.text) {
+        data.utterances = [{ text: data.text, start_ms: 0, duration_ms: data.duration_ms || 0 }];
+      }
+      sttData = data;
+      currentData = data;
+      sttUtterances = data.utterances || [];
+      sttPartial = null;
+
+      resultsFilename.textContent = data.filename || file.name || 'Audio file';
+      resultsAudio.src = audioObjectUrl;
+      renderTranscript();
+      window.scrollTo(0, 0);
+    } catch (err) {
+      stopProgress();
+      hideOverlay();
+      showError(err.message || 'Transcription failed. Please try again.');
+    }
+  }
+
+  function startTranscriptionRecording() {
+    const opts = getSttOptions();
+    const params = new URLSearchParams();
+    params.set('speaker_diarization', opts.speaker_diarization);
+    params.set('emotion_signal', opts.emotion_signal);
+    params.set('accent_signal', opts.accent_signal);
+    params.set('pii_phi_tagging', opts.pii_phi_tagging);
+    params.set('partial_results', 'true');
+
+    sttUtterances = [];
+    sttPartial = null;
+    sttData = null;
+    currentData = null;
+
+    startRecordingCommon('/api/velma-2-stt-streaming?' + params.toString(), (msg) => {
+      if (msg?.type === 'utterance' && msg.utterance) {
+        sttUtterances.push(msg.utterance);
+        sttPartial = null;
+        updateSttData();
+        renderTranscript();
+      } else if (msg?.type === 'partial_utterance' && msg.partial_utterance) {
+        sttPartial = msg.partial_utterance;
+        renderTranscript();
+      } else if (msg?.type === 'done') {
+        sttPartial = null;
+        if (msg.duration_ms) {
+          updateSttData();
+          if (sttData) sttData.duration_ms = msg.duration_ms;
+        }
+        renderTranscript();
+        stopRecording();
+      } else if (msg?.type === 'error') {
+        showError('Streaming error: ' + (msg.error || 'Unknown'));
+        if (sttUtterances.length > 0) stopRecording();
+        else cleanupRecording();
+      }
+    }, () => {
+      resultsFilename.textContent = 'Live Recording';
+      resultsAudio.removeAttribute('src');
+      resultsAudio.load();
+      if (audioObjectUrl) { URL.revokeObjectURL(audioObjectUrl); audioObjectUrl = null; }
+      renderTranscript();
+      window.scrollTo(0, 0);
+    });
+  }
+
+  function updateSttData() {
+    const durationMs = Date.now() - recordingStartTime;
+    sttData = { filename: 'Live Recording', utterances: sttUtterances, duration_ms: durationMs };
+    currentData = sttData;
+  }
+
+  function renderTranscript() {
+    transcriptList.innerHTML = '';
+
+    if (sttUtterances.length === 0 && !sttPartial) {
+      const empty = document.createElement('div');
+      empty.className = 'transcript-empty';
+      empty.textContent = isRecording ? 'Listening\u2026' : 'Upload an audio file or start recording to see the transcript.';
+      transcriptList.appendChild(empty);
+      return;
+    }
+
+    const opts = getSttOptions();
+
+    sttUtterances.forEach((u, i) => {
+      transcriptList.appendChild(buildUtteranceEl(u, opts, false, i));
+    });
+
+    if (sttPartial) {
+      transcriptList.appendChild(buildUtteranceEl(sttPartial, opts, true, -1));
+    }
+
+    if (isRecording && transcriptList.lastElementChild) {
+      transcriptList.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    // Render emotion chart (includes its own playback tracking for both bars and bubbles)
+    const opts2 = getSttOptions();
+    if (sttUtterances.length > 0 && !isRecording && opts2.speaker_diarization) {
+      renderSttChart();
+    } else {
+      sttChart.innerHTML = '';
+      sttChart.classList.remove('visible');
+    }
+  }
+
+  let sttPlaybackTracker = null;
+
+  function setupTranscriptPlaybackTracking() {
+    if (sttPlaybackTracker) cancelAnimationFrame(sttPlaybackTracker);
+    const utteranceEls = transcriptList.querySelectorAll('.transcript-utterance');
+
+    function tick() {
+      if (resultsAudio.paused) { sttPlaybackTracker = requestAnimationFrame(tick); return; }
+      const currentMs = resultsAudio.currentTime * 1000;
+      let activeIdx = -1;
+      for (let i = sttUtterances.length - 1; i >= 0; i--) {
+        const u = sttUtterances[i];
+        const endMs = u.start_ms + (u.duration_ms || 0);
+        if (currentMs >= u.start_ms && currentMs < endMs) { activeIdx = i; break; }
+      }
+      utteranceEls.forEach((el, i) => el.classList.toggle('active', i === activeIdx));
+      sttPlaybackTracker = requestAnimationFrame(tick);
+    }
+    sttPlaybackTracker = requestAnimationFrame(tick);
+  }
+
+  function renderSttChart() {
+    sttChart.innerHTML = '';
+    if (!sttUtterances.length) { sttChart.classList.remove('visible'); return; }
+
+    // Calculate total duration
+    const lastU = sttUtterances[sttUtterances.length - 1];
+    const totalMs = (sttData && sttData.duration_ms)
+      ? sttData.duration_ms
+      : (lastU.start_ms + (lastU.duration_ms || 4000));
+    if (totalMs <= 0) return;
+
+    // Group utterances by speaker
+    const speakerMap = new Map();
+    sttUtterances.forEach((u, i) => {
+      const spk = u.speaker != null ? u.speaker : 0;
+      if (!speakerMap.has(spk)) speakerMap.set(spk, []);
+      speakerMap.get(spk).push({ u, i });
+    });
+    const speakers = Array.from(speakerMap.keys()).sort((a, b) => a - b);
+
+    // Build rows
+    speakers.forEach(spk => {
+      const row = document.createElement('div');
+      row.className = 'stt-chart-row';
+
+      const label = document.createElement('div');
+      label.className = 'stt-chart-label';
+      label.textContent = 'Speaker ' + spk;
+      row.appendChild(label);
+
+      speakerMap.get(spk).forEach(({ u, i }) => {
+        const bar = document.createElement('div');
+        bar.className = 'stt-chart-bar';
+
+        // Extend bar to the start of the next utterance from ANY speaker
+        let nextStartMs = totalMs;
+        for (let j = 0; j < sttUtterances.length; j++) {
+          if (sttUtterances[j].start_ms > u.start_ms) {
+            nextStartMs = sttUtterances[j].start_ms;
+            break;
           }
         }
-      : null;
-
-    const transport = config.mode === 'streaming'
-      ? await requestStreamingTranscription({ file, options, config, onStreamingFrame })
-      : await requestBatchTranscription({ file, options, config });
-    const processingMs = Date.now() - startedAt;
-
-    // Handle 429 from server
-    if (transport.statusCode === 429) {
-      const payload = normalizeApiResponse({ modelKey: model, file, options, config, statusCode: 429, statusText: 'Rate Limit Exceeded', parsed: transport.parsed, rawText: transport.rawText, processingMs, ok: false });
-      payload.error = { type: 'Rate Limit', message: transport.parsed?.message || 'Transcription limit reached.', detail: 'Please try again later.' };
-      finalize(payload, 'error');
-      fetchUsage();
-      return;
-    }
-
-    const payload = normalizeApiResponse({ modelKey: model, file, options, config, statusCode: transport.statusCode, statusText: transport.statusText, parsed: transport.parsed, rawText: transport.rawText, processingMs, ok: transport.ok });
-    finalize(payload, payload.success ? 'done' : 'error');
-    fetchUsage();
-  } catch (error) {
-    const processingMs = Date.now() - startedAt;
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const payload = normalizeApiResponse({ modelKey: model, file, options, config, statusCode: null, statusText: config.mode === 'streaming' ? 'Streaming Error' : 'Network Error', parsed: { message: errorMessage }, rawText: JSON.stringify({ message: errorMessage }), processingMs, ok: false });
-    payload.error = { type: config.mode === 'streaming' ? 'Streaming Error' : 'Network Error', message: errorMessage, detail: config.mode === 'streaming' ? 'WebSocket streaming failed.' : 'Request failed.' };
-    finalize(payload, 'error');
-  } finally {
-    fileEl.value = '';
-    if (isStreamingModel(model) && mediaRecorder?.state !== 'recording') {
-      recordStatusEl.textContent = 'Ready to record';
-    }
-  }
-}
-// ─────────────────────────────────────────────────────────────────────────────
-
-function probeFileDuration(file) {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const audio = new Audio();
-    const cleanup = () => URL.revokeObjectURL(url);
-    audio.onloadedmetadata = () => { cleanup(); resolve(audio.duration * 1000); };
-    audio.onerror = () => { cleanup(); reject(); };
-    audio.src = url;
-    setTimeout(() => { cleanup(); reject(); }, 4000);
-  });
-}
-
-const INT_FMT = new Intl.NumberFormat('en-US');
-const DEC3_FMT = new Intl.NumberFormat('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-const DEC2_FMT = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const DEC1_FMT = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-const BATCH_ONLY_TOOLTIP = 'Available in Batch or Streaming model.';
-
-const UNSUPPORTED_BY_MODEL = Object.fromEntries(
-  Object.entries(MODEL_CONFIG).map(([modelKey, config]) => [modelKey, config.unsupported || new Set()]),
-);
-
-function toText(value, fallback = '—') {
-  if (value === null || value === undefined || value === '') return fallback;
-  return String(value);
-}
-
-function formatCount(value, unit) {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return '—';
-  return `${INT_FMT.format(value)} ${unit}`;
-}
-
-function formatMb(bytes) {
-  if (typeof bytes !== 'number' || !Number.isFinite(bytes)) return '—';
-  return `${DEC3_FMT.format(bytes / (1024 * 1024))} MB`;
-}
-
-function formatResponseBytes(bytes) {
-  if (typeof bytes !== 'number' || !Number.isFinite(bytes) || bytes < 0) return '—';
-  if (bytes < 1024) return `${INT_FMT.format(bytes)} B`;
-  if (bytes < 1024 * 1024) return `${DEC2_FMT.format(bytes / 1024)} KB`;
-  return `${DEC2_FMT.format(bytes / (1024 * 1024))} MB`;
-}
-
-function formatDurationMs(ms) {
-  if (typeof ms !== 'number' || !Number.isFinite(ms)) return '—';
-  return `${INT_FMT.format(Math.round(ms))} ms`;
-}
-
-function formatMsToMinSec(ms) {
-  if (typeof ms !== 'number' || !Number.isFinite(ms) || ms < 0) return '—';
-  const totalSec = Math.round(ms / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  if (m > 0) return `${m} m ${s} s`;
-  return `${s} s`;
-}
-
-function formatSecondsFromMs(ms) {
-  return formatMsToMinSec(ms);
-}
-
-function formatMinutes(value) {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return '—';
-  return formatMsToMinSec(value * 60000);
-}
-
-function formatAdaptive(value) {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return 'N/A';
-
-  const abs = Math.abs(value);
-  if (abs >= 100) return INT_FMT.format(Math.round(value));
-  if (abs >= 10) return DEC1_FMT.format(value);
-  if (abs >= 1) return DEC2_FMT.format(value);
-  if (abs >= 0.1) return value.toFixed(3);
-  if (abs >= 0.01) return value.toFixed(4);
-  return value.toFixed(5);
-}
-
-function formatProcessingFactor(data) {
-  const processingMs = data?.speed?.processingMs;
-  const audioDurationMs = data?.meta?.audioDurationMs ?? data?.speed?.audioDurationMs;
-
-  if (typeof processingMs !== 'number' || !Number.isFinite(processingMs) || processingMs <= 0) {
-    return 'N/A';
-  }
-
-  if (typeof audioDurationMs !== 'number' || !Number.isFinite(audioDurationMs) || audioDurationMs <= 0) {
-    return 'N/A';
-  }
-
-  // Use the same rounded-second values shown in the table to keep factor visually consistent.
-  const durationSecondsForFactor = Math.round(audioDurationMs / 1000);
-  const processingSecondsForFactor = Math.round(processingMs / 1000) || (processingMs / 1000);
-
-  if (!Number.isFinite(durationSecondsForFactor) || durationSecondsForFactor <= 0) {
-    return 'N/A';
-  }
-
-  if (!Number.isFinite(processingSecondsForFactor) || processingSecondsForFactor <= 0) {
-    return 'N/A';
-  }
-
-  const fasterMultiplier = durationSecondsForFactor / processingSecondsForFactor;
-
-  if (fasterMultiplier >= 1) {
-    return `×${formatAdaptive(fasterMultiplier)} faster`;
-  }
-
-  const slowerMultiplier = processingMs / audioDurationMs;
-  return `x${formatAdaptive(slowerMultiplier)} slower`;
-}
-
-function setStatus(label, state = 'neutral') {
-  metaStatusEl.classList.remove('ok', 'fail', 'processing');
-
-  if (state === 'processing') {
-    metaStatusEl.classList.add('processing');
-    metaStatusEl.innerHTML = `${label}<span class="dots"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>`;
-    return;
-  }
-
-  metaStatusEl.textContent = label;
-  if (state === 'ok') metaStatusEl.classList.add('ok');
-  if (state === 'fail') metaStatusEl.classList.add('fail');
-}
-
-function formatRate(cost) {
-  if (!cost) return '—';
-
-  if (typeof cost.ratePerHourUsd === 'number' && cost.ratePerHourUsd > 0) {
-    return `$${cost.ratePerHourUsd}/hour`;
-  }
-
-  return 'N/A';
-}
-
-function formatCost(cost) {
-  if (!cost) return '—';
-
-  if (typeof cost.estimatedUsd === 'number') {
-    return `$${cost.estimatedUsd.toFixed(6)} USD`;
-  }
-
-  return 'N/A';
-}
-
-function formatTokens(tokens) {
-  if (!tokens) return 'N/A';
-
-  const parts = [];
-
-  if (typeof tokens.totalTokens === 'number') parts.push(`total: ${INT_FMT.format(tokens.totalTokens)} tokens`);
-  if (typeof tokens.inputTokens === 'number') parts.push(`input: ${INT_FMT.format(tokens.inputTokens)} tokens`);
-  if (typeof tokens.outputTokens === 'number') parts.push(`output: ${INT_FMT.format(tokens.outputTokens)} tokens`);
-
-  return parts.length ? parts.join(' | ') : 'N/A';
-}
-
-function escapeHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function syntaxHighlightJson(jsonText) {
-  const escaped = escapeHtml(jsonText);
-  return escaped.replace(
-    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"\s*:?|\btrue\b|\bfalse\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?)/g,
-    (match) => {
-      if (match.startsWith('"')) {
-        if (match.endsWith(':')) {
-          return `<span class="json-key">${match}</span>`;
-        }
-        return `<span class="json-string">${match}</span>`;
-      }
-      if (match === 'true' || match === 'false') {
-        return `<span class="json-boolean">${match}</span>`;
-      }
-      if (match === 'null') {
-        return `<span class="json-null">${match}</span>`;
-      }
-      return `<span class="json-number">${match}</span>`;
-    },
-  );
-}
-
-function renderJson(payload) {
-  // For detection models, show only the raw API response — no wrapper fields
-  const displayPayload = payload?.modelType === 'detection' && payload?.result
-    ? payload.result
-    : payload;
-  const pretty = JSON.stringify(displayPayload, null, 2);
-  outputEl.innerHTML = syntaxHighlightJson(pretty);
-
-  latestPayload = payload;
-  updatePreview(payload);
-}
-
-function renderCallJson(callInfo) {
-  const pretty = JSON.stringify(callInfo || {}, null, 2);
-  outputCallEl.innerHTML = syntaxHighlightJson(pretty);
-}
-
-function extractTranscriptText(payload) {
-  const result = payload?.result;
-
-  if (result && typeof result.text === 'string' && result.text.trim()) {
-    return stripSignalTags(result.text).trim();
-  }
-
-  if (result && Array.isArray(result.utterances) && result.utterances.length) {
-    const lines = result.utterances
-      .map((utterance) => (utterance && typeof utterance.text === 'string' ? stripSignalTags(utterance.text).trim() : ''))
-      .filter(Boolean);
-
-    if (lines.length) return lines.join('\n');
-  }
-
-  return '';
-}
-
-function getRequestedOptions() {
-  return {
-    speaker_diarization: !!optSpeakerDiarizationEl?.checked,
-    emotion_signal: !!optEmotionSignalEl?.checked,
-    accent_signal: !!optAccentSignalEl?.checked,
-    pii_phi_tagging: !!optPiiPhiTaggingEl?.checked,
-  };
-}
-
-function updateFeatureControlsForModel(modelKey) {
-  const config = MODEL_CONFIG[modelKey];
-  const isDetection = config?.type === 'detection';
-  const supportsOptions = !isDetection && !config?.unsupported?.has('options');
-
-  const featureControlsEl = document.getElementById('feature-controls');
-  const featureTitleEl = document.querySelector('.feature-title');
-  if (featureControlsEl) featureControlsEl.hidden = isDetection;
-  if (featureTitleEl) featureTitleEl.hidden = isDetection;
-
-  for (const input of optionInputs) {
-    input.disabled = !supportsOptions;
-    const label = input.closest('.feature-item');
-    if (label) {
-      label.classList.toggle('disabled', !supportsOptions);
-      label.title = supportsOptions ? '' : BATCH_ONLY_TOOLTIP;
-    }
-  }
-
-  const autoscrollLabel = autoscrollEl?.closest('.autoscroll-label');
-  if (autoscrollEl) {
-    autoscrollEl.disabled = !supportsOptions;
-    if (autoscrollLabel) {
-      autoscrollLabel.classList.toggle('disabled', !supportsOptions);
-      autoscrollLabel.title = supportsOptions ? '' : BATCH_ONLY_TOOLTIP;
-    }
-  }
-
-  // Hide copy transcript and autoscroll for detection models
-  if (copyBtnEl) copyBtnEl.hidden = isDetection;
-  if (autoscrollEl) {
-    const autoscrollLabel = autoscrollEl.closest('.autoscroll-label');
-    if (autoscrollLabel) autoscrollLabel.hidden = isDetection;
-  }
-
-  if (featureNoteEl) featureNoteEl.textContent = '';
-
-  // Update stats table row visibility
-  updateStatsRowVisibility(modelKey);
-}
-
-// Rows that only apply to STT models
-const STT_ONLY_ROW_IDS = [
-  'row-options', 'row-utterances', 'row-speakers', 'row-languages',
-  'row-transcript-words', 'row-transcript-chars', 'row-emotions',
-  'row-accents', 'row-pii-tags', 'row-tokens',
-];
-
-function updateStatsRowVisibility(modelKey) {
-  const config = MODEL_CONFIG[modelKey];
-  const isDetection = config?.type === 'detection';
-
-  for (const id of STT_ONLY_ROW_IDS) {
-    const row = document.getElementById(id);
-    if (row) row.hidden = isDetection;
-  }
-
-  // Detection score row is no longer shown — verdict is in the preview chart
-  if (rowDetectionScoreEl) rowDetectionScoreEl.hidden = true;
-}
-
-function formatRequestedOptions(options, modelKey) {
-  const cfg = MODEL_CONFIG[modelKey];
-  if (cfg?.type === 'detection' || cfg?.unsupported?.has('options')) return 'N/A';
-
-  const opts = options || getRequestedOptions();
-  const on = [
-    opts.speaker_diarization && 'Diarization',
-    opts.emotion_signal && 'Emotion',
-    opts.accent_signal && 'Accent',
-    opts.pii_phi_tagging && 'PII/PHI',
-  ].filter(Boolean);
-  return on.length ? on.join(', ') : 'none';
-}
-
-function toSpeakerLabel(value) {
-  const raw = value === undefined || value === null ? '' : String(value).trim();
-  if (!raw) return 'Speaker';
-
-  if (/^speaker\b/i.test(raw)) {
-    return raw.replace(/^speaker/i, 'Speaker');
-  }
-
-  if (/^\d+$/.test(raw)) {
-    return `Speaker ${raw}`;
-  }
-
-  return raw;
-}
-
-function formatTimestampMs(ms) {
-  if (typeof ms !== 'number' || !Number.isFinite(ms) || ms < 0) return '';
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
-}
-
-function collectSignalStats(result) {
-  const utterances = Array.isArray(result?.utterances) ? result.utterances : [];
-  const emotions = new Map();
-  const accents = new Map();
-  let piiTagCount = 0;
-
-  for (const utterance of utterances) {
-    if (!utterance || typeof utterance !== 'object') continue;
-
-    if (typeof utterance.emotion === 'string' && utterance.emotion.trim()) {
-      const key = utterance.emotion.trim();
-      emotions.set(key, (emotions.get(key) || 0) + 1);
-    }
-
-    if (typeof utterance.accent === 'string' && utterance.accent.trim()) {
-      const key = utterance.accent.trim();
-      accents.set(key, (accents.get(key) || 0) + 1);
-    }
-
-    if (typeof utterance.text === 'string') {
-      const piiMatches = utterance.text.match(/<\/?(?:pii|phi)\b[^>]*>/gi);
-      piiTagCount += piiMatches ? piiMatches.length : 0;
-    }
-  }
-
-  return { emotions, accents, piiTagCount };
-}
-
-function formatSignalMap(map) {
-  if (!(map instanceof Map) || !map.size) return 'N/A';
-
-  return Array.from(map.entries())
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .map(([label, count]) => `${label} (${count})`)
-    .join(', ');
-}
-
-function firstNonEmptyString(...values) {
-  for (const value of values) {
-    if (typeof value === 'string' && value.trim()) return value.trim();
-  }
-  return null;
-}
-
-function getFailureInfo(data) {
-  if (data?.success) {
-    return { type: 'N/A', name: 'N/A' };
-  }
-
-  const error = data?.error || {};
-  const detail = error?.detail;
-  const statusCode = data?.api?.statusCode;
-  const statusText = typeof data?.api?.statusText === 'string' ? data.api.statusText.trim() : '';
-
-  let detailText = null;
-  if (typeof detail === 'string' && detail.trim()) {
-    detailText = detail.trim();
-  } else if (detail && typeof detail === 'object') {
-    detailText = firstNonEmptyString(detail.detail, detail.message, detail.error, detail.raw);
-    if (!detailText) {
-      try {
-        detailText = JSON.stringify(detail);
-      } catch {
-        detailText = null;
-      }
-    }
-  }
-
-  const statusSummary = statusCode
-    ? `HTTP ${statusCode}${statusText ? ` ${statusText}` : ''}`
-    : statusText
-      ? `HTTP ${statusText}`
-      : null;
-
-  return {
-    type: firstNonEmptyString(error.type, error.code, statusSummary, 'Request Failure') || 'Request Failure',
-    name: firstNonEmptyString(detailText, error.message, statusText, 'Unknown error') || 'Unknown error',
-  };
-}
-
-function stripSignalTags(text) {
-  if (typeof text !== 'string') return '';
-  return text.replace(/<(pii|phi):([a-zA-Z0-9_-]+)>([\s\S]*?)<\/\1:\2>/gi, '$3');
-}
-
-function renderTranscriptTextWithMaskedTags(container, text) {
-  container.textContent = '';
-  if (typeof text !== 'string' || !text) return;
-
-  const tagRegex = /<(pii|phi):([a-zA-Z0-9_-]+)>([\s\S]*?)<\/\1:\2>/gi;
-  let cursor = 0;
-  let matched = false;
-  let match;
-
-  while ((match = tagRegex.exec(text)) !== null) {
-    matched = true;
-
-    if (match.index > cursor) {
-      container.appendChild(document.createTextNode(text.slice(cursor, match.index)));
-    }
-
-    const value = typeof match[3] === 'string' ? match[3] : '';
-    const typeLabel = `${String(match[1]).toUpperCase()}:${String(match[2])}`;
-    const token = document.createElement('button');
-    token.type = 'button';
-    token.className = 'pii-token';
-    token.textContent = value;
-    token.title = `${typeLabel} (click to reveal)`;
-    token.addEventListener('click', () => {
-      token.classList.toggle('revealed');
+        const endMs = Math.max(nextStartMs, u.start_ms + (u.duration_ms || 2000));
+        const leftPct = (u.start_ms / totalMs * 100).toFixed(3);
+        const widthPct = ((endMs - u.start_ms) / totalMs * 100).toFixed(3);
+        bar.style.left = leftPct + '%';
+        bar.style.width = widthPct + '%';
+
+        const ec = u.emotion ? (EMOTION_COLORS[u.emotion.toLowerCase()] || '#78909c') : '#78909c';
+        bar.style.background = ec;
+
+        // Tooltip
+        const endTimeMs = u.start_ms + (u.duration_ms || 2000);
+        const tooltipText = formatMs(u.start_ms) + ' \u2013 ' + formatMs(endTimeMs) +
+          ' · Speaker ' + (u.speaker || 0) + (u.emotion ? ' · ' + u.emotion : '');
+        bar.addEventListener('mouseenter', () => {
+          const rect = bar.getBoundingClientRect();
+          histoTooltip.textContent = tooltipText;
+          histoTooltip.style.display = 'block';
+          histoTooltip.style.top = (rect.top - 6) + 'px';
+          histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
+          histoTooltip.style.transform = 'translate(-50%, -100%)';
+        });
+        bar.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
+
+        // Click to seek and highlight transcript bubble
+        bar.addEventListener('click', () => {
+          if (resultsAudio) {
+            resultsAudio.currentTime = u.start_ms / 1000;
+            resultsAudio.play().catch(() => {});
+          }
+          const bubbles = transcriptList.querySelectorAll('.transcript-utterance');
+          bubbles.forEach((el, j) => el.classList.toggle('active', j === i));
+          if (bubbles[i]) bubbles[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
+        bar.dataset.uttIdx = i;
+        row.appendChild(bar);
+      });
+
+      sttChart.appendChild(row);
     });
-    container.appendChild(token);
 
-    cursor = tagRegex.lastIndex;
+    sttChart.classList.add('visible');
+
+    // Sync chart bars with playback
+    setupSttChartPlaybackTracking();
   }
 
-  if (cursor < text.length) {
-    container.appendChild(document.createTextNode(text.slice(cursor)));
+  let sttChartTracker = null;
+
+  function setupSttChartPlaybackTracking() {
+    if (sttChartTracker) cancelAnimationFrame(sttChartTracker);
+    const bars = sttChart.querySelectorAll('.stt-chart-bar');
+    const bubbles = transcriptList.querySelectorAll('.transcript-utterance');
+
+    function tick() {
+      const currentMs = resultsAudio.currentTime * 1000;
+      // Find the last utterance whose start_ms <= currentMs (keeps highlighted until next starts)
+      let activeIdx = -1;
+      for (let i = sttUtterances.length - 1; i >= 0; i--) {
+        if (currentMs >= sttUtterances[i].start_ms) { activeIdx = i; break; }
+      }
+      bars.forEach(bar => {
+        bar.classList.toggle('active', parseInt(bar.dataset.uttIdx) === activeIdx);
+      });
+      bubbles.forEach((el, i) => el.classList.toggle('active', i === activeIdx));
+      sttChartTracker = requestAnimationFrame(tick);
+    }
+    sttChartTracker = requestAnimationFrame(tick);
   }
 
-  if (!matched) {
-    container.textContent = text;
-  }
-}
+  const LANGUAGE_NAMES = {
+    EN: 'English', ES: 'Spanish', FR: 'French', DE: 'German', IT: 'Italian',
+    PT: 'Portuguese', RU: 'Russian', ZH: 'Chinese', JA: 'Japanese', KO: 'Korean',
+    AR: 'Arabic', HI: 'Hindi', NL: 'Dutch', PL: 'Polish', SV: 'Swedish',
+    DA: 'Danish', NO: 'Norwegian', FI: 'Finnish', TR: 'Turkish', EL: 'Greek',
+    HE: 'Hebrew', TH: 'Thai', VI: 'Vietnamese', ID: 'Indonesian', MS: 'Malay',
+    UK: 'Ukrainian', CS: 'Czech', RO: 'Romanian', HU: 'Hungarian', BG: 'Bulgarian',
+    HR: 'Croatian', SK: 'Slovak', SL: 'Slovenian', LT: 'Lithuanian', LV: 'Latvian',
+    ET: 'Estonian', CA: 'Catalan', GL: 'Galician', EU: 'Basque', FA: 'Persian',
+    UR: 'Urdu', BN: 'Bengali', TA: 'Tamil', TE: 'Telugu', MR: 'Marathi',
+    SW: 'Swahili', AF: 'Afrikaans', TL: 'Filipino', CY: 'Welsh',
+  };
 
-function buildTranscriptCopyFromUtterances(utterances) {
-  const lines = [];
+  const EMOTION_COLORS = {
+    angry: '#e53935', contemptuous: '#c62828', disgusted: '#e91e63',
+    afraid: '#ef5350', anxious: '#ff7043',
+    stressed: '#8e24aa', surprised: '#7b1fa2', frustrated: '#6a1b9a',
+    excited: '#ff5722', hopeful: '#ff9800', amused: '#ff9800',
+    proud: '#ec407a', curious: '#ab47bc',
+    sad: '#5c6bc0', disappointed: '#42a5f5', bored: '#5c6bc0', tired: '#7986cb',
+    concerned: '#26a69a', confused: '#ff8a65',
+    calm: '#42a5f5', confident: '#5c6bc0', interested: '#7986cb',
+    neutral: '#78909c', unknown: '#546e7a', affectionate: '#ec407a',
+  };
 
-  for (const utterance of utterances) {
-    if (!utterance || typeof utterance !== 'object') continue;
+  function buildUtteranceEl(u, opts, isPartial, index) {
+    const el = document.createElement('div');
+    // Alternate bubble alignment by speaker (odd left, even right)
+    const side = (u.speaker != null && u.speaker % 2 === 0) ? 'speaker-right' : 'speaker-left';
+    el.className = 'transcript-utterance ' + side;
 
-    const text = stripSignalTags(typeof utterance.text === 'string' ? utterance.text : '').trim();
-    if (!text) continue;
+    // Full bubble tint with emotion color
+    const emotionColor = (u.emotion && opts.emotion_signal)
+      ? EMOTION_COLORS[u.emotion.toLowerCase()] || null : null;
+    if (emotionColor) {
+      el.style.background = emotionColor + '18';
+      el.style.setProperty('--ec', emotionColor);
+    } else {
+      el.style.setProperty('--ec', '#78909c');
+    }
 
-    const speakerRaw = utterance.speaker ?? utterance.speaker_id ?? utterance.speakerId;
-    const speaker = speakerRaw !== undefined && speakerRaw !== null ? toSpeakerLabel(speakerRaw) : '';
-    const ts = formatTimestampMs(utterance.start_ms);
-    const prefixParts = [ts, speaker].filter(Boolean);
-    const prefix = prefixParts.length ? `${prefixParts.join(' ')} ` : '';
-    lines.push(`${prefix}${text}`);
-  }
-
-  return lines.join('\n');
-}
-
-function renderUtterancePreview(utterances) {
-  previewOutputEl.textContent = '';
-  const list = document.createElement('div');
-  list.className = 'speaker-preview';
-
-  for (const utterance of utterances) {
-    if (!utterance || typeof utterance !== 'object') continue;
-
-    const rawText = typeof utterance.text === 'string' ? utterance.text : '';
-    const text = stripSignalTags(rawText).trim();
-    if (!text) continue;
-
-    const row = document.createElement('div');
-    row.className = 'speaker-turn';
-    if (typeof utterance.start_ms === 'number') {
-      row.dataset.startMs = utterance.start_ms;
-      row.addEventListener('click', () => {
-        audioPlayerEl.currentTime = utterance.start_ms / 1000;
-        if (audioPlayerEl.paused) audioPlayerEl.play();
+    if (u.start_ms != null && !isPartial) {
+      el.addEventListener('click', () => {
+        if (resultsAudio) {
+          resultsAudio.currentTime = u.start_ms / 1000;
+          resultsAudio.play().catch(() => {});
+        }
       });
     }
-    if (typeof utterance.start_ms === 'number' && typeof utterance.duration_ms === 'number') {
-      row.dataset.endMs = utterance.start_ms + utterance.duration_ms;
-    }
-    const meta = document.createElement('div');
-    meta.className = 'utterance-meta';
 
-    const ts = formatTimestampMs(utterance.start_ms);
-    if (ts) {
-      const timeEl = document.createElement('span');
-      timeEl.className = 'utterance-time';
-      timeEl.textContent = ts;
-      meta.appendChild(timeEl);
+    const header = document.createElement('div');
+    header.className = 'transcript-utterance-header';
+
+    // Timestamp (start only)
+    if (u.start_ms != null) {
+      const time = document.createElement('span');
+      time.className = 'transcript-time';
+      time.textContent = formatMs(u.start_ms);
+      header.appendChild(time);
     }
 
-    const speakerRaw = utterance.speaker ?? utterance.speaker_id ?? utterance.speakerId;
-    if (speakerRaw !== undefined && speakerRaw !== null && String(speakerRaw).trim()) {
-      const chip = document.createElement('span');
-      chip.className = 'speaker-chip';
-      chip.textContent = toSpeakerLabel(speakerRaw);
-      meta.appendChild(chip);
+    // Speaker name
+    if (u.speaker != null && opts.speaker_diarization) {
+      const sp = document.createElement('span');
+      sp.className = 'transcript-speaker';
+      sp.textContent = 'Speaker ' + u.speaker;
+      header.appendChild(sp);
     }
 
-    if (typeof utterance.emotion === 'string' && utterance.emotion.trim()) {
-      const name = utterance.emotion.trim();
-      const color = emotionColor(name);
-      const emotionEl = document.createElement('span');
-      if (color) {
-        emotionEl.className = 'signal-pill emotion';
-        emotionEl.style.background = color + '28';
-        emotionEl.style.color = color;
-      } else {
-        emotionEl.className = 'signal-pill neutral';
-      }
-      emotionEl.textContent = name;
-      meta.appendChild(emotionEl);
+    // Emotion inline
+    if (u.emotion && opts.emotion_signal) {
+      const em = document.createElement('span');
+      em.className = 'transcript-emotion';
+      if (emotionColor) em.style.color = emotionColor;
+      em.textContent = u.emotion;
+      header.appendChild(em);
     }
 
-    if (typeof utterance.language === 'string' && utterance.language.trim()) {
-      const langEl = document.createElement('span');
-      langEl.className = 'signal-pill neutral';
-      langEl.textContent = langCodeToName(utterance.language.trim());
-      meta.appendChild(langEl);
+    // Language + Accent inline
+    const langAccentParts = [];
+    if (u.language) langAccentParts.push(LANGUAGE_NAMES[u.language.toUpperCase()] || u.language);
+    if (u.accent && opts.accent_signal) langAccentParts.push(u.accent + ' accent');
+    if (langAccentParts.length) {
+      const la = document.createElement('span');
+      la.className = 'transcript-accent';
+      la.textContent = langAccentParts.join(' with ');
+      header.appendChild(la);
     }
 
-    if (typeof utterance.accent === 'string' && utterance.accent.trim()) {
-      const accentEl = document.createElement('span');
-      accentEl.className = 'signal-pill neutral';
-      accentEl.textContent = utterance.accent.trim() + ' accent';
-      meta.appendChild(accentEl);
-    }
+    el.appendChild(header);
 
-    const bubble = document.createElement('p');
-    bubble.className = 'speaker-bubble';
-    renderTranscriptTextWithMaskedTags(bubble, rawText);
-
-    if (meta.childNodes.length) row.appendChild(meta);
-    row.appendChild(bubble);
-    list.appendChild(row);
-  }
-
-  previewOutputEl.appendChild(list);
-}
-
-// ── Smoothing: weighted average with window=5 ──────────────────────────────
-function smoothFrameScores(frames, windowSize = 5) {
-  if (!frames || frames.length <= 1) return frames.map(f => ({ ...f, smoothed: f.confidence }));
-  const half = Math.floor(windowSize / 2);
-  return frames.map((f, i) => {
-    let sum = 0, weight = 0;
-    for (let j = -half; j <= half; j++) {
-      const idx = i + j;
-      if (idx < 0 || idx >= frames.length) continue;
-      // Triangle weighting: center frame has highest weight
-      const w = half + 1 - Math.abs(j);
-      sum += frames[idx].confidence * w;
-      weight += w;
-    }
-    return { ...f, smoothed: weight > 0 ? sum / weight : f.confidence };
-  });
-}
-
-// ── Heatmap color helper ───────────────────────────────────────────────────
-// Maps (synthetic_voice, confidence) to a color.
-// Uses exponential ramp so 90% is visually distinct from 100%.
-function scoreToColor(isSynthetic, confidence) {
-  // Exponential ramp: spread out high-confidence values
-  // pow(conf, 0.4) makes 0.9→0.96, 1.0→1.0 more distinguishable
-  const t = Math.pow(confidence, 0.4);
-  if (isSynthetic) {
-    // Red channel: lightness goes from 65% (low conf) to 38% (high conf)
-    const l = 65 - t * 27;
-    return `hsl(4, 80%, ${l}%)`;
-  } else {
-    const l = 65 - t * 27;
-    return `hsl(145, 65%, ${l}%)`;
-  }
-}
-
-// Legacy: convert old-format P(synthetic) confidence to new-format fields
-function legacyToNewFormat(f) {
-  if (typeof f.synthetic_voice === 'boolean') return f;
-  return {
-    ...f,
-    synthetic_voice: f.confidence >= 0.5,
-    confidence: Math.abs(f.confidence - 0.5) * 2,
-  };
-}
-
-function formatConfidenceLabel(isSyntheticOrScore, confidence) {
-  // New format: (boolean, number)
-  if (typeof isSyntheticOrScore === 'boolean') {
-    const pct = (confidence * 100).toFixed(0);
-    return isSyntheticOrScore ? `Synthetic (${pct}%)` : `Real (${pct}%)`;
-  }
-  // Legacy format: single P(synthetic) score
-  const score = isSyntheticOrScore;
-  const certaintyPct = (Math.abs(score - 0.5) * 2 * 100).toFixed(0);
-  if (score >= 0.5) return `Synthetic (${certaintyPct}% certain)`;
-  return `Real (${certaintyPct}% certain)`;
-}
-
-// Store current detection data for playback sync
-let currentDetectionData = null;
-
-function renderDetectionPreview(score, durationMs, frames) {
-  previewOutputEl.innerHTML = '';
-  const card = document.createElement('div');
-  card.className = 'detection-score-card';
-
-  if (!Array.isArray(frames) || !frames.length) {
-    card.innerHTML = '<span class="empty-hint">No detection data returned.</span>';
-    previewOutputEl.appendChild(card);
-    currentDetectionData = null;
-    return;
-  }
-
-  // Normalize frame times to ms and convert legacy format
-  const normalizedFrames = frames.map(f => {
-    const nf = legacyToNewFormat(f);
-    return {
-      ...nf,
-      startMs: nf.start_time_ms ?? (nf.start_time_s != null ? nf.start_time_s * 1000 : 0),
-      endMs: nf.end_time_ms ?? (nf.end_time_s != null ? nf.end_time_s * 1000 : 0),
-    };
-  });
-
-  // Smooth scores (confidence is now 0-1 certainty, not P(synthetic))
-  const smoothed = smoothFrameScores(normalizedFrames);
-  const totalDurationMs = durationMs || Math.max(...smoothed.map(f => f.endMs));
-
-  // Store for playback sync
-  currentDetectionData = { smoothed, totalDurationMs };
-
-  // ── Verdict: deepfake if ANY clip is synthetic with 90%+ confidence ────
-  const isDeepfake = smoothed.some(f => f.synthetic_voice && f.confidence >= 0.90);
-  const verdictHtml = isDeepfake
-    ? `<div class="det-title det-title-fake">Deepfake Detected</div>`
-    : `<div class="det-title det-title-real">No Deepfake</div>`;
-
-  // ── Build chart container ──────────────────────────────────────────────
-  card.innerHTML =
-    verdictHtml +
-    `<div class="det-chart-wrap">` +
-      `<div class="det-chart-y-axis">` +
-        `<span>100%</span><span>50%</span><span>0%</span>` +
-      `</div>` +
-      `<div class="det-chart-area">` +
-        `<canvas class="det-chart-canvas"></canvas>` +
-        `<div class="det-chart-playhead"><span class="det-playhead-label"></span></div>` +
-        `<div class="det-chart-tooltip"></div>` +
-      `</div>` +
-    `</div>` +
-    `<div class="det-chart-times"></div>` +
-    `<div class="det-segment-details">` +
-      `<div class="det-segment-table-wrap"></div>` +
-    `</div>`;
-
-  previewOutputEl.appendChild(card);
-
-  // ── Draw on canvas ─────────────────────────────────────────────────────
-  const canvas = card.querySelector('.det-chart-canvas');
-  const chartArea = card.querySelector('.det-chart-area');
-  const dpr = window.devicePixelRatio || 1;
-
-  function drawChart() {
-    const rect = chartArea.getBoundingClientRect();
-    const w = rect.width;
-    const h = rect.height;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-
-    const n = smoothed.length;
-    // Tufte: no gaps between bars — data-ink ratio maximized
-    const barW = w / n;
-    // 100% score = full chart height so y-axis labels stay accurate
-    const maxBarH = h;
-    const minBarH = 3; // minimum height so 0% scores remain visible
-
-    // ── Histogram bars (confidence height, colored by verdict) ──────────
-    smoothed.forEach((f, i) => {
-      const x = i * barW;
-      const rawH = Math.max(minBarH, f.confidence * maxBarH);
-      const color = scoreToColor(f.synthetic_voice, f.confidence);
-      // Parse hsl to add alpha
-      ctx.fillStyle = color.replace('hsl(', 'hsla(').replace(')', ', 0.55)');
-      ctx.fillRect(x, h - rawH, barW, rawH);
-    });
-
-    // ── Smoothed curve: thin, barely visible — Tufte "smallest effective difference"
-    if (n >= 2) {
-      const points = smoothed.map((f, i) => ({
-        x: i * barW + barW / 2,
-        y: h - Math.max(minBarH, f.smoothed * maxBarH),
-      }));
-
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 0; i < points.length - 1; i++) {
-        const p0 = points[Math.max(0, i - 1)];
-        const p1 = points[i];
-        const p2 = points[i + 1];
-        const p3 = points[Math.min(points.length - 1, i + 2)];
-        const tension = 0.35;
-        ctx.bezierCurveTo(
-          p1.x + (p2.x - p0.x) * tension, p1.y + (p2.y - p0.y) * tension,
-          p2.x - (p3.x - p1.x) * tension, p2.y - (p3.y - p1.y) * tension,
-          p2.x, p2.y
-        );
-      }
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.38)';
-      ctx.lineWidth = 1.2;
-      ctx.lineJoin = 'round';
-      ctx.stroke();
-    }
-
-    // Store bar geometry for hit-testing
-    canvas._barW = barW;
-    canvas._barGap = 0;
-    canvas._chartH = h;
-    canvas._chartW = w;
-    canvas._maxBarH = maxBarH;
-  }
-
-  // Initial draw + redraw on resize
-  requestAnimationFrame(drawChart);
-  const resizeObserver = new ResizeObserver(() => requestAnimationFrame(drawChart));
-  resizeObserver.observe(chartArea);
-
-  // ── Time labels (1m 32s format) ────────────────────────────────────────
-  function fmtTime(sec) {
-    const s = Math.round(sec);
-    if (s < 60) return `${s}s`;
-    const m = Math.floor(s / 60);
-    const rem = s % 60;
-    return rem === 0 ? `${m}m` : `${m}m ${rem}s`;
-  }
-  const totalS = totalDurationMs / 1000;
-  const timesEl = card.querySelector('.det-chart-times');
-  const labels = [0];
-  if (totalS > 20) labels.push(totalS / 4, totalS / 2, totalS * 3 / 4);
-  else if (totalS > 8) labels.push(totalS / 2);
-  labels.push(totalS);
-  timesEl.innerHTML = labels.map(s => `<span>${fmtTime(s)}</span>`).join('');
-
-  // ── Hover + click interaction ──────────────────────────────────────────
-  const tooltip = card.querySelector('.det-chart-tooltip');
-
-  chartArea.addEventListener('mousemove', (e) => {
-    const rect = chartArea.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const barW = canvas._barW || 10;
-    const barGap = canvas._barGap || 1;
-    const idx = Math.floor(mx / (barW + barGap));
-    if (idx < 0 || idx >= smoothed.length) { tooltip.style.opacity = '0'; return; }
-    const f = smoothed[idx];
-    const startS = (f.startMs / 1000).toFixed(1);
-    const endS = (f.endMs / 1000).toFixed(1);
-    tooltip.innerHTML =
-      `<strong>${startS}s – ${endS}s</strong><br>` +
-      formatConfidenceLabel(f.synthetic_voice, f.confidence);
-    tooltip.style.opacity = '1';
-    const tooltipX = idx * (barW + barGap) + barW / 2;
-    tooltip.style.left = `${Math.max(0, Math.min(tooltipX - 60, (canvas._chartW || 300) - 140))}px`;
-  });
-
-  chartArea.addEventListener('mouseleave', () => { tooltip.style.opacity = '0'; });
-
-  chartArea.addEventListener('click', (e) => {
-    const rect = chartArea.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const barW = canvas._barW || 10;
-    const barGap = canvas._barGap || 1;
-    const idx = Math.floor(mx / (barW + barGap));
-    if (idx < 0 || idx >= smoothed.length || !audioPlayerEl) return;
-    audioPlayerEl.currentTime = smoothed[idx].startMs / 1000;
-    if (audioPlayerEl.paused) audioPlayerEl.play();
-  });
-
-  // ── Per-segment rows — two columns side by side ────────────────────────
-  const tableWrap = card.querySelector('.det-segment-table-wrap');
-  const rows = smoothed.map(f => {
-    const fColor = scoreToColor(f.synthetic_voice, f.confidence);
-    const startS = (f.startMs / 1000).toFixed(1);
-    const endS = (f.endMs / 1000).toFixed(1);
-    const pct = (f.confidence * 100).toFixed(0);
-    const verdictTag = f.synthetic_voice
-      ? `<span class="det-row-verdict det-verdict-fake">Synthetic</span>`
-      : `<span class="det-row-verdict det-verdict-real">Real</span>`;
-    return `<div class="det-row">` +
-      `<span class="det-row-time">${startS}s–${endS}s</span>` +
-      verdictTag +
-      `<span class="det-row-pct" style="color:${fColor}">${pct}%</span>` +
-      `</div>`;
-  }).join('');
-  tableWrap.innerHTML =
-    `<div class="det-segment-header">` +
-      `<span>Time</span>` +
-      `<span>Verdict</span>` +
-      `<span>Confidence</span>` +
-    `</div>` + rows;
-}
-
-function updatePreview(payload) {
-  if (payload?.status === 'processing') {
-    latestPreviewText = '';
-    // Don't reset the animation if the processing indicator is already showing
-    if (previewOutputEl.querySelector('.processing-progress, .preview-processing')) return;
-    if (progressEstimatedMs) {
-      const totalS = progressEstimatedMs / 1000;
-      const roundedS = Math.max(5, Math.round(totalS / 5) * 5);
-      const label = roundedS >= 60
-        ? `About ${Math.round(roundedS / 60)} min to process`
-        : `About ${roundedS}s to process`;
-      previewOutputEl.innerHTML =
-        `<div class="processing-progress">` +
-        `<div class="progress-bar-wrap"><div class="progress-bar-fill" style="animation-duration:${totalS.toFixed(1)}s"></div></div>` +
-        `<div class="processing-progress-label">${label}</div>` +
-        `</div>`;
+    const text = document.createElement('div');
+    text.className = 'transcript-text' + (isPartial ? ' partial' : '');
+    if (opts.pii_phi_tagging && u.text && /<pii:|<phi:/i.test(u.text)) {
+      text.innerHTML = renderPiiText(u.text);
     } else {
-      previewOutputEl.innerHTML =
-        '<span class="preview-processing">Processing<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>';
+      text.textContent = u.text || '';
     }
-    return;
+    el.appendChild(text);
+
+    return el;
   }
 
-  // Detection model — render avg score gauge + per-segment frames
-  if (payload?.modelType === 'detection') {
-    const score = payload?.meta?.detectionScore;
-    if (score && typeof score === 'object') {
-      latestPreviewText = formatConfidenceLabel(score.synthetic, score.confidence);
-    } else {
-      latestPreviewText = typeof score === 'number' ? formatConfidenceLabel(score) : '';
-    }
-    if (payload?.success) {
-      renderDetectionPreview(score, payload?.meta?.audioDurationMs, payload?.meta?.detectionFrames);
-    } else {
-      previewOutputEl.innerHTML = '<span class="empty-hint">Detection failed. See Stats tab for details.</span>';
-    }
-    return;
-  }
-
-  const utterances = Array.isArray(payload?.result?.utterances) ? payload.result.utterances : [];
-
-  if (utterances.length) {
-    latestPreviewText = buildTranscriptCopyFromUtterances(utterances);
-    renderUtterancePreview(utterances);
-    return;
-  }
-
-  const transcriptText = extractTranscriptText(payload);
-
-  latestPreviewText = transcriptText;
-  if (transcriptText) {
-    previewOutputEl.textContent = transcriptText;
-  } else {
-    previewOutputEl.innerHTML = payload?.success ? 'No transcript returned.' : '<span class="empty-hint">Drop a file above to transcribe it.</span>';
-  }
-}
-
-let activeRightTab = 'stats';
-
-function setActiveRightTab(tabName) {
-  activeRightTab = tabName;
-
-  rightTabStatsEl.classList.toggle('active', tabName === 'stats');
-  tabCallEl.classList.toggle('active', tabName === 'call');
-  tabJsonEl.classList.toggle('active', tabName === 'json');
-
-  for (const button of viewerTabButtons) {
-    button.classList.toggle('active', button.dataset.tab === tabName);
-  }
-}
-
-async function copyTextToClipboard(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return;
-    } catch { /* fall through to execCommand */ }
-  }
-
-  const tempTextArea = document.createElement('textarea');
-  tempTextArea.value = text;
-  tempTextArea.style.position = 'fixed';
-  tempTextArea.style.opacity = '0';
-  document.body.appendChild(tempTextArea);
-  tempTextArea.focus();
-  tempTextArea.select();
-  const ok = document.execCommand('copy');
-  tempTextArea.remove();
-  if (!ok) throw new Error('copy failed');
-}
-
-
-function deriveClientFileType(file) {
-  if (!file) return '—';
-
-  if (file.type) return file.type;
-
-  const ext = file.name.includes('.') ? file.name.split('.').pop() : '';
-  return ext ? `.${ext}` : 'unknown';
-}
-
-function toFixedNumber(value, digits = 3) {
-  if (!Number.isFinite(value)) return null;
-  return Number(value.toFixed(digits));
-}
-
-function findFirstNumericValueByKey(input, keys) {
-  const queue = [input];
-  const normalizedKeys = new Set(keys.map((key) => key.toLowerCase()));
-  const visited = new Set();
-
-  while (queue.length) {
-    const current = queue.shift();
-    if (!current || typeof current !== 'object') continue;
-    if (visited.has(current)) continue;
-    visited.add(current);
-
-    for (const [key, value] of Object.entries(current)) {
-      if (normalizedKeys.has(key.toLowerCase()) && typeof value === 'number' && Number.isFinite(value)) {
-        return value;
-      }
-    }
-
-    for (const value of Object.values(current)) {
-      if (value && typeof value === 'object') queue.push(value);
-    }
-  }
-
-  return null;
-}
-
-function findFirstStringValueByKey(input, keys) {
-  const queue = [input];
-  const normalizedKeys = new Set(keys.map((key) => key.toLowerCase()));
-  const visited = new Set();
-
-  while (queue.length) {
-    const current = queue.shift();
-    if (!current || typeof current !== 'object') continue;
-    if (visited.has(current)) continue;
-    visited.add(current);
-
-    for (const [key, value] of Object.entries(current)) {
-      if (normalizedKeys.has(key.toLowerCase()) && typeof value === 'string' && value.trim()) {
-        return value;
-      }
-    }
-
-    for (const value of Object.values(current)) {
-      if (value && typeof value === 'object') queue.push(value);
-    }
-  }
-
-  return null;
-}
-
-function extractTokenUsage(resultData) {
-  if (!resultData || typeof resultData !== 'object') return null;
-
-  const inputTokens = findFirstNumericValueByKey(resultData, ['input_tokens', 'prompt_tokens', 'inputTokens', 'promptTokens']);
-  const outputTokens = findFirstNumericValueByKey(resultData, [
-    'output_tokens',
-    'completion_tokens',
-    'outputTokens',
-    'completionTokens',
-  ]);
-  const totalTokens = findFirstNumericValueByKey(resultData, [
-    'total_tokens',
-    'token_count',
-    'tokens',
-    'totalTokens',
-    'tokenCount',
-  ]);
-
-  if (inputTokens === null && outputTokens === null && totalTokens === null) return null;
-  return { inputTokens, outputTokens, totalTokens };
-}
-
-function extractTranscriptMeta(resultData) {
-  if (!resultData || typeof resultData !== 'object') {
-    return {
-      requestId: null,
-      transcriptChars: null,
-      transcriptWords: null,
-      utteranceCount: null,
-      speakerCount: null,
-      languageCount: null,
-      languages: [],
-    };
-  }
-
-  const utterances = Array.isArray(resultData.utterances) ? resultData.utterances : [];
-  let transcriptText = typeof resultData.text === 'string' ? resultData.text.trim() : '';
-
-  if (!transcriptText && utterances.length) {
-    transcriptText = utterances
-      .map((utterance) => (typeof utterance?.text === 'string' ? utterance.text.trim() : ''))
-      .filter(Boolean)
-      .join(' ');
-  }
-
-  const transcriptChars = transcriptText ? transcriptText.length : null;
-  const transcriptWords = transcriptText ? transcriptText.split(/\s+/).filter(Boolean).length : null;
-  const speakers = new Set();
-  const languages = new Set();
-
-  for (const utterance of utterances) {
-    if (!utterance || typeof utterance !== 'object') continue;
-
-    if (utterance.speaker !== undefined && utterance.speaker !== null && String(utterance.speaker).trim()) {
-      speakers.add(String(utterance.speaker).trim());
-    }
-
-    if (typeof utterance.language === 'string' && utterance.language.trim()) {
-      languages.add(utterance.language.trim());
-    }
-  }
-
-  const requestId = findFirstStringValueByKey(resultData, ['request_id', 'requestId', 'transcription_id', 'transcriptionId']);
-
-  return {
-    requestId,
-    transcriptChars,
-    transcriptWords,
-    utteranceCount: utterances.length || null,
-    speakerCount: speakers.size || null,
-    languageCount: languages.size || null,
-    languages: Array.from(languages),
-  };
-}
-
-function getStreamingDurationFromUtterances(utterances) {
-  if (!Array.isArray(utterances) || !utterances.length) return null;
-
-  let maxEndMs = 0;
-  for (const utterance of utterances) {
-    if (!utterance || typeof utterance !== 'object') continue;
-    const startMs = typeof utterance.start_ms === 'number' ? utterance.start_ms : null;
-    const durationMs = typeof utterance.duration_ms === 'number' ? utterance.duration_ms : null;
-    if (startMs === null || durationMs === null) continue;
-    maxEndMs = Math.max(maxEndMs, startMs + durationMs);
-  }
-
-  return maxEndMs > 0 ? maxEndMs : null;
-}
-
-function normalizeApiResponse({ modelKey, file, options, config, statusCode, statusText, parsed, rawText, processingMs, ok }) {
-  const durationMs =
-    typeof parsed?.duration_ms === 'number'
-      ? parsed.duration_ms
-      : typeof parsed?.duration_s === 'number'
-        ? parsed.duration_s * 1000
-        : findFirstNumericValueByKey(parsed, ['duration_ms', 'audio_duration_ms', 'durationMs']);
-  const audioMinutes = durationMs !== null && durationMs !== undefined ? toFixedNumber(durationMs / 60000, 3) : null;
-  const transcriptMeta = extractTranscriptMeta(parsed);
-  const tokens = extractTokenUsage(parsed);
-  const ratePerHourUsd = typeof config.ratePerHourUsd === 'number' ? config.ratePerHourUsd : null;
-  const ratePerMinuteUsd = ratePerHourUsd !== null ? ratePerHourUsd / 60 : null;
-  const estimatedUsd =
-    durationMs !== null && durationMs !== undefined && ratePerMinuteUsd !== null
-      ? Number(((durationMs / 60000) * ratePerMinuteUsd).toFixed(6))
-      : null;
-
-  const payload = {
-    success: !!ok,
-    failure: !ok,
-    model: modelKey,
-    modelFullName: config.fullName,
-    modelType: config.type,
-    ...(config.type !== 'detection' ? {
-      options: {
-        ...options,
-        appliedByModel: !config.unsupported.has('options'),
-      },
-    } : {}),
-    meta: {
-      fileName: file?.name || 'upload.audio',
-      fileMimeType: file?.type || null,
-      fileSizeBytes: typeof file?.size === 'number' ? file.size : null,
-      fileSizeMb: typeof file?.size === 'number' ? toFixedNumber(file.size / (1024 * 1024), 3) : null,
-      responseBytes: typeof rawText === 'string' ? rawText.length : null,
-      audioDurationMs: durationMs ?? null,
-      audioMinutes,
-      requestId: transcriptMeta.requestId,
-      transcriptChars: transcriptMeta.transcriptChars,
-      transcriptWords: transcriptMeta.transcriptWords,
-      utteranceCount: transcriptMeta.utteranceCount,
-      speakerCount: transcriptMeta.speakerCount,
-      languageCount: transcriptMeta.languageCount,
-      languages: transcriptMeta.languages,
-      detectionScore: Array.isArray(parsed?.frames) && parsed.frames.length > 0
-        ? (() => {
-            // New format: synthetic_voice boolean + confidence
-            const fs = parsed.frames.map(legacyToNewFormat);
-            const hasSynthetic = fs.some(f => f.synthetic_voice && f.confidence >= 0.90);
-            if (hasSynthetic) {
-              const maxConf = Math.max(...fs.filter(f => f.synthetic_voice).map(f => f.confidence));
-              return { synthetic: true, confidence: maxConf };
-            }
-            const avgConf = fs.reduce((s, f) => s + f.confidence, 0) / fs.length;
-            return { synthetic: false, confidence: avgConf };
-          })()
-        : null,
-      detectionFrames: Array.isArray(parsed?.frames) ? parsed.frames : null,
-    },
-    speed: {
-      processingMs,
-      audioDurationMs: durationMs ?? null,
-      realtimeFactor: durationMs && durationMs > 0 ? Number((processingMs / durationMs).toFixed(3)) : null,
-    },
-    cost: {
-      currency: 'USD',
-      ratePerHourUsd,
-      ratePerMinuteUsd,
-      estimatedUsd,
-      estimatedFromAudioDuration: durationMs !== null && durationMs !== undefined,
-      tokens,
-    },
-    api: {
-      baseUrl: config.mode === 'streaming' ? API_WS_BASE_URL : API_BASE_URL,
-      endpoint: config.endpoint,
-      statusCode,
-      statusText,
-    },
-    result: parsed,
-  };
-
-  if (!ok) {
-    payload.error = {
-      type: statusCode ? `HTTP ${statusCode}` : 'Request Failure',
-      message: 'Modulate API request failed.',
-      detail: parsed,
-    };
-  }
-
-  return payload;
-}
-
-async function readMessageDataAsText(data) {
-  if (typeof data === 'string') return data;
-  if (data instanceof ArrayBuffer) {
-    return new TextDecoder().decode(data);
-  }
-  if (data instanceof Blob) {
-    return await data.text();
-  }
-  return String(data ?? '');
-}
-
-async function requestBatchTranscription({ file, options, config }) {
-  const formData = new FormData();
-  formData.append('upload_file', file, file.name || 'upload.audio');
-
-  if (config.type === 'stt' && config.mode !== 'streaming' && !config.unsupported.has('options')) {
-    formData.append('speaker_diarization', String(options.speaker_diarization));
-    formData.append('emotion_signal', String(options.emotion_signal));
-    formData.append('accent_signal', String(options.accent_signal));
-    formData.append('pii_phi_tagging', String(options.pii_phi_tagging));
-  }
-
-  const response = await fetch(`${API_BASE_URL}${config.endpoint}`, {
-    method: 'POST',
-    body: formData,
-  });
-
-  const rawText = await response.text();
-  let parsed = {};
-  try {
-    parsed = rawText ? JSON.parse(rawText) : {};
-  } catch {
-    parsed = { raw: rawText };
-  }
-
-  return {
-    ok: response.ok,
-    statusCode: response.status,
-    statusText: response.statusText,
-    parsed,
-    rawText,
-  };
-}
-
-async function requestStreamingTranscription({ file, options, config, onStreamingFrame }) {
-  const audioBuffer = new Uint8Array(await file.arrayBuffer());
-
-  const params = new URLSearchParams();
-  if (config.type !== 'detection') {
-    params.set('speaker_diarization', String(options.speaker_diarization));
-    params.set('emotion_signal', String(options.emotion_signal));
-    params.set('accent_signal', String(options.accent_signal));
-    params.set('pii_phi_tagging', String(options.pii_phi_tagging));
-  }
-
-  const wsUrl = `${API_WS_BASE_URL}${config.endpoint}?${params.toString()}`;
-
-  return await new Promise((resolve, reject) => {
-    let opened = false;
-    let settled = false;
-    let streamError = null;
-    let doneDurationMs = null;
-    const utterances = [];
-    const detectionFrames = [];
-
-    const ws = new WebSocket(wsUrl);
-
-    const settleResolve = (payload) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(wsTimeoutId);
-      resolve(payload);
-    };
-    const settleReject = (error) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(wsTimeoutId);
-      reject(error);
-    };
-
-    // Hard timeout: close WS and resolve with whatever we have after 5 min
-    const wsTimeoutId = setTimeout(() => {
-      if (settled) return;
-      if (detectionFrames.length > 0 || utterances.length > 0) {
-        resolveWithCurrentData();
-      } else {
-        settleReject(new Error('Streaming timed out after 5 minutes'));
-      }
-      ws.close();
-    }, WS_STREAM_TIMEOUT_MS);
-
-    function resolveWithCurrentData() {
-      let parsed;
-      if (config.type === 'detection') {
-        const durationMs = doneDurationMs ?? (detectionFrames.length > 0
-          ? Math.max(...detectionFrames.map(f => f.end_time_ms || 0))
-          : null);
-        parsed = { frames: detectionFrames, duration_ms: durationMs };
-      } else {
-        const durationMs = doneDurationMs ?? getStreamingDurationFromUtterances(utterances);
-        parsed = {
-          text: utterances.map(u => (typeof u?.text === 'string' ? u.text.trim() : '')).filter(Boolean).join(' '),
-          duration_ms: durationMs,
-          utterances,
-        };
-      }
-      settleResolve({ ok: true, statusCode: 200, statusText: 'OK', parsed, rawText: JSON.stringify(parsed) });
-    }
-
-    ws.addEventListener('open', () => {
-      opened = true;
-      const chunkSize = 32 * 1024;
-      for (let offset = 0; offset < audioBuffer.length; offset += chunkSize) {
-        ws.send(audioBuffer.slice(offset, offset + chunkSize));
-      }
-      ws.send('');
-    });
-
-    ws.addEventListener('message', async (event) => {
-      let payloadText = '';
-      try {
-        payloadText = await readMessageDataAsText(event.data);
-      } catch {
-        return;
-      }
-
-      if (!payloadText) return;
-      let payload;
-      try {
-        payload = JSON.parse(payloadText);
-      } catch {
-        return;
-      }
-
-      if (payload?.type === 'utterance' && payload.utterance && typeof payload.utterance === 'object') {
-        utterances.push(payload.utterance);
-      } else if (payload?.type === 'frame' && payload.frame && typeof payload.frame.confidence === 'number') {
-        detectionFrames.push(payload.frame);
-        if (onStreamingFrame) {
-          const estDuration = Math.max(...detectionFrames.map(f => f.end_time_ms || 0));
-          onStreamingFrame(detectionFrames, estDuration);
-        }
-      } else if (payload?.type === 'done') {
-        doneDurationMs = typeof payload.duration_ms === 'number' ? payload.duration_ms : null;
-        resolveWithCurrentData();
-        ws.close();
-      } else if (payload?.type === 'error') {
-        streamError = typeof payload.error === 'string' ? payload.error : 'Streaming error';
-        // If we already have frames, resolve with what we have instead of failing
-        if (detectionFrames.length > 0) {
-          resolveWithCurrentData();
-        } else {
-          settleReject(new Error(streamError));
-        }
-        ws.close();
-      }
-    });
-
-    ws.addEventListener('error', () => {
-      settleReject(new Error('Streaming WebSocket connection error'));
-    });
-
-    ws.addEventListener('close', (event) => {
-      if (settled) return;
-
-      if (!opened) {
-        const reason = event.reason ? ` ${event.reason}` : '';
-        settleReject(new Error(`Streaming connection rejected (${event.code})${reason}`));
-        return;
-      }
-
-      if (streamError && detectionFrames.length === 0 && utterances.length === 0) {
-        settleReject(new Error(streamError));
-        return;
-      }
-
-      if (event.code !== 1000 && event.code !== 1005 && detectionFrames.length === 0 && utterances.length === 0) {
-        const reason = event.reason ? ` ${event.reason}` : '';
-        settleReject(new Error(`Streaming connection closed unexpectedly (${event.code})${reason}`));
-        return;
-      }
-
-      resolveWithCurrentData();
-    });
-  });
-}
-
-function isStreamingModel(modelKey = modelEl.value) {
-  return MODEL_CONFIG[modelKey]?.mode === 'streaming';
-}
-
-function stopMediaTracks() {
-  if (!mediaStream) return;
-  for (const track of mediaStream.getTracks()) {
-    track.stop();
-  }
-  mediaStream = null;
-}
-
-function clearRecordingTimer() {
-  if (recordingTimerId) {
-    clearInterval(recordingTimerId);
-    recordingTimerId = null;
-  }
-  if (recordingMaxTimerId) {
-    clearTimeout(recordingMaxTimerId);
-    recordingMaxTimerId = null;
-  }
-}
-
-function startRecordingTimer() {
-  clearRecordingTimer();
-  recordingStartedAt = Date.now();
-  const maxSec = Math.floor(MAX_RECORDING_MS / 1000);
-  const maxMm = String(Math.floor(maxSec / 60)).padStart(2, '0');
-  const maxSs = String(maxSec % 60).padStart(2, '0');
-  const maxLabel = `${maxMm}:${maxSs}`;
-  recordingTimerId = setInterval(() => {
-    const elapsedSec = Math.floor((Date.now() - recordingStartedAt) / 1000);
-    const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
-    const ss = String(elapsedSec % 60).padStart(2, '0');
-    const label = `Recording ${mm}:${ss} / ${maxLabel}`;
-    recordStatusEl.textContent = label;
-    const panelRecordStatusEl = document.getElementById('panel-record-status');
-    if (panelRecordStatusEl && isLiveDetectionModel()) {
-      panelRecordStatusEl.textContent = label;
-    }
-    const liveTimerEl = document.getElementById('live-record-timer');
-    if (liveTimerEl) liveTimerEl.textContent = `${mm}:${ss} / ${maxLabel}`;
-  }, 200);
-
-  // Hard cap: auto-stop after MAX_RECORDING_MS
-  clearTimeout(recordingMaxTimerId);
-  recordingMaxTimerId = setTimeout(() => {
-    if (mediaRecorder?.state === 'recording') {
-      stopRecording(false);
-    }
-  }, MAX_RECORDING_MS);
-}
-
-function updateRecordingUiState() {
-  const isRecording = mediaRecorder?.state === 'recording';
-  recordToggleBtnEl.classList.toggle('recording', !!isRecording);
-  recordToggleBtnEl.textContent = isRecording ? 'Stop recording' : 'Start recording';
-  if (!isRecording) {
-    recordStatusEl.textContent = 'Ready to record';
-  }
-  // Also update panel record button for live detection mode
-  const panelRecordBtn = document.getElementById('panel-record-btn');
-  const panelRecordStatusEl = document.getElementById('panel-record-status');
-  if (panelRecordBtn && isLiveDetectionModel()) {
-    panelRecordBtn.textContent = isRecording ? 'Stop Recording' : 'Start Recording';
-  }
-  if (panelRecordStatusEl && isLiveDetectionModel()) {
-    panelRecordStatusEl.textContent = isRecording ? recordStatusEl.textContent : '';
-  }
-}
-
-function createRecordedFileFromChunks() {
-  const mimeType = mediaRecorder?.mimeType || 'audio/webm';
-  const blob = new Blob(recordedChunks, { type: mimeType });
-  const ext = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('wav') ? 'wav' : 'webm';
-  return new File([blob], `mic-recording-${Date.now()}.${ext}`, { type: mimeType });
-}
-
-// ── Live streaming detection state ──────────────────────────────────────────
-let liveDetectionWs = null;
-let liveDetectionFrames = [];
-let liveDetectionStartedAt = null;
-
-function isLiveDetectionModel(modelKey = modelEl.value) {
-  const config = MODEL_CONFIG[modelKey];
-  return config?.mode === 'streaming' && config?.type === 'detection';
-}
-
-function finalizeLiveDetection() {
-  if (!liveDetectionStartedAt) return;
-  const processingMs = Date.now() - liveDetectionStartedAt;
-  const modelKey = modelEl.value;
-  const config = MODEL_CONFIG[modelKey];
-  const framesCopy = [...liveDetectionFrames];
-  const durationMs = framesCopy.length > 0
-    ? Math.max(...framesCopy.map(f => f.end_time_ms || 0))
-    : null;
-  const parsed = { frames: framesCopy, duration_ms: durationMs };
-  const rawText = JSON.stringify(parsed);
-  const file = files[activeFileIndex]?.file;
-  const options = getRequestedOptions();
-  const payload = normalizeApiResponse({
-    modelKey, file, options, config,
-    statusCode: 200, statusText: 'OK', parsed, rawText, processingMs, ok: true,
-  });
-
-  const entry = files[activeFileIndex];
-  if (entry) {
-    entry.status = 'done';
-    entry.normalizedResponse = payload;
-    entry.rawPayload = payload;
-    entry.previewText = computePreviewText(payload);
-    updateTabStatus(activeFileIndex);
-  }
-  latestPayload = payload;
-  latestPreviewText = entry?.previewText || '';
-  renderJson(payload);
-  updateMetaFromResponse(payload, modelKey);
-  progressEstimatedMs = null;
-  updatePreview(payload);
-  recordStatusEl.textContent = 'Ready to record';
-
-  liveDetectionStartedAt = null;
-  liveDetectionFrames = [];
-}
-
-async function startRecording() {
-  if (!isStreamingModel()) return;
-  if (!navigator.mediaDevices?.getUserMedia) {
-    recordStatusEl.textContent = 'Microphone not supported';
-    return;
-  }
-
-  try {
-    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-    const mimeCandidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
-    const mimeType = mimeCandidates.find((m) => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m));
-    mediaRecorder = mimeType ? new MediaRecorder(mediaStream, { mimeType }) : new MediaRecorder(mediaStream);
-
-    recordedChunks = [];
-    shouldSubmitRecording = true;
-
-    // ── Live detection: stream raw PCM via Web Audio API ───────────────
-    if (isLiveDetectionModel()) {
-      const config = MODEL_CONFIG[modelEl.value];
-      const wsUrl = `${API_WS_BASE_URL}${config.endpoint}`;
-      liveDetectionWs = new WebSocket(wsUrl);
-      liveDetectionWs.binaryType = 'arraybuffer';
-      liveDetectionFrames = [];
-      liveDetectionStartedAt = Date.now();
-
-      // Set up a placeholder file entry so the UI has something to show
-      const placeholderFile = new File([], `mic-recording-${Date.now()}.webm`, { type: mimeType || 'audio/webm' });
-      files = []; activeFileIndex = -1;
-      files.push({
-        file: placeholderFile,
-        model: modelEl.value,
-        options: getRequestedOptions(),
-        status: 'processing',
-        audioUrl: null,
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── SHARED RECORDING LOGIC ────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  function startRecordingCommon(wsPath, onMessage, onOpen) {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      mediaStream = stream;
+
+      const mimeCandidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
+      const mimeType = mimeCandidates.find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m));
+      mediaRecorder = mimeType ? new MediaRecorder(mediaStream, { mimeType }) : new MediaRecorder(mediaStream);
+      recordedChunks = [];
+      mediaRecorder.addEventListener('dataavailable', (e) => {
+        if (e.data && e.data.size > 0) recordedChunks.push(e.data);
       });
-      activeFileIndex = 0;
-      renderFileTabs();
-      panelNewUploadEl.hidden = true;
-      viewerShellEl.hidden = false;
-      audioPlayerWrapEl.hidden = true;
-      // Keep top record zone hidden — stop button goes in the preview area
-      metaModelEl.textContent = config.fullName;
-      setStatus('Recording', 'processing');
+      mediaRecorder.start(200);
 
-      // Show stop button + waiting message in the preview area
-      previewOutputEl.innerHTML =
-        '<div class="detection-score-card">' +
-          '<div class="live-detection-controls">' +
-            '<button id="live-stop-btn" class="record-btn recording" type="button">Stop recording</button>' +
-            '<span id="live-record-timer" class="record-status"></span>' +
-          '</div>' +
-          '<div class="det-title" style="color:var(--muted)">Waiting for first 4s window...</div>' +
-        '</div>';
-      document.getElementById('live-stop-btn')?.addEventListener('click', () => stopRecording());
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = proto + '//' + location.host + wsPath;
+      recordingWs = new WebSocket(wsUrl);
+      recordingWs.binaryType = 'arraybuffer';
 
-      // Set up raw PCM capture via AudioContext (16kHz mono int16 LE)
-      const audioCtx = new AudioContext({ sampleRate: 16000 });
-      const source = audioCtx.createMediaStreamSource(mediaStream);
-      const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-      // Silence node to prevent mic echo through speakers
-      const silencer = audioCtx.createGain();
-      silencer.gain.value = 0;
+      recordingWs.onopen = () => {
+        isRecording = true;
+        liveFrames = [];
+        recordingStartTime = Date.now();
+        updateRecordButton();
 
-      processor.onaudioprocess = (e) => {
-        if (liveDetectionWs?.readyState === WebSocket.OPEN) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        const source = audioContext.createMediaStreamSource(mediaStream);
+        scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+        const silencer = audioContext.createGain();
+        silencer.gain.value = 0;
+
+        scriptProcessor.onaudioprocess = (e) => {
+          if (!isRecording || !recordingWs || recordingWs.readyState !== WebSocket.OPEN) return;
           const float32 = e.inputBuffer.getChannelData(0);
           const int16 = new Int16Array(float32.length);
           for (let i = 0; i < float32.length; i++) {
             int16[i] = Math.max(-32768, Math.min(32767, Math.round(float32[i] * 32767)));
           }
-          liveDetectionWs.send(int16.buffer);
-        }
+          recordingWs.send(int16.buffer);
+        };
+
+        source.connect(scriptProcessor);
+        scriptProcessor.connect(silencer);
+        silencer.connect(audioContext.destination);
+
+        if (onOpen) onOpen();
       };
-      source.connect(processor);
-      processor.connect(silencer);
-      silencer.connect(audioCtx.destination);
 
-      // Store for cleanup
-      liveDetectionWs._audioCtx = audioCtx;
-      liveDetectionWs._processor = processor;
-      liveDetectionWs._source = source;
-
-      liveDetectionWs.addEventListener('message', async (event) => {
+      recordingWs.addEventListener('message', async (event) => {
         let text = '';
         try {
-          if (typeof event.data === 'string') {
-            text = event.data;
-          } else if (event.data instanceof Blob) {
-            text = await event.data.text();
-          } else if (event.data instanceof ArrayBuffer) {
-            text = new TextDecoder().decode(event.data);
-          }
+          if (typeof event.data === 'string') text = event.data;
+          else if (event.data instanceof Blob) text = await event.data.text();
+          else if (event.data instanceof ArrayBuffer) text = new TextDecoder().decode(event.data);
         } catch { return; }
         if (!text) return;
+
         let msg;
         try { msg = JSON.parse(text); } catch { return; }
+        onMessage(msg);
+      });
 
-        if (msg?.type === 'frame' && msg.frame && typeof msg.frame.confidence === 'number') {
-          liveDetectionFrames.push(msg.frame);
-          const estDuration = Math.max(...liveDetectionFrames.map(f => f.end_time_ms || 0));
-          renderDetectionPreview(null, estDuration, liveDetectionFrames);
-          // Re-inject stop button above chart during live recording
-          if (mediaRecorder?.state === 'recording') {
-            const card = previewOutputEl.querySelector('.detection-score-card');
-            if (card && !card.querySelector('#live-stop-btn')) {
-              const controls = document.createElement('div');
-              controls.className = 'live-detection-controls';
-              controls.innerHTML =
-                '<button id="live-stop-btn" class="record-btn recording" type="button">Stop recording</button>' +
-                '<span id="live-record-timer" class="record-status"></span>';
-              card.insertBefore(controls, card.firstChild);
-              controls.querySelector('#live-stop-btn').addEventListener('click', () => stopRecording());
-            }
-          }
-          setStatus(`Recording — ${liveDetectionFrames.length} chunks analyzed`, 'processing');
-        } else if (msg?.type === 'done') {
-          finalizeLiveDetection();
-          liveDetectionWs?.close();
-          liveDetectionWs = null;
-        } else if (msg?.type === 'error') {
-          if (liveDetectionFrames.length > 0) {
-            finalizeLiveDetection();
+      recordingWs.onerror = () => { console.error('WebSocket error'); cleanupRecording(); };
+
+      recordingWs.onclose = (event) => {
+        if (isRecording) {
+          const hasData = currentMode === 'deepfake' ? liveFrames.length > 0 : sttUtterances.length > 0;
+          if (hasData) {
+            stopRecording();
           } else {
-            setStatus('Error', 'error');
-            previewOutputEl.innerHTML = `<span class="empty-hint">Streaming error: ${msg.error || 'Unknown'}</span>`;
+            cleanupRecording();
+            const reason = event.reason || '';
+            let msg;
+            if (event.code === 1006) msg = 'Could not connect to the server. You may have reached the rate limit \u2014 please wait a minute and try again.';
+            else if (event.code === 1011) msg = 'Upstream server error: ' + (reason || 'the service is temporarily unavailable.');
+            else if (event.code === 1000 && reason === 'Timeout') msg = 'Recording timed out after 5 minutes.';
+            else msg = 'Connection closed' + (reason ? ': ' + reason : '') + ' (code ' + event.code + ').';
+            showError(msg);
           }
-          liveDetectionWs?.close();
-          liveDetectionWs = null;
-        }
-      });
-
-      liveDetectionWs.addEventListener('error', () => {
-        if (liveDetectionFrames.length > 0) finalizeLiveDetection();
-        else setStatus('Error', 'error');
-        liveDetectionWs = null;
-      });
-
-      liveDetectionWs.addEventListener('close', () => {
-        if (liveDetectionStartedAt && liveDetectionFrames.length > 0) finalizeLiveDetection();
-        liveDetectionWs = null;
-      });
-
-      // Keep MediaRecorder running in parallel for playback file
-      mediaRecorder.addEventListener('dataavailable', (event) => {
-        if (event.data && event.data.size > 0) {
-          recordedChunks.push(event.data);
-        }
-      });
-
-      mediaRecorder.addEventListener('stop', () => {
-        clearRecordingTimer();
-        updateRecordingUiState();
-
-        // 1. Stop sending PCM
-        if (liveDetectionWs?._processor) {
-          liveDetectionWs._processor.disconnect();
-          liveDetectionWs._source.disconnect();
-        }
-
-        // 2. Signal end of stream, then close
-        if (liveDetectionWs?.readyState === WebSocket.OPEN) {
-          liveDetectionWs.send('');
-          liveDetectionWs.close();
-        }
-
-        // 3. Clean up
-        stopMediaTracks();
-        if (liveDetectionWs?._audioCtx) liveDetectionWs._audioCtx.close().catch(() => {});
-        liveDetectionWs = null;
-
-        // 4. Build playback file
-        const recordedFile = createRecordedFileFromChunks();
-        recordedChunks = [];
-        if (files[activeFileIndex]) {
-          files[activeFileIndex].file = recordedFile;
-          files[activeFileIndex].audioUrl = URL.createObjectURL(recordedFile);
-          setPlayerSrc(files[activeFileIndex]);
-          audioPlayerWrapEl.hidden = false;
-        }
-        mediaRecorder = null;
-
-        // 5. Finalize immediately with whatever frames we have
-        finalizeLiveDetection();
-      });
-
-    } else {
-      // ── Standard STT streaming: record then send ──────────────────────
-      mediaRecorder.addEventListener('dataavailable', (event) => {
-        if (event.data && event.data.size > 0) {
-          recordedChunks.push(event.data);
-        }
-      });
-
-      mediaRecorder.addEventListener('stop', () => {
-        clearRecordingTimer();
-        updateRecordingUiState();
-
-        const submit = shouldSubmitRecording;
-        shouldSubmitRecording = false;
-        stopMediaTracks();
-        mediaRecorder = null;
-
-        if (!submit) {
-          recordedChunks = [];
-          return;
-        }
-
-        const recordedFile = createRecordedFileFromChunks();
-        recordedChunks = [];
-        if (recordedFile.size <= 0) {
-          recordStatusEl.textContent = 'No audio captured';
-          return;
-        }
-        recordStatusEl.textContent = 'Processing recording...';
-        // Reset files for recording (single-file streaming flow)
-        files = []; activeFileIndex = -1;
-        addFiles([recordedFile]);
-      });
-    }
-
-    mediaRecorder.start(200);
-    startRecordingTimer();
-    updateRecordingUiState();
-  } catch (error) {
-    recordStatusEl.textContent = error instanceof Error ? error.message : 'Microphone permission failed';
-    stopMediaTracks();
-  }
-}
-
-function stopRecording(cancel = false) {
-  // Clean up live detection WS on cancel
-  if (cancel && liveDetectionWs) {
-    if (liveDetectionWs._processor) {
-      liveDetectionWs._processor.disconnect();
-      liveDetectionWs._source.disconnect();
-      liveDetectionWs._audioCtx.close();
-    }
-    liveDetectionWs.close();
-    liveDetectionWs = null;
-    liveDetectionStartedAt = null;
-    liveDetectionFrames = [];
-  }
-
-  if (!mediaRecorder || mediaRecorder.state !== 'recording') {
-    if (cancel) {
-      shouldSubmitRecording = false;
-      clearRecordingTimer();
-      updateRecordingUiState();
-      stopMediaTracks();
-    }
-    return;
-  }
-
-  shouldSubmitRecording = !cancel;
-  mediaRecorder.stop();
-}
-
-/* ── Panel recording (works with all models) ── */
-
-let panelMediaRecorder = null;
-let panelMediaStream = null;
-let panelRecordedChunks = [];
-let panelRecordingTimerId = null;
-let panelRecordingStartedAt = 0;
-
-function updatePanelRecordingUi() {
-  const isRecording = panelMediaRecorder?.state === 'recording';
-  panelRecordBtnEl.classList.toggle('recording', isRecording);
-  panelRecordBtnEl.textContent = isRecording ? 'Stop Recording' : 'Start Recording';
-  if (!isRecording && panelRecordStatusEl.dataset.final !== '1') {
-    panelRecordStatusEl.textContent = '';
-  }
-}
-
-function startPanelRecordingTimer() {
-  panelRecordingStartedAt = Date.now();
-  panelRecordingTimerId = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - panelRecordingStartedAt) / 1000);
-    const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
-    const ss = String(elapsed % 60).padStart(2, '0');
-    panelRecordStatusEl.textContent = `Recording ${mm}:${ss}`;
-  }, 200);
-}
-
-function clearPanelRecordingTimer() {
-  if (panelRecordingTimerId) { clearInterval(panelRecordingTimerId); panelRecordingTimerId = null; }
-}
-
-function stopPanelMediaTracks() {
-  if (panelMediaStream) {
-    panelMediaStream.getTracks().forEach(t => t.stop());
-    panelMediaStream = null;
-  }
-}
-
-async function startPanelRecording() {
-  if (panelMediaRecorder?.state === 'recording') return;
-  if (!navigator.mediaDevices?.getUserMedia) {
-    panelRecordStatusEl.textContent = 'Microphone not supported';
-    return;
-  }
-  try {
-    panelMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mimeCandidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
-    const mimeType = mimeCandidates.find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m));
-    panelMediaRecorder = mimeType ? new MediaRecorder(panelMediaStream, { mimeType }) : new MediaRecorder(panelMediaStream);
-    panelRecordedChunks = [];
-
-    panelMediaRecorder.addEventListener('dataavailable', (event) => {
-      if (event.data && event.data.size > 0) panelRecordedChunks.push(event.data);
-    });
-
-    panelMediaRecorder.addEventListener('stop', () => {
-      clearPanelRecordingTimer();
-      stopPanelMediaTracks();
-      const chunks = panelRecordedChunks;
-      const recorderMime = panelMediaRecorder?.mimeType || 'audio/webm';
-      panelRecordedChunks = [];
-      panelMediaRecorder = null;
-
-      if (!chunks.length) {
-        panelRecordStatusEl.textContent = 'No audio captured';
-        panelRecordStatusEl.dataset.final = '1';
-        updatePanelRecordingUi();
-        return;
-      }
-
-      const blob = new Blob(chunks, { type: recorderMime });
-      const ext = recorderMime.includes('ogg') ? 'ogg' : recorderMime.includes('wav') ? 'wav' : 'webm';
-      const recordedFile = new File([blob], `mic-recording-${Date.now()}.${ext}`, { type: recorderMime });
-
-      if (recordedFile.size <= 0) {
-        panelRecordStatusEl.textContent = 'No audio captured';
-        panelRecordStatusEl.dataset.final = '1';
-        updatePanelRecordingUi();
-        return;
-      }
-
-      panelRecordStatusEl.textContent = '';
-      panelRecordStatusEl.dataset.final = '';
-      updatePanelRecordingUi();
-      addFiles([recordedFile]);
-    });
-
-    panelMediaRecorder.start(200);
-    panelRecordStatusEl.dataset.final = '';
-    startPanelRecordingTimer();
-    updatePanelRecordingUi();
-  } catch (error) {
-    panelRecordStatusEl.textContent = error instanceof Error ? error.message : 'Microphone permission failed';
-    panelRecordStatusEl.dataset.final = '1';
-    stopPanelMediaTracks();
-    updatePanelRecordingUi();
-  }
-}
-
-function stopPanelRecording(cancel = false) {
-  if (!panelMediaRecorder || panelMediaRecorder.state !== 'recording') {
-    if (cancel) {
-      clearPanelRecordingTimer();
-      stopPanelMediaTracks();
-      panelRecordedChunks = [];
-      panelMediaRecorder = null;
-      panelRecordStatusEl.textContent = '';
-      updatePanelRecordingUi();
-    }
-    return;
-  }
-  if (cancel) {
-    panelRecordedChunks = [];
-  }
-  panelMediaRecorder.stop();
-}
-
-const UPLOAD_FORMATS_RAW = {
-  'batch-fast': { formats: ['Opus'], note: 'up to 100 MB' },
-  'batch': { formats: ['AAC', 'AIFF', 'FLAC', 'MP3', 'MP4', 'MOV', 'OGG', 'Opus', 'WAV', 'WebM'], note: 'up to 100 MB' },
-  'streaming': { formats: ['AAC', 'AIFF', 'FLAC', 'MP3', 'MP4', 'MOV', 'OGG', 'Opus', 'WAV', 'WebM'], note: '' },
-  'deepfake': { formats: ['AAC', 'AIFF', 'FLAC', 'MOV', 'MP3', 'MP4', 'OGG', 'Opus', 'WAV', 'WebM'], note: 'up to 100 MB' },
-  'deepfake-streaming': { formats: [], note: 'Record from microphone' },
-};
-function formatUploadFormats(key) {
-  const { formats, note } = UPLOAD_FORMATS_RAW[key] || UPLOAD_FORMATS_RAW.batch;
-  const tags = formats.map(f => `<span>${f}</span>`).join(' ');
-  return note ? `${tags}<br>${note}` : tags;
-}
-
-function updateInputWidgetForModel(modelKey) {
-  const streaming = isStreamingModel(modelKey);
-  const liveDetection = isLiveDetectionModel(modelKey);
-  const panelRecordZone = document.getElementById('panel-record-zone');
-  const panelDivider = document.querySelector('.panel-upload-divider');
-  const panelRecordBtn = document.getElementById('panel-record-btn');
-  const panelRecordStatusEl = document.getElementById('panel-record-status');
-
-  // For live detection streaming: hide top record widget, hide drop zone,
-  // make the panel record zone the sole input with a big prominent button
-  if (liveDetection) {
-    recordZoneEl.hidden = true;
-    recordZoneEl.style.display = 'none';
-    panelDropZoneEl.style.display = 'none';
-    if (panelDivider) panelDivider.style.display = 'none';
-    if (panelRecordZone) {
-      panelRecordZone.hidden = false;
-      panelRecordZone.style.minHeight = '180px';
-      panelRecordZone.style.justifyContent = 'center';
-    }
-    if (panelRecordBtn) {
-      panelRecordBtn.textContent = 'Start Recording';
-      panelRecordBtn.onclick = (e) => {
-        e.stopPropagation();
-        if (mediaRecorder?.state === 'recording') {
-          stopRecording();
-        } else {
-          startRecording();
         }
       };
+    }).catch(() => {
+      showError('Microphone access denied. Please allow microphone access and try again.');
+    });
+  }
+
+  function stopRecording() {
+    if (scriptProcessor) { scriptProcessor.disconnect(); scriptProcessor = null; }
+
+    if (recordingWs && recordingWs.readyState === WebSocket.OPEN) {
+      recordingWs.send('');
+      recordingWs.close();
     }
-    if (panelRecordStatusEl) panelRecordStatusEl.textContent = '';
-  } else {
-    // Restore normal layout
-    panelDropZoneEl.style.display = '';
-    if (panelDivider) panelDivider.style.display = '';
-    if (panelRecordZone) {
-      panelRecordZone.style.minHeight = '';
-      panelRecordZone.style.justifyContent = '';
-      if (panelRecordBtn) panelRecordBtn.onclick = null;
+
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.addEventListener('stop', () => {
+        const mt = mediaRecorder.mimeType || 'audio/webm';
+        const blob = new Blob(recordedChunks, { type: mt });
+        if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
+        audioObjectUrl = URL.createObjectURL(blob);
+        resultsAudio.src = audioObjectUrl;
+        recordedChunks = [];
+        mediaRecorder = null;
+      });
+      mediaRecorder.stop();
     }
 
-    recordZoneEl.hidden = !streaming;
-    recordZoneEl.style.display = streaming ? 'grid' : 'none';
+    cleanupRecording();
+
+    if (currentMode === 'deepfake' && liveFrames.length > 0) {
+      const durationMs = Date.now() - recordingStartTime;
+      const data = { filename: 'Live Recording', frames: liveFrames, duration_ms: durationMs };
+      currentMeta = {
+        fileSize: 0, fileType: 'PCM 16kHz', httpStatus: 101, httpStatusText: 'Switching Protocols',
+        responseSize: JSON.stringify(data).length, processingMs: durationMs,
+      };
+      currentData = data;
+      currentFrames = liveFrames;
+
+      const synFrames = liveFrames.filter(f => f.synthetic_voice);
+      const highConf99 = synFrames.filter(f => f.confidence > 0.99).length;
+      const highConf90 = synFrames.filter(f => f.confidence > 0.90).length;
+      const isSynthetic = highConf99 >= 1 || highConf90 >= 2;
+
+      renderVerdict(isSynthetic, synFrames.length, liveFrames.length);
+      renderHistogram(liveFrames);
+      renderTable(liveFrames);
+    } else if (currentMode === 'transcription') {
+      const durationMs = Date.now() - recordingStartTime;
+      currentMeta = {
+        fileSize: 0, fileType: 'PCM 16kHz', httpStatus: 101, httpStatusText: 'Switching Protocols',
+        responseSize: sttData ? JSON.stringify(sttData).length : 0, processingMs: durationMs,
+      };
+      sttPartial = null;
+      updateSttData();
+      renderTranscript();
+    }
   }
 
-  if (panelUploadFormatsEl) {
-    panelUploadFormatsEl.innerHTML = formatUploadFormats(modelKey);
+  function cleanupRecording() {
+    isRecording = false;
+    updateRecordButton();
+    if (scriptProcessor) { scriptProcessor.disconnect(); scriptProcessor = null; }
+    if (audioContext) { audioContext.close().catch(() => {}); audioContext = null; }
+    if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
   }
 
-  if (!streaming) {
-    stopRecording(true);
-    recordStatusEl.textContent = 'Ready to record';
-  }
-}
-
-function resetMeta(file) {
-  const modelKey = modelEl.value;
-  const options = getRequestedOptions();
-  const supportsSignals = modelKey !== 'batch-fast';
-  setStatus('Processing', 'processing');
-  metaFailureTypeEl.textContent = '';
-  metaFailureNameEl.textContent = '';
-  rowFailureTypeEl.hidden = true;
-  rowFailureNameEl.hidden = true;
-  metaModelEl.textContent = toText(MODEL_CONFIG[modelKey]?.fullName, modelKey);
-  metaOptionsEl.textContent = formatRequestedOptions(options, modelKey);
-  metaFileNameEl.textContent = file?.name || '—';
-  metaFileTypeEl.textContent = deriveClientFileType(file);
-  metaFileSizeEl.textContent = formatMb(file?.size);
-  metaDurationMinEl.textContent = '—';
-  metaProcessingEl.textContent = '—';
-  metaRtfEl.textContent = '—';
-  metaHttpEl.textContent = '—';
-  metaEndpointEl.textContent = '—';
-  metaRequestIdEl.textContent = '—';
-  metaRateEl.textContent = '—';
-  metaCostEl.textContent = '—';
-  metaTokensEl.textContent = '—';
-  metaTranscriptCharsEl.textContent = '—';
-  metaTranscriptWordsEl.textContent = '—';
-  metaUtterancesEl.textContent = '—';
-  metaSpeakersEl.textContent = supportsSignals && options.speaker_diarization ? '—' : 'N/A';
-  metaLanguagesEl.textContent = '—';
-  metaEmotionsEl.textContent = supportsSignals && options.emotion_signal ? '—' : 'N/A';
-  metaAccentsEl.textContent = supportsSignals && options.accent_signal ? '—' : 'N/A';
-  metaPiiTagsEl.textContent = supportsSignals && options.pii_phi_tagging ? '—' : 'N/A';
-  metaResponseBytesEl.textContent = '—';
-  if (metaDetectionScoreEl) metaDetectionScoreEl.textContent = '—';
-  updateStatsRowVisibility(modelKey);
-}
-
-function updateMetaFromResponse(data, fallbackModel) {
-  const processingText = formatSecondsFromMs(data?.speed?.processingMs);
-  const factor = formatProcessingFactor(data);
-  const modelKey = data?.model || fallbackModel;
-  const isUnsupported = (field) => UNSUPPORTED_BY_MODEL[modelKey]?.has(field);
-  const options = data?.options || getRequestedOptions();
-  const diarizationEnabled = !isUnsupported('speakers') && !!options.speaker_diarization;
-  const emotionEnabled = !isUnsupported('emotions') && !!options.emotion_signal;
-  const accentEnabled = !isUnsupported('accents') && !!options.accent_signal;
-  const piiEnabled = !isUnsupported('pii_tags') && !!options.pii_phi_tagging;
-
-  if (data?.success) {
-    setStatus(`SUCCESS (${processingText})`, 'ok');
-  } else {
-    setStatus(`FAILURE (${processingText})`, 'fail');
-  }
-  const failureInfo = getFailureInfo(data);
-  const hasFailure = failureInfo.type && failureInfo.type !== 'N/A';
-  metaFailureTypeEl.textContent = hasFailure ? failureInfo.type : '';
-  metaFailureNameEl.textContent = hasFailure ? failureInfo.name : '';
-  rowFailureTypeEl.hidden = !hasFailure;
-  rowFailureNameEl.hidden = !hasFailure;
-
-  metaModelEl.textContent = toText(data?.modelFullName, toText(data?.model, fallbackModel));
-  metaOptionsEl.textContent = isUnsupported('options') ? 'N/A' : formatRequestedOptions(options, modelKey);
-  metaFileNameEl.textContent = toText(data?.meta?.fileName);
-  metaFileTypeEl.textContent = toText(data?.meta?.fileMimeType, metaFileTypeEl.textContent || '—');
-  metaFileSizeEl.textContent = typeof data?.meta?.fileSizeBytes === 'number' ? formatMb(data.meta.fileSizeBytes) : '—';
-  metaDurationMinEl.textContent = formatMinutes(data?.meta?.audioMinutes);
-
-  metaProcessingEl.textContent = processingText;
-  metaRtfEl.textContent = factor;
-
-  const httpParts = [];
-  if (data?.api?.statusCode !== null && data?.api?.statusCode !== undefined && data.api.statusCode !== '') {
-    httpParts.push(String(data.api.statusCode));
-  }
-  if (typeof data?.api?.statusText === 'string' && data.api.statusText.trim()) {
-    httpParts.push(data.api.statusText.trim());
-  }
-  metaHttpEl.textContent = httpParts.length ? httpParts.join(' ') : '—';
-  metaEndpointEl.textContent = toText(data?.api?.endpoint);
-  metaRequestIdEl.textContent = toText(data?.meta?.requestId);
-
-  metaRateEl.textContent = formatRate(data?.cost);
-  metaCostEl.textContent = formatCost(data?.cost);
-  metaCostEl.classList.remove('cost-estimate');
-  metaTokensEl.textContent = formatTokens(data?.cost?.tokens);
-
-  metaTranscriptCharsEl.textContent = formatCount(data?.meta?.transcriptChars, 'chars');
-  metaTranscriptWordsEl.textContent = formatCount(data?.meta?.transcriptWords, 'words');
-  metaUtterancesEl.textContent = isUnsupported('utterances')
-    ? 'N/A'
-    : formatCount(data?.meta?.utteranceCount, 'utterances') === '—'
-      ? 'N/A'
-      : formatCount(data?.meta?.utteranceCount, 'utterances');
-  metaSpeakersEl.textContent = !diarizationEnabled
-    ? 'N/A'
-    : formatCount(data?.meta?.speakerCount, 'speakers') === '—'
-      ? 'N/A'
-      : formatCount(data?.meta?.speakerCount, 'speakers');
-
-  if (isUnsupported('languages')) {
-    metaLanguagesEl.textContent = 'N/A';
-  } else if (Array.isArray(data?.meta?.languages) && data.meta.languages.length) {
-    metaLanguagesEl.textContent = data.meta.languages.map(c => langCodeToName(c)).join(', ');
-  } else if (typeof data?.meta?.languageCount === 'number') {
-    metaLanguagesEl.textContent = formatCount(data.meta.languageCount, 'languages');
-  } else {
-    metaLanguagesEl.textContent = 'N/A';
+  function updateRecordButton() {
+    if (!recordAction) return;
+    const span = recordAction.querySelector('span');
+    if (isRecording) { recordAction.classList.add('recording'); span.textContent = 'Stop streaming'; }
+    else { recordAction.classList.remove('recording'); span.textContent = 'Start streaming'; }
   }
 
-  const signalStats = collectSignalStats(data?.result);
-  metaEmotionsEl.textContent = emotionEnabled ? formatSignalMap(signalStats.emotions) : 'N/A';
-  metaAccentsEl.textContent = accentEnabled ? formatSignalMap(signalStats.accents) : 'N/A';
-  metaPiiTagsEl.textContent = !piiEnabled
-    ? 'N/A'
-    : typeof signalStats.piiTagCount === 'number'
-      ? `${INT_FMT.format(signalStats.piiTagCount)} tags`
-      : 'N/A';
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── MODALS ────────────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
 
-  metaResponseBytesEl.textContent = formatResponseBytes(data?.meta?.responseBytes);
+  document.getElementById('btn-show-stats').addEventListener('click', () => showStatsModal());
+  document.getElementById('btn-show-json').addEventListener('click', () => showJsonModal());
+  document.getElementById('btn-show-stats-stt').addEventListener('click', () => showStatsModal());
+  document.getElementById('btn-show-json-stt').addEventListener('click', () => showJsonModal());
 
-  // Detection score
-  if (metaDetectionScoreEl) {
-    const score = data?.meta?.detectionScore;
-    if (data?.modelType === 'detection' && score && typeof score === 'object') {
-      metaDetectionScoreEl.textContent = formatConfidenceLabel(score.synthetic, score.confidence);
-    } else if (data?.modelType === 'detection' && typeof score === 'number') {
-      metaDetectionScoreEl.textContent = formatConfidenceLabel(score);
+  document.getElementById('stats-modal-close').addEventListener('click', () => statsModal.classList.remove('visible'));
+  document.getElementById('json-modal-close').addEventListener('click', () => jsonModal.classList.remove('visible'));
+  statsModal.addEventListener('click', (e) => { if (e.target === statsModal) statsModal.classList.remove('visible'); });
+  jsonModal.addEventListener('click', (e) => { if (e.target === jsonModal) jsonModal.classList.remove('visible'); });
+
+  jsonCopyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(JSON.stringify(currentData, null, 2)).then(() => {
+      jsonCopyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+      setTimeout(() => {
+        jsonCopyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy';
+      }, 2000);
+    });
+  });
+
+  function showStatsModal() {
+    if (!currentData) return;
+    const m = currentMeta;
+    let groups;
+
+    if (currentMode === 'deepfake') {
+      statsModalTitle.textContent = 'Detection Statistics';
+      const frames = currentData.frames || [];
+      const synFrames = frames.filter(f => f.synthetic_voice);
+      const avgSynConf = synFrames.length ? synFrames.reduce((s, f) => s + f.confidence, 0) / synFrames.length : 0;
+      const maxSynConf = synFrames.length ? Math.max(...synFrames.map(f => f.confidence)) : 0;
+      const durationMs = currentData.duration_ms || 0;
+      const highConf99 = synFrames.filter(f => f.confidence > 0.99).length;
+      const highConf90 = synFrames.filter(f => f.confidence > 0.90).length;
+      const isSyn = highConf99 >= 1 || highConf90 >= 2;
+      const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
+      const procFactor = m.processingMs && durationMs ? (durationMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
+      const costVal = durationMs ? '$' + (durationMs / 3600000 * 0.25).toFixed(4) : 'N/A';
+      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
+      const fileType = m.fileType || (currentData.filename ? currentData.filename.split('.').pop().toUpperCase() : 'N/A');
+
+      groups = [
+        { group: 'Detection', rows: [
+          ['Model', 'velma-2-synthetic-voice-detection'],
+          ['Verdict', isSyn ? 'Deepfake detected' : 'Authentic'],
+          ['Deepfake segments', synFrames.length + ' / ' + frames.length],
+          ['Avg deepfake confidence', synFrames.length ? (avgSynConf * 100).toFixed(1) + '%' : 'N/A'],
+          ['Max deepfake confidence', synFrames.length ? (maxSynConf * 100).toFixed(1) + '%' : 'N/A'],
+        ]},
+        { group: 'Audio', rows: [
+          ['File Name', currentData.filename || 'N/A'],
+          ['File Size', m.fileSize ? formatBytes(m.fileSize) : 'N/A'],
+          ['File Type', fileType],
+          ['Audio Duration', formatDuration(durationMs)],
+          ['Total segments', String(frames.length)],
+        ]},
+        { group: 'Performance', rows: [
+          ['Processing Time', procTimeStr],
+          ['Processing Factor', procFactor],
+          ['Cost', costVal],
+          ['Rate', '$0.25/hr'],
+        ]},
+        { group: 'Request', rows: [
+          ['HTTP', httpStr],
+          ['Endpoint', '/api/velma-2-synthetic-voice-detection-batch'],
+          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
+        ]},
+      ];
     } else {
-      metaDetectionScoreEl.textContent = '—';
+      statsModalTitle.textContent = 'Transcription Statistics';
+      const utterances = currentData.utterances || [];
+      const durationMs = currentData.duration_ms || 0;
+      const languages = [...new Set(utterances.map(u => u.language).filter(Boolean))];
+      const speakers = [...new Set(utterances.map(u => u.speaker).filter(s => s != null))];
+      const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
+      const procFactor = m.processingMs && durationMs ? (durationMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
+      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
+      const fileType = m.fileType || (currentData.filename ? currentData.filename.split('.').pop().toUpperCase() : 'N/A');
+
+      groups = [
+        { group: 'Transcription', rows: [
+          ['Model', 'velma-2-stt'],
+          ['Utterances', String(utterances.length)],
+          ['Speakers', speakers.length ? speakers.length.toString() : 'N/A'],
+          ['Languages', languages.length ? languages.join(', ') : 'N/A'],
+        ]},
+        { group: 'Audio', rows: [
+          ['File Name', currentData.filename || 'N/A'],
+          ['File Size', m.fileSize ? formatBytes(m.fileSize) : 'N/A'],
+          ['File Type', fileType],
+          ['Audio Duration', formatDuration(durationMs)],
+        ]},
+        { group: 'Performance', rows: [
+          ['Processing Time', procTimeStr],
+          ['Processing Factor', procFactor],
+        ]},
+        { group: 'Request', rows: [
+          ['HTTP', httpStr],
+          ['Endpoint', m.httpStatus === 101 ? '/api/velma-2-stt-streaming' : '/api/velma-2-stt-batch'],
+          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
+        ]},
+      ];
     }
+
+    let html = '<table class="stats-table">';
+    groups.forEach(g => {
+      html += '<tr class="stats-group-row"><td colspan="2">' + g.group + '</td></tr>';
+      g.rows.forEach(([label, value]) => {
+        html += '<tr><td class="stats-label">' + label + '</td><td class="stats-value">' + value + '</td></tr>';
+      });
+    });
+    html += '</table>';
+    statsGrid.innerHTML = html;
+    statsModal.classList.add('visible');
   }
 
-  // Update row visibility for model type
-  updateStatsRowVisibility(modelKey);
-
-  if (metaRequestIdEl.textContent === '—' || !metaRequestIdEl.textContent) {
-    metaRequestIdEl.textContent = 'N/A';
-  }
-  if (metaTokensEl.textContent === '—') {
-    metaTokensEl.textContent = 'N/A';
-  }
-  if (metaTranscriptCharsEl.textContent === '—') {
-    metaTranscriptCharsEl.textContent = 'N/A';
-  }
-  if (metaTranscriptWordsEl.textContent === '—') {
-    metaTranscriptWordsEl.textContent = 'N/A';
-  }
-}
-
-
-modelEl.addEventListener('change', () => {
-  updateInputWidgetForModel(modelEl.value);
-  updateFeatureControlsForModel(modelEl.value);
-  metaModelEl.textContent = toText(MODEL_CONFIG[modelEl.value]?.fullName, modelEl.value);
-  metaOptionsEl.textContent = formatRequestedOptions(getRequestedOptions(), modelEl.value);
-});
-
-for (const optInput of optionInputs) {
-  optInput.addEventListener('change', () => {
-    metaOptionsEl.textContent = formatRequestedOptions(getRequestedOptions(), modelEl.value);
-  });
-}
-
-for (const vtab of viewerTabButtons) {
-  vtab.addEventListener('click', () => {
-    setActiveRightTab(vtab.dataset.tab || 'stats');
-  });
-}
-
-fileEl.addEventListener('change', () => {
-  if (!fileEl.files?.length) return;
-  addFiles(fileEl.files);
-});
-
-panelChooseBtnEl.addEventListener('click', (event) => {
-  event.stopPropagation();
-  fileEl.click();
-});
-
-panelDropZoneEl.addEventListener('click', () => {
-  fileEl.click();
-});
-
-panelDropZoneEl.addEventListener('dragover', (event) => {
-  event.preventDefault();
-  panelDropZoneEl.classList.add('drag');
-});
-
-panelDropZoneEl.addEventListener('dragleave', () => {
-  panelDropZoneEl.classList.remove('drag');
-});
-
-panelDropZoneEl.addEventListener('drop', (event) => {
-  event.preventDefault();
-  panelDropZoneEl.classList.remove('drag');
-  const droppedFiles = event.dataTransfer?.files;
-  if (!droppedFiles?.length) return;
-  addFiles(droppedFiles);
-});
-
-document.getElementById('panel-record-zone').addEventListener('click', () => {
-  if (panelMediaRecorder?.state === 'recording') {
-    stopPanelRecording(false);
-    return;
-  }
-  void startPanelRecording();
-});
-
-recordToggleBtnEl.addEventListener('click', () => {
-  if (!isStreamingModel()) return;
-  if (mediaRecorder?.state === 'recording') {
-    stopRecording(false);
-    return;
-  }
-  void startRecording();
-});
-
-copyBtnEl.addEventListener('click', async () => {
-  const text = latestPreviewText || '';
-  if (!text) return;
-  try {
-    await copyTextToClipboard(text);
-    copyBtnEl.textContent = 'Copied';
-    setTimeout(() => { copyBtnEl.textContent = 'Copy transcript'; }, 1200);
-  } catch {
-    copyBtnEl.textContent = 'Copy failed';
-    setTimeout(() => { copyBtnEl.textContent = 'Copy transcript'; }, 1200);
-  }
-});
-
-audioPlayerEl.addEventListener('timeupdate', () => {
-  const currentMs = audioPlayerEl.currentTime * 1000;
-
-  // ── STT utterance highlighting ─────────────────────────────────────────
-  const turns = Array.from(previewOutputEl.querySelectorAll('.speaker-turn[data-start-ms]'));
-  let newActive = null;
-  for (const turn of turns) {
-    if (Number(turn.dataset.startMs) <= currentMs) newActive = turn;
-  }
-  for (const turn of turns) {
-    turn.classList.toggle('active-utterance', turn === newActive);
-  }
-  if (newActive && newActive !== activeUtteranceEl) {
-    activeUtteranceEl = newActive;
-    if (autoscrollEl.checked) {
-      newActive.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+  function showJsonModal() {
+    if (!currentData) return;
+    jsonPre.innerHTML = syntaxHighlightJson(JSON.stringify(currentData, null, 2));
+    jsonModal.classList.add('visible');
   }
 
-  // ── Detection chart playhead sync ───────────────────────────────────────
-  if (currentDetectionData) {
-    const { smoothed, totalDurationMs } = currentDetectionData;
-    const playhead = previewOutputEl.querySelector('.det-chart-playhead');
-    const canvas = previewOutputEl.querySelector('.det-chart-canvas');
-    if (playhead && canvas && totalDurationMs > 0) {
-      // Map current time to the bar position, not just percentage of width
-      const barW = canvas._barW || 10;
-      const barGap = canvas._barGap || 1;
-      const n = smoothed.length;
-      // Find which frame we're in
-      let activeIdx = 0;
-      for (let i = 0; i < n; i++) {
-        const midMs = (smoothed[i].startMs + smoothed[i].endMs) / 2;
-        if (currentMs >= smoothed[i].startMs) activeIdx = i;
-      }
-      // Interpolate position within the active frame
-      const f = smoothed[activeIdx];
-      const frameFrac = Math.min(1, Math.max(0, (currentMs - f.startMs) / (f.endMs - f.startMs)));
-      const barStart = activeIdx * (barW + barGap);
-      const xPos = barStart + barW * frameFrac;
-      playhead.style.left = `${xPos}px`;
-      playhead.style.display = 'block';
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── SHARED UTILITIES ──────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
 
-      // Update data label at top of playhead
-      const label = playhead.querySelector('.det-playhead-label');
-      if (label) {
-        const pct = (f.confidence * 100).toFixed(0);
-        const timeS = (currentMs / 1000).toFixed(1);
-        label.textContent = `${timeS}s · ${f.synthetic_voice ? 'Syn' : 'Real'} ${pct}%`;
-        label.style.color = scoreToColor(f.synthetic_voice, f.confidence);
+  async function uploadAndAnalyze(file, endpoint, extraFields) {
+    const formData = new FormData();
+    formData.append('upload_file', file);
+    if (extraFields) {
+      for (const [key, value] of Object.entries(extraFields)) {
+        formData.append(key, String(value));
       }
     }
+    const res = await fetch(endpoint, { method: 'POST', body: formData });
+    const responseText = await res.text();
+    if (!res.ok) {
+      let body = {};
+      try { body = JSON.parse(responseText); } catch {}
+      throw new Error(body.detail || body.message || body.error || 'Server error (' + res.status + ')');
+    }
+    return {
+      data: JSON.parse(responseText),
+      meta: { httpStatus: res.status, httpStatusText: res.statusText, responseSize: responseText.length },
+    };
   }
-});
 
+  function getAudioDuration(file) {
+    return new Promise((resolve) => {
+      const audio = new Audio();
+      const url = URL.createObjectURL(file);
+      audio.addEventListener('loadedmetadata', () => {
+        const dur = audio.duration;
+        URL.revokeObjectURL(url);
+        resolve(isFinite(dur) ? dur * 1000 : 10000);
+      });
+      audio.addEventListener('error', () => { URL.revokeObjectURL(url); resolve(10000); });
+      audio.src = url;
+    });
+  }
 
+  function startProgress(estimatedMs) {
+    const start = Date.now();
+    progressFill.style.transition = 'none';
+    progressFill.style.width = '0%';
+    void progressFill.offsetWidth;
 
+    const tick = () => {
+      const elapsed = Date.now() - start;
+      const rawPct = Math.min(elapsed / estimatedMs, 1);
+      progressFill.style.transition = 'width 0.3s linear';
+      progressFill.style.width = (rawPct * 90) + '%';
+      if (rawPct < 1) progressTimer = requestAnimationFrame(tick);
+    };
+    progressTimer = requestAnimationFrame(tick);
+  }
 
-setActiveRightTab('stats');
-updateInputWidgetForModel(modelEl.value);
-updateFeatureControlsForModel(modelEl.value);
-metaModelEl.textContent = toText(MODEL_CONFIG[modelEl.value]?.fullName, modelEl.value);
-metaOptionsEl.textContent = formatRequestedOptions(getRequestedOptions(), modelEl.value);
-renderJson({});
-renderFileTabs();
+  function finishProgress() {
+    return new Promise((resolve) => {
+      if (progressTimer) cancelAnimationFrame(progressTimer);
+      progressFill.style.transition = 'width 0.4s ease-out';
+      progressFill.style.width = '100%';
+      setTimeout(resolve, 500);
+    });
+  }
 
-// Diarization tooltip on hover
-(function() {
-  const label = document.getElementById('diarization-label');
-  if (!label) return;
-  const tipText = 'Identifies and labels individual speakers in the audio';
-  let tipEl = null;
-  label.addEventListener('mouseenter', () => {
-    if (tipEl) return;
-    tipEl = document.createElement('span');
-    tipEl.className = 'feature-tip';
-    tipEl.textContent = tipText;
-    document.body.appendChild(tipEl);
-    const r = label.getBoundingClientRect();
-    tipEl.style.left = r.left + 'px';
-    tipEl.style.top = (r.bottom + 4) + 'px';
+  function stopProgress() { if (progressTimer) cancelAnimationFrame(progressTimer); }
+
+  function showOverlay(filename, statusText) {
+    if (analysisTitle) analysisTitle.textContent = 'Analyzing \u201c' + truncate(filename, 30) + '\u201d';
+    if (analysisStatus) analysisStatus.textContent = statusText || 'Processing audio';
+    progressFill.style.width = '0%';
+    overlay.classList.add('visible');
+  }
+
+  function hideOverlay() { overlay.classList.remove('visible'); }
+
+  function showError(msg) {
+    errorToast.textContent = msg;
+    errorToast.classList.add('visible');
+    setTimeout(() => errorToast.classList.remove('visible'), 5000);
+  }
+
+  function syntaxHighlightJson(json) {
+    return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")\s*:/g, '<span class="json-key">$1</span>:')
+      .replace(/:\s*("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")/g, ': <span class="json-string">$1</span>')
+      .replace(/:\s*(-?\d+\.?\d*([eE][+-]?\d+)?)/g, ': <span class="json-number">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>')
+      .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>')
+      .replace(/([{}[\]])/g, '<span class="json-brace">$1</span>');
+  }
+
+  // Render PII/PHI tagged text with blurred spans
+  function renderPiiText(rawText) {
+    // Match <pii:type>content</pii:type> and <phi:type>content</phi:type>
+    const piiRegex = /<(pii|phi):(\w+)>([\s\S]*?)<\/\1:\2>/gi;
+    let result = '';
+    let lastIdx = 0;
+    let match;
+    while ((match = piiRegex.exec(rawText)) !== null) {
+      // Escape and add text before the match
+      result += escapeHtml(rawText.slice(lastIdx, match.index));
+      const tagType = match[1].toUpperCase();
+      const tagName = match[2].replace(/_/g, ' ');
+      const content = match[3];
+      result += '<span class="pii-blur" title="' + tagType + ': ' + escapeHtml(tagName) + '">' + escapeHtml(content) + '</span>';
+      lastIdx = match.index + match[0].length;
+    }
+    result += escapeHtml(rawText.slice(lastIdx));
+    return result;
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function formatMs(ms) {
+    const totalSec = Math.floor(ms / 1000);
+    return Math.floor(totalSec / 60) + ':' + String(totalSec % 60).padStart(2, '0');
+  }
+
+  function formatSecCompact(ms) {
+    const sec = Math.round(ms / 1000);
+    if (sec < 60) return sec + 's';
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m + 'm' + (s > 0 ? s + 's' : '');
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+
+  function formatDuration(ms) {
+    if (ms < 1000) return ms.toFixed(0) + 'ms';
+    const sec = ms / 1000;
+    if (sec < 60) return sec.toFixed(2) + 's';
+    const m = Math.floor(sec / 60);
+    return m + 'm ' + (sec % 60).toFixed(1) + 's';
+  }
+
+  function truncate(str, n) { return str.length > n ? str.slice(0, n - 1) + '\u2026' : str; }
+
+  function confidenceToOpacity(c) {
+    const t = Math.max(0, (c - 0.5) / 0.5);
+    return Math.max(0.3, Math.pow(t, 1.8)).toFixed(2);
+  }
+
+  // ── URL Routing ──────────────────────────────────────────────────────────
+  window.addEventListener('popstate', (e) => {
+    const mode = (e.state && e.state.mode) || getModeFromPath();
+    document.getElementById('mode-' + mode).checked = true;
+    switchMode(mode, false);
   });
-  label.addEventListener('mouseleave', () => {
-    if (tipEl) { tipEl.remove(); tipEl = null; }
-  });
+
+  function getModeFromPath() {
+    const path = location.pathname.replace(/\/$/, '');
+    if (path === '/deepfake') return 'deepfake';
+    return 'transcription';
+  }
+
+  // ── Init ────────────────────────────────────────────────────────────────
+  const initMode = getModeFromPath();
+  document.getElementById('mode-' + initMode).checked = true;
+
+  if (initMode === 'deepfake') {
+    // Deepfake init
+    transcriptContainer.classList.remove('visible');
+    resultsSidebar.classList.remove('visible');
+    currentMeta = {
+      fileSize: 1.87 * 1024 * 1024, fileType: 'audio/mpeg',
+      httpStatus: 200, httpStatusText: 'OK',
+      responseSize: 4.2 * 1024, processingMs: 2660,
+    };
+    renderDeepfakeResults(DEMO_DATA, DEMO_AUDIO_URL);
+  } else {
+    // Transcription init (default)
+    deepfakeContent.style.display = 'none';
+    resultsVerdict.style.display = 'none';
+    transcriptContainer.classList.add('visible');
+    resultsSidebar.classList.add('visible');
+    sttOptions.classList.add('visible');
+    if (recordAction) {
+      recordAction.classList.add('disabled-soon');
+      recordAction.querySelector('span').textContent = 'Start streaming (Soon)';
+    }
+
+    sttData = DEMO_STT_DATA;
+    currentData = DEMO_STT_DATA;
+    sttUtterances = DEMO_STT_DATA.utterances || [];
+    sttPartial = null;
+    currentMeta = {
+      fileSize: 1.87 * 1024 * 1024, fileType: 'audio/mpeg',
+      httpStatus: 200, httpStatusText: 'OK',
+      responseSize: JSON.stringify(DEMO_STT_DATA).length, processingMs: 2660,
+    };
+    resultsFilename.textContent = 'Irate_Caller_Final.mp3';
+    resultsAudio.src = DEMO_STT_AUDIO_URL;
+    renderTranscript();
+  }
+
+  // Replace initial state so back button works
+  history.replaceState({ mode: initMode }, '', initMode === 'deepfake' ? '/deepfake' : '/transcription');
 })();
-
-// Fetch usage on page load
-fetchUsage();
