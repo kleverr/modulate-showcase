@@ -2,6 +2,30 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [2.0.0] - 2026-03-29
+
+### Added
+- Transcript chat bubbles: rounded bubble design with speaker-based left/right alignment
+- Emotion color palette: full-color bubble tinting based on detected emotion (22 emotions mapped)
+- Emotion timeline chart: per-speaker bar chart showing utterance emotions over time, clickable to seek audio
+- Playback sync: active transcript bubble highlights during audio playback, stays highlighted until next utterance
+- Tooltip on chart bars showing timestamp range, speaker, and emotion
+- Fast transcription mode: checkbox to use vfast English-only batch endpoint
+- Language dictionary: two-letter codes resolved to full names (e.g., EN → English)
+- New demo audio: Irate Caller scenario with PII tagging, angry/frustrated emotions, and two speakers
+
+### Changed
+- Transcript header order: timestamp first, then speaker, emotion (colored), accent (with "accent" suffix)
+- Language and accent displayed as "English with American accent" format
+- Emotion label color matches the emotion palette color
+- Start streaming button disabled for transcription mode (marked "Soon")
+- Removed language-only display from transcript bubbles
+
+### Removed
+- Separate emotion/accent tags below transcript text (now inline in header)
+- Time interval display in transcript (only start timestamp shown)
+- Speaker color pill badges (replaced by bubble alignment)
+
 ## [1.7.3] - 2026-03-27
 
 ### Added
