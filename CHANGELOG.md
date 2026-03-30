@@ -2,6 +2,31 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [2.0.1] - 2026-03-30
+
+### Fixed
+- Deepfake mode init bug: uploading files on /deepfake now correctly hits the detection API instead of STT
+- Analysis results preserved across mode switches instead of resetting to demo data
+- Race condition guard prevents concurrent uploads from corrupting state
+- Friendly error message on malformed API responses instead of raw JSON.parse errors
+- Empty frames array shows "Insufficient data" instead of false "Authentic" verdict
+- Animation frame trackers stopped on mode switch to prevent resource drain
+- XSS protection: filenames sanitized in stats modal innerHTML
+- JSON copy button now works on non-HTTPS contexts via execCommand fallback
+
+### Added
+- "Get API Access" CTA button in header with HubSpot form modal
+- Rate limit indicator above footer showing remaining requests
+- 2-minute fetch timeout on upstream API calls with friendly 504 message
+- Scrollbar auto-hides when not scrolling
+- Updated deepfake demo data to match new model output (25 non-overlapping 4s frames)
+
+### Changed
+- "Deep Fake" renamed to "Deepfake" in mode toggle
+- Upload overlay text changed from "Transcribing" to "Analyzing"
+- Standalone /deepfake/index.html redirects to SPA at /deepfake
+- HubSpot form moved from inline embed to modal popup
+
 ## [2.0.0] - 2026-03-29
 
 ### Added
