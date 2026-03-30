@@ -13,6 +13,15 @@
 /* ── Reset & Tokens ──────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Hide scrollbar until user scrolls */
+html { scrollbar-gutter: stable; }
+html::-webkit-scrollbar { width: 6px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; transition: background 0.3s; }
+html.is-scrolling::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); }
+html { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+html.is-scrolling { scrollbar-color: rgba(0,0,0,0.2) transparent; }
+
 :root {
   font-size: 100%;
 
@@ -76,6 +85,7 @@ body {
   padding: var(--space-m) 0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-xs);
 }
 
@@ -93,6 +103,76 @@ body {
   font-size: var(--font-s);
   font-weight: 600;
   letter-spacing: -0.01em;
+}
+
+.header-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.8rem;
+  font-size: var(--font-s);
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: linear-gradient(135deg, #430f92, #fb3958);
+  border: none;
+  border-radius: var(--radius-m);
+  cursor: pointer;
+  transition: filter var(--hover-out);
+  white-space: nowrap;
+}
+.header-cta:hover { filter: brightness(1.2); transition-duration: var(--hover-in); }
+.header-cta svg { width: 1rem; height: 1rem; }
+
+.hs-modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  justify-content: center;
+  align-items: center;
+}
+.hs-modal-backdrop.visible { display: flex; }
+.hs-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: min(480px, 90vw);
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: modalIn 0.2s ease-out;
+}
+.hs-modal-header {
+  padding: 1.5rem 1.5rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.hs-modal-header h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-color);
+}
+.hs-modal-header p {
+  margin-top: 0.25rem;
+  font-size: var(--font-xs);
+  color: var(--text-caption);
+}
+.hs-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-caption);
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.hs-modal-close:hover { background: var(--bg-surface); }
+.hs-modal-close svg { width: 1.1rem; height: 1.1rem; }
+.hs-modal-body {
+  padding: 1rem 1.5rem 1.5rem;
 }
 
 .file-input { display: none; }
@@ -957,6 +1037,14 @@ body {
 
 .error-toast.visible { display: block; }
 
+/* ── Rate Limit Bar ──────────────────────────────────────────────────── */
+.rate-limit-bar {
+  padding: var(--space-xs) 0;
+  text-align: center;
+  font-size: var(--font-xs);
+  color: var(--text-caption);
+}
+
 /* ── Footer ──────────────────────────────────────────────────────────── */
 .footer {
   padding: var(--space-m) 0 var(--space-l);
@@ -1005,6 +1093,10 @@ body {
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 219.6 264.66"><defs><linearGradient id="mg" x1="28.58" y1="232.87" x2="183.79" y2="47.91" gradientUnits="userSpaceOnUse"><stop offset=".02" stop-color="#12113d"/><stop offset=".1" stop-color="#141041"/><stop offset=".2" stop-color="#1c104f"/><stop offset=".3" stop-color="#291065"/><stop offset=".4" stop-color="#3b0f84"/><stop offset=".44" stop-color="#430f92"/><stop offset=".47" stop-color="#4b108f"/><stop offset=".52" stop-color="#621688"/><stop offset=".58" stop-color="#871e7c"/><stop offset=".65" stop-color="#ba2a6c"/><stop offset=".73" stop-color="#fb3958"/><stop offset=".8" stop-color="#fb4557"/><stop offset=".93" stop-color="#fb6556"/><stop offset="1" stop-color="#fc7856"/></linearGradient></defs><path fill="url(#mg)" d="M164.41,146.92l46.78-14.88-2.46-8.22-46.74,14.87c.99,2.66,1.8,5.41,2.42,8.23ZM145.35,114.38l47.74-58.65-6.56-5.52-47.95,58.91c2.38,1.6,4.65,3.36,6.78,5.26ZM198.33,158.26l-.19-8.58-32.96,1.28c.42,2.79.64,5.65.67,8.56l32.48-1.27ZM160.7,184.81l32.46,10.56,2.79-8.11-32.36-10.53c-.78,2.78-1.74,5.48-2.88,8.08ZM179.8,124.57l-4.03-7.57-19.25,10.64c1.51,2.42,2.86,4.95,4.03,7.57l19.25-10.64ZM183.73,88.07l-35.07,29.5c1.99,2.06,3.83,4.25,5.51,6.57l34.97-29.41-5.41-6.66ZM213.29,170.9l-47.53-7.24c-.16,2.89-.53,5.74-1.07,8.51l47.17,7.19,1.43-8.46ZM135.07,106.96l18.84-41.61-7.75-3.67-18.8,41.53c2.67,1.07,5.25,2.33,7.72,3.75ZM73.03,107.44L20.76,30.23l-7.18,4.69,52.41,77.42c2.22-1.79,4.57-3.43,7.04-4.91ZM158.86,188.64c-.5.95-1.04,1.87-1.59,2.78-.32.54-.64,1.08-.98,1.61-.4.62-.81,1.24-1.23,1.85-11.06,16.07-29.55,26.63-50.54,26.63-33.89,0-61.36-27.47-61.36-61.36,0-17.55,7.38-33.37,19.2-44.56l-.02-.02c.14-.13.27-.28.41-.41L7.1,55.48l-6.37,5.74,26.6,28.54C10.38,108.33,0,133.01,0,160.14c0,57.72,46.79,104.52,104.52,104.52,37.64,0,70.6-19.91,89-49.75l22.22,10.74,3.86-7.66-60.74-29.35ZM84.99,101.95l-29.4-67.27-7.92,3.3,29.39,67.25c2.55-1.27,5.19-2.37,7.92-3.28ZM97.53,99.18L79.42,0l-8.46,1.4,18.13,99.32c2.74-.71,5.56-1.22,8.44-1.54ZM104.47,98.78c2.1,0,4.17.11,6.21.31l-.19-61.1-8.58-.12.19,60.96c.79-.03,1.57-.06,2.37-.06ZM132.31,64.67l-8.3-2.16-9.01,37.18c2.85.49,5.63,1.17,8.33,2.04l8.99-37.07Z"/></svg>
       <span class="header-wordmark">Modulate Models Preview</span>
     </a>
+    <button class="header-cta" id="cta-access-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      Start building with API access
+    </button>
   </header>
 
   <!-- Mode Toggle -->
@@ -1106,6 +1198,9 @@ body {
     </div>
   </section>
 
+  <!-- Rate limit indicator -->
+  <div class="rate-limit-bar" id="rate-limit-bar"></div>
+
   <!-- Footer -->
   <footer class="footer">
     Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a> &middot; &copy; 2026 Modulate, Inc.
@@ -1167,8 +1262,25 @@ body {
 <!-- Shared histogram tooltip -->
 <div class="histo-bar-tooltip" id="histo-tooltip"></div>
 
+<!-- HubSpot Access Modal -->
+<div class="hs-modal-backdrop" id="hs-modal">
+  <div class="hs-modal">
+    <div class="hs-modal-header">
+      <div>
+        <h3>Get API Access</h3>
+        <p>Start building with Modulate's voice intelligence APIs.</p>
+      </div>
+      <button class="hs-modal-close" id="hs-modal-close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="hs-modal-body">
+      <div class="hs-form-frame" data-region="na1" data-form-id="58b05257-fab0-4145-90c1-ea658b4d5cda" data-portal-id="22677265"></div>
+    </div>
+  </div>
+</div>
+
 <script src="/app.js"></script>
 <script src="https://js.hsforms.net/forms/embed/22677265.js" defer></script>
-<div class="hs-form-frame" data-region="na1" data-form-id="58b05257-fab0-4145-90c1-ea658b4d5cda" data-portal-id="22677265"></div>
 </body>
 </html>

@@ -153,6 +153,8 @@ app.post('/api/:path(*)', handleUpload, async (req, res) => {
     const body = Buffer.concat(bodyParts);
 
     const baseUrl = ENDPOINT_BASE_URL[endpoint] || API_BASE_URL;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120_000); // 2 min timeout
     const upstreamRes = await fetch(`${baseUrl}${endpoint}`, {
       method: 'POST',
       headers: {
@@ -160,7 +162,9 @@ app.post('/api/:path(*)', handleUpload, async (req, res) => {
         'Content-Type': `multipart/form-data; boundary=${boundary}`,
       },
       body,
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     const responseText = await upstreamRes.text();
 
@@ -174,7 +178,11 @@ app.post('/api/:path(*)', handleUpload, async (req, res) => {
     res.send(responseText);
   } catch (err) {
     console.error('Proxy error:', err.message);
-    res.status(502).json({ error: 'Upstream request failed', message: err.message });
+    if (err.name === 'AbortError') {
+      res.status(504).json({ error: 'Request timed out', message: 'The analysis took too long. Please try a shorter audio file.' });
+    } else {
+      res.status(502).json({ error: 'Upstream request failed', message: err.message });
+    }
   }
 });
 
@@ -185,6 +193,11 @@ app.get('/transcription', (req, res) => {
 
 app.get('/deepfake', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Redirect standalone deepfake page to the SPA
+app.get('/deepfake/index.html', (req, res) => {
+  res.redirect(301, '/deepfake');
 });
 
 // ── Static files ─────────────────────────────────────────────────────────────
