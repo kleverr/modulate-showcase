@@ -62,6 +62,14 @@
   let currentFrames = [];
   let playbackTracker = null;
 
+  // Persist last deepfake/STT results so mode-switching doesn't lose them
+  let lastDeepfakeData = null;
+  let lastDeepfakeAudioUrl = null;
+  let lastDeepfakeMeta = null;
+  let lastSttData = null;
+  let lastSttAudioUrl = null;
+  let lastSttMeta = null;
+
   // Transcription state
   let sttUtterances = [];
   let sttPartial = null;
@@ -113,7 +121,9 @@
     if (isRecording) stopRecording();
 
     if (isDeepfake) {
-      currentMeta = {
+      const dfData = lastDeepfakeData || DEMO_DATA;
+      const dfAudio = lastDeepfakeAudioUrl || DEMO_AUDIO_URL;
+      currentMeta = lastDeepfakeMeta || {
         fileSize: 1.87 * 1024 * 1024,
         fileType: 'audio/mpeg',
         httpStatus: 200,
@@ -121,15 +131,16 @@
         responseSize: 4.2 * 1024,
         processingMs: 2660,
       };
-      renderDeepfakeResults(DEMO_DATA, DEMO_AUDIO_URL);
+      renderDeepfakeResults(dfData, dfAudio);
       applyMobileLayout(mobileQuery.matches);
     } else {
-      // Load STT demo with same audio file
-      sttData = DEMO_STT_DATA;
-      currentData = DEMO_STT_DATA;
-      sttUtterances = DEMO_STT_DATA.utterances || [];
+      const sData = lastSttData || DEMO_STT_DATA;
+      const sAudio = lastSttAudioUrl || DEMO_STT_AUDIO_URL;
+      sttData = sData;
+      currentData = sData;
+      sttUtterances = sData.utterances || [];
       sttPartial = null;
-      currentMeta = {
+      currentMeta = lastSttMeta || {
         fileSize: 1.87 * 1024 * 1024,
         fileType: 'audio/mpeg',
         httpStatus: 200,
@@ -137,8 +148,8 @@
         responseSize: JSON.stringify(DEMO_STT_DATA).length,
         processingMs: 2660,
       };
-      resultsFilename.textContent = 'Irate_Caller_Final.mp3';
-      resultsAudio.src = DEMO_STT_AUDIO_URL;
+      resultsFilename.textContent = sData.filename || 'Irate_Caller_Final.mp3';
+      resultsAudio.src = sAudio;
       renderTranscript();
     }
   }
@@ -272,6 +283,9 @@
         processingMs: processingMs,
       };
 
+      lastDeepfakeData = data;
+      lastDeepfakeAudioUrl = audioObjectUrl;
+      lastDeepfakeMeta = { ...currentMeta };
       renderDeepfakeResults(data, audioObjectUrl);
     } catch (err) {
       stopProgress();
@@ -501,7 +515,7 @@
 
   async function startTranscriptionBatch(file) {
     const durationMs = await getAudioDuration(file);
-    showOverlay(file.name, 'Transcribing audio');
+    showOverlay(file.name, 'Analyzing audio');
     const speedFactor = getSttSpeedFactor();
     const estimatedMs = Math.max(MIN_PROGRESS_MS, (durationMs / speedFactor));
     startProgress(estimatedMs);
@@ -537,6 +551,9 @@
       sttUtterances = data.utterances || [];
       sttPartial = null;
 
+      lastSttData = data;
+      lastSttAudioUrl = audioObjectUrl;
+      lastSttMeta = { ...currentMeta };
       resultsFilename.textContent = data.filename || file.name || 'Audio file';
       resultsAudio.src = audioObjectUrl;
       renderTranscript();
@@ -1317,6 +1334,7 @@
 
   // ── Init ────────────────────────────────────────────────────────────────
   const initMode = getModeFromPath();
+  currentMode = initMode;
   document.getElementById('mode-' + initMode).checked = true;
 
   if (initMode === 'deepfake') {
