@@ -63,10 +63,7 @@ const ALLOWED_ENDPOINTS = new Set([
 ]);
 
 // Per-endpoint upstream base URL overrides (defaults to API_BASE_URL)
-const ENDPOINT_BASE_URL = {
-  '/api/velma-2-synthetic-voice-detection-batch': 'http://54.147.23.177:8080',
-  '/api/velma-2-synthetic-voice-detection-streaming': 'http://54.147.23.177:8080',
-};
+const ENDPOINT_BASE_URL = {};
 
 // ── Usage endpoint ───────────────────────────────────────────────────────────
 app.get('/api/usage', (req, res) => {
@@ -256,7 +253,9 @@ server.on('upgrade', (req, socket, head) => {
     const upstreamUrl = `${wsBaseOverride}${url.pathname}?${upstreamParams.toString()}`;
     console.log('WS proxy connecting to:', upstreamUrl.replace(/api_key=[^&]+/, 'api_key=***'));
 
-    const upstreamWs = new WebSocket(upstreamUrl);
+    const upstreamWs = new WebSocket(upstreamUrl, {
+      headers: { 'User-Agent': req.headers['user-agent'] || 'ModulateShowcase/1.0' },
+    });
     const pendingMessages = [];
 
     // Hard timeout: close both sides after 5 minutes to prevent zombie connections

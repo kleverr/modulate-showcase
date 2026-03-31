@@ -8,7 +8,7 @@
 
   // ── Cached demo data (pre-computed so the page loads instantly) ────────
   const DEMO_AUDIO_URL = '/deepfake/demo.mp3';
-  const DEMO_DATA = {"filename":"AIAgentFrustration.mp3","frames":[{"start_time_ms":128,"end_time_ms":4128,"synthetic_voice":true,"confidence":0.9827},{"start_time_ms":4128,"end_time_ms":8128,"synthetic_voice":true,"confidence":0.9181},{"start_time_ms":8128,"end_time_ms":12128,"synthetic_voice":false,"confidence":0.9623},{"start_time_ms":12128,"end_time_ms":16128,"synthetic_voice":true,"confidence":0.9334},{"start_time_ms":16128,"end_time_ms":20128,"synthetic_voice":false,"confidence":0.8104},{"start_time_ms":20128,"end_time_ms":24128,"synthetic_voice":false,"confidence":0.9545},{"start_time_ms":24128,"end_time_ms":28128,"synthetic_voice":true,"confidence":0.7519},{"start_time_ms":28128,"end_time_ms":32128,"synthetic_voice":true,"confidence":0.9618},{"start_time_ms":32128,"end_time_ms":36128,"synthetic_voice":true,"confidence":0.5571},{"start_time_ms":36128,"end_time_ms":40128,"synthetic_voice":false,"confidence":0.9657},{"start_time_ms":40128,"end_time_ms":44128,"synthetic_voice":true,"confidence":0.9766},{"start_time_ms":44128,"end_time_ms":48128,"synthetic_voice":false,"confidence":0.8975},{"start_time_ms":48128,"end_time_ms":52128,"synthetic_voice":true,"confidence":0.7688},{"start_time_ms":52128,"end_time_ms":56128,"synthetic_voice":true,"confidence":0.8945},{"start_time_ms":56128,"end_time_ms":60128,"synthetic_voice":false,"confidence":0.9509},{"start_time_ms":60128,"end_time_ms":64128,"synthetic_voice":true,"confidence":0.9489},{"start_time_ms":64128,"end_time_ms":68128,"synthetic_voice":false,"confidence":0.9722},{"start_time_ms":68128,"end_time_ms":72128,"synthetic_voice":true,"confidence":0.9224},{"start_time_ms":72128,"end_time_ms":76128,"synthetic_voice":false,"confidence":0.9814},{"start_time_ms":76128,"end_time_ms":80128,"synthetic_voice":true,"confidence":0.8336},{"start_time_ms":80128,"end_time_ms":84128,"synthetic_voice":false,"confidence":0.6863},{"start_time_ms":84128,"end_time_ms":88128,"synthetic_voice":true,"confidence":0.8183},{"start_time_ms":88128,"end_time_ms":92128,"synthetic_voice":true,"confidence":0.9485},{"start_time_ms":92128,"end_time_ms":96128,"synthetic_voice":false,"confidence":0.9355},{"start_time_ms":96128,"end_time_ms":97568,"synthetic_voice":true,"confidence":0.9856}],"duration_ms":97698};
+  const DEMO_DATA = {"filename":"AIAgentFrustration.mp3","frames":[{"start_time_ms":0,"end_time_ms":4000,"verdict":"synthetic","confidence":0.9848},{"start_time_ms":4000,"end_time_ms":8000,"verdict":"synthetic","confidence":0.9571},{"start_time_ms":8000,"end_time_ms":12000,"verdict":"non-synthetic","confidence":0.9398},{"start_time_ms":12000,"end_time_ms":16000,"verdict":"synthetic","confidence":0.9595},{"start_time_ms":16000,"end_time_ms":20000,"verdict":"non-synthetic","confidence":0.8176},{"start_time_ms":20000,"end_time_ms":24000,"verdict":"non-synthetic","confidence":0.9524},{"start_time_ms":24000,"end_time_ms":28000,"verdict":"synthetic","confidence":0.9089},{"start_time_ms":28000,"end_time_ms":32000,"verdict":"synthetic","confidence":0.9696},{"start_time_ms":32000,"end_time_ms":36000,"verdict":"synthetic","confidence":0.972},{"start_time_ms":36000,"end_time_ms":40000,"verdict":"non-synthetic","confidence":0.9173},{"start_time_ms":40000,"end_time_ms":44000,"verdict":"synthetic","confidence":0.9785},{"start_time_ms":44000,"end_time_ms":48000,"verdict":"non-synthetic","confidence":0.9094},{"start_time_ms":48000,"end_time_ms":52000,"verdict":"non-synthetic","confidence":0.6542},{"start_time_ms":52000,"end_time_ms":56000,"verdict":"synthetic","confidence":0.9671},{"start_time_ms":56000,"end_time_ms":60000,"verdict":"non-synthetic","confidence":0.9443},{"start_time_ms":60000,"end_time_ms":64000,"verdict":"synthetic","confidence":0.9611},{"start_time_ms":64000,"end_time_ms":68000,"verdict":"non-synthetic","confidence":0.9418},{"start_time_ms":68000,"end_time_ms":72000,"verdict":"synthetic","confidence":0.984},{"start_time_ms":72000,"end_time_ms":76000,"verdict":"non-synthetic","confidence":0.9723},{"start_time_ms":76000,"end_time_ms":80000,"verdict":"synthetic","confidence":0.9755},{"start_time_ms":80000,"end_time_ms":84000,"verdict":"non-synthetic","confidence":0.5998},{"start_time_ms":84000,"end_time_ms":88000,"verdict":"synthetic","confidence":0.9757},{"start_time_ms":88000,"end_time_ms":92000,"verdict":"synthetic","confidence":0.9563},{"start_time_ms":92000,"end_time_ms":96000,"verdict":"non-synthetic","confidence":0.9242},{"start_time_ms":96000,"end_time_ms":97698,"verdict":"synthetic","confidence":0.9821}],"duration_ms":97698};
 
   // ── DOM refs ──────────────────────────────────────────────────────────────
   const overlay       = document.getElementById('analysis-overlay');
@@ -36,6 +36,20 @@
   const jsonModal     = document.getElementById('json-modal');
   const jsonPre       = document.getElementById('json-pre');
   const jsonCopyBtn   = document.getElementById('json-copy-btn');
+
+  // ── Verdict helpers ───────────────────────────────────────────────────────
+  function isSyntheticFrame(f) { return f.verdict === 'synthetic'; }
+  function isNoContent(f) { return f.verdict === 'no-content'; }
+  function verdictClass(f) {
+    if (f.verdict === 'synthetic') return 'synthetic';
+    if (f.verdict === 'no-content') return 'no-content';
+    return 'authentic';
+  }
+  function verdictText(f) {
+    if (f.verdict === 'synthetic') return 'Deepfake';
+    if (f.verdict === 'no-content') return 'No Content';
+    return 'Authentic';
+  }
 
   // ── State ─────────────────────────────────────────────────────────────────
   let audioObjectUrl = null;
@@ -265,10 +279,10 @@
     // Verdict algorithm:
     // Deepfake if >=1 frame synthetic with >99% confidence,
     // OR >=2 frames synthetic with each >90% confidence.
-    const synFrames = frames.filter(f => f.synthetic_voice);
-    const highConf99 = synFrames.filter(f => f.confidence > 0.99).length;
-    const highConf90 = synFrames.filter(f => f.confidence > 0.90).length;
-    const isSynthetic = highConf99 >= 1 || highConf90 >= 2;
+    const synFrames = frames.filter(isSyntheticFrame);
+    const highConf97 = synFrames.filter(f => f.confidence > 0.97).length;
+    const highConf95 = synFrames.filter(f => f.confidence > 0.95).length;
+    const isSynthetic = highConf97 >= 1 || highConf95 >= 2;
 
     renderVerdict(isSynthetic, synFrames.length, frames.length);
     renderHistogram(frames);
@@ -296,7 +310,7 @@
 
     frames.forEach((frame, i) => {
       const bar = document.createElement('div');
-      bar.className = 'histo-bar ' + (frame.synthetic_voice ? 'synthetic' : 'authentic');
+      bar.className = 'histo-bar ' + verdictClass(frame);
       bar.style.height = Math.max(8, frame.confidence * 100) + '%';
       bar.style.opacity = confidenceToOpacity(frame.confidence);
 
@@ -323,8 +337,8 @@
 
       const tdVerdict = document.createElement('td');
       const pill = document.createElement('span');
-      pill.className = 'verdict-pill ' + (frame.synthetic_voice ? 'synthetic' : 'authentic');
-      pill.textContent = frame.synthetic_voice ? 'Deepfake' : 'Authentic';
+      pill.className = 'verdict-pill ' + verdictClass(frame);
+      pill.textContent = verdictText(frame);
       tdVerdict.appendChild(pill);
 
       const tdConf = document.createElement('td');
@@ -334,7 +348,7 @@
       const confTrack = document.createElement('div');
       confTrack.className = 'confidence-bar-track';
       const confFill = document.createElement('div');
-      confFill.className = 'confidence-bar-fill ' + (frame.synthetic_voice ? 'synthetic' : 'authentic');
+      confFill.className = 'confidence-bar-fill ' + verdictClass(frame);
       confFill.style.width = (frame.confidence * 100) + '%';
       confTrack.appendChild(confFill);
 
@@ -410,16 +424,16 @@
     if (!currentData) return;
 
     const frames = currentData.frames || [];
-    const synFrames = frames.filter(f => f.synthetic_voice);
+    const synFrames = frames.filter(isSyntheticFrame);
     const avgSynConf = synFrames.length ? synFrames.reduce((s, f) => s + f.confidence, 0) / synFrames.length : 0;
     const maxSynConf = synFrames.length ? Math.max(...synFrames.map(f => f.confidence)) : 0;
     const durationMs = currentData.duration_ms || 0;
     const m = currentMeta;
 
     // Verdict
-    const highConf99 = synFrames.filter(f => f.confidence > 0.99).length;
-    const highConf90 = synFrames.filter(f => f.confidence > 0.90).length;
-    const isSyn = highConf99 >= 1 || highConf90 >= 2;
+    const highConf97 = synFrames.filter(f => f.confidence > 0.97).length;
+    const highConf95 = synFrames.filter(f => f.confidence > 0.95).length;
+    const isSyn = highConf97 >= 1 || highConf95 >= 2;
 
     // Processing
     const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
@@ -434,7 +448,7 @@
 
     const groups = [
       { group: 'Detection', rows: [
-        ['Model', 'velma-2-synthetic-voice-detection'],
+        ['Model', 'velma-2-synthetic-voice-detection-batch'],
         ['Verdict', isSyn ? 'Deepfake detected' : 'Authentic'],
         ['Deepfake segments', synFrames.length + ' / ' + frames.length],
         ['Avg deepfake confidence', synFrames.length ? (avgSynConf * 100).toFixed(1) + '%' : 'N/A'],

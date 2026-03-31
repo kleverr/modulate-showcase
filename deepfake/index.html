@@ -284,6 +284,7 @@ body {
 
 .histo-bar.synthetic { background: var(--ui-error); }
 .histo-bar.authentic { background: var(--ui-success); }
+.histo-bar.no-content { background: var(--ui-border); }
 
 .histo-bar.active {
   outline: 2px solid var(--bg-accent);
@@ -328,6 +329,7 @@ body {
 
 .legend-dot.synthetic { background: var(--ui-error); }
 .legend-dot.authentic { background: var(--ui-success); }
+.legend-dot.no-content { background: var(--ui-border); }
 
 /* Results Table */
 .results-table-section {
@@ -391,6 +393,11 @@ body {
   color: rgb(10, 150, 95);
 }
 
+.verdict-pill.no-content {
+  background: color-mix(in srgb, var(--ui-border) 40%, transparent);
+  color: var(--text-caption);
+}
+
 /* Confidence bar in table */
 .confidence-cell {
   display: flex;
@@ -414,6 +421,7 @@ body {
 
 .confidence-bar-fill.synthetic { background: var(--ui-error); }
 .confidence-bar-fill.authentic { background: var(--ui-success); }
+.confidence-bar-fill.no-content { background: var(--ui-border); }
 
 /* Overall Verdict */
 .results-verdict {
@@ -743,6 +751,7 @@ body {
           <div class="histogram-legend">
             <span><span class="legend-dot authentic"></span>Authentic</span>
             <span><span class="legend-dot synthetic"></span>Deepfake</span>
+            <span><span class="legend-dot no-content"></span>No Content</span>
           </div>
         </div>
 
