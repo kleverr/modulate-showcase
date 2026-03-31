@@ -2,6 +2,22 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [2.1.0] - 2026-03-30
+
+### Changed
+- Deepfake detection API schema migrated from `synthetic_voice` boolean to `verdict` string (`"synthetic"`, `"non-synthetic"`, `"no-content"`)
+- Deepfake endpoints now point to production API (`modulate-developer-apis.com`) instead of dev server
+- Demo data updated with real production API response
+- Overall verdict logic tuned: deepfake if >=1 frame >97% confidence or >=2 frames >95%
+
+### Added
+- `no-content` verdict support with grey styling for silent/empty audio segments
+- Verdict helper functions (`isSyntheticFrame`, `verdictClass`, `verdictText`) in both SPA and standalone deepfake page
+
+### Fixed
+- WebSocket streaming proxy now forwards `User-Agent` header, fixing 403 from AWS ALB/WAF
+- Removed hardcoded dev server IP overrides for deepfake endpoints
+
 ## [2.0.1] - 2026-03-30
 
 ### Fixed
