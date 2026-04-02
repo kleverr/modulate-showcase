@@ -2,6 +2,17 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [2.2.0] - 2026-04-02
+
+### Fixed
+- Deepfake streaming WebSocket now includes required `audio_format=s16le&sample_rate=16000&num_channels=1` query params (API change)
+- UTM query parameters preserved in URL on initial load and tab switches
+
+### Changed
+- Verdict algorithm unified into single `computeVerdict()` function across all deepfake pages (was duplicated with inconsistent thresholds)
+- Verdict rules updated: 1+ segment >98%, 2+ >95%, 3+ >90%, 5+ >85%, or ≥7 segments with >30% flagged
+- Verdict ring now shows the triggering rule in small text below the segment count
+
 ## [2.1.0] - 2026-03-30
 
 ### Changed

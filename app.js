@@ -14,6 +14,23 @@
 
   // ── Verdict helpers ─────────────────────────────────────────────────────────
   function isSyntheticFrame(f) { return f.verdict === 'synthetic'; }
+
+  function computeVerdict(frames) {
+    const synFrames = frames.filter(isSyntheticFrame);
+    const c98 = synFrames.filter(f => f.confidence > 0.98).length;
+    const c95 = synFrames.filter(f => f.confidence > 0.95).length;
+    const c90 = synFrames.filter(f => f.confidence > 0.90).length;
+    const c85 = synFrames.filter(f => f.confidence > 0.85).length;
+    const pct = frames.length > 0 ? synFrames.length / frames.length : 0;
+    let reason = '';
+    if (c98 >= 1) reason = c98 + ' segment' + (c98 > 1 ? 's' : '') + ' with >98% conf.';
+    else if (c95 >= 2) reason = c95 + ' segments with >95% conf.';
+    else if (c90 >= 3) reason = c90 + ' segments with >90% conf.';
+    else if (c85 >= 5) reason = c85 + ' segments with >85% conf.';
+    else if (frames.length >= 7 && pct > 0.3) reason = Math.round(pct * 100) + '% of segments flagged as deepfake';
+    const isSynthetic = reason !== '';
+    return { isSynthetic, synFrames, reason };
+  }
   function verdictClass(f) {
     if (f.verdict === 'synthetic') return 'synthetic';
     if (f.verdict === 'no-content') return 'no-content';
@@ -117,7 +134,7 @@
     // Update URL
     const targetPath = isDeepfake ? '/deepfake' : '/transcription';
     if (pushUrl !== false && location.pathname !== targetPath) {
-      history.pushState({ mode: mode }, '', targetPath);
+      history.pushState({ mode: mode }, '', targetPath + location.search);
     }
 
     deepfakeContent.style.display = isDeepfake ? '' : 'none';
@@ -318,7 +335,7 @@
   }
 
   function startDeepfakeRecording() {
-    startRecordingCommon('/api/velma-2-synthetic-voice-detection-streaming', (msg) => {
+    startRecordingCommon('/api/velma-2-synthetic-voice-detection-streaming?audio_format=s16le&sample_rate=16000&num_channels=1', (msg) => {
       if (msg?.type === 'frame' && msg.frame && typeof msg.frame.confidence === 'number') {
         liveFrames.push(msg.frame);
         renderDeepfakeLiveResults();
@@ -378,12 +395,9 @@
     resultsFilename.textContent = 'Live Recording';
     currentFrames = liveFrames;
 
-    const synFrames = liveFrames.filter(isSyntheticFrame);
-    const highConf97 = synFrames.filter(f => f.confidence > 0.97).length;
-    const highConf95 = synFrames.filter(f => f.confidence > 0.95).length;
-    const isSynthetic = highConf97 >= 1 || highConf95 >= 2;
+    const { isSynthetic, synFrames, reason } = computeVerdict(liveFrames);
 
-    renderVerdict(isSynthetic, synFrames.length, liveFrames.length);
+    renderVerdict(isSynthetic, synFrames.length, liveFrames.length, reason);
     renderHistogram(liveFrames);
     renderTable(liveFrames);
   }
@@ -406,19 +420,16 @@
       return;
     }
 
-    const synFrames = frames.filter(isSyntheticFrame);
-    const highConf97 = synFrames.filter(f => f.confidence > 0.97).length;
-    const highConf95 = synFrames.filter(f => f.confidence > 0.95).length;
-    const isSynthetic = highConf97 >= 1 || highConf95 >= 2;
+    const { isSynthetic, synFrames, reason } = computeVerdict(frames);
 
-    renderVerdict(isSynthetic, synFrames.length, frames.length);
+    renderVerdict(isSynthetic, synFrames.length, frames.length, reason);
     renderHistogram(frames);
     renderTable(frames);
     setupPlaybackTracking(frames);
     window.scrollTo(0, 0);
   }
 
-  function renderVerdict(isSynthetic, syntheticCount, totalCount) {
+  function renderVerdict(isSynthetic, syntheticCount, totalCount, reason) {
     verdictRing.className = 'verdict-ring ' + (isSynthetic ? 'synthetic' : 'authentic');
 
     verdictIcon.innerHTML = isSynthetic
@@ -427,6 +438,20 @@
 
     verdictLabel.textContent = isSynthetic ? 'Deepfake' : 'Authentic';
     verdictCount.textContent = syntheticCount + '/' + totalCount + ' deepfake segments';
+
+    let reasonEl = verdictCount.parentElement.querySelector('.verdict-reason');
+    if (isSynthetic && reason) {
+      if (!reasonEl) {
+        reasonEl = document.createElement('div');
+        reasonEl.className = 'verdict-reason';
+        reasonEl.style.cssText = 'font-size:0.7rem;opacity:0.55;margin-top:2px;';
+        verdictCount.parentElement.appendChild(reasonEl);
+      }
+      reasonEl.textContent = reason;
+      reasonEl.hidden = false;
+    } else if (reasonEl) {
+      reasonEl.hidden = true;
+    }
   }
 
   function renderHistogram(frames) {
@@ -1133,12 +1158,9 @@
       currentData = data;
       currentFrames = liveFrames;
 
-      const synFrames = liveFrames.filter(isSyntheticFrame);
-      const highConf99 = synFrames.filter(f => f.confidence > 0.99).length;
-      const highConf90 = synFrames.filter(f => f.confidence > 0.90).length;
-      const isSynthetic = highConf99 >= 1 || highConf90 >= 2;
+      const { isSynthetic, synFrames, reason } = computeVerdict(liveFrames);
 
-      renderVerdict(isSynthetic, synFrames.length, liveFrames.length);
+      renderVerdict(isSynthetic, synFrames.length, liveFrames.length, reason);
       renderHistogram(liveFrames);
       renderTable(liveFrames);
     } else if (currentMode === 'transcription') {
@@ -1231,13 +1253,10 @@
     if (currentMode === 'deepfake') {
       statsModalTitle.textContent = 'Detection Statistics';
       const frames = currentData.frames || [];
-      const synFrames = frames.filter(isSyntheticFrame);
+      const { isSynthetic: isSyn, synFrames } = computeVerdict(frames);
       const avgSynConf = synFrames.length ? synFrames.reduce((s, f) => s + f.confidence, 0) / synFrames.length : 0;
       const maxSynConf = synFrames.length ? Math.max(...synFrames.map(f => f.confidence)) : 0;
       const durationMs = currentData.duration_ms || 0;
-      const highConf97 = synFrames.filter(f => f.confidence > 0.97).length;
-      const highConf95 = synFrames.filter(f => f.confidence > 0.95).length;
-      const isSyn = highConf97 >= 1 || highConf95 >= 2;
       const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
       const procFactor = m.processingMs && durationMs ? (durationMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
       const costVal = durationMs ? '$' + (durationMs / 3600000 * 0.25).toFixed(4) : 'N/A';
@@ -1551,5 +1570,5 @@
   }
 
   // Replace initial state so back button works
-  history.replaceState({ mode: initMode }, '', initMode === 'deepfake' ? '/deepfake' : '/transcription');
+  history.replaceState({ mode: initMode }, '', (initMode === 'deepfake' ? '/deepfake' : '/transcription') + location.search);
 })();
