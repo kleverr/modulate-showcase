@@ -212,7 +212,7 @@ app.get('*', (req, res) => {
 });
 
 // ── WebSocket proxy ──────────────────────────────────────────────────────────
-const wss = new WebSocketServer({ noServer: true });
+const wss = new WebSocketServer({ noServer: true, perMessageDeflate: false });
 
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
@@ -255,6 +255,7 @@ server.on('upgrade', (req, socket, head) => {
 
     const upstreamWs = new WebSocket(upstreamUrl, {
       headers: { 'User-Agent': req.headers['user-agent'] || 'ModulateShowcase/1.0' },
+      perMessageDeflate: false,
     });
     const pendingMessages = [];
 
@@ -267,17 +268,17 @@ server.on('upgrade', (req, socket, head) => {
 
     const clearProxyTimeout = () => clearTimeout(proxyTimeout);
 
-    clientWs.on('message', (data) => {
+    clientWs.on('message', (data, isBinary) => {
       if (upstreamWs.readyState === WebSocket.OPEN) {
-        upstreamWs.send(data);
+        upstreamWs.send(data, { binary: isBinary });
       } else {
-        pendingMessages.push(data);
+        pendingMessages.push({ data, isBinary });
       }
     });
 
     upstreamWs.on('open', () => {
       for (const msg of pendingMessages) {
-        upstreamWs.send(msg);
+        upstreamWs.send(msg.data, { binary: msg.isBinary });
       }
       pendingMessages.length = 0;
     });

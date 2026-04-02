@@ -130,11 +130,10 @@
     if (playbackTracker) { cancelAnimationFrame(playbackTracker); playbackTracker = null; }
     if (sttChartTracker) { cancelAnimationFrame(sttChartTracker); sttChartTracker = null; }
 
-    // Streaming not available for transcription yet
     if (recordAction) {
-      recordAction.classList.toggle('disabled-soon', !isDeepfake);
+      recordAction.classList.remove('disabled-soon');
       const span = recordAction.querySelector('span');
-      span.textContent = isDeepfake ? 'Start streaming' : 'Start streaming (Soon)';
+      span.textContent = 'Start streaming';
     }
 
     if (isRecording) stopRecording();
@@ -612,6 +611,11 @@
     params.set('emotion_signal', opts.emotion_signal);
     params.set('accent_signal', opts.accent_signal);
     params.set('pii_phi_tagging', opts.pii_phi_tagging);
+    // Raw PCM format params — required so the server knows how to decode headerless audio
+    params.set('audio_format', 's16le');
+    params.set('sample_rate', '16000');
+    params.set('num_channels', '1');
+    // Enable partial results for real-time text preview
     params.set('partial_results', 'true');
 
     sttUtterances = [];
@@ -622,6 +626,7 @@
     startRecordingCommon('/api/velma-2-stt-streaming?' + params.toString(), (msg) => {
       if (msg?.type === 'utterance' && msg.utterance) {
         sttUtterances.push(msg.utterance);
+        deduplicateUtterances();
         sttPartial = null;
         updateSttData();
         renderTranscript();
@@ -629,7 +634,17 @@
         sttPartial = msg.partial_utterance;
         renderTranscript();
       } else if (msg?.type === 'done') {
-        sttPartial = null;
+        if (sttPartial) {
+          sttUtterances.push({
+            text: sttPartial.text,
+            start_ms: sttPartial.start_ms || 0,
+            duration_ms: 0,
+            speaker: sttPartial.speaker || 1,
+            language: null, emotion: null, accent: null,
+          });
+          deduplicateUtterances();
+          sttPartial = null;
+        }
         if (msg.duration_ms) {
           updateSttData();
           if (sttData) sttData.duration_ms = msg.duration_ms;
@@ -651,10 +666,61 @@
     });
   }
 
+  // Cluster raw utterances by time proximity for display.
+  // Groups consecutive utterances within 4s of each other (using the max start_ms
+  // in each group for chaining), keeps only the longest text per group.
+  // Operates on a copy — never mutates sttUtterances.
+  function clusterUtterances(utterances) {
+    if (utterances.length < 2) return utterances.slice();
+    const sorted = utterances.slice().sort((a, b) => a.start_ms - b.start_ms);
+    const groups = [[sorted[0]]];
+    for (let i = 1; i < sorted.length; i++) {
+      const lastGroup = groups[groups.length - 1];
+      const groupMaxMs = Math.max(...lastGroup.map(u => u.start_ms));
+      if (sorted[i].start_ms - groupMaxMs < 4000) {
+        lastGroup.push(sorted[i]);
+      } else {
+        groups.push([sorted[i]]);
+      }
+    }
+    return groups.map(group =>
+      group.reduce((best, u) =>
+        (u.text || '').length > (best.text || '').length ? u : best
+      )
+    );
+  }
+
+  function deduplicateUtterances() { /* no-op — dedup now happens in clusterUtterances at render time */ }
+
   function updateSttData() {
     const durationMs = Date.now() - recordingStartTime;
-    sttData = { filename: 'Live Recording', utterances: sttUtterances, duration_ms: durationMs };
+    sttData = { filename: 'Live Recording', utterances: clusterUtterances(sttUtterances), duration_ms: durationMs };
     currentData = sttData;
+  }
+
+  // Lightweight update: only replace/add the partial element at the bottom
+  // without rebuilding the entire transcript list (avoids flicker)
+  function renderStreamingPartial() {
+    // Remove old partial and listening indicator
+    const oldPartial = transcriptList.querySelector('[data-partial]');
+    if (oldPartial) oldPartial.remove();
+    const oldIndicator = transcriptList.querySelector('[data-listening]');
+    if (oldIndicator) oldIndicator.remove();
+
+    if (sttPartial) {
+      const opts = getSttOptions();
+      const el = buildUtteranceEl(sttPartial, opts, true, -1);
+      el.setAttribute('data-partial', 'true');
+      transcriptList.appendChild(el);
+      el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    } else if (isRecording) {
+      const indicator = document.createElement('div');
+      indicator.className = 'transcript-empty';
+      indicator.textContent = 'Listening\u2026';
+      indicator.style.opacity = '0.5';
+      indicator.setAttribute('data-listening', 'true');
+      transcriptList.appendChild(indicator);
+    }
   }
 
   function renderTranscript() {
@@ -664,18 +730,34 @@
       const empty = document.createElement('div');
       empty.className = 'transcript-empty';
       empty.textContent = isRecording ? 'Listening\u2026' : 'Upload an audio file or start recording to see the transcript.';
+      if (isRecording) empty.setAttribute('data-listening', 'true');
       transcriptList.appendChild(empty);
+      sttChart.innerHTML = '';
+      sttChart.classList.remove('visible');
       return;
     }
 
     const opts = getSttOptions();
+    const displayUtterances = clusterUtterances(sttUtterances);
 
-    sttUtterances.forEach((u, i) => {
+    displayUtterances.forEach((u, i) => {
       transcriptList.appendChild(buildUtteranceEl(u, opts, false, i));
     });
 
     if (sttPartial) {
-      transcriptList.appendChild(buildUtteranceEl(sttPartial, opts, true, -1));
+      const partialEl = buildUtteranceEl(sttPartial, opts, true, -1);
+      partialEl.setAttribute('data-partial', 'true');
+      transcriptList.appendChild(partialEl);
+    }
+
+    // Show a live "listening" indicator only when recording and no partial is active
+    if (isRecording && !sttPartial) {
+      const indicator = document.createElement('div');
+      indicator.className = 'transcript-empty';
+      indicator.textContent = 'Listening\u2026';
+      indicator.style.opacity = '0.5';
+      indicator.setAttribute('data-listening', 'true');
+      transcriptList.appendChild(indicator);
     }
 
     if (isRecording && transcriptList.lastElementChild) {
@@ -934,6 +1016,7 @@
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
       mediaStream = stream;
 
+      // MediaRecorder for playback recording (saved locally, not sent over WS)
       const mimeCandidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
       const mimeType = mimeCandidates.find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m));
       mediaRecorder = mimeType ? new MediaRecorder(mediaStream, { mimeType }) : new MediaRecorder(mediaStream);
@@ -954,6 +1037,7 @@
         recordingStartTime = Date.now();
         updateRecordButton();
 
+        // Stream raw PCM 16-bit little-endian 16kHz mono over WebSocket
         audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
         const source = audioContext.createMediaStreamSource(mediaStream);
         scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
@@ -1020,7 +1104,8 @@
 
     if (recordingWs && recordingWs.readyState === WebSocket.OPEN) {
       recordingWs.send('');
-      recordingWs.close();
+      // Don't close immediately — let the server send back final results
+      // The connection will close after we receive the 'done' message
     }
 
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
@@ -1062,7 +1147,8 @@
         fileSize: 0, fileType: 'PCM 16kHz', httpStatus: 101, httpStatusText: 'Switching Protocols',
         responseSize: sttData ? JSON.stringify(sttData).length : 0, processingMs: durationMs,
       };
-      sttPartial = null;
+      // Keep sttPartial visible until finals arrive from the server.
+      // The 'done' handler will promote any lingering partial to a final utterance.
       updateSttData();
       renderTranscript();
     }
@@ -1446,8 +1532,8 @@
     resultsSidebar.classList.add('visible');
     sttOptions.classList.add('visible');
     if (recordAction) {
-      recordAction.classList.add('disabled-soon');
-      recordAction.querySelector('span').textContent = 'Start streaming (Soon)';
+      recordAction.classList.remove('disabled-soon');
+      recordAction.querySelector('span').textContent = 'Start streaming';
     }
 
     sttData = DEMO_STT_DATA;
