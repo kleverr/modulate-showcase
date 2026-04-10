@@ -2,6 +2,11 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [3.1.1] - 2026-04-10
+
+### Fixed
+- Proxy timeout bumped from 2 min to 5 min to handle longer audio files
+
 ## [3.1.0] - 2026-04-10
 
 ### Added

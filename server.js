@@ -151,7 +151,7 @@ app.post('/api/:path(*)', handleUpload, async (req, res) => {
 
     const baseUrl = ENDPOINT_BASE_URL[endpoint] || API_BASE_URL;
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120_000); // 2 min timeout
+    const timeout = setTimeout(() => controller.abort(), 300_000); // 5 min timeout
     const upstreamRes = await fetch(`${baseUrl}${endpoint}`, {
       method: 'POST',
       headers: {
