@@ -230,6 +230,12 @@ body {
 
 .stt-options.visible { display: flex; }
 
+.stt-option-divider {
+  color: var(--text-caption);
+  padding: 0 0.1rem;
+  user-select: none;
+}
+
 .stt-option {
   display: flex;
   align-items: center;
@@ -602,6 +608,18 @@ body {
   color: var(--text-caption);
 }
 
+.verdict-pill.uncertain {
+  background: color-mix(in srgb, var(--ui-border) 40%, transparent);
+  color: var(--text-caption);
+}
+
+/* Smaller inline variant for transcript header */
+.verdict-pill.sm {
+  font-size: 0.65rem;
+  padding: 0.05rem 0.35rem;
+  font-weight: 600;
+}
+
 /* Confidence bar in table */
 .confidence-cell {
   display: flex;
@@ -764,6 +782,12 @@ body {
 
 .transcript-accent {
   color: var(--text-caption);
+}
+
+.transcript-deepfake-score {
+  color: var(--text-caption);
+  font-family: monospace;
+  font-size: 0.75rem;
 }
 
 .transcript-lang {
@@ -1111,16 +1135,18 @@ body {
     <input type="radio" name="mode" id="mode-transcription" value="transcription" checked>
     <label for="mode-transcription">Transcription</label>
     <input type="radio" name="mode" id="mode-deepfake" value="deepfake">
-    <label for="mode-deepfake">Deepfake</label>
+    <label for="mode-deepfake">Deepfake Standalone</label>
   </div>
 
   <!-- Options row (reserved space in both modes for alignment) -->
   <div class="options-row" id="options-row">
     <div class="stt-options" id="stt-options">
       <label class="stt-option" data-tip="Identify different speakers in the audio"><input type="checkbox" id="opt-diarization" checked> Diarization</label>
+      <label class="stt-option" data-tip="Detect synthetic/AI-generated voice (deepfake) per utterance"><input type="checkbox" id="opt-deepfake" checked> Deepfake</label>
       <label class="stt-option" data-tip="Detect emotional tone (e.g. Calm, Happy, Frustrated)"><input type="checkbox" id="opt-emotion" checked> Emotions</label>
       <label class="stt-option" data-tip="Detect speaker accent (e.g. American, British)"><input type="checkbox" id="opt-accent" checked> Accent</label>
       <label class="stt-option" data-tip="Tag personally identifiable and health information"><input type="checkbox" id="opt-pii" checked> PII/PHI</label>
+      <span class="stt-option-divider">|</span>
       <label class="stt-option" data-tip="Fast transcription, English only"><input type="checkbox" id="opt-fast"> Fast</label>
     </div>
   </div>
@@ -1210,7 +1236,7 @@ body {
 
   <!-- Footer -->
   <footer class="footer">
-    Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a> &middot; &copy; 2026 Modulate, Inc. &middot; v2.2.0 (Apr 2, 2026)
+    Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a> &middot; &copy; 2026 Modulate, Inc. &middot; v3.0.0 (Apr 10, 2026)
   </footer>
 
 </div>
@@ -1259,7 +1285,7 @@ body {
     <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
   </div>
   <div class="overlay-footer">
-    Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a> &middot; &copy; 2026 Modulate, Inc.
+    Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a> &middot; &copy; 2026 Modulate, Inc. &middot; v3.0.0 (Apr 10, 2026)
   </div>
 </div>
 

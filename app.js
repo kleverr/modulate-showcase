@@ -7,10 +7,10 @@
   const MIN_PROGRESS_MS = 1500;
 
   const DEMO_AUDIO_URL = '/deepfake/demo.mp3';
-  const DEMO_STT_AUDIO_URL = '/demo-stt.mp3';
+  const DEMO_STT_AUDIO_URL = '/deepfake/demo.mp3';
   const DEMO_DATA = {"filename":"AIAgentFrustration.mp3","frames":[{"start_time_ms":0,"end_time_ms":4000,"verdict":"synthetic","confidence":0.9848},{"start_time_ms":4000,"end_time_ms":8000,"verdict":"synthetic","confidence":0.9571},{"start_time_ms":8000,"end_time_ms":12000,"verdict":"non-synthetic","confidence":0.9398},{"start_time_ms":12000,"end_time_ms":16000,"verdict":"synthetic","confidence":0.9595},{"start_time_ms":16000,"end_time_ms":20000,"verdict":"non-synthetic","confidence":0.8176},{"start_time_ms":20000,"end_time_ms":24000,"verdict":"non-synthetic","confidence":0.9524},{"start_time_ms":24000,"end_time_ms":28000,"verdict":"synthetic","confidence":0.9089},{"start_time_ms":28000,"end_time_ms":32000,"verdict":"synthetic","confidence":0.9696},{"start_time_ms":32000,"end_time_ms":36000,"verdict":"synthetic","confidence":0.972},{"start_time_ms":36000,"end_time_ms":40000,"verdict":"non-synthetic","confidence":0.9173},{"start_time_ms":40000,"end_time_ms":44000,"verdict":"synthetic","confidence":0.9785},{"start_time_ms":44000,"end_time_ms":48000,"verdict":"non-synthetic","confidence":0.9094},{"start_time_ms":48000,"end_time_ms":52000,"verdict":"non-synthetic","confidence":0.6542},{"start_time_ms":52000,"end_time_ms":56000,"verdict":"synthetic","confidence":0.9671},{"start_time_ms":56000,"end_time_ms":60000,"verdict":"non-synthetic","confidence":0.9443},{"start_time_ms":60000,"end_time_ms":64000,"verdict":"synthetic","confidence":0.9611},{"start_time_ms":64000,"end_time_ms":68000,"verdict":"non-synthetic","confidence":0.9418},{"start_time_ms":68000,"end_time_ms":72000,"verdict":"synthetic","confidence":0.984},{"start_time_ms":72000,"end_time_ms":76000,"verdict":"non-synthetic","confidence":0.9723},{"start_time_ms":76000,"end_time_ms":80000,"verdict":"synthetic","confidence":0.9755},{"start_time_ms":80000,"end_time_ms":84000,"verdict":"non-synthetic","confidence":0.5998},{"start_time_ms":84000,"end_time_ms":88000,"verdict":"synthetic","confidence":0.9757},{"start_time_ms":88000,"end_time_ms":92000,"verdict":"synthetic","confidence":0.9563},{"start_time_ms":92000,"end_time_ms":96000,"verdict":"non-synthetic","confidence":0.9242},{"start_time_ms":96000,"end_time_ms":97698,"verdict":"synthetic","confidence":0.9821}],"duration_ms":97698};
 
-  const DEMO_STT_DATA = {"duration_ms":268680,"utterances":[{"text":"You've reached home-supply-plus.com customer support. Can you provide your name and account email?","start_ms":900,"duration_ms":4260,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"You better be a real person because I'm sick and tired of you people passing me off.","start_ms":5820,"duration_ms":3720,"speaker":2,"language":"en","emotion":"Frustrated","accent":"American"},{"text":"I am a real person, sir. Can I have your name and account email?","start_ms":10200,"duration_ms":2880,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"My name's <pii:firstname>John</pii:firstname> <pii:lastname>Sampson</pii:lastname>, and my account email is <pii:username>jsampson, J-S-A-M-S-O-N</pii:username> at yahoo.com.","start_ms":13560,"duration_ms":8040,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"Thank you, <pii:firstname>John</pii:firstname>. What can I assist you with today?","start_ms":23220,"duration_ms":2880,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Listen to me? Let me tell you something. You better be helpful, 'cause there's a lot riding on this for me and your people who have wasted my time. Do you know how long I've been waiting for this order? I mean, my backyard trawler was a total nightmare because of you people.","start_ms":27060,"duration_ms":13020,"speaker":2,"language":"en","emotion":"Frustrated","accent":"American"},{"text":"I'm sorry to hear that, sir. Can you give me the order number for the sofa?","start_ms":40380,"duration_ms":3480,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"I might as well have it memorized by now, but it's tattooed on me somewhere, the number <pii:phone>002-257-8938</pii:phone>. I was supposed to have those extra chairs from you guys a week ago\u2014no one had anywhere to sit. I mean, what are you guys doing over there? A circus? A clown show? Come on.","start_ms":45240,"duration_ms":18540,"speaker":2,"language":"en","emotion":"Frustrated","accent":"American"},{"text":"I'm sorry, sir. Let me check on that order for you.","start_ms":65520,"duration_ms":2220,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Check on it? You better get me those chairs as soon as humanly possible, or I'm going to sue your company for false advertising. I mean, it's been a week and a half already. Two-day delivery my ass. Those chairs have been stolen by pirates and sank to the bottom of the <pii:country>Atlantic Ocean</pii:country> at this point. Come on.","start_ms":69000,"duration_ms":16500,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"I'm sorry, sir, it looks like they're still on their way for you, but it's been delayed.","start_ms":87600,"duration_ms":3900,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Where from where? Seriously, from <pii:workplace_address>Siberia</pii:workplace_address>? What kind of scam operations are you guys running here? I mean, are you smuggling them across international borders? Do you find them with a treasure map? Where are those chairs?","start_ms":91740,"duration_ms":13140,"speaker":2,"language":"en","emotion":"Frustrated","accent":"American"},{"text":"I'm sorry, sir, it looks like intense rains have caused some roads to flood, so we have had a delay with many packages.","start_ms":105840,"duration_ms":6960,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Christ, if I wanted them shipped from the rainforest, I would've ordered them from Amazon, you nitwit! How much time does it take to load up some chairs, drive a fucking truck, and put them on my porch? Isn't your warehouse down the street? I paid for expedited delivery. Is that a complete fucking scam, or is that part of your problem?","start_ms":115080,"duration_ms":16260,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"No, sir. Usually, they deliver these things on time. It's just we've had some extreme weather in your area.","start_ms":133020,"duration_ms":5820,"speaker":1,"language":"en","emotion":"Concerned","accent":"British"},{"text":"What kind of fucking hurricane was it? I didn't say hurricane fuck up my chairs in the news, did you? You need to be giving me my chairs today, or I'm suing your company and tagging your name in the lawsuit. What's your name?","start_ms":139260,"duration_ms":12180,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"I'm sorry, sir. My name is <pii:firstname>Fred</pii:firstname>.","start_ms":152460,"duration_ms":1920,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Well, <pii:firstname>Alfred</pii:firstname>, that's the name I'm writing the complaint when I rip your company a goddamn new asshole in court. What a fucking joke. Two-day shipping, all-day customer service, total fucking scam.","start_ms":155580,"duration_ms":11580,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"I'm sorry, sir. Is there any information I can give to help you give you some assurance?","start_ms":168900,"duration_ms":5880,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Fuck insurance, fuck this, and fuck you. You can give me my fucking chairs, or you can sue me in court after I get my refund.","start_ms":175500,"duration_ms":7260,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"I understand this has been frustrating, sir, and I'm hoping we can resolve this issue for you as soon as possible. It would be helpful if you could calm down so that we can.","start_ms":184380,"duration_ms":8520,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"What the fuck do you mean calm down? I've been so compliant with you people and now you want me to calm down? What a terrible fucking attitude from a complete fucking shit-brained idiot of a person. In what world do you think it's only okay to imply I'm overreacting? You people made this problem when you didn't deliver my fucking chairs and now you're blaming me for it?","start_ms":193020,"duration_ms":19140,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"It was out of our control, sir.","start_ms":214260,"duration_ms":1740,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Yeah, right. Out of your control, my ass. Apparently, people have always been lazy good-for-nothing shit-brained fuck-wits on idiot sandwich time right from the goddamn beginning.","start_ms":218220,"duration_ms":11760,"speaker":2,"language":"en","emotion":"Angry","accent":"American"},{"text":"I'm sorry, sir. I can issue you a credit on your account for the inconvenience.","start_ms":231600,"duration_ms":5100,"speaker":1,"language":"en","emotion":"Concerned","accent":"American"},{"text":"Are you even fucking listening to me, you ham-headed fart mouth? I swear this court citation is gonna be so fucking satisfying. What the fuck do you think a \"credit on my account\" is gonna do for me, <pii:firstname>Fred</pii:firstname>? Is it gonna get me my fucking chairs on my fucking porch? Absolutely not. Your ass is grass, <pii:firstname>Fred</pii:firstname>, and I'm the lawnmower. You know what? This is fucking useless. You're fucking useless, and I'm sick and fucking tired of it. See you in court, motherfucker. Goodbye.","start_ms":236820,"duration_ms":31860,"speaker":2,"language":"en","emotion":"Angry","accent":"American"}]};
+  const DEMO_STT_DATA = {"filename":"AIAgentFrustration.mp3","text":"Welcome to Northwest Warehouse's automated customer service system. In a few words, can you describe your reason for calling today? Track an order. Thank you. Can you provide the account ID number or the name on the account? 02738917. Thank you. Let me find your account in our system. Hello, <pii:firstname>Roger</pii:firstname>. Would you like to place an order over the phone today? No, track an order. Thank you. Please provide the item number to place an order. No, no, track an existing order. I'm sorry, I didn't quite catch that. Did you say you'd like to place an order? No. Okay. Can you describe in a few words your reason for calling today? Track an order. Thank you. Did you say you'd like to place an order over the phone? No, track, tracking. I'm sorry, I didn't quite catch that. Can you answer yes or no? No, back, undo. I'm sorry, I didn't quite catch that. Can you describe in a few words your reason for calling today? Track package. Thank you. Did you say you'd like to place an order?","duration_ms":97320,"utterances":[{"utterance_uuid":"59578ed0-acb4-4941-9c4d-b792c9a3760b","text":"Welcome to Northwest Warehouse's automated customer service system. In a few words, can you describe your reason for calling today?","start_ms":240,"duration_ms":7260,"speaker":1,"language":"en","emotion":"Calm","accent":"American","deepfake_score":0.9810000000000001},{"utterance_uuid":"0e0d034a-aef3-44a4-9ea8-9de1eca2af2b","text":"Track an order.","start_ms":9420,"duration_ms":660,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.5392},{"utterance_uuid":"2282571c-b16c-49cc-ac67-1253ddc99ff9","text":"Thank you. Can you provide the account ID number or the name on the account?","start_ms":12300,"duration_ms":4680,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.9783999999999999},{"utterance_uuid":"02b1d2d1-c057-455a-ab1e-6750ee5e5f4c","text":"02738917.","start_ms":19320,"duration_ms":4620,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.2754},{"utterance_uuid":"517e8e3b-8555-419a-af55-60f112763e5b","text":"Thank you. Let me find your account in our system. Hello, <pii:firstname>Roger</pii:firstname>. Would you like to place an order over the phone today?","start_ms":25560,"duration_ms":8820,"speaker":1,"language":"en","emotion":"Interested","accent":"American","deepfake_score":0.9723333333333333},{"utterance_uuid":"46c11e6d-7ffa-44a4-bf75-21ed6482ae95","text":"No, track an order.","start_ms":36720,"duration_ms":1560,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.08640000000000003},{"utterance_uuid":"36ecffcb-834f-43a0-b822-606eddb9efeb","text":"Thank you. Please provide the item number to place an order.","start_ms":40620,"duration_ms":3660,"speaker":1,"language":"en","emotion":"Calm","accent":"American","deepfake_score":0.9796},{"utterance_uuid":"47d3b3ba-71f5-48f9-ba46-c0bdf44f2900","text":"No, no, track an existing order.","start_ms":46080,"duration_ms":2160,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.08150000000000002},{"utterance_uuid":"4ddc44b8-e4ab-4024-875c-5be369a43654","text":"I'm sorry, I didn't quite catch that. Did you say you'd like to place an order?","start_ms":50520,"duration_ms":4620,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.9727},{"utterance_uuid":"00c4dfe6-ac97-4e74-809c-564937cc718a","text":"No.","start_ms":56280,"duration_ms":60,"speaker":2,"language":"en","emotion":"Amused","accent":"American","deepfake_score":null},{"utterance_uuid":"00be4745-849b-4814-94a0-7768aac15c82","text":"Okay. Can you describe in a few words your reason for calling today?","start_ms":59040,"duration_ms":5340,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.78235},{"utterance_uuid":"e9bec06b-a77f-4713-b0e2-17ce89a03dbc","text":"Track an order.","start_ms":66600,"duration_ms":1080,"speaker":2,"language":"en","emotion":"Confident","accent":"American","deepfake_score":0.08599999999999997},{"utterance_uuid":"135317de-c976-497f-918e-9ccfd1dbc0fd","text":"Thank you. Did you say you'd like to place an order over the phone?","start_ms":69180,"duration_ms":3120,"speaker":1,"language":"en","emotion":"Interested","accent":"American","deepfake_score":0.9778},{"utterance_uuid":"66bc4b5f-3be1-44dd-9f0c-8aae8589e5a8","text":"No, track, tracking.","start_ms":73560,"duration_ms":2160,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":null},{"utterance_uuid":"c8093216-16b3-44ca-b30d-ff8274196cde","text":"I'm sorry, I didn't quite catch that. Can you answer yes or no?","start_ms":77280,"duration_ms":4320,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.9766},{"utterance_uuid":"3de81bf7-a453-4618-a265-962e902c4d50","text":"No, back, undo.","start_ms":82320,"duration_ms":1560,"speaker":2,"language":"en","emotion":"Frustrated","accent":"American","deepfake_score":0.07579999999999998},{"utterance_uuid":"1415b904-e949-4fb2-a3a3-629df8e6610a","text":"I'm sorry, I didn't quite catch that. Can you describe in a few words your reason for calling today?","start_ms":85260,"duration_ms":5640,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.9788},{"utterance_uuid":"ec69b9e7-0fac-4b3e-a4da-ea9773d56aed","text":"Track package.","start_ms":91620,"duration_ms":960,"speaker":2,"language":"en","emotion":"Excited","accent":"American","deepfake_score":0.10909999999999997},{"utterance_uuid":"4003694d-b15d-46b1-9276-80366dc178fc","text":"Thank you. Did you say you'd like to place an order?","start_ms":94320,"duration_ms":3000,"speaker":1,"language":"en","emotion":"Interested","accent":"American","deepfake_score":0.9723}]};
 
   // ── Verdict helpers ─────────────────────────────────────────────────────────
   function isSyntheticFrame(f) { return f.verdict === 'synthetic'; }
@@ -198,10 +198,11 @@
   // ── STT Options Helper ──────────────────────────────────────────────────────
   const optFast = document.getElementById('opt-fast');
   const optDiarization = document.getElementById('opt-diarization');
+  const optDeepfake = document.getElementById('opt-deepfake');
   const optEmotion = document.getElementById('opt-emotion');
   const optAccent = document.getElementById('opt-accent');
   const optPii = document.getElementById('opt-pii');
-  const richOpts = [optDiarization, optEmotion, optAccent, optPii];
+  const richOpts = [optDiarization, optDeepfake, optEmotion, optAccent, optPii];
 
   optFast.addEventListener('change', () => {
     if (optFast.checked) richOpts.forEach(cb => { cb.checked = false; });
@@ -217,6 +218,7 @@
   function getSttOptions() {
     return {
       speaker_diarization: optDiarization.checked,
+      deepfake_signal: optDeepfake.checked,
       emotion_signal: optEmotion.checked,
       accent_signal: optAccent.checked,
       pii_phi_tagging: optPii.checked,
@@ -763,7 +765,9 @@
     }
 
     const opts = getSttOptions();
-    const displayUtterances = clusterUtterances(sttUtterances);
+    // Only cluster during streaming to merge overlapping partials;
+    // batch results are already clean so render them as-is.
+    const displayUtterances = isRecording ? clusterUtterances(sttUtterances) : sttUtterances.slice();
 
     displayUtterances.forEach((u, i) => {
       transcriptList.appendChild(buildUtteranceEl(u, opts, false, i));
@@ -789,7 +793,7 @@
       transcriptList.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
-    // Render emotion chart (includes its own playback tracking for both bars and bubbles)
+    // Render emotion chart
     const opts2 = getSttOptions();
     if (sttUtterances.length > 0 && !isRecording && opts2.speaker_diarization) {
       renderSttChart();
@@ -797,24 +801,31 @@
       sttChart.innerHTML = '';
       sttChart.classList.remove('visible');
     }
+
+    // Always track playback → bubble highlights
+    if (!isRecording && sttUtterances.length > 0) {
+      setupTranscriptPlaybackTracking();
+    }
   }
 
   let sttPlaybackTracker = null;
 
   function setupTranscriptPlaybackTracking() {
     if (sttPlaybackTracker) cancelAnimationFrame(sttPlaybackTracker);
-    const utteranceEls = transcriptList.querySelectorAll('.transcript-utterance');
 
     function tick() {
-      if (resultsAudio.paused) { sttPlaybackTracker = requestAnimationFrame(tick); return; }
       const currentMs = resultsAudio.currentTime * 1000;
+      // Sticky: highlight the last utterance whose start_ms <= currentMs
       let activeIdx = -1;
       for (let i = sttUtterances.length - 1; i >= 0; i--) {
-        const u = sttUtterances[i];
-        const endMs = u.start_ms + (u.duration_ms || 0);
-        if (currentMs >= u.start_ms && currentMs < endMs) { activeIdx = i; break; }
+        if (currentMs >= sttUtterances[i].start_ms) { activeIdx = i; break; }
       }
-      utteranceEls.forEach((el, i) => el.classList.toggle('active', i === activeIdx));
+      transcriptList.querySelectorAll('.transcript-utterance').forEach((el, i) => {
+        const wasActive = el.classList.contains('active');
+        const nowActive = i === activeIdx;
+        el.classList.toggle('active', nowActive);
+        if (nowActive && !wasActive) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
       sttPlaybackTracker = requestAnimationFrame(tick);
     }
     sttPlaybackTracker = requestAnimationFrame(tick);
@@ -873,8 +884,15 @@
 
         // Tooltip
         const endTimeMs = u.start_ms + (u.duration_ms || 2000);
+        let dfTooltip = '';
+        if (u.deepfake_score != null) {
+          const s = u.deepfake_score;
+          if (s > 0.7) dfTooltip = ' · Deepfake (' + Math.round((s - 0.5) * 200) + '%)';
+          else if (s < 0.3) dfTooltip = ' · Authentic (' + Math.round((0.5 - s) * 200) + '%)';
+          else dfTooltip = ' · Uncertain authenticity';
+        }
         const tooltipText = formatMs(u.start_ms) + ' \u2013 ' + formatMs(endTimeMs) +
-          ' · Speaker ' + (u.speaker || 0) + (u.emotion ? ' · ' + u.emotion : '');
+          ' · Speaker ' + (u.speaker || 0) + (u.emotion ? ' · ' + u.emotion : '') + dfTooltip;
         bar.addEventListener('mouseenter', () => {
           const rect = bar.getBoundingClientRect();
           histoTooltip.textContent = tooltipText;
@@ -912,11 +930,9 @@
   function setupSttChartPlaybackTracking() {
     if (sttChartTracker) cancelAnimationFrame(sttChartTracker);
     const bars = sttChart.querySelectorAll('.stt-chart-bar');
-    const bubbles = transcriptList.querySelectorAll('.transcript-utterance');
 
     function tick() {
       const currentMs = resultsAudio.currentTime * 1000;
-      // Find the last utterance whose start_ms <= currentMs (keeps highlighted until next starts)
       let activeIdx = -1;
       for (let i = sttUtterances.length - 1; i >= 0; i--) {
         if (currentMs >= sttUtterances[i].start_ms) { activeIdx = i; break; }
@@ -924,7 +940,6 @@
       bars.forEach(bar => {
         bar.classList.toggle('active', parseInt(bar.dataset.uttIdx) === activeIdx);
       });
-      bubbles.forEach((el, i) => el.classList.toggle('active', i === activeIdx));
       sttChartTracker = requestAnimationFrame(tick);
     }
     sttChartTracker = requestAnimationFrame(tick);
@@ -1017,6 +1032,37 @@
       la.className = 'transcript-accent';
       la.textContent = langAccentParts.join(' with ');
       header.appendChild(la);
+    }
+
+    // Deepfake verdict pill
+    if (opts.deepfake_signal && u.deepfake_score != null) {
+      const score = u.deepfake_score;
+      const df = document.createElement('span');
+      df.className = 'verdict-pill sm';
+      if (score > 0.7) {
+        const conf = Math.round((score - 0.5) * 2 * 100);
+        df.className += ' synthetic';
+        df.textContent = 'Deepfake';
+        df.title = 'Deepfake · ' + conf + '% confidence';
+      } else if (score < 0.3) {
+        const conf = Math.round((0.5 - score) * 2 * 100);
+        df.className += ' authentic';
+        df.textContent = 'Authentic';
+        df.title = 'Authentic · ' + conf + '% confidence';
+      } else {
+        df.className += ' uncertain';
+        df.textContent = 'Uncertain authenticity';
+        if (score > 0.5) {
+          const conf = Math.round((score - 0.5) * 2 * 100);
+          df.title = 'Uncertain · leans Deepfake at ' + conf + '% confidence';
+        } else if (score < 0.5) {
+          const conf = Math.round((0.5 - score) * 2 * 100);
+          df.title = 'Uncertain · leans Authentic at ' + conf + '% confidence';
+        } else {
+          df.title = 'Uncertain · 50/50';
+        }
+      }
+      header.appendChild(df);
     }
 
     el.appendChild(header);
@@ -1301,12 +1347,19 @@
       const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
       const fileType = m.fileType || (currentData.filename ? currentData.filename.split('.').pop().toUpperCase() : 'N/A');
 
+      const dfUtterances = utterances.filter(u => u.deepfake_score != null);
+      const dfAvg = dfUtterances.length ? (dfUtterances.reduce((s, u) => s + u.deepfake_score, 0) / dfUtterances.length) : null;
+      const dfMax = dfUtterances.length ? Math.max(...dfUtterances.map(u => u.deepfake_score)) : null;
+
       groups = [
         { group: 'Transcription', rows: [
           ['Model', 'velma-2-stt'],
           ['Utterances', String(utterances.length)],
           ['Speakers', speakers.length ? speakers.length.toString() : 'N/A'],
           ['Languages', languages.length ? languages.join(', ') : 'N/A'],
+          ['Deepfake analyzed', dfUtterances.length ? dfUtterances.length + ' / ' + utterances.length + ' utterances' : 'N/A'],
+          ['Avg deepfake score', dfAvg != null ? dfAvg.toFixed(4) : 'N/A'],
+          ['Max deepfake score', dfMax != null ? dfMax.toFixed(4) : 'N/A'],
         ]},
         { group: 'Audio', rows: [
           ['File Name', currentData.filename || 'N/A'],
@@ -1560,11 +1613,11 @@
     sttUtterances = DEMO_STT_DATA.utterances || [];
     sttPartial = null;
     currentMeta = {
-      fileSize: 1.87 * 1024 * 1024, fileType: 'audio/mpeg',
+      fileSize: 1958055, fileType: 'audio/mpeg',
       httpStatus: 200, httpStatusText: 'OK',
       responseSize: JSON.stringify(DEMO_STT_DATA).length, processingMs: 2660,
     };
-    resultsFilename.textContent = 'Irate_Caller_Final.mp3';
+    resultsFilename.textContent = DEMO_STT_DATA.filename || 'AIAgentFrustration.mp3';
     resultsAudio.src = DEMO_STT_AUDIO_URL;
     renderTranscript();
   }

@@ -2,6 +2,25 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [3.0.0] - 2026-04-10
+
+### Added
+- Deepfake detection in Transcription (batch) mode — new "Deepfake" checkbox (on by default) sends `deepfake_signal` to the API
+- Per-utterance deepfake verdict pills: red "Deepfake" (score > 0.7), green "Authentic" (score < 0.3), grey "Uncertain authenticity" (0.3–0.7)
+- Confidence shown on hover for all verdict pills, scaled from 0.5 anchor (e.g. score 0.85 → 70% confidence)
+- Deepfake verdict and confidence appended to chart bar tooltips (after emotion)
+
+### Changed
+- "Deepfake" tab renamed to "Deepfake Standalone" to distinguish from in-transcript deepfake detection
+- Default transcription demo updated to AIAgentFrustration.mp3 (same file as Deepfake Standalone demo)
+- Demo STT data replaced with AIAgentFrustration transcript including deepfake scores, emotions, and accents
+- Batch transcription results bypass clustering logic (was incorrectly dropping short utterances like "Track an order.")
+- Playback sync fixed: transcript bubbles now always highlight and scroll into view during audio playback, even without diarization
+
+### Fixed
+- Short utterances dropped from transcript in batch mode due to streaming dedup logic being applied incorrectly
+- Transcript bubble playback tracking was never started (dead code path) — now always initialized after batch results render
+
 ## [2.2.0] - 2026-04-02
 
 ### Fixed
