@@ -328,10 +328,7 @@
       renderDeepfakeResults(data, audioObjectUrl);
       updateRateLimit();
     } catch (err) {
-      stopProgress();
-      hideOverlay();
-      showError(err.message || 'Analysis failed. Please try again.');
-    } finally {
+      showOverlayError(err.message || 'Analysis failed. Please try again.', err.rawText);
       isAnalyzing = false;
     }
   }
@@ -623,10 +620,7 @@
       window.scrollTo(0, 0);
       updateRateLimit();
     } catch (err) {
-      stopProgress();
-      hideOverlay();
-      showError(err.message || 'Transcription failed. Please try again.');
-    } finally {
+      showOverlayError(err.message || 'Transcription failed. Please try again.', err.rawText);
       isAnalyzing = false;
     }
   }
@@ -945,17 +939,24 @@
     sttChartTracker = requestAnimationFrame(tick);
   }
 
-  const LANGUAGE_NAMES = {
-    EN: 'English', ES: 'Spanish', FR: 'French', DE: 'German', IT: 'Italian',
-    PT: 'Portuguese', RU: 'Russian', ZH: 'Chinese', JA: 'Japanese', KO: 'Korean',
-    AR: 'Arabic', HI: 'Hindi', NL: 'Dutch', PL: 'Polish', SV: 'Swedish',
-    DA: 'Danish', NO: 'Norwegian', FI: 'Finnish', TR: 'Turkish', EL: 'Greek',
-    HE: 'Hebrew', TH: 'Thai', VI: 'Vietnamese', ID: 'Indonesian', MS: 'Malay',
-    UK: 'Ukrainian', CS: 'Czech', RO: 'Romanian', HU: 'Hungarian', BG: 'Bulgarian',
-    HR: 'Croatian', SK: 'Slovak', SL: 'Slovenian', LT: 'Lithuanian', LV: 'Latvian',
-    ET: 'Estonian', CA: 'Catalan', GL: 'Galician', EU: 'Basque', FA: 'Persian',
-    UR: 'Urdu', BN: 'Bengali', TA: 'Tamil', TE: 'Telugu', MR: 'Marathi',
-    SW: 'Swahili', AF: 'Afrikaans', TL: 'Filipino', CY: 'Welsh',
+  const LANGUAGE_FLAGS = {
+    EN: '🇬🇧', ES: '🇪🇸', FR: '🇫🇷', DE: '🇩🇪', IT: '🇮🇹',
+    PT: '🇵🇹', RU: '🇷🇺', ZH: '🇨🇳', JA: '🇯🇵', KO: '🇰🇷',
+    AR: '🇸🇦', HI: '🇮🇳', NL: '🇳🇱', PL: '🇵🇱', SV: '🇸🇪',
+    DA: '🇩🇰', NO: '🇳🇴', FI: '🇫🇮', TR: '🇹🇷', EL: '🇬🇷',
+    HE: '🇮🇱', TH: '🇹🇭', VI: '🇻🇳', ID: '🇮🇩', MS: '🇲🇾',
+    UK: '🇺🇦', CS: '🇨🇿', RO: '🇷🇴', HU: '🇭🇺', BG: '🇧🇬',
+    HR: '🇭🇷', SK: '🇸🇰', SL: '🇸🇮', LT: '🇱🇹', LV: '🇱🇻',
+    ET: '🇪🇪', CA: '🏳️', GL: '🏳️', EU: '🏳️', FA: '🇮🇷',
+    UR: '🇵🇰', BN: '🇧🇩', TA: '🇮🇳', TE: '🇮🇳', MR: '🇮🇳',
+    SW: '🇰🇪', AF: '🇿🇦', TL: '🇵🇭', CY: '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+  };
+
+  const ACCENT_SHORT = {
+    American: 'American', British: 'British', Australian: 'Australian',
+    Southern: 'Southern US', Indian: 'Indian', Irish: 'Irish', Scottish: 'Scottish',
+    Eastern_European: 'E. European', African: 'African', Asian: 'Asian',
+    Latin_American: 'Latin Am.', Middle_Eastern: 'Middle Eastern', Unknown: 'Unknown',
   };
 
   const EMOTION_COLORS = {
@@ -976,15 +977,10 @@
     const side = (u.speaker != null && u.speaker % 2 === 0) ? 'speaker-right' : 'speaker-left';
     el.className = 'transcript-utterance ' + side;
 
-    // Full bubble tint with emotion color
+    // No emotion coloring on bubbles
     const emotionColor = (u.emotion && opts.emotion_signal)
       ? EMOTION_COLORS[u.emotion.toLowerCase()] || null : null;
-    if (emotionColor) {
-      el.style.background = emotionColor + '18';
-      el.style.setProperty('--ec', emotionColor);
-    } else {
-      el.style.setProperty('--ec', '#78909c');
-    }
+    el.style.setProperty('--ec', emotionColor || '#78909c');
 
     if (u.start_ms != null && !isPartial) {
       el.addEventListener('click', () => {
@@ -1023,14 +1019,24 @@
       header.appendChild(em);
     }
 
-    // Language + Accent inline
-    const langAccentParts = [];
-    if (u.language) langAccentParts.push(LANGUAGE_NAMES[u.language.toUpperCase()] || u.language);
-    if (u.accent && opts.accent_signal) langAccentParts.push(u.accent + ' accent');
-    if (langAccentParts.length) {
+    // Language flag
+    if (u.language) {
+      const flag = LANGUAGE_FLAGS[u.language.toUpperCase()];
+      if (flag) {
+        const lf = document.createElement('span');
+        lf.className = 'transcript-accent';
+        lf.textContent = flag;
+        lf.title = u.language.toUpperCase();
+        header.appendChild(lf);
+      }
+    }
+
+    // Accent (shortened text, bolded)
+    if (u.accent && opts.accent_signal) {
       const la = document.createElement('span');
       la.className = 'transcript-accent';
-      la.textContent = langAccentParts.join(' with ');
+      la.style.fontWeight = '700';
+      la.textContent = (ACCENT_SHORT[u.accent] || u.accent) + ' accent';
       header.appendChild(la);
     }
 
@@ -1409,21 +1415,64 @@
         formData.append(key, String(value));
       }
     }
-    const res = await fetch(endpoint, { method: 'POST', body: formData });
-    const responseText = await res.text();
-    if (!res.ok) {
-      let body = {};
-      try { body = JSON.parse(responseText); } catch {}
-      throw new Error(body.detail || body.message || body.error || 'Server error (' + res.status + ')');
-    }
-    let data;
-    try { data = JSON.parse(responseText); } catch {
-      throw new Error('Invalid response from server. Please try again.');
-    }
-    return {
-      data,
-      meta: { httpStatus: res.status, httpStatusText: res.statusText, responseSize: responseText.length },
-    };
+
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable && analysisStatus) {
+          const pct = Math.round(e.loaded / e.total * 100);
+          analysisStatus.textContent = pct < 100
+            ? 'Uploading\u2026 ' + pct + '%'
+            : 'Processing on server\u2026';
+        }
+      });
+
+      xhr.upload.addEventListener('load', () => {
+        if (analysisStatus) analysisStatus.textContent = 'Processing on server\u2026';
+      });
+
+      xhr.addEventListener('load', () => {
+        const responseText = xhr.responseText;
+        if (xhr.status < 200 || xhr.status >= 300) {
+          let body = {};
+          try { body = JSON.parse(responseText); } catch {}
+          const msg = body.detail || body.message || body.error || ('Server error (' + xhr.status + ')');
+          const err = new Error(msg);
+          err.rawText = responseText;
+          err.httpStatus = xhr.status;
+          reject(err);
+          return;
+        }
+        let data;
+        try { data = JSON.parse(responseText); } catch {
+          const err = new Error('Invalid response from server');
+          err.rawText = responseText;
+          reject(err);
+          return;
+        }
+        resolve({
+          data,
+          meta: { httpStatus: xhr.status, httpStatusText: xhr.statusText, responseSize: responseText.length },
+        });
+      });
+
+      xhr.addEventListener('error', () => {
+        const err = new Error('Network error — could not reach server');
+        err.rawText = '';
+        reject(err);
+      });
+
+      xhr.addEventListener('timeout', () => {
+        const err = new Error('Request timed out');
+        err.rawText = '';
+        reject(err);
+      });
+
+      xhr.open('POST', endpoint);
+      xhr.timeout = 300000; // 5 min
+      xhr.send(formData);
+    });
   }
 
   function getAudioDuration(file) {
@@ -1471,10 +1520,31 @@
     if (analysisTitle) analysisTitle.textContent = 'Analyzing \u201c' + truncate(filename, 30) + '\u201d';
     if (analysisStatus) analysisStatus.textContent = statusText || 'Processing audio';
     progressFill.style.width = '0%';
+    overlay.classList.remove('error');
     overlay.classList.add('visible');
   }
 
-  function hideOverlay() { overlay.classList.remove('visible'); }
+  function hideOverlay() {
+    overlay.classList.remove('visible', 'error');
+  }
+
+  function showOverlayError(msg, rawText) {
+    stopProgress();
+    overlay.classList.add('error');
+    document.getElementById('overlay-error-msg').textContent = msg;
+    const pre = document.getElementById('overlay-error-json');
+    if (rawText) {
+      try { pre.textContent = JSON.stringify(JSON.parse(rawText), null, 2); }
+      catch { pre.textContent = rawText; }
+    } else {
+      pre.textContent = '(no response body)';
+    }
+  }
+
+  document.getElementById('overlay-dismiss-btn').addEventListener('click', () => {
+    hideOverlay();
+    isAnalyzing = false;
+  });
 
   function showError(msg) {
     errorToast.textContent = msg;

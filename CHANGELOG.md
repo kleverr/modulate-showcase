@@ -2,6 +2,21 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [3.1.0] - 2026-04-10
+
+### Added
+- Upload progress shown in overlay status line ("Uploading… 42%" → "Processing on server…") via XHR
+- On error: overlay stays open with red error message + full raw response JSON in scrollable block + Dismiss button
+
+### Changed
+- Language now shown as flag emoji (🇬🇧, 🇫🇷, etc.) instead of text
+- Accent label is now bold; long regional accents shortened (e.g. "E. European", "Latin Am.")
+- Emotion label is now bold
+- Bubble backgrounds uniform grey (removed gradient emotion coloring experiment)
+
+### Fixed
+- Errors no longer silently dismiss — full server response preserved for investigation
+
 ## [3.0.0] - 2026-04-10
 
 ### Added
