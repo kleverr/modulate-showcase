@@ -786,6 +786,273 @@ body {
 .transcript-container { display: none; }
 .transcript-container.visible { display: block; }
 
+/* ── STT Debug panel (lives in the sidebar slot of results-layout) ───── */
+.stt-debug-panel {
+  padding: var(--space-s);
+  border: 1px solid #d8d8de;
+  border-radius: 8px;
+  background: #fafafb;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  color: #222;
+  position: sticky;
+  top: var(--space-m);
+  max-height: calc(100vh - 2 * var(--space-m));
+  display: flex;
+  flex-direction: column;
+}
+.stt-debug-panel[hidden] { display: none !important; }
+
+/* When debug panel is visible, widen page to viewport and give panel majority of space */
+body:has(#stt-debug-panel:not([hidden])) .page {
+  max-width: none;
+}
+.results-layout:has(#stt-debug-panel:not([hidden])) {
+  grid-template-columns: minmax(360px, 520px) minmax(500px, 1fr);
+}
+.results-layout:has(#stt-debug-panel:not([hidden])) .results-sidebar {
+  display: none !important;
+}
+/* Align top of debug panel with the start of transcript content (below actions bar) */
+.stt-debug-panel {
+  margin-top: calc(48px + var(--space-l));
+}
+
+@media (max-width: 900px) {
+  .stt-debug-panel { position: static; max-height: 420px; margin-top: 0; }
+  body:has(#stt-debug-panel:not([hidden])) .page { max-width: 1040px; }
+  .results-layout:has(#stt-debug-panel:not([hidden])) { grid-template-columns: 1fr; }
+}
+
+/* Toolbar inside the debug status bar */
+.stt-debug-tools { margin-left: auto; display: inline-flex; gap: 0.35rem; }
+.stt-debug-btn {
+  font-family: inherit;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid #d0d0d5;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #444;
+  white-space: nowrap;
+}
+.stt-debug-btn:hover { background: #f0f0f5; }
+.stt-debug-btn.active { background: #3a2d9a; color: #fff; border-color: #3a2d9a; }
+
+/* Legend below the two columns */
+.stt-debug-legend {
+  padding-top: 0.45rem;
+  border-top: 1px solid #e4e4e8;
+  margin-top: 0.45rem;
+  font-size: 0.68rem;
+  color: #555;
+  line-height: 1.5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+}
+.stt-debug-legend .chip {
+  padding: 0 0.35rem;
+  border-radius: 3px;
+  font-weight: 600;
+}
+.stt-debug-legend .chip.yellow { background: #fff9e5; border: 1px solid #f2e0a3; color: #7a5a00; }
+.stt-debug-legend .chip.dim { background: #fcfcfd; border: 1px solid #eceef0; color: #888; opacity: 0.7; }
+.stt-debug-legend .chip.kept { background: #eaf7ef; border: 1px solid #b5dcc2; color: #0d5c2e; }
+
+.stt-debug-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e4e4e8;
+  margin-bottom: 0.5rem;
+}
+
+.stt-debug-phase {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+  background: #e5e7ea;
+  color: #333;
+}
+.stt-debug-phase.connecting { background: #fff4d6; color: #7a5a00; }
+.stt-debug-phase.streaming  { background: #d5f1df; color: #0d5c2e; }
+.stt-debug-phase.end-sent   { background: #e0dcff; color: #3a2d9a; }
+.stt-debug-phase.done       { background: #d2e7ff; color: #0b3f7a; }
+.stt-debug-phase.closed     { background: #e4e4e8; color: #444; }
+.stt-debug-phase.error      { background: #fbe0dd; color: #7a1f15; }
+
+.stt-debug-since,
+.stt-debug-counters,
+.stt-debug-info {
+  color: #666;
+  font-size: 0.72rem;
+}
+.stt-debug-info { color: #7a1f15; }
+
+.stt-debug-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.stt-debug-col {
+  border: 1px solid #e4e4e8;
+  border-radius: 6px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+  min-width: 0;
+}
+
+.stt-debug-col-head {
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid #e4e4e8;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #555;
+  background: #f5f5f7;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stt-debug-col-count {
+  font-family: ui-monospace, monospace;
+  color: #888;
+  font-weight: 500;
+}
+
+.stt-debug-col-body {
+  overflow-y: auto;
+  padding: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stt-debug-row {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #eceef0;
+  border-radius: 4px;
+  background: #fcfcfd;
+}
+
+.stt-debug-row.superseded { opacity: 0.55; }
+.stt-debug-row.merged { background: #fff9e5; border-color: #f2e0a3; }
+.stt-debug-row.error-row { background: #fbe0dd; border-color: #f0b5b0; }
+.stt-debug-row.event-row { background: #eef1ff; border-color: #ccd2f0; }
+
+.stt-debug-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+  font-size: 0.68rem;
+  color: #666;
+  margin-bottom: 0.2rem;
+}
+
+.stt-debug-row-meta .seq  { color: #333; font-weight: 700; min-width: 2.8em; }
+.stt-debug-row-meta .t   { color: #0b6cc4; font-weight: 600; }
+.stt-debug-row-meta .sp  { color: #7a1fa6; }
+.stt-debug-row-meta .lg  { color: #555; }
+.stt-debug-row-meta .em  { color: #0078c8; font-weight: 600; }
+.stt-debug-row-meta .ac  { color: #555; }
+.stt-debug-row-meta .df  { color: #c4430b; font-variant-numeric: tabular-nums; }
+.stt-debug-row-meta .uid { color: #999; font-family: ui-monospace, monospace; }
+.stt-debug-row-meta .tag { color: #0d5c2e; font-weight: 600; }
+.stt-debug-row-meta .tag.merged { color: #7a5a00; }
+.stt-debug-row-meta .claim { color: #0d5c2e; font-weight: 700; }
+
+.stt-debug-row-text {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #222;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  word-break: break-word;
+}
+
+.stt-debug-row.is-group { cursor: pointer; }
+.stt-debug-row.is-group:hover { background: #f6f7fb; }
+.stt-debug-row.merged.is-group:hover { background: #fff3c7; }
+
+.stt-debug-row-meta .exp-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1em;
+  color: #888;
+  font-size: 0.8rem;
+  user-select: none;
+  cursor: pointer;
+}
+.stt-debug-row-meta .exp-toggle-spacer { display: inline-block; width: 1.1em; }
+.stt-debug-row-meta .count {
+  color: #666;
+  background: #eceef0;
+  border-radius: 3px;
+  padding: 0 0.3rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stt-debug-row-children {
+  margin-top: 0.35rem;
+  padding: 0.3rem 0 0 1.2rem;
+  border-top: 1px dashed #e3e5e8;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.stt-debug-row-children[hidden] { display: none !important; }
+.stt-debug-row-child {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.25rem 0.4rem;
+  border-left: 2px solid #d8dadf;
+  background: #f9fafb;
+  border-radius: 0 3px 3px 0;
+}
+.stt-debug-claimed-group {
+  cursor: pointer;
+}
+.stt-debug-claimed-group:hover {
+  background: #eef0f5;
+  border-left-color: #3a2d9a;
+}
+.stt-debug-row-child-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.65rem;
+  color: #666;
+}
+.stt-debug-row-child-meta .seq { color: #333; font-weight: 700; }
+.stt-debug-row-child-meta .count { color: #666; }
+.stt-debug-row-child-text {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #333;
+  word-break: break-word;
+}
+
+.stt-debug-row.is-linked {
+  outline: 2px solid #3a2d9a;
+  outline-offset: -1px;
+  background: #eef0ff;
+}
+.stt-debug-row.is-linked.merged { background: #fff3c7; outline-color: #7a5a00; }
+
 .transcript-list {
   display: flex;
   flex-direction: column;
@@ -1198,6 +1465,8 @@ body {
       <label class="stt-option" data-tip="Tag personally identifiable and health information"><input type="checkbox" id="opt-pii" checked> PII/PHI</label>
       <span class="stt-option-divider">|</span>
       <label class="stt-option" data-tip="Fast transcription, English only"><input type="checkbox" id="opt-fast"> Fast</label>
+      <span class="stt-option-divider">|</span>
+      <label class="stt-option" data-tip="Show raw streaming debug panel: partials, finals, status, cluster tags"><input type="checkbox" id="opt-debug"> Debug</label>
     </div>
   </div>
 
@@ -1215,6 +1484,15 @@ body {
           <div class="results-action" id="results-record-action">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
             <span>Start streaming</span>
+          </div>
+          <div class="results-action results-action-demo" id="results-stream-demo-action" title="Stream a pre-recorded demo file over the streaming API (for testing)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Stream demo</span>
+          </div>
+          <div class="results-action results-action-stream-file" id="results-stream-file-action" title="Pick any audio file and stream it over the streaming API">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Stream file&hellip;</span>
+            <input type="file" class="file-input" id="results-stream-file-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.mp4,.mov,.webm,.opus">
           </div>
         </div>
 
@@ -1278,6 +1556,34 @@ body {
           </button>
         </div>
       </aside>
+
+      <!-- STT streaming debug panel (takes sidebar slot when active) -->
+      <aside class="stt-debug-panel" id="stt-debug-panel" hidden>
+        <div class="stt-debug-status" id="stt-debug-status">
+          <span class="stt-debug-phase" id="stt-debug-phase">Idle</span>
+          <span class="stt-debug-since" id="stt-debug-since"></span>
+          <span class="stt-debug-counters" id="stt-debug-counters"></span>
+          <span class="stt-debug-info" id="stt-debug-info"></span>
+          <span class="stt-debug-tools">
+            <button class="stt-debug-btn" id="stt-debug-reverse-btn" title="Flip transcript order (newest first) to match this panel">↑ Reverse transcript</button>
+          </span>
+        </div>
+        <div class="stt-debug-cols">
+          <div class="stt-debug-col">
+            <div class="stt-debug-col-head">Partials <span class="stt-debug-col-count" id="stt-debug-partials-count">0</span></div>
+            <div class="stt-debug-col-body" id="stt-debug-partials"></div>
+          </div>
+          <div class="stt-debug-col">
+            <div class="stt-debug-col-head">Finals <span class="stt-debug-col-count" id="stt-debug-finals-count">0</span></div>
+            <div class="stt-debug-col-body" id="stt-debug-finals"></div>
+          </div>
+        </div>
+        <div class="stt-debug-legend">
+          <span><span class="chip kept">kept #N</span> keeper of a client-side cluster (longest text within 4s)</span>
+          <span><span class="chip yellow">merged → #N</span> suppressed in favor of a longer final in the same cluster</span>
+          <span><span class="chip dim">dim partial</span> superseded by a later final covering this region</span>
+        </div>
+      </aside>
     </div>
   </section>
 
@@ -1286,7 +1592,7 @@ body {
 
   <!-- Footer -->
   <footer class="footer">
-    Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a> &middot; &copy; 2026 Modulate, Inc. &middot; v3.1.1 (Apr 10, 2026)
+    Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a> &middot; &copy; 2026 Modulate, Inc. &middot; v3.2.0 (Apr 17, 2026)
   </footer>
 
 </div>
@@ -1340,7 +1646,7 @@ body {
     </div>
   </div>
   <div class="overlay-footer">
-    Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a> &middot; &copy; 2026 Modulate, Inc. &middot; v3.1.1 (Apr 10, 2026)
+    Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a> &middot; &copy; 2026 Modulate, Inc. &middot; v3.2.0 (Apr 17, 2026)
   </div>
 </div>
 

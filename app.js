@@ -64,6 +64,9 @@
   const uploadAction  = document.getElementById('results-upload-action');
   const fileInput     = document.getElementById('results-file-input');
   const recordAction  = document.getElementById('results-record-action');
+  const streamDemoAction = document.getElementById('results-stream-demo-action');
+  const streamFileAction = document.getElementById('results-stream-file-action');
+  const streamFileInput  = document.getElementById('results-stream-file-input');
   const histoTooltip  = document.getElementById('histo-tooltip');
   const sttChart      = document.getElementById('stt-chart');
 
@@ -142,6 +145,9 @@
     transcriptContainer.classList.toggle('visible', !isDeepfake);
     resultsSidebar.classList.toggle('visible', !isDeepfake);
     sttOptions.classList.toggle('visible', !isDeepfake);
+    if (streamDemoAction) streamDemoAction.style.display = isDeepfake ? 'none' : '';
+    if (streamFileAction) streamFileAction.style.display = isDeepfake ? 'none' : '';
+    renderDebugPanel(true);
 
     // Stop any running animation frame trackers
     if (playbackTracker) { cancelAnimationFrame(playbackTracker); playbackTracker = null; }
@@ -202,7 +208,19 @@
   const optEmotion = document.getElementById('opt-emotion');
   const optAccent = document.getElementById('opt-accent');
   const optPii = document.getElementById('opt-pii');
+  const optDebug = document.getElementById('opt-debug');
   const richOpts = [optDiarization, optDeepfake, optEmotion, optAccent, optPii];
+
+  const debugPanel          = document.getElementById('stt-debug-panel');
+  const debugPhaseEl        = document.getElementById('stt-debug-phase');
+  const debugSinceEl        = document.getElementById('stt-debug-since');
+  const debugCountersEl     = document.getElementById('stt-debug-counters');
+  const debugInfoEl         = document.getElementById('stt-debug-info');
+  const debugPartialsList   = document.getElementById('stt-debug-partials');
+  const debugFinalsList     = document.getElementById('stt-debug-finals');
+  const debugPartialsCount  = document.getElementById('stt-debug-partials-count');
+  const debugFinalsCount    = document.getElementById('stt-debug-finals-count');
+  const debugReverseBtn     = document.getElementById('stt-debug-reverse-btn');
 
   optFast.addEventListener('change', () => {
     if (optFast.checked) richOpts.forEach(cb => { cb.checked = false; });
@@ -278,6 +296,7 @@
   let recordingStartTime = 0;
   let mediaRecorder = null;
   let recordedChunks = [];
+  let endFrameSent = false;
 
   if (recordAction) {
     recordAction.addEventListener('click', () => {
@@ -287,6 +306,28 @@
       } else {
         if (currentMode === 'deepfake') startDeepfakeRecording();
         else startTranscriptionRecording();
+      }
+    });
+  }
+
+  if (streamDemoAction) {
+    streamDemoAction.addEventListener('click', () => {
+      if (isRecording) { stopRecording(); return; }
+      startTranscriptionDemoStream();
+    });
+  }
+
+  if (streamFileAction && streamFileInput) {
+    streamFileAction.addEventListener('click', (e) => {
+      if (e.target !== streamFileInput) {
+        if (isRecording) { stopRecording(); return; }
+        streamFileInput.click();
+      }
+    });
+    streamFileInput.addEventListener('change', () => {
+      if (streamFileInput.files.length > 0) {
+        startTranscriptionFileStream(streamFileInput.files[0]);
+        streamFileInput.value = '';
       }
     });
   }
@@ -625,12 +666,13 @@
     }
   }
 
-  function startTranscriptionRecording() {
+  function buildSttStreamingParams() {
     const opts = getSttOptions();
     const params = new URLSearchParams();
     params.set('speaker_diarization', opts.speaker_diarization);
     params.set('emotion_signal', opts.emotion_signal);
     params.set('accent_signal', opts.accent_signal);
+    params.set('deepfake_signal', opts.deepfake_signal);
     params.set('pii_phi_tagging', opts.pii_phi_tagging);
     // Raw PCM format params — required so the server knows how to decode headerless audio
     params.set('audio_format', 's16le');
@@ -638,46 +680,60 @@
     params.set('num_channels', '1');
     // Enable partial results for real-time text preview
     params.set('partial_results', 'true');
+    return params;
+  }
 
+  function handleTranscriptionStreamMessage(msg) {
+    if (msg?.type === 'utterance' && msg.utterance) {
+      debugOnMessage();
+      debugLogFinal(msg.utterance);
+      sttUtterances.push(msg.utterance);
+      deduplicateUtterances();
+      sttPartial = null;
+      updateSttData();
+      renderTranscript();
+    } else if (msg?.type === 'partial_utterance' && msg.partial_utterance) {
+      debugOnMessage();
+      debugLogPartial(msg.partial_utterance);
+      sttPartial = msg.partial_utterance;
+      renderTranscript();
+    } else if (msg?.type === 'done') {
+      debugOnMessage();
+      debugSetPhase('done', 'duration_ms=' + (msg.duration_ms || 0));
+      if (!sttDebug && sttPartial) {
+        sttUtterances.push({
+          text: sttPartial.text,
+          start_ms: sttPartial.start_ms || 0,
+          duration_ms: 0,
+          speaker: sttPartial.speaker || 1,
+          language: null, emotion: null, accent: null,
+        });
+        deduplicateUtterances();
+        sttPartial = null;
+      }
+      if (msg.duration_ms) {
+        updateSttData();
+        if (sttData) sttData.duration_ms = msg.duration_ms;
+      }
+      renderTranscript();
+      stopRecording();
+    } else if (msg?.type === 'error') {
+      debugOnMessage();
+      debugSetPhase('error', msg.error || 'Unknown');
+      showError('Streaming error: ' + (msg.error || 'Unknown'));
+      if (sttUtterances.length > 0) stopRecording();
+      else cleanupRecording();
+    }
+  }
+
+  function startTranscriptionRecording() {
     sttUtterances = [];
     sttPartial = null;
     sttData = null;
     currentData = null;
+    debugReset();
 
-    startRecordingCommon('/api/velma-2-stt-streaming?' + params.toString(), (msg) => {
-      if (msg?.type === 'utterance' && msg.utterance) {
-        sttUtterances.push(msg.utterance);
-        deduplicateUtterances();
-        sttPartial = null;
-        updateSttData();
-        renderTranscript();
-      } else if (msg?.type === 'partial_utterance' && msg.partial_utterance) {
-        sttPartial = msg.partial_utterance;
-        renderTranscript();
-      } else if (msg?.type === 'done') {
-        if (sttPartial) {
-          sttUtterances.push({
-            text: sttPartial.text,
-            start_ms: sttPartial.start_ms || 0,
-            duration_ms: 0,
-            speaker: sttPartial.speaker || 1,
-            language: null, emotion: null, accent: null,
-          });
-          deduplicateUtterances();
-          sttPartial = null;
-        }
-        if (msg.duration_ms) {
-          updateSttData();
-          if (sttData) sttData.duration_ms = msg.duration_ms;
-        }
-        renderTranscript();
-        stopRecording();
-      } else if (msg?.type === 'error') {
-        showError('Streaming error: ' + (msg.error || 'Unknown'));
-        if (sttUtterances.length > 0) stopRecording();
-        else cleanupRecording();
-      }
-    }, () => {
+    startRecordingCommon('/api/velma-2-stt-streaming?' + buildSttStreamingParams().toString(), handleTranscriptionStreamMessage, () => {
       resultsFilename.textContent = 'Live Recording';
       resultsAudio.removeAttribute('src');
       resultsAudio.load();
@@ -685,6 +741,129 @@
       renderTranscript();
       window.scrollTo(0, 0);
     });
+  }
+
+  // ── File/demo streaming (shared pipeline) ────────────────────────────────
+  let demoChunkTimer = null;
+  let isDemoStreaming = false;
+
+  function startTranscriptionDemoStream() {
+    return startTranscriptionStreamFromUrl(DEMO_STT_AUDIO_URL, 'Demo stream', false);
+  }
+
+  async function startTranscriptionFileStream(file) {
+    const url = URL.createObjectURL(file);
+    await startTranscriptionStreamFromUrl(url, file.name, true);
+  }
+
+  async function startTranscriptionStreamFromUrl(url, filename, isUserFile) {
+    if (isRecording) return;
+    if (currentMode !== 'transcription') return;
+
+    sttUtterances = [];
+    sttPartial = null;
+    sttData = null;
+    currentData = null;
+    debugReset();
+
+    resultsFilename.textContent = filename;
+    if (audioObjectUrl) { URL.revokeObjectURL(audioObjectUrl); audioObjectUrl = null; }
+    if (isUserFile) audioObjectUrl = url; // track blob url so we can revoke later
+    resultsAudio.src = url;
+    renderTranscript();
+    window.scrollTo(0, 0);
+
+    // Fetch + decode → 16 kHz mono PCM s16le
+    let int16;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const arr = await res.arrayBuffer();
+      const actx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+      const audio = await actx.decodeAudioData(arr);
+      const ch = audio.getChannelData(0);
+      int16 = new Int16Array(ch.length);
+      for (let i = 0; i < ch.length; i++) {
+        int16[i] = Math.max(-32768, Math.min(32767, Math.round(ch[i] * 32767)));
+      }
+      actx.close().catch(() => {});
+    } catch (err) {
+      showError('Failed to load audio: ' + (err && err.message ? err.message : err));
+      return;
+    }
+
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = proto + '//' + location.host + '/api/velma-2-stt-streaming?' + buildSttStreamingParams().toString();
+    recordingWs = new WebSocket(wsUrl);
+    recordingWs.binaryType = 'arraybuffer';
+    endFrameSent = false;
+    isDemoStreaming = true;
+    debugSetPhase('connecting', '');
+
+    recordingWs.onopen = () => {
+      isRecording = true;
+      recordingStartTime = Date.now();
+      debugSetPhase('streaming', '');
+      updateRecordButton();
+
+      // Play the source audio alongside the stream so the user hears what the model hears.
+      // User gesture (button click) already happened, so autoplay should be allowed.
+      try { resultsAudio.currentTime = 0; } catch {}
+      const playPromise = resultsAudio.play();
+      if (playPromise && playPromise.catch) playPromise.catch(() => { /* autoplay blocked — silent */ });
+
+      // Pace at realtime: 4096 samples = 256 ms at 16 kHz
+      const CHUNK = 4096;
+      let offset = 0;
+      function sendNext() {
+        if (!isRecording || !recordingWs || recordingWs.readyState !== WebSocket.OPEN) return;
+        if (offset >= int16.length) {
+          try { recordingWs.send(''); } catch (e) {}
+          endFrameSent = true;
+          if (debugPhase !== 'done' && debugPhase !== 'error') debugSetPhase('end-sent', '');
+          return;
+        }
+        const end = Math.min(offset + CHUNK, int16.length);
+        const slice = int16.subarray(offset, end);
+        const ab = new ArrayBuffer(slice.byteLength);
+        new Int16Array(ab).set(slice);
+        recordingWs.send(ab);
+        offset = end;
+        demoChunkTimer = setTimeout(sendNext, 256);
+      }
+      sendNext();
+    };
+
+    recordingWs.addEventListener('message', async (event) => {
+      let text = '';
+      try {
+        if (typeof event.data === 'string') text = event.data;
+        else if (event.data instanceof Blob) text = await event.data.text();
+        else if (event.data instanceof ArrayBuffer) text = new TextDecoder().decode(event.data);
+      } catch { return; }
+      if (!text) return;
+      let msg; try { msg = JSON.parse(text); } catch { return; }
+      handleTranscriptionStreamMessage(msg);
+    });
+
+    recordingWs.onerror = () => {
+      debugSetPhase('error', 'socket error');
+      demoCleanup();
+    };
+
+    recordingWs.onclose = (event) => {
+      if (debugPhase !== 'done' && debugPhase !== 'error') {
+        debugSetPhase('closed', 'code=' + event.code + (event.reason ? ' ' + event.reason : ''));
+      }
+      demoCleanup();
+    };
+  }
+
+  function demoCleanup() {
+    if (demoChunkTimer) { clearTimeout(demoChunkTimer); demoChunkTimer = null; }
+    isDemoStreaming = false;
+    isRecording = false;
+    updateRecordButton();
   }
 
   // Cluster raw utterances by time proximity for display.
@@ -713,6 +892,438 @@
 
   function deduplicateUtterances() { /* no-op — dedup now happens in clusterUtterances at render time */ }
 
+  // ── Streaming debug panel ────────────────────────────────────────────────
+  let sttDebug = false;
+  let debugPartials = [];      // { seq, t, partial: {text, start_ms, speaker} }
+  let debugFinals = [];        // { seq, t, utterance: {...} }
+  let debugPartialSeq = 0;     // arrival counter for partials
+  let debugFinalSeq = 0;       // arrival counter for finals
+  let debugPhase = 'idle';     // 'idle'|'connecting'|'streaming'|'end-sent'|'done'|'closed'|'error'
+  let debugPhaseSince = Date.now();
+  let debugPhaseInfo = '';
+  let debugStreamStart = 0;
+  let debugLastMsgAt = 0;
+  let debugTickerId = null;
+  let debugFrozen = null;      // { streamMs, lastMsgOffsetMs } when phase is terminal
+  let expandedPartialGroups = new Set();  // keys: String(start_ms)
+  let expandedFinals = new Set();         // keys: final seq number
+
+  const DEBUG_TERMINAL = ['done', 'closed', 'error'];
+  function isDebugTerminal() { return DEBUG_TERMINAL.indexOf(debugPhase) !== -1; }
+
+  function debugActive() {
+    return !!(optDebug && optDebug.checked && currentMode === 'transcription');
+  }
+
+  function debugReset() {
+    debugPartials = [];
+    debugFinals = [];
+    debugPartialSeq = 0;
+    debugFinalSeq = 0;
+    debugPhase = 'idle';
+    debugPhaseSince = Date.now();
+    debugPhaseInfo = '';
+    debugStreamStart = Date.now();
+    debugLastMsgAt = 0;
+    debugFrozen = null;
+    expandedPartialGroups = new Set();
+    expandedFinals = new Set();
+    if (debugActive()) renderDebugPanel(true);
+  }
+
+  function debugSetPhase(phase, info) {
+    debugPhase = phase;
+    debugPhaseSince = Date.now();
+    debugPhaseInfo = info || '';
+    if (DEBUG_TERMINAL.indexOf(phase) !== -1 && debugStreamStart) {
+      debugFrozen = {
+        streamMs: Date.now() - debugStreamStart,
+        lastMsgOffsetMs: debugLastMsgAt ? debugLastMsgAt - debugStreamStart : null,
+      };
+    } else {
+      debugFrozen = null;
+    }
+    if (debugActive()) renderDebugPanel();
+  }
+
+  function debugOnMessage() {
+    debugLastMsgAt = Date.now();
+  }
+
+  function debugLogPartial(p) {
+    debugPartials.unshift({ seq: ++debugPartialSeq, t: Date.now() - debugStreamStart, partial: p });
+    if (debugActive()) renderDebugPanel();
+  }
+
+  function debugLogFinal(u) {
+    debugFinals.unshift({ seq: ++debugFinalSeq, t: Date.now() - debugStreamStart, utterance: u });
+    if (debugActive()) renderDebugPanel();
+  }
+
+  // Mirrors clusterUtterances logic: groups finals within 4s, keeps longest-text per group.
+  // Returns a map from utterance_uuid → { groupIdx, kept: bool }.
+  function computeClusterTags(finals) {
+    const tags = {};
+    if (!finals.length) return tags;
+    const sorted = finals.slice().sort((a, b) => a.start_ms - b.start_ms);
+    const groups = [[sorted[0]]];
+    for (let i = 1; i < sorted.length; i++) {
+      const last = groups[groups.length - 1];
+      const maxMs = Math.max.apply(null, last.map(u => u.start_ms));
+      if (sorted[i].start_ms - maxMs < 4000) last.push(sorted[i]);
+      else groups.push([sorted[i]]);
+    }
+    groups.forEach((g, gi) => {
+      const keeper = g.reduce((best, u) => (u.text || '').length > (best.text || '').length ? u : best);
+      g.forEach(u => {
+        const uid = u.utterance_uuid || String(u.start_ms);
+        tags[uid] = { groupIdx: gi, kept: u === keeper };
+      });
+    });
+    return tags;
+  }
+
+  function formatTOffset(ms) {
+    const s = Math.max(0, ms) / 1000;
+    return '+' + s.toFixed(2) + 's';
+  }
+
+  function renderDebugPanel(force) {
+    if (!debugPanel) return;
+    if (!debugActive()) {
+      debugPanel.setAttribute('hidden', '');
+      if (debugTickerId) { clearInterval(debugTickerId); debugTickerId = null; }
+      return;
+    }
+    debugPanel.removeAttribute('hidden');
+
+    // Phase pill + counters
+    debugPhaseEl.className = 'stt-debug-phase ' + debugPhase;
+    debugPhaseEl.textContent = ({
+      'idle': 'Idle',
+      'connecting': 'Connecting…',
+      'streaming': 'Streaming audio',
+      'end-sent': 'End-of-audio sent · waiting for model…',
+      'done': 'Done',
+      'closed': 'Closed',
+      'error': 'Error',
+    })[debugPhase] || debugPhase;
+
+    if (debugFrozen) {
+      const s = (debugFrozen.streamMs / 1000).toFixed(1) + 's';
+      const m = debugFrozen.lastMsgOffsetMs != null
+        ? '+' + (debugFrozen.lastMsgOffsetMs / 1000).toFixed(1) + 's'
+        : '—';
+      debugSinceEl.textContent = 'stream: ' + s + ' · last msg: ' + m;
+      if (debugTickerId) { clearInterval(debugTickerId); debugTickerId = null; }
+    } else {
+      const sincePhase = ((Date.now() - debugPhaseSince) / 1000).toFixed(1) + 's';
+      const sinceMsg = debugLastMsgAt ? ((Date.now() - debugLastMsgAt) / 1000).toFixed(1) + 's' : '—';
+      debugSinceEl.textContent = 'phase: ' + sincePhase + ' · last msg: ' + sinceMsg;
+      if (!debugTickerId) {
+        debugTickerId = setInterval(() => {
+          if (!debugActive() || debugFrozen) {
+            clearInterval(debugTickerId); debugTickerId = null; return;
+          }
+          const p = ((Date.now() - debugPhaseSince) / 1000).toFixed(1) + 's';
+          const mm = debugLastMsgAt ? ((Date.now() - debugLastMsgAt) / 1000).toFixed(1) + 's' : '—';
+          debugSinceEl.textContent = 'phase: ' + p + ' · last msg: ' + mm;
+        }, 250);
+      }
+    }
+    debugCountersEl.textContent = 'partials: ' + debugPartials.length + ' · finals: ' + debugFinals.length;
+    debugInfoEl.textContent = debugPhaseInfo || '';
+
+    debugPartialsCount.textContent = String(debugPartials.length);
+    debugFinalsCount.textContent = String(debugFinals.length);
+
+    // Build a lookup: for each final, which seq# covers a given start_ms?
+    // A final "claims" a partial if the partial's start_ms falls within the final's range.
+    // debugFinals is newest-first; build array sorted by arrival order for seq lookups.
+    const finalRanges = debugFinals.map(e => ({
+      seq: e.seq,
+      start: e.utterance.start_ms || 0,
+      end: (e.utterance.start_ms || 0) + (e.utterance.duration_ms || 0),
+    }));
+    function claimingFinalSeq(startMs) {
+      const ms = startMs || 0;
+      // Pick the final whose range contains ms; prefer latest arrival if multiple overlap
+      let best = null;
+      for (let i = 0; i < finalRanges.length; i++) {
+        const f = finalRanges[i];
+        if (ms >= f.start && ms < f.end) { if (!best || f.seq > best.seq) best = f; }
+      }
+      return best ? best.seq : null;
+    }
+
+    // Partials column — group by start_ms (progressive extensions of the same utterance)
+    debugPartialsList.innerHTML = '';
+    const maxFinalEnd = finalRanges.length
+      ? Math.max.apply(null, finalRanges.map(f => f.end))
+      : -1;
+
+    // Group by start_ms. debugPartials is newest-first, so group's [0] = latest text.
+    const partialGroupMap = new Map(); // startMsKey → { startMs, entries: [] }
+    const partialGroupOrder = [];
+    debugPartials.forEach((entry) => {
+      const key = entry.partial.start_ms == null ? 'null' : String(entry.partial.start_ms);
+      let g = partialGroupMap.get(key);
+      if (!g) {
+        g = { key, startMs: entry.partial.start_ms, entries: [] };
+        partialGroupMap.set(key, g);
+        partialGroupOrder.push(g);
+      }
+      g.entries.push(entry);
+    });
+
+    partialGroupOrder.forEach((group) => {
+      const latest = group.entries[0];
+      const p = latest.partial;
+      const pStart = p.start_ms || 0;
+      const isClaimed = pStart < maxFinalEnd;
+      const claimedBy = claimingFinalSeq(pStart);
+      const expanded = expandedPartialGroups.has(group.key);
+      const multi = group.entries.length > 1;
+
+      const row = document.createElement('div');
+      row.className = 'stt-debug-row stt-debug-partial-group';
+      if (isClaimed) row.classList.add('superseded');
+      if (multi) row.classList.add('is-group');
+      if (expanded) row.classList.add('is-expanded');
+      row.setAttribute('data-partial-start', group.key);
+      if (claimedBy != null) row.setAttribute('data-claim-seq', String(claimedBy));
+
+      const meta = document.createElement('div');
+      meta.className = 'stt-debug-row-meta';
+      const oldestEntry = group.entries[group.entries.length - 1];
+      const seqLabel = multi
+        ? ('#' + oldestEntry.seq + '..#' + latest.seq)
+        : ('#' + latest.seq);
+      let html = '';
+      if (multi) html += '<span class="exp-toggle" role="button" title="Expand partial progression">' + (expanded ? '▾' : '▸') + '</span>';
+      else html += '<span class="exp-toggle-spacer"></span>';
+      html += '<span class="seq">' + seqLabel + '</span>' +
+        '<span class="t">' + formatTOffset(latest.t) + '</span>' +
+        '<span>' + (p.start_ms == null ? '—' : p.start_ms) + 'ms</span>' +
+        (p.speaker != null ? '<span class="sp">sp' + p.speaker + '</span>' : '');
+      if (multi) html += '<span class="count">' + group.entries.length + ' partials</span>';
+      if (claimedBy != null) html += '<span class="claim">→ F#' + claimedBy + '</span>';
+      meta.innerHTML = html;
+      row.appendChild(meta);
+
+      const text = document.createElement('div');
+      text.className = 'stt-debug-row-text';
+      text.textContent = p.text || '';
+      row.appendChild(text);
+
+      if (multi) {
+        const children = document.createElement('div');
+        children.className = 'stt-debug-row-children';
+        if (!expanded) children.setAttribute('hidden', '');
+        // Show oldest→newest so the text progression reads top-to-bottom
+        group.entries.slice().reverse().forEach((e) => {
+          const child = document.createElement('div');
+          child.className = 'stt-debug-row-child';
+          const cmeta = document.createElement('div');
+          cmeta.className = 'stt-debug-row-child-meta';
+          cmeta.innerHTML = '<span class="seq">#' + e.seq + '</span>' +
+            '<span class="t">' + formatTOffset(e.t) + '</span>';
+          const ctext = document.createElement('div');
+          ctext.className = 'stt-debug-row-child-text';
+          ctext.textContent = e.partial.text || '';
+          child.appendChild(cmeta);
+          child.appendChild(ctext);
+          children.appendChild(child);
+        });
+        row.appendChild(children);
+      }
+      debugPartialsList.appendChild(row);
+    });
+
+    // Finals column
+    debugFinalsList.innerHTML = '';
+    const tags = computeClusterTags(debugFinals.map(e => e.utterance));
+    // Build a map: groupIdx → seq of the keeper (for merged rows to reference)
+    const groupKeeperSeq = {};
+    debugFinals.forEach((entry) => {
+      const uid = entry.utterance.utterance_uuid || String(entry.utterance.start_ms);
+      const tag = tags[uid];
+      if (tag && tag.kept) groupKeeperSeq[tag.groupIdx] = entry.seq;
+    });
+    debugFinals.forEach((entry) => {
+      const u = entry.utterance;
+      const uid = u.utterance_uuid || String(u.start_ms);
+      const tag = tags[uid];
+      const expanded = expandedFinals.has(entry.seq);
+
+      // Find partial groups whose start_ms falls within this final's range
+      const fStart = u.start_ms || 0;
+      const fEnd = fStart + (u.duration_ms || 0);
+      const claimedGroups = partialGroupOrder.filter((g) => {
+        if (g.startMs == null) return false;
+        return g.startMs >= fStart && g.startMs < fEnd;
+      });
+      const hasClaims = claimedGroups.length > 0;
+
+      const row = document.createElement('div');
+      row.className = 'stt-debug-row stt-debug-final';
+      if (tag && !tag.kept) row.classList.add('merged');
+      if (hasClaims) row.classList.add('is-group');
+      if (expanded) row.classList.add('is-expanded');
+      row.setAttribute('data-final-seq', String(entry.seq));
+
+      const meta = document.createElement('div');
+      meta.className = 'stt-debug-row-meta';
+      const parts = [];
+      if (hasClaims) parts.push('<span class="exp-toggle" role="button" title="Expand claimed partials">' + (expanded ? '▾' : '▸') + '</span>');
+      else parts.push('<span class="exp-toggle-spacer"></span>');
+      parts.push('<span class="seq">F#' + entry.seq + '</span>');
+      parts.push('<span class="t">' + formatTOffset(entry.t) + '</span>');
+      parts.push('<span>' + (u.start_ms != null ? u.start_ms : '—') + '..' + ((u.start_ms != null && u.duration_ms != null) ? (u.start_ms + u.duration_ms) : '—') + 'ms</span>');
+      if (u.speaker != null) parts.push('<span class="sp">sp' + u.speaker + '</span>');
+      if (u.language) parts.push('<span class="lg">' + u.language + '</span>');
+      if (u.emotion) parts.push('<span class="em">' + u.emotion + '</span>');
+      if (u.accent) parts.push('<span class="ac">' + u.accent + '</span>');
+      if (u.deepfake_score != null) parts.push('<span class="df">df=' + Number(u.deepfake_score).toFixed(3) + '</span>');
+      if (u.utterance_uuid) parts.push('<span class="uid">' + u.utterance_uuid.slice(0, 8) + '</span>');
+      if (hasClaims) {
+        const partialCount = claimedGroups.reduce((n, g) => n + g.entries.length, 0);
+        parts.push('<span class="count">' + claimedGroups.length + ' group' + (claimedGroups.length === 1 ? '' : 's') + ' · ' + partialCount + ' partials</span>');
+      }
+      if (tag) {
+        const keeperRef = (!tag.kept && groupKeeperSeq[tag.groupIdx] != null)
+          ? ' (F#' + groupKeeperSeq[tag.groupIdx] + ' won)'
+          : '';
+        parts.push('<span class="tag' + (tag.kept ? '' : ' merged') + '">' +
+          (tag.kept ? ('kept · cluster #' + tag.groupIdx) : ('merged → cluster #' + tag.groupIdx + keeperRef)) + '</span>');
+      }
+      meta.innerHTML = parts.join('');
+      row.appendChild(meta);
+
+      const text = document.createElement('div');
+      text.className = 'stt-debug-row-text';
+      text.textContent = u.text || '';
+      row.appendChild(text);
+
+      if (hasClaims) {
+        const children = document.createElement('div');
+        children.className = 'stt-debug-row-children';
+        if (!expanded) children.setAttribute('hidden', '');
+        claimedGroups.forEach((g) => {
+          const latest = g.entries[0];
+          const child = document.createElement('div');
+          child.className = 'stt-debug-row-child stt-debug-claimed-group';
+          child.setAttribute('data-partial-start', g.key);
+          const cmeta = document.createElement('div');
+          cmeta.className = 'stt-debug-row-child-meta';
+          const gOldest = g.entries[g.entries.length - 1];
+          const seqLabel = g.entries.length > 1
+            ? ('#' + gOldest.seq + '..#' + latest.seq)
+            : ('#' + latest.seq);
+          cmeta.innerHTML = '<span class="seq">' + seqLabel + '</span>' +
+            '<span>' + g.startMs + 'ms</span>' +
+            '<span class="count">' + g.entries.length + '×</span>';
+          const ctext = document.createElement('div');
+          ctext.className = 'stt-debug-row-child-text';
+          ctext.textContent = latest.partial.text || '';
+          child.appendChild(cmeta);
+          child.appendChild(ctext);
+          children.appendChild(child);
+        });
+        row.appendChild(children);
+      }
+      debugFinalsList.appendChild(row);
+    });
+  }
+
+  // Event delegation: expand/collapse on click
+  if (debugPartialsList) {
+    debugPartialsList.addEventListener('click', (e) => {
+      const row = e.target.closest('.stt-debug-partial-group.is-group');
+      if (!row) return;
+      const key = row.getAttribute('data-partial-start');
+      if (!key) return;
+      if (expandedPartialGroups.has(key)) expandedPartialGroups.delete(key);
+      else expandedPartialGroups.add(key);
+      renderDebugPanel(true);
+    });
+  }
+  if (debugFinalsList) {
+    debugFinalsList.addEventListener('click', (e) => {
+      const row = e.target.closest('.stt-debug-final.is-group');
+      if (!row) return;
+      // Child claimed-group clicks → jump/expand that partial group in the left column
+      const childGroup = e.target.closest('.stt-debug-claimed-group');
+      if (childGroup) {
+        const childKey = childGroup.getAttribute('data-partial-start');
+        if (childKey) {
+          expandedPartialGroups.add(childKey);
+          renderDebugPanel(true);
+          const target = debugPartialsList.querySelector('[data-partial-start="' + CSS.escape(childKey) + '"]');
+          if (target) target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+        return;
+      }
+      const seqAttr = row.getAttribute('data-final-seq');
+      if (!seqAttr) return;
+      const seq = Number(seqAttr);
+      if (expandedFinals.has(seq)) expandedFinals.delete(seq);
+      else expandedFinals.add(seq);
+      renderDebugPanel(true);
+    });
+  }
+
+  // Hover cross-linking between partials and finals
+  function setLinkedClass(seq, on) {
+    if (!debugPartialsList || !debugFinalsList) return;
+    const pRows = debugPartialsList.querySelectorAll('[data-claim-seq="' + seq + '"]');
+    pRows.forEach((r) => r.classList.toggle('is-linked', on));
+    const fRow = debugFinalsList.querySelector('[data-final-seq="' + seq + '"]');
+    if (fRow) fRow.classList.toggle('is-linked', on);
+  }
+  if (debugPartialsList) {
+    debugPartialsList.addEventListener('mouseover', (e) => {
+      const row = e.target.closest('[data-claim-seq]');
+      if (!row) return;
+      setLinkedClass(row.getAttribute('data-claim-seq'), true);
+    });
+    debugPartialsList.addEventListener('mouseout', (e) => {
+      const row = e.target.closest('[data-claim-seq]');
+      if (!row) return;
+      setLinkedClass(row.getAttribute('data-claim-seq'), false);
+    });
+  }
+  if (debugFinalsList) {
+    debugFinalsList.addEventListener('mouseover', (e) => {
+      const row = e.target.closest('[data-final-seq]');
+      if (!row) return;
+      setLinkedClass(row.getAttribute('data-final-seq'), true);
+    });
+    debugFinalsList.addEventListener('mouseout', (e) => {
+      const row = e.target.closest('[data-final-seq]');
+      if (!row) return;
+      setLinkedClass(row.getAttribute('data-final-seq'), false);
+    });
+  }
+
+  if (optDebug) {
+    optDebug.addEventListener('change', () => {
+      sttDebug = optDebug.checked;
+      renderDebugPanel(true);
+      renderTranscript();
+    });
+    sttDebug = optDebug.checked;
+  }
+
+  let debugReverseTranscript = false;
+  if (debugReverseBtn) {
+    debugReverseBtn.addEventListener('click', () => {
+      debugReverseTranscript = !debugReverseTranscript;
+      debugReverseBtn.classList.toggle('active', debugReverseTranscript);
+      renderTranscript();
+    });
+  }
+
   function updateSttData() {
     const durationMs = Date.now() - recordingStartTime;
     sttData = { filename: 'Live Recording', utterances: clusterUtterances(sttUtterances), duration_ms: durationMs };
@@ -728,19 +1339,27 @@
     const oldIndicator = transcriptList.querySelector('[data-listening]');
     if (oldIndicator) oldIndicator.remove();
 
+    const reversed = debugReverseTranscript && debugActive();
+
     if (sttPartial) {
       const opts = getSttOptions();
       const el = buildUtteranceEl(sttPartial, opts, true, -1);
       el.setAttribute('data-partial', 'true');
-      transcriptList.appendChild(el);
-      el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      if (reversed) {
+        transcriptList.prepend(el);
+        if (!debugActive()) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        transcriptList.appendChild(el);
+        if (!debugActive()) el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
     } else if (isRecording) {
       const indicator = document.createElement('div');
       indicator.className = 'transcript-empty';
       indicator.textContent = 'Listening\u2026';
       indicator.style.opacity = '0.5';
       indicator.setAttribute('data-listening', 'true');
-      transcriptList.appendChild(indicator);
+      if (reversed) transcriptList.prepend(indicator);
+      else transcriptList.appendChild(indicator);
     }
   }
 
@@ -760,14 +1379,29 @@
 
     const opts = getSttOptions();
     // Only cluster during streaming to merge overlapping partials;
-    // batch results are already clean so render them as-is.
-    const displayUtterances = isRecording ? clusterUtterances(sttUtterances) : sttUtterances.slice();
+    // batch results are already clean so render them as-is. But always
+    // sort by start_ms — streaming utterances arrive out of order.
+    const byStart = (a, b) => (a.start_ms || 0) - (b.start_ms || 0);
+    let displayUtterances = isRecording
+      ? clusterUtterances(sttUtterances)
+      : sttUtterances.slice().sort(byStart);
+
+    // Debug reverse: newest first so order matches the debug panel columns.
+    const reversed = debugReverseTranscript && debugActive();
+    if (reversed) displayUtterances = displayUtterances.slice().reverse();
+
+    if (reversed && sttPartial) {
+      const partialEl = buildUtteranceEl(sttPartial, opts, true, -1);
+      partialEl.setAttribute('data-partial', 'true');
+      transcriptList.appendChild(partialEl);
+    }
 
     displayUtterances.forEach((u, i) => {
-      transcriptList.appendChild(buildUtteranceEl(u, opts, false, i));
+      const origIdx = reversed ? (displayUtterances.length - 1 - i) : i;
+      transcriptList.appendChild(buildUtteranceEl(u, opts, false, origIdx));
     });
 
-    if (sttPartial) {
+    if (!reversed && sttPartial) {
       const partialEl = buildUtteranceEl(sttPartial, opts, true, -1);
       partialEl.setAttribute('data-partial', 'true');
       transcriptList.appendChild(partialEl);
@@ -783,7 +1417,7 @@
       transcriptList.appendChild(indicator);
     }
 
-    if (isRecording && transcriptList.lastElementChild) {
+    if (isRecording && transcriptList.lastElementChild && !debugActive()) {
       transcriptList.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
@@ -818,7 +1452,7 @@
         const wasActive = el.classList.contains('active');
         const nowActive = i === activeIdx;
         el.classList.toggle('active', nowActive);
-        if (nowActive && !wasActive) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (nowActive && !wasActive && !debugActive()) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
       sttPlaybackTracker = requestAnimationFrame(tick);
     }
@@ -1107,11 +1741,14 @@
       const wsUrl = proto + '//' + location.host + wsPath;
       recordingWs = new WebSocket(wsUrl);
       recordingWs.binaryType = 'arraybuffer';
+      endFrameSent = false;
+      if (currentMode === 'transcription') debugSetPhase('connecting', '');
 
       recordingWs.onopen = () => {
         isRecording = true;
         liveFrames = [];
         recordingStartTime = Date.now();
+        if (currentMode === 'transcription') debugSetPhase('streaming', '');
         updateRecordButton();
 
         // Stream raw PCM 16-bit little-endian 16kHz mono over WebSocket
@@ -1152,9 +1789,16 @@
         onMessage(msg);
       });
 
-      recordingWs.onerror = () => { console.error('WebSocket error'); cleanupRecording(); };
+      recordingWs.onerror = () => {
+        console.error('WebSocket error');
+        if (currentMode === 'transcription') debugSetPhase('error', 'socket error');
+        cleanupRecording();
+      };
 
       recordingWs.onclose = (event) => {
+        if (currentMode === 'transcription' && debugPhase !== 'done' && debugPhase !== 'error') {
+          debugSetPhase('closed', 'code=' + event.code + (event.reason ? ' ' + event.reason : ''));
+        }
         if (isRecording) {
           const hasData = currentMode === 'deepfake' ? liveFrames.length > 0 : sttUtterances.length > 0;
           if (hasData) {
@@ -1179,8 +1823,14 @@
   function stopRecording() {
     if (scriptProcessor) { scriptProcessor.disconnect(); scriptProcessor = null; }
 
-    if (recordingWs && recordingWs.readyState === WebSocket.OPEN) {
+    if (demoChunkTimer) { clearTimeout(demoChunkTimer); demoChunkTimer = null; }
+
+    if (recordingWs && recordingWs.readyState === WebSocket.OPEN && !endFrameSent) {
       recordingWs.send('');
+      endFrameSent = true;
+      if (currentMode === 'transcription' && debugPhase !== 'done' && debugPhase !== 'error') {
+        debugSetPhase('end-sent', '');
+      }
       // Don't close immediately — let the server send back final results
       // The connection will close after we receive the 'done' message
     }
