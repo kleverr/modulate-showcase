@@ -1191,11 +1191,13 @@
         parts.push('<span class="count">' + claimedGroups.length + ' group' + (claimedGroups.length === 1 ? '' : 's') + ' · ' + partialCount + ' partials</span>');
       }
       if (tag) {
-        const keeperRef = (!tag.kept && groupKeeperSeq[tag.groupIdx] != null)
-          ? ' (F#' + groupKeeperSeq[tag.groupIdx] + ' won)'
-          : '';
-        parts.push('<span class="tag' + (tag.kept ? '' : ' merged') + '">' +
-          (tag.kept ? ('kept · cluster #' + tag.groupIdx) : ('merged → cluster #' + tag.groupIdx + keeperRef)) + '</span>');
+        if (tag.kept) {
+          parts.push('<span class="tag">kept</span>');
+        } else {
+          const winnerSeq = groupKeeperSeq[tag.groupIdx];
+          const label = winnerSeq != null ? 'superseded by F#' + winnerSeq : 'superseded';
+          parts.push('<span class="tag merged">' + label + '</span>');
+        }
       }
       meta.innerHTML = parts.join('');
       row.appendChild(meta);

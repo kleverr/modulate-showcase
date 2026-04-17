@@ -1579,8 +1579,8 @@ body:has(#stt-debug-panel:not([hidden])) .page {
           </div>
         </div>
         <div class="stt-debug-legend">
-          <span><span class="chip kept">kept #N</span> keeper of a client-side cluster (longest text within 4s)</span>
-          <span><span class="chip yellow">merged → #N</span> suppressed in favor of a longer final in the same cluster</span>
+          <span><span class="chip kept">kept</span> longest final in its 4-second time window — shown in transcript</span>
+          <span><span class="chip yellow">superseded by F#N</span> a later final covering the same window had more text; this one is dropped</span>
           <span><span class="chip dim">dim partial</span> superseded by a later final covering this region</span>
         </div>
       </aside>
