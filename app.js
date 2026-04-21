@@ -175,7 +175,10 @@
     redactionOptions.classList.toggle('visible', isRedaction);
     if (streamDemoAction) streamDemoAction.style.display = isTranscription ? '' : 'none';
     if (streamFileAction) streamFileAction.style.display = isTranscription ? '' : 'none';
-    if (recordAction) recordAction.style.display = isRedaction ? 'none' : '';
+    if (recordAction) {
+      recordAction.style.display = '';
+      recordAction.classList.toggle('disabled-soon', isRedaction);
+    }
     renderDebugPanel(true);
 
     // Stop any running animation frame trackers
@@ -2131,7 +2134,7 @@
 
     const text = document.createElement('div');
     text.className = 'transcript-text' + (isPartial ? ' partial' : '');
-    if (opts.pii_phi_tagging && u.text && /<pii:|<phi:/i.test(u.text)) {
+    if (opts.pii_phi_tagging && u.text && /<pii|<phi/i.test(u.text)) {
       text.innerHTML = renderPiiText(u.text);
     } else {
       text.textContent = u.text || '';
@@ -2638,15 +2641,14 @@
   // Render PII/PHI tagged text with blurred spans
   function renderPiiText(rawText) {
     // Match <pii:type>content</pii:type> and <phi:type>content</phi:type>
-    const piiRegex = /<(pii|phi):(\w+)>([\s\S]*?)<\/\1:\2>/gi;
+    const piiRegex = /<(pii|phi)(?::(\w+))?>([\s\S]*?)<\/\1(?::\2)?>/gi;
     let result = '';
     let lastIdx = 0;
     let match;
     while ((match = piiRegex.exec(rawText)) !== null) {
-      // Escape and add text before the match
       result += escapeHtml(rawText.slice(lastIdx, match.index));
       const tagType = match[1].toUpperCase();
-      const tagName = match[2].replace(/_/g, ' ');
+      const tagName = match[2] ? match[2].replace(/_/g, ' ') : tagType;
       const content = match[3];
       result += '<span class="pii-blur" title="' + tagType + ': ' + escapeHtml(tagName) + '">' + escapeHtml(content) + '</span>';
       lastIdx = match.index + match[0].length;
@@ -2751,7 +2753,7 @@
     redactionContent.style.display = 'block';
     redactionSidebar.classList.add('visible');
     redactionOptions.classList.add('visible');
-    if (recordAction) recordAction.style.display = 'none';
+    if (recordAction) { recordAction.style.display = ''; recordAction.classList.add('disabled-soon'); }
     if (streamDemoAction) streamDemoAction.style.display = 'none';
     if (streamFileAction) streamFileAction.style.display = 'none';
     redactionData = DEMO_REDACTION_DATA;
