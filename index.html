@@ -517,6 +517,16 @@ body {
   height: 44px;
   border-radius: var(--radius-m);
 }
+.player-entry + .player-entry { margin-top: var(--space-s); }
+.player-entry-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: 4px;
+}
 
 /* Histogram */
 .histogram-section { margin-bottom: var(--space-s); }
@@ -1656,7 +1666,14 @@ body:has(#stt-debug-panel:not([hidden])) .page {
         <h2 class="results-filename" id="results-filename"></h2>
 
         <div class="results-player">
-          <audio controls id="results-audio"></audio>
+          <div class="player-entry" id="player-entry-original" style="display:none">
+            <span class="player-entry-label">Original</span>
+            <audio controls id="original-audio"></audio>
+          </div>
+          <div class="player-entry" id="player-entry-redacted">
+            <span class="player-entry-label" id="redacted-label" style="display:none">Redacted</span>
+            <audio controls id="results-audio"></audio>
+          </div>
         </div>
 
         <!-- Deepfake content -->
