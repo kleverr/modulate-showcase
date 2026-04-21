@@ -1003,7 +1003,7 @@
     el.appendChild(header);
     const text = document.createElement('div');
     text.className = 'transcript-text';
-    if (u.text && (/\[REDACTED\]/i.test(u.text) || /<(pii|phi):/i.test(u.text))) {
+    if (u.text && (/\[REDACTED\]/i.test(u.text) || /<(pii|phi)/i.test(u.text))) {
       text.innerHTML = renderRedactionText(u.text);
     } else {
       text.textContent = u.text || '';
@@ -1013,8 +1013,8 @@
   }
 
   function renderRedactionText(rawText) {
-    // Handle XML-style PII tags: <pii:type>content</pii:type> or <phi:type>...</phi:type>
-    const piiRegex = /<(pii|phi):(\w+)>([\s\S]*?)<\/\1:\2>/gi;
+    // Handle both typed (<pii:firstname>, <phi:ssn>) and bare (<phi>, <pii>) tags
+    const piiRegex = /<(pii|phi)(?::(\w+))?>([\s\S]*?)<\/\1(?::\2)?>/gi;
     if (piiRegex.test(rawText)) {
       piiRegex.lastIndex = 0;
       let result = '';
@@ -1022,7 +1022,8 @@
       let match;
       while ((match = piiRegex.exec(rawText)) !== null) {
         result += escapeHtml(rawText.slice(lastIdx, match.index));
-        const label = match[2].replace(/_/g, ' ').toUpperCase();
+        const tagKind = match[1].toUpperCase(); // PII or PHI
+        const label = match[2] ? match[2].replace(/_/g, ' ').toUpperCase() : tagKind;
         result += '<span class="redacted-marker">[' + label + ']</span>';
         lastIdx = match.index + match[0].length;
       }
