@@ -60,6 +60,7 @@ const ALLOWED_ENDPOINTS = new Set([
   '/api/velma-2-stt-batch',
   '/api/velma-2-stt-batch-english-vfast',
   '/api/velma-2-synthetic-voice-detection-batch',
+  '/api/preview/velma-2-pii-phi-redaction-batch',
 ]);
 
 // Per-endpoint upstream base URL overrides (defaults to API_BASE_URL)
@@ -163,16 +164,16 @@ app.post('/api/:path(*)', handleUpload, async (req, res) => {
     });
     clearTimeout(timeout);
 
-    const responseText = await upstreamRes.text();
+    const responseBody = await upstreamRes.arrayBuffer();
 
-    // Forward status and response
+    // Forward status and response (arrayBuffer preserves binary for multipart responses)
     res.status(upstreamRes.status);
     const contentType = upstreamRes.headers.get('content-type');
     if (contentType) res.set('Content-Type', contentType);
 
     const remaining = Math.max(0, RATE_LIMIT_MAX - recentCount - 1);
     res.set('X-Rate-Limit-Remaining', String(remaining));
-    res.send(responseText);
+    res.send(Buffer.from(responseBody));
   } catch (err) {
     console.error('Proxy error:', err.message);
     if (err.name === 'AbortError') {
@@ -189,6 +190,10 @@ app.get('/transcription', (req, res) => {
 });
 
 app.get('/deepfake', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/redaction', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 

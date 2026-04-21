@@ -8,6 +8,7 @@
 
   const DEMO_AUDIO_URL = '/deepfake/demo.mp3';
   const DEMO_STT_AUDIO_URL = '/deepfake/demo.mp3';
+  const DEMO_REDACTION_AUDIO_URL = '/deepfake/demo.mp3';
   const DEMO_DATA = {"filename":"AIAgentFrustration.mp3","frames":[{"start_time_ms":0,"end_time_ms":4000,"verdict":"synthetic","confidence":0.9848},{"start_time_ms":4000,"end_time_ms":8000,"verdict":"synthetic","confidence":0.9571},{"start_time_ms":8000,"end_time_ms":12000,"verdict":"non-synthetic","confidence":0.9398},{"start_time_ms":12000,"end_time_ms":16000,"verdict":"synthetic","confidence":0.9595},{"start_time_ms":16000,"end_time_ms":20000,"verdict":"non-synthetic","confidence":0.8176},{"start_time_ms":20000,"end_time_ms":24000,"verdict":"non-synthetic","confidence":0.9524},{"start_time_ms":24000,"end_time_ms":28000,"verdict":"synthetic","confidence":0.9089},{"start_time_ms":28000,"end_time_ms":32000,"verdict":"synthetic","confidence":0.9696},{"start_time_ms":32000,"end_time_ms":36000,"verdict":"synthetic","confidence":0.972},{"start_time_ms":36000,"end_time_ms":40000,"verdict":"non-synthetic","confidence":0.9173},{"start_time_ms":40000,"end_time_ms":44000,"verdict":"synthetic","confidence":0.9785},{"start_time_ms":44000,"end_time_ms":48000,"verdict":"non-synthetic","confidence":0.9094},{"start_time_ms":48000,"end_time_ms":52000,"verdict":"non-synthetic","confidence":0.6542},{"start_time_ms":52000,"end_time_ms":56000,"verdict":"synthetic","confidence":0.9671},{"start_time_ms":56000,"end_time_ms":60000,"verdict":"non-synthetic","confidence":0.9443},{"start_time_ms":60000,"end_time_ms":64000,"verdict":"synthetic","confidence":0.9611},{"start_time_ms":64000,"end_time_ms":68000,"verdict":"non-synthetic","confidence":0.9418},{"start_time_ms":68000,"end_time_ms":72000,"verdict":"synthetic","confidence":0.984},{"start_time_ms":72000,"end_time_ms":76000,"verdict":"non-synthetic","confidence":0.9723},{"start_time_ms":76000,"end_time_ms":80000,"verdict":"synthetic","confidence":0.9755},{"start_time_ms":80000,"end_time_ms":84000,"verdict":"non-synthetic","confidence":0.5998},{"start_time_ms":84000,"end_time_ms":88000,"verdict":"synthetic","confidence":0.9757},{"start_time_ms":88000,"end_time_ms":92000,"verdict":"synthetic","confidence":0.9563},{"start_time_ms":92000,"end_time_ms":96000,"verdict":"non-synthetic","confidence":0.9242},{"start_time_ms":96000,"end_time_ms":97698,"verdict":"synthetic","confidence":0.9821}],"duration_ms":97698};
 
   const DEMO_STT_DATA = {"filename":"AIAgentFrustration.mp3","text":"Welcome to Northwest Warehouse's automated customer service system. In a few words, can you describe your reason for calling today? Track an order. Thank you. Can you provide the account ID number or the name on the account? 02738917. Thank you. Let me find your account in our system. Hello, <pii:firstname>Roger</pii:firstname>. Would you like to place an order over the phone today? No, track an order. Thank you. Please provide the item number to place an order. No, no, track an existing order. I'm sorry, I didn't quite catch that. Did you say you'd like to place an order? No. Okay. Can you describe in a few words your reason for calling today? Track an order. Thank you. Did you say you'd like to place an order over the phone? No, track, tracking. I'm sorry, I didn't quite catch that. Can you answer yes or no? No, back, undo. I'm sorry, I didn't quite catch that. Can you describe in a few words your reason for calling today? Track package. Thank you. Did you say you'd like to place an order?","duration_ms":97320,"utterances":[{"utterance_uuid":"59578ed0-acb4-4941-9c4d-b792c9a3760b","text":"Welcome to Northwest Warehouse's automated customer service system. In a few words, can you describe your reason for calling today?","start_ms":240,"duration_ms":7260,"speaker":1,"language":"en","emotion":"Calm","accent":"American","deepfake_score":0.9810000000000001},{"utterance_uuid":"0e0d034a-aef3-44a4-9ea8-9de1eca2af2b","text":"Track an order.","start_ms":9420,"duration_ms":660,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.5392},{"utterance_uuid":"2282571c-b16c-49cc-ac67-1253ddc99ff9","text":"Thank you. Can you provide the account ID number or the name on the account?","start_ms":12300,"duration_ms":4680,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.9783999999999999},{"utterance_uuid":"02b1d2d1-c057-455a-ab1e-6750ee5e5f4c","text":"02738917.","start_ms":19320,"duration_ms":4620,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.2754},{"utterance_uuid":"517e8e3b-8555-419a-af55-60f112763e5b","text":"Thank you. Let me find your account in our system. Hello, <pii:firstname>Roger</pii:firstname>. Would you like to place an order over the phone today?","start_ms":25560,"duration_ms":8820,"speaker":1,"language":"en","emotion":"Interested","accent":"American","deepfake_score":0.9723333333333333},{"utterance_uuid":"46c11e6d-7ffa-44a4-bf75-21ed6482ae95","text":"No, track an order.","start_ms":36720,"duration_ms":1560,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.08640000000000003},{"utterance_uuid":"36ecffcb-834f-43a0-b822-606eddb9efeb","text":"Thank you. Please provide the item number to place an order.","start_ms":40620,"duration_ms":3660,"speaker":1,"language":"en","emotion":"Calm","accent":"American","deepfake_score":0.9796},{"utterance_uuid":"47d3b3ba-71f5-48f9-ba46-c0bdf44f2900","text":"No, no, track an existing order.","start_ms":46080,"duration_ms":2160,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.08150000000000002},{"utterance_uuid":"4ddc44b8-e4ab-4024-875c-5be369a43654","text":"I'm sorry, I didn't quite catch that. Did you say you'd like to place an order?","start_ms":50520,"duration_ms":4620,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.9727},{"utterance_uuid":"00c4dfe6-ac97-4e74-809c-564937cc718a","text":"No.","start_ms":56280,"duration_ms":60,"speaker":2,"language":"en","emotion":"Amused","accent":"American","deepfake_score":null},{"utterance_uuid":"00be4745-849b-4814-94a0-7768aac15c82","text":"Okay. Can you describe in a few words your reason for calling today?","start_ms":59040,"duration_ms":5340,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.78235},{"utterance_uuid":"e9bec06b-a77f-4713-b0e2-17ce89a03dbc","text":"Track an order.","start_ms":66600,"duration_ms":1080,"speaker":2,"language":"en","emotion":"Confident","accent":"American","deepfake_score":0.08599999999999997},{"utterance_uuid":"135317de-c976-497f-918e-9ccfd1dbc0fd","text":"Thank you. Did you say you'd like to place an order over the phone?","start_ms":69180,"duration_ms":3120,"speaker":1,"language":"en","emotion":"Interested","accent":"American","deepfake_score":0.9778},{"utterance_uuid":"66bc4b5f-3be1-44dd-9f0c-8aae8589e5a8","text":"No, track, tracking.","start_ms":73560,"duration_ms":2160,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":null},{"utterance_uuid":"c8093216-16b3-44ca-b30d-ff8274196cde","text":"I'm sorry, I didn't quite catch that. Can you answer yes or no?","start_ms":77280,"duration_ms":4320,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.9766},{"utterance_uuid":"3de81bf7-a453-4618-a265-962e902c4d50","text":"No, back, undo.","start_ms":82320,"duration_ms":1560,"speaker":2,"language":"en","emotion":"Frustrated","accent":"American","deepfake_score":0.07579999999999998},{"utterance_uuid":"1415b904-e949-4fb2-a3a3-629df8e6610a","text":"I'm sorry, I didn't quite catch that. Can you describe in a few words your reason for calling today?","start_ms":85260,"duration_ms":5640,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.9788},{"utterance_uuid":"ec69b9e7-0fac-4b3e-a4da-ea9773d56aed","text":"Track package.","start_ms":91620,"duration_ms":960,"speaker":2,"language":"en","emotion":"Excited","accent":"American","deepfake_score":0.10909999999999997},{"utterance_uuid":"4003694d-b15d-46b1-9276-80366dc178fc","text":"Thank you. Did you say you'd like to place an order?","start_ms":94320,"duration_ms":3000,"speaker":1,"language":"en","emotion":"Interested","accent":"American","deepfake_score":0.9723}]};
@@ -79,6 +80,19 @@
   const resultsSidebar = document.getElementById('results-sidebar');
   const sttOptions    = document.getElementById('stt-options');
 
+  // Redaction elements
+  const redactionContent        = document.getElementById('redaction-content');
+  const redactionTimeline       = document.getElementById('redaction-timeline');
+  const redactionPlayhead       = document.getElementById('redaction-playhead');
+  const redactionTimelineAxis   = document.getElementById('redaction-timeline-axis');
+  const redactionTranscriptList = document.getElementById('redaction-transcript-list');
+  const redactionStats          = document.getElementById('redaction-stats');
+  const redactionOptions        = document.getElementById('redaction-options');
+  const redactionSidebar        = document.getElementById('results-redaction-sidebar');
+  const optRedactDiarization    = document.getElementById('redact-opt-diarization');
+  const optRedactStartPad       = document.getElementById('redact-opt-start-pad');
+  const optRedactEndPad         = document.getElementById('redact-opt-end-pad');
+
   // Modals
   const statsModal    = document.getElementById('stats-modal');
   const statsModalTitle = document.getElementById('stats-modal-title');
@@ -95,15 +109,23 @@
   let currentFrames = [];
   let playbackTracker = null;
 
-  // Persist last deepfake/STT results so mode-switching doesn't lose them
+  // Persist last deepfake/STT/redaction results so mode-switching doesn't lose them
   let lastDeepfakeData = null;
   let lastDeepfakeAudioUrl = null;
   let lastDeepfakeMeta = null;
   let lastSttData = null;
   let lastSttAudioUrl = null;
   let lastSttMeta = null;
+  let lastRedactionData = null;
+  let lastRedactionAudioUrl = null;
+  let lastRedactionMeta = null;
   let isAnalyzing = false;
   let sttChartTracker = null;
+
+  let redactionData = null;
+  let redactionUtterances = [];
+  let redactionPlaybackTracker = null;
+  let redactionTranscriptTracker = null;
 
   // Transcription state
   let sttUtterances = [];
@@ -132,31 +154,39 @@
   // ── Mode Switching ──────────────────────────────────────────────────────────
   function switchMode(mode, pushUrl) {
     currentMode = mode;
-    const isDeepfake = mode === 'deepfake';
+    const isDeepfake    = mode === 'deepfake';
+    const isRedaction   = mode === 'redaction';
+    const isTranscription = mode === 'transcription';
 
     // Update URL
-    const targetPath = isDeepfake ? '/deepfake' : '/transcription';
+    const targetPath = isDeepfake ? '/deepfake' : isRedaction ? '/redaction' : '/transcription';
     if (pushUrl !== false && location.pathname !== targetPath) {
       history.pushState({ mode: mode }, '', targetPath + location.search);
     }
 
     deepfakeContent.style.display = isDeepfake ? '' : 'none';
     resultsVerdict.style.display = isDeepfake ? '' : 'none';
-    transcriptContainer.classList.toggle('visible', !isDeepfake);
-    resultsSidebar.classList.toggle('visible', !isDeepfake);
-    sttOptions.classList.toggle('visible', !isDeepfake);
-    if (streamDemoAction) streamDemoAction.style.display = isDeepfake ? 'none' : '';
-    if (streamFileAction) streamFileAction.style.display = isDeepfake ? 'none' : '';
+    transcriptContainer.classList.toggle('visible', isTranscription);
+    resultsSidebar.classList.toggle('visible', isTranscription);
+    sttOptions.classList.toggle('visible', isTranscription);
+    redactionContent.style.display = isRedaction ? 'block' : 'none';
+    redactionSidebar.classList.toggle('visible', isRedaction);
+    redactionOptions.classList.toggle('visible', isRedaction);
+    if (streamDemoAction) streamDemoAction.style.display = isTranscription ? '' : 'none';
+    if (streamFileAction) streamFileAction.style.display = isTranscription ? '' : 'none';
+    if (recordAction) recordAction.style.display = isRedaction ? 'none' : '';
     renderDebugPanel(true);
 
     // Stop any running animation frame trackers
     if (playbackTracker) { cancelAnimationFrame(playbackTracker); playbackTracker = null; }
     if (sttChartTracker) { cancelAnimationFrame(sttChartTracker); sttChartTracker = null; }
+    if (redactionPlaybackTracker) { cancelAnimationFrame(redactionPlaybackTracker); redactionPlaybackTracker = null; }
+    if (redactionTranscriptTracker) { cancelAnimationFrame(redactionTranscriptTracker); redactionTranscriptTracker = null; }
 
     if (recordAction) {
       recordAction.classList.remove('disabled-soon');
       const span = recordAction.querySelector('span');
-      span.textContent = 'Start streaming';
+      if (span) span.textContent = 'Start streaming';
     }
 
     if (isRecording) stopRecording();
@@ -174,6 +204,32 @@
       };
       renderDeepfakeResults(dfData, dfAudio);
       applyMobileLayout(mobileQuery.matches);
+    } else if (isRedaction) {
+      if (lastRedactionData) {
+        redactionData = lastRedactionData;
+        currentData = lastRedactionData;
+        currentMeta = lastRedactionMeta || {};
+        resultsFilename.textContent = lastRedactionData.filename || '';
+        resultsAudio.src = lastRedactionAudioUrl || '';
+        const ranges = lastRedactionData.redaction_ranges || [];
+        const durMs = lastRedactionData.duration_ms || 0;
+        renderRedactionTimeline(ranges, durMs);
+        renderRedactionTranscript(lastRedactionData.utterances || []);
+        renderRedactionSidebar(ranges, durMs);
+        if (durMs) {
+          setupRedactionPlaybackTracking(durMs);
+          setupRedactionTranscriptTracking(lastRedactionData.utterances || []);
+        }
+      } else {
+        resultsFilename.textContent = '';
+        resultsAudio.removeAttribute('src');
+        resultsAudio.load();
+        redactionTimeline.querySelectorAll('.redaction-range').forEach(el => el.remove());
+        redactionTimelineAxis.innerHTML = '';
+        redactionTranscriptList.innerHTML = '<div class="transcript-empty">Upload an audio file to see the redacted transcript.</div>';
+        redactionStats.innerHTML = '';
+        redactionPlayhead.classList.remove('active');
+      }
     } else {
       const sData = lastSttData || DEMO_STT_DATA;
       const sAudio = lastSttAudioUrl || DEMO_STT_AUDIO_URL;
@@ -264,6 +320,8 @@
       if (fileInput.files.length > 0) {
         if (currentMode === 'deepfake') {
           startDeepfakeAnalysis(fileInput.files[0]);
+        } else if (currentMode === 'redaction') {
+          startRedactionBatch(fileInput.files[0]);
         } else {
           startTranscriptionBatch(fileInput.files[0]);
         }
@@ -281,6 +339,7 @@
       uploadAction.classList.remove('drag-over');
       if (e.dataTransfer.files.length > 0) {
         if (currentMode === 'deepfake') startDeepfakeAnalysis(e.dataTransfer.files[0]);
+        else if (currentMode === 'redaction') startRedactionBatch(e.dataTransfer.files[0]);
         else startTranscriptionBatch(e.dataTransfer.files[0]);
       }
     });
@@ -664,6 +723,350 @@
       showOverlayError(err.message || 'Transcription failed. Please try again.', err.rawText);
       isAnalyzing = false;
     }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── PII/PHI REDACTION MODE ────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  function getRedactionOptions() {
+    return {
+      speaker_diarization: optRedactDiarization ? optRedactDiarization.checked : true,
+      start_redaction_padding_ms: optRedactStartPad ? (parseInt(optRedactStartPad.value, 10) || 0) : 100,
+      end_redaction_padding_ms: optRedactEndPad ? (parseInt(optRedactEndPad.value, 10) || 0) : 0,
+    };
+  }
+
+  function parseMultipartBuffer(buf, boundary) {
+    const enc = new TextEncoder();
+    const sep = enc.encode('--' + boundary);
+    const crlfcrlf = enc.encode('\r\n\r\n');
+
+    function indexOf(haystack, needle, from) {
+      from = from || 0;
+      outer: for (let i = from; i <= haystack.length - needle.length; i++) {
+        for (let j = 0; j < needle.length; j++) {
+          if (haystack[i + j] !== needle[j]) continue outer;
+        }
+        return i;
+      }
+      return -1;
+    }
+
+    const parts = {};
+    let pos = 0;
+
+    while (pos < buf.length) {
+      const bStart = indexOf(buf, sep, pos);
+      if (bStart === -1) break;
+      const afterBoundary = bStart + sep.length;
+      // Terminal boundary: --boundary--
+      if (buf[afterBoundary] === 45 && buf[afterBoundary + 1] === 45) break;
+      // Skip CRLF after boundary line
+      const headerStart = afterBoundary + 2;
+      const headerEnd = indexOf(buf, crlfcrlf, headerStart);
+      if (headerEnd === -1) break;
+      const headerText = new TextDecoder().decode(buf.slice(headerStart, headerEnd));
+      const bodyStart = headerEnd + 4;
+      const nextBoundary = indexOf(buf, sep, bodyStart);
+      if (nextBoundary === -1) break;
+      // Trim trailing \r\n before next boundary
+      const body = buf.slice(bodyStart, nextBoundary - 2);
+      if (headerText.includes('name="metadata"')) parts.metadata = body;
+      else if (headerText.includes('name="audio"')) parts.audio = body;
+      pos = nextBoundary;
+    }
+    return parts;
+  }
+
+  async function uploadAndAnalyzeMultipart(file, endpoint, extraFields) {
+    const formData = new FormData();
+    formData.append('upload_file', file);
+    if (extraFields) {
+      for (const [k, v] of Object.entries(extraFields)) formData.append(k, String(v));
+    }
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable && analysisStatus) {
+          const pct = Math.round(e.loaded / e.total * 100);
+          analysisStatus.textContent = pct < 100 ? 'Uploading\u2026 ' + pct + '%' : 'Processing on server\u2026';
+        }
+      });
+      xhr.upload.addEventListener('load', () => {
+        if (analysisStatus) analysisStatus.textContent = 'Processing on server\u2026';
+      });
+      xhr.responseType = 'arraybuffer';
+      xhr.addEventListener('load', () => {
+        if (xhr.status < 200 || xhr.status >= 300) {
+          let detail = 'Server error (' + xhr.status + ')';
+          try { const body = JSON.parse(new TextDecoder().decode(xhr.response)); detail = body.detail || body.message || detail; } catch {}
+          const err = new Error(detail); err.httpStatus = xhr.status; err.rawText = ''; reject(err); return;
+        }
+        const contentType = xhr.getResponseHeader('content-type') || '';
+        const bMatch = contentType.match(/boundary=([^;,\s"]+)/);
+        if (!bMatch) { reject(new Error('Invalid response: missing multipart boundary')); return; }
+        const boundary = bMatch[1];
+        let parts;
+        try { parts = parseMultipartBuffer(new Uint8Array(xhr.response), boundary); } catch {
+          reject(new Error('Failed to parse multipart response')); return;
+        }
+        if (!parts.metadata) { reject(new Error('Invalid response: missing metadata part')); return; }
+        if (!parts.audio) { reject(new Error('Invalid response: missing audio part')); return; }
+        let metadata;
+        try { metadata = JSON.parse(new TextDecoder().decode(parts.metadata)); } catch {
+          reject(new Error('Invalid metadata JSON in response')); return;
+        }
+        resolve({
+          metadata,
+          audioBlob: new Blob([parts.audio], { type: 'audio/mpeg' }),
+          meta: { httpStatus: xhr.status, httpStatusText: xhr.statusText, responseSize: xhr.response.byteLength },
+        });
+      });
+      xhr.addEventListener('error', () => { const err = new Error('Network error — could not reach server'); err.rawText = ''; reject(err); });
+      xhr.addEventListener('timeout', () => { const err = new Error('Request timed out'); err.rawText = ''; reject(err); });
+      xhr.open('POST', endpoint);
+      xhr.timeout = 300000;
+      xhr.send(formData);
+    });
+  }
+
+  async function startRedactionBatch(file) {
+    if (isAnalyzing) return;
+    isAnalyzing = true;
+    const durationMs = await getAudioDuration(file);
+    showOverlay(file.name, 'Redacting audio');
+    const estimatedMs = Math.max(MIN_PROGRESS_MS, durationMs / 8);
+    startProgress(estimatedMs);
+
+    try {
+      const startedAt = Date.now();
+      const opts = getRedactionOptions();
+      const { metadata, audioBlob, meta } = await uploadAndAnalyzeMultipart(
+        file, '/api/preview/velma-2-pii-phi-redaction-batch', opts
+      );
+      const processingMs = Date.now() - startedAt;
+      await finishProgress();
+      hideOverlay();
+      isAnalyzing = false;
+
+      if (lastRedactionAudioUrl) URL.revokeObjectURL(lastRedactionAudioUrl);
+      const redactedUrl = URL.createObjectURL(audioBlob);
+      metadata.filename = file.name;
+
+      currentMeta = {
+        fileSize: file.size,
+        fileType: file.type || file.name.split('.').pop().toUpperCase(),
+        httpStatus: meta.httpStatus,
+        httpStatusText: meta.httpStatusText,
+        responseSize: meta.responseSize,
+        processingMs,
+      };
+
+      redactionData = metadata;
+      currentData = metadata;
+      lastRedactionData = metadata;
+      lastRedactionAudioUrl = redactedUrl;
+      lastRedactionMeta = { ...currentMeta };
+      redactionUtterances = metadata.utterances || [];
+
+      resultsFilename.textContent = metadata.filename || file.name;
+      resultsAudio.src = redactedUrl;
+
+      const ranges = metadata.redaction_ranges || [];
+      const durMs = metadata.duration_ms || 0;
+      renderRedactionTimeline(ranges, durMs);
+      renderRedactionTranscript(redactionUtterances);
+      renderRedactionSidebar(ranges, durMs);
+      if (durMs) {
+        setupRedactionPlaybackTracking(durMs);
+        setupRedactionTranscriptTracking(redactionUtterances);
+      }
+      window.scrollTo(0, 0);
+      updateRateLimit();
+    } catch (err) {
+      showOverlayError(err.message || 'Redaction failed. Please try again.', err.rawText);
+      isAnalyzing = false;
+    }
+  }
+
+  function renderRedactionTimeline(ranges, durationMs) {
+    redactionTimeline.querySelectorAll('.redaction-range').forEach(el => el.remove());
+    redactionTimelineAxis.innerHTML = '';
+
+    if (!durationMs || durationMs <= 0) {
+      redactionPlayhead.classList.remove('active');
+      return;
+    }
+
+    ranges.forEach(([startMs, endMs]) => {
+      const range = document.createElement('div');
+      range.className = 'redaction-range';
+      range.style.left = (startMs / durationMs * 100).toFixed(3) + '%';
+      range.style.width = Math.max(0.3, (endMs - startMs) / durationMs * 100).toFixed(3) + '%';
+      range.addEventListener('mouseenter', () => {
+        const rect = range.getBoundingClientRect();
+        histoTooltip.textContent = formatMs(startMs) + ' \u2013 ' + formatMs(endMs) + ' \u00B7 ' + ((endMs - startMs) / 1000).toFixed(1) + 's';
+        histoTooltip.style.display = 'block';
+        histoTooltip.style.top = (rect.top - 6) + 'px';
+        histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
+        histoTooltip.style.transform = 'translate(-50%, -100%)';
+      });
+      range.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
+      range.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (resultsAudio) { resultsAudio.currentTime = startMs / 1000; resultsAudio.play().catch(() => {}); }
+      });
+      redactionTimeline.insertBefore(range, redactionPlayhead);
+    });
+
+    // Axis ticks
+    const ticks = 5;
+    for (let i = 0; i <= ticks; i++) {
+      const tick = document.createElement('span');
+      tick.textContent = formatMs(durationMs * i / ticks);
+      redactionTimelineAxis.appendChild(tick);
+    }
+
+    redactionTimeline.onclick = (e) => {
+      const rect = redactionTimeline.getBoundingClientRect();
+      const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      if (resultsAudio) { resultsAudio.currentTime = pct * durationMs / 1000; resultsAudio.play().catch(() => {}); }
+    };
+  }
+
+  function renderRedactionTranscript(utterances) {
+    redactionTranscriptList.innerHTML = '';
+    if (!utterances.length) {
+      const empty = document.createElement('div');
+      empty.className = 'transcript-empty';
+      empty.textContent = 'Upload an audio file to see the redacted transcript.';
+      redactionTranscriptList.appendChild(empty);
+      return;
+    }
+    const showDiarization = optRedactDiarization ? optRedactDiarization.checked : true;
+    utterances.slice().sort((a, b) => (a.start_ms || 0) - (b.start_ms || 0)).forEach(u => {
+      redactionTranscriptList.appendChild(buildRedactionUtteranceEl(u, showDiarization));
+    });
+  }
+
+  function buildRedactionUtteranceEl(u, showDiarization) {
+    const el = document.createElement('div');
+    const side = (u.speaker != null && u.speaker % 2 === 0) ? 'speaker-right' : 'speaker-left';
+    el.className = 'transcript-utterance ' + side;
+    el.style.setProperty('--ec', '#78909c');
+    if (u.start_ms != null) {
+      el.addEventListener('click', () => {
+        if (resultsAudio) { resultsAudio.currentTime = u.start_ms / 1000; resultsAudio.play().catch(() => {}); }
+      });
+    }
+    const header = document.createElement('div');
+    header.className = 'transcript-utterance-header';
+    if (u.start_ms != null) {
+      const time = document.createElement('span');
+      time.className = 'transcript-time';
+      time.textContent = formatMs(u.start_ms);
+      header.appendChild(time);
+    }
+    if (u.speaker != null && showDiarization) {
+      const sp = document.createElement('span');
+      sp.className = 'transcript-speaker';
+      sp.textContent = 'Speaker ' + u.speaker;
+      header.appendChild(sp);
+    }
+    if (u.language) {
+      const flag = LANGUAGE_FLAGS[u.language.toUpperCase()];
+      if (flag) {
+        const lf = document.createElement('span');
+        lf.className = 'transcript-accent';
+        lf.textContent = flag;
+        lf.title = u.language.toUpperCase();
+        header.appendChild(lf);
+      }
+    }
+    el.appendChild(header);
+    const text = document.createElement('div');
+    text.className = 'transcript-text';
+    if (u.text && (/\[REDACTED\]/i.test(u.text) || /<(pii|phi):/i.test(u.text))) {
+      text.innerHTML = renderRedactionText(u.text);
+    } else {
+      text.textContent = u.text || '';
+    }
+    el.appendChild(text);
+    return el;
+  }
+
+  function renderRedactionText(rawText) {
+    // Handle XML-style PII tags: <pii:type>content</pii:type> or <phi:type>...</phi:type>
+    const piiRegex = /<(pii|phi):(\w+)>([\s\S]*?)<\/\1:\2>/gi;
+    if (piiRegex.test(rawText)) {
+      piiRegex.lastIndex = 0;
+      let result = '';
+      let lastIdx = 0;
+      let match;
+      while ((match = piiRegex.exec(rawText)) !== null) {
+        result += escapeHtml(rawText.slice(lastIdx, match.index));
+        const label = match[2].replace(/_/g, ' ').toUpperCase();
+        result += '<span class="redacted-marker">[' + label + ']</span>';
+        lastIdx = match.index + match[0].length;
+      }
+      result += escapeHtml(rawText.slice(lastIdx));
+      return result;
+    }
+    // Handle [REDACTED] markers
+    const parts = rawText.split(/(\[REDACTED\])/gi);
+    return parts.map(p => /^\[REDACTED\]$/i.test(p)
+      ? '<span class="redacted-marker">[REDACTED]</span>'
+      : escapeHtml(p)
+    ).join('');
+  }
+
+  function renderRedactionSidebar(ranges, durationMs) {
+    redactionStats.innerHTML = '';
+    const totalSilencedMs = ranges.reduce((s, [a, b]) => s + (b - a), 0);
+    const pct = durationMs > 0 ? totalSilencedMs / durationMs * 100 : 0;
+    [
+      { val: String(ranges.length), lbl: 'Redactions' },
+      { val: (totalSilencedMs / 1000).toFixed(1) + 's', lbl: 'Silenced' },
+      { val: pct.toFixed(1) + '%', lbl: 'Of audio' },
+    ].forEach(({ val, lbl }) => {
+      const card = document.createElement('div');
+      card.className = 'redaction-stat-card';
+      const v = document.createElement('div'); v.className = 'redaction-stat-val'; v.textContent = val;
+      const l = document.createElement('div'); l.className = 'redaction-stat-lbl'; l.textContent = lbl;
+      card.appendChild(v); card.appendChild(l);
+      redactionStats.appendChild(card);
+    });
+  }
+
+  function setupRedactionPlaybackTracking(durationMs) {
+    if (redactionPlaybackTracker) cancelAnimationFrame(redactionPlaybackTracker);
+    if (!durationMs) return;
+    redactionPlayhead.classList.add('active');
+    function tick() {
+      const pct = Math.min(resultsAudio.currentTime * 1000 / durationMs, 1);
+      redactionPlayhead.style.left = (pct * 100).toFixed(3) + '%';
+      redactionPlaybackTracker = requestAnimationFrame(tick);
+    }
+    redactionPlaybackTracker = requestAnimationFrame(tick);
+  }
+
+  function setupRedactionTranscriptTracking(utterances) {
+    if (redactionTranscriptTracker) cancelAnimationFrame(redactionTranscriptTracker);
+    if (!utterances.length) return;
+    const sorted = utterances.slice().sort((a, b) => (a.start_ms || 0) - (b.start_ms || 0));
+    function tick() {
+      const currentMs = resultsAudio.currentTime * 1000;
+      let activeIdx = -1;
+      for (let i = sorted.length - 1; i >= 0; i--) {
+        if (currentMs >= sorted[i].start_ms) { activeIdx = i; break; }
+      }
+      redactionTranscriptList.querySelectorAll('.transcript-utterance').forEach((el, i) => {
+        el.classList.toggle('active', i === activeIdx);
+      });
+      redactionTranscriptTracker = requestAnimationFrame(tick);
+    }
+    redactionTranscriptTracker = requestAnimationFrame(tick);
   }
 
   function buildSttStreamingParams() {
@@ -1903,6 +2306,7 @@
   document.getElementById('btn-show-json').addEventListener('click', () => showJsonModal());
   document.getElementById('btn-show-stats-stt').addEventListener('click', () => showStatsModal());
   document.getElementById('btn-show-json-stt').addEventListener('click', () => showJsonModal());
+  document.getElementById('btn-show-json-redaction').addEventListener('click', () => showJsonModal());
 
   document.getElementById('stats-modal-close').addEventListener('click', () => statsModal.classList.remove('visible'));
   document.getElementById('json-modal-close').addEventListener('click', () => jsonModal.classList.remove('visible'));
@@ -2282,6 +2686,7 @@
   function getModeFromPath() {
     const path = location.pathname.replace(/\/$/, '');
     if (path === '/deepfake') return 'deepfake';
+    if (path === '/redaction') return 'redaction';
     return 'transcription';
   }
 
@@ -2312,16 +2717,31 @@
     // Deepfake init
     transcriptContainer.classList.remove('visible');
     resultsSidebar.classList.remove('visible');
+    redactionContent.style.display = 'none';
     currentMeta = {
       fileSize: 1.87 * 1024 * 1024, fileType: 'audio/mpeg',
       httpStatus: 200, httpStatusText: 'OK',
       responseSize: 4.2 * 1024, processingMs: 2660,
     };
     renderDeepfakeResults(DEMO_DATA, DEMO_AUDIO_URL);
+  } else if (initMode === 'redaction') {
+    // Redaction init
+    deepfakeContent.style.display = 'none';
+    resultsVerdict.style.display = 'none';
+    transcriptContainer.classList.remove('visible');
+    resultsSidebar.classList.remove('visible');
+    sttOptions.classList.remove('visible');
+    redactionContent.style.display = 'block';
+    redactionSidebar.classList.add('visible');
+    redactionOptions.classList.add('visible');
+    if (recordAction) recordAction.style.display = 'none';
+    if (streamDemoAction) streamDemoAction.style.display = 'none';
+    if (streamFileAction) streamFileAction.style.display = 'none';
   } else {
     // Transcription init (default)
     deepfakeContent.style.display = 'none';
     resultsVerdict.style.display = 'none';
+    redactionContent.style.display = 'none';
     transcriptContainer.classList.add('visible');
     resultsSidebar.classList.add('visible');
     sttOptions.classList.add('visible');
@@ -2345,5 +2765,6 @@
   }
 
   // Replace initial state so back button works
-  history.replaceState({ mode: initMode }, '', (initMode === 'deepfake' ? '/deepfake' : '/transcription') + location.search);
+  const initPath = initMode === 'deepfake' ? '/deepfake' : initMode === 'redaction' ? '/redaction' : '/transcription';
+  history.replaceState({ mode: initMode }, '', initPath + location.search);
 })();
