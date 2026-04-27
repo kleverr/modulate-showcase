@@ -60,7 +60,7 @@ const ALLOWED_ENDPOINTS = new Set([
   '/api/velma-2-stt-batch',
   '/api/velma-2-stt-batch-english-vfast',
   '/api/velma-2-synthetic-voice-detection-batch',
-  '/api/preview/velma-2-pii-phi-redaction-batch',
+  '/api/velma-2-pii-phi-redaction-batch',
 ]);
 
 // Per-endpoint upstream base URL overrides (defaults to API_BASE_URL)

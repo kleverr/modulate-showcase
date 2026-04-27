@@ -871,7 +871,7 @@
       const startedAt = Date.now();
       const opts = getRedactionOptions();
       const { metadata, audioBlob, meta } = await uploadAndAnalyzeMultipart(
-        file, '/api/preview/velma-2-pii-phi-redaction-batch', opts
+        file, '/api/velma-2-pii-phi-redaction-batch', opts
       );
       const processingMs = Date.now() - startedAt;
       await finishProgress();
