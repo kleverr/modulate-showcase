@@ -2586,10 +2586,10 @@
 
     const tick = () => {
       const elapsed = Date.now() - start;
-      const rawPct = Math.min(elapsed / estimatedMs, 1);
+      const pct = (1 - Math.exp(-elapsed / estimatedMs)) * 88;
       progressFill.style.transition = 'width 0.3s linear';
-      progressFill.style.width = (rawPct * 90) + '%';
-      if (rawPct < 1) progressTimer = requestAnimationFrame(tick);
+      progressFill.style.width = pct + '%';
+      progressTimer = requestAnimationFrame(tick);
     };
     progressTimer = requestAnimationFrame(tick);
   }
