@@ -61,24 +61,19 @@ const ALLOWED_ENDPOINTS = new Set([
   '/api/velma-2-stt-batch-english-vfast',
   '/api/velma-2-synthetic-voice-detection-batch',
   '/api/velma-2-pii-phi-redaction-batch',
-  '/api/preview/music-detection',
+  '/api/velma-2-music-detection',
 ]);
 
-// Per-endpoint upstream base URL overrides (defaults to API_BASE_URL).
-// Music Detection's preview model is hosted directly (not behind the gateway).
-const ENDPOINT_BASE_URL = {
-  '/api/preview/music-detection': 'http://34.228.138.241:8080',
-};
+// Per-endpoint upstream base URL overrides (defaults to API_BASE_URL)
+const ENDPOINT_BASE_URL = {};
 
-// Per-endpoint upstream path overrides (defaults to the incoming request path).
-const ENDPOINT_UPSTREAM_PATH = {
-  '/api/preview/music-detection': '/MusicDetection',
-};
+// Per-endpoint upstream path overrides (defaults to the incoming request path)
+const ENDPOINT_UPSTREAM_PATH = {};
 
 // Per-endpoint upstream form-field name overrides (defaults to "upload_file").
 // Music Detection's spec uses "file" instead.
 const ENDPOINT_UPLOAD_FIELD = {
-  '/api/preview/music-detection': 'file',
+  '/api/velma-2-music-detection': 'file',
 };
 
 // ── Usage endpoint ───────────────────────────────────────────────────────────

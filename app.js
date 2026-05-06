@@ -1202,7 +1202,7 @@
 
     try {
       const startedAt = Date.now();
-      const { data, meta } = await uploadAndAnalyze(file, '/api/preview/music-detection');
+      const { data, meta } = await uploadAndAnalyze(file, '/api/velma-2-music-detection');
       const processingMs = Date.now() - startedAt;
       await finishProgress();
       hideOverlay();
@@ -2893,7 +2893,7 @@
 
       groups = [
         { group: 'Detection', rows: [
-          ['Model', 'music-detection (preview)'],
+          ['Model', 'velma-2-music-detection'],
           ['Primary label', (currentData.primary_label || 'unknown').replace(/^./, c => c.toUpperCase())],
           ['Music coverage', (currentData.music_pct  != null ? currentData.music_pct.toFixed(1)  : '0.0') + '%'],
           ['Speech coverage', (currentData.speech_pct != null ? currentData.speech_pct.toFixed(1) : '0.0') + '%'],
@@ -2919,7 +2919,7 @@
         ]},
         { group: 'Request', rows: [
           ['HTTP', httpStr],
-          ['Endpoint', '/api/preview/music-detection'],
+          ['Endpoint', '/api/velma-2-music-detection'],
           ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
         ]},
       ];

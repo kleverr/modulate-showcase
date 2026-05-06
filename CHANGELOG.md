@@ -2,6 +2,11 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [3.7.1] - 2026-05-06
+
+### Changed
+- Music Detection now goes through the developer-apis gateway at `/api/velma-2-music-detection` (was the dedicated host `34.228.138.241:8080/MusicDetection`). Per-endpoint base URL + upstream-path overrides removed; only the `file` form-field override remains.
+
 ## [3.7.0] - 2026-05-06
 
 ### Added
