@@ -61,10 +61,25 @@ const ALLOWED_ENDPOINTS = new Set([
   '/api/velma-2-stt-batch-english-vfast',
   '/api/velma-2-synthetic-voice-detection-batch',
   '/api/velma-2-pii-phi-redaction-batch',
+  '/api/preview/music-detection',
 ]);
 
-// Per-endpoint upstream base URL overrides (defaults to API_BASE_URL)
-const ENDPOINT_BASE_URL = {};
+// Per-endpoint upstream base URL overrides (defaults to API_BASE_URL).
+// Music Detection's preview model is hosted directly (not behind the gateway).
+const ENDPOINT_BASE_URL = {
+  '/api/preview/music-detection': 'http://34.228.138.241:8080',
+};
+
+// Per-endpoint upstream path overrides (defaults to the incoming request path).
+const ENDPOINT_UPSTREAM_PATH = {
+  '/api/preview/music-detection': '/MusicDetection',
+};
+
+// Per-endpoint upstream form-field name overrides (defaults to "upload_file").
+// Music Detection's spec uses "file" instead.
+const ENDPOINT_UPLOAD_FIELD = {
+  '/api/preview/music-detection': 'file',
+};
 
 // ── Usage endpoint ───────────────────────────────────────────────────────────
 app.get('/api/usage', (req, res) => {
@@ -125,9 +140,10 @@ app.post('/api/:path(*)', handleUpload, async (req, res) => {
     const parts = [];
 
     // File part
+    const uploadFieldName = ENDPOINT_UPLOAD_FIELD[endpoint] || 'upload_file';
     parts.push(
       `--${boundary}\r\n` +
-      `Content-Disposition: form-data; name="upload_file"; filename="${safeFilename}"\r\n` +
+      `Content-Disposition: form-data; name="${uploadFieldName}"; filename="${safeFilename}"\r\n` +
       `Content-Type: ${req.file.mimetype || 'application/octet-stream'}\r\n\r\n`
     );
     parts.push(req.file.buffer);
@@ -151,9 +167,10 @@ app.post('/api/:path(*)', handleUpload, async (req, res) => {
     const body = Buffer.concat(bodyParts);
 
     const baseUrl = ENDPOINT_BASE_URL[endpoint] || API_BASE_URL;
+    const upstreamPath = ENDPOINT_UPSTREAM_PATH[endpoint] || endpoint;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 300_000); // 5 min timeout
-    const upstreamRes = await fetch(`${baseUrl}${endpoint}`, {
+    const upstreamRes = await fetch(`${baseUrl}${upstreamPath}`, {
       method: 'POST',
       headers: {
         'X-API-KEY': API_KEY,
@@ -194,6 +211,10 @@ app.get('/deepfake', (req, res) => {
 });
 
 app.get('/redaction', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/music', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 

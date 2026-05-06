@@ -10,10 +10,52 @@
   const DEMO_STT_AUDIO_URL = '/deepfake/demo.mp3';
   const DEMO_REDACTION_AUDIO_URL = '/deepfake/call-center-redacted.mp3';
   const DEMO_REDACTION_ORIGINAL_AUDIO_URL = '/deepfake/call-center-demo.mp3';
+  const DEMO_MUSIC_AUDIO_URL = '/music/demo.opus';
   const DEMO_REDACTION_DATA = {"filename":"call_center_conversation.mp3","text":"Thank you for calling Green Valley Health member services. This is <pii:firstname></pii:firstname> speaking on a recorded line. Can I confirm I'm speaking with <pii:firstname></pii:firstname> <pii:lastname></pii:lastname>, born <pii:date_of_birth></pii:date_of_birth>, and living at <pii:address></pii:address>, <pii:address></pii:address> <pii:zipcode></pii:zipcode>? Yes, this is <pii:firstname></pii:firstname> <pii:middlename></pii:middlename> <pii:lastname></pii:lastname>. The last 4 of my Social Security number are <pii:ssn></pii:ssn>, and my member ID is <phi></phi>. Thank you, <pii:prefix_suffix></pii:prefix_suffix> <pii:lastname></pii:lastname>. For verification, can you confirm the phone number and email we have on file: <pii:phone></pii:phone>, and <pii:email></pii:email>? Yes, that's right, although my new callback number is <pii:phone></pii:phone>, and my employer is <pii:employer></pii:employer> at <pii:workplace_address></pii:workplace_address>. I see your plan is under policy number <pii:policy_number></pii:policy_number>. And the primary care physician listed is <pii:prefix_suffix></pii:prefix_suffix> <pii:firstname></pii:firstname> <pii:lastname></pii:lastname> at Buckeye Family Clinic, <pii:address></pii:address>, <pii:address></pii:address> <pii:zipcode></pii:zipcode>. That's correct. I'm calling about a claim for my <phi></phi> from <phi></phi>, after I <pii:insurance_claim></pii:insurance_claim>. The diagnosis code on my paperwork says <phi></phi>, and the imaging center was <phi></phi>. I found that claim. It shows service date <phi></phi>, account number <pii:claim_number></pii:claim_number>, billed amount <pii:transaction></pii:transaction>, and it references your prior authorization number <pii:claim_number></pii:claim_number>. I also had a prescription denied. It was for <phi></phi>, prescribed by <pii:prefix_suffix></pii:prefix_suffix> <pii:firstname></pii:firstname> <pii:lastname></pii:lastname> for <phi></phi>, and my pharmacy is CVS number 11472, <pii:address></pii:address>, <pii:address></pii:address>. I can see that medication request. To verify, your emergency contact is <pii:firstname></pii:firstname> <pii:lastname></pii:lastname>, <pii:emergency_contact></pii:emergency_contact>, at <pii:phone></pii:phone>, and your preferred mailing address is still <pii:mailing_address></pii:mailing_address>? Yes, and my wife's date of birth is <pii:date_of_birth></pii:date_of_birth>. Also, the hospital can fax records to my attorney, <pii:firstname></pii:firstname> <pii:middleinitial></pii:middleinitial> <pii:lastname></pii:lastname>, at <pii:phone></pii:phone>, because this relates to a workplace injury claim. Understood. I also see notes from your recent visit indicating <phi></phi>, <phi></phi>, and an <phi></phi>. The lab order was submitted under requisition number <phi></phi> from St. Anne's Outpatient Center. Thanks. Please send the appeal form to <pii:email></pii:email>, and mail a copy to <pii:address></pii:address>, <pii:address></pii:address> <pii:zipcode></pii:zipcode>. If you need payment for the balance, my HSA card ending in <pii:bank_account></pii:bank_account> is available.","duration_ms":202920,"utterances":[{"utterance_uuid":"f74ac92e-3979-4c34-ae60-9d9de964cde3","text":"Thank you for calling Green Valley Health member services. This is <pii:firstname></pii:firstname> speaking on a recorded line. Can I confirm I'm speaking with <pii:firstname></pii:firstname> <pii:lastname></pii:lastname>, born <pii:date_of_birth></pii:date_of_birth>, and living at <pii:address></pii:address>, <pii:address></pii:address> <pii:zipcode></pii:zipcode>?","start_ms":300,"duration_ms":17340,"speaker":1,"language":"en","words":[{"text":"Thank","start_ms":300,"duration_ms":180},{"text":"you","start_ms":480,"duration_ms":120},{"text":"for","start_ms":660,"duration_ms":60},{"text":"calling","start_ms":840,"duration_ms":240},{"text":"Green","start_ms":1320,"duration_ms":60},{"text":"Valley","start_ms":1560,"duration_ms":240},{"text":"Health","start_ms":1860,"duration_ms":180},{"text":"member","start_ms":2280,"duration_ms":60},{"text":"services.","start_ms":2580,"duration_ms":480},{"text":"This","start_ms":3360,"duration_ms":60},{"text":"is","start_ms":3480,"duration_ms":60},{"text":"","start_ms":3720,"duration_ms":300},{"text":"speaking","start_ms":4080,"duration_ms":240},{"text":"on","start_ms":4320,"duration_ms":60},{"text":"a","start_ms":4440,"duration_ms":60},{"text":"recorded","start_ms":4560,"duration_ms":300},{"text":"line.","start_ms":5100,"duration_ms":300},{"text":"Can","start_ms":6120,"duration_ms":60},{"text":"I","start_ms":6240,"duration_ms":60},{"text":"confirm","start_ms":6360,"duration_ms":180},{"text":"I'm","start_ms":6720,"duration_ms":180},{"text":"speaking","start_ms":6960,"duration_ms":180},{"text":"with","start_ms":7140,"duration_ms":60},{"text":"","start_ms":7500,"duration_ms":60},{"text":"","start_ms":7860,"duration_ms":360},{"text":"born","start_ms":8580,"duration_ms":60},{"text":"","start_ms":8880,"duration_ms":60},{"text":"","start_ms":9240,"duration_ms":480},{"text":"","start_ms":9780,"duration_ms":960},{"text":"and","start_ms":10980,"duration_ms":60},{"text":"living","start_ms":11100,"duration_ms":180},{"text":"at","start_ms":11340,"duration_ms":60},{"text":"","start_ms":11640,"duration_ms":780},{"text":"","start_ms":12840,"duration_ms":240},{"text":"","start_ms":13140,"duration_ms":180},{"text":"","start_ms":13440,"duration_ms":420},{"text":"","start_ms":14100,"duration_ms":180},{"text":"","start_ms":14460,"duration_ms":480},{"text":"","start_ms":15240,"duration_ms":300},{"text":"","start_ms":15660,"duration_ms":420},{"text":"","start_ms":16500,"duration_ms":1140}]},{"utterance_uuid":"17420dac-9294-46d7-b3bf-d3a431ef9f8e","text":"Yes, this is <pii:firstname></pii:firstname> <pii:middlename></pii:middlename> <pii:lastname></pii:lastname>. The last 4 of my Social Security number are <pii:ssn></pii:ssn>, and my member ID is <phi></phi>.","start_ms":18300,"duration_ms":13320,"speaker":2,"language":"en","words":[{"text":"Yes,","start_ms":18300,"duration_ms":300},{"text":"this","start_ms":19500,"duration_ms":60},{"text":"is","start_ms":19620,"duration_ms":60},{"text":"","start_ms":20040,"duration_ms":60},{"text":"","start_ms":20580,"duration_ms":60},{"text":"","start_ms":20940,"duration_ms":300},{"text":"The","start_ms":21720,"duration_ms":60},{"text":"last","start_ms":21900,"duration_ms":60},{"text":"4","start_ms":22380,"duration_ms":60},{"text":"of","start_ms":22500,"duration_ms":60},{"text":"my","start_ms":22620,"duration_ms":60},{"text":"Social","start_ms":22920,"duration_ms":60},{"text":"Security","start_ms":23220,"duration_ms":300},{"text":"number","start_ms":23700,"duration_ms":60},{"text":"are","start_ms":24000,"duration_ms":60},{"text":"","start_ms":24360,"duration_ms":1260},{"text":"and","start_ms":25920,"duration_ms":60},{"text":"my","start_ms":26040,"duration_ms":60},{"text":"member","start_ms":26280,"duration_ms":60},{"text":"ID","start_ms":26640,"duration_ms":240},{"text":"is","start_ms":26940,"duration_ms":60},{"text":"","start_ms":27360,"duration_ms":4260}]},{"utterance_uuid":"863ab9c9-e2e2-4c51-b36d-37a7cf68f4e6","text":"Thank you, <pii:prefix_suffix></pii:prefix_suffix> <pii:lastname></pii:lastname>. For verification, can you confirm the phone number and email we have on file: <pii:phone></pii:phone>, and <pii:email></pii:email>?","start_ms":32100,"duration_ms":15300,"speaker":1,"language":"en","words":[{"text":"Thank","start_ms":32100,"duration_ms":120},{"text":"you,","start_ms":32280,"duration_ms":240},{"text":"","start_ms":32760,"duration_ms":60},{"text":"","start_ms":33060,"duration_ms":360},{"text":"For","start_ms":34200,"duration_ms":60},{"text":"verification,","start_ms":34320,"duration_ms":720},{"text":"can","start_ms":35160,"duration_ms":60},{"text":"you","start_ms":35220,"duration_ms":180},{"text":"confirm","start_ms":35460,"duration_ms":240},{"text":"the","start_ms":35820,"duration_ms":60},{"text":"phone","start_ms":36060,"duration_ms":180},{"text":"number","start_ms":36300,"duration_ms":60},{"text":"and","start_ms":36660,"duration_ms":60},{"text":"email","start_ms":36960,"duration_ms":240},{"text":"we","start_ms":37260,"duration_ms":60},{"text":"have","start_ms":37440,"duration_ms":60},{"text":"on","start_ms":37620,"duration_ms":60},{"text":"file:","start_ms":37980,"duration_ms":420},{"text":"","start_ms":39120,"duration_ms":4140},{"text":"and","start_ms":43680,"duration_ms":60},{"text":"","start_ms":43980,"duration_ms":3420}]},{"utterance_uuid":"dfb1b2ac-3181-4dad-b905-b5010e7368ce","text":"Yes, that's right, although my new callback number is <pii:phone></pii:phone>, and my employer is <pii:employer></pii:employer> at <pii:workplace_address></pii:workplace_address>.","start_ms":47700,"duration_ms":12240,"speaker":2,"language":"en","words":[{"text":"Yes,","start_ms":47700,"duration_ms":240},{"text":"that'sright,","start_ms":48120,"duration_ms":600},{"text":"although","start_ms":49020,"duration_ms":120},{"text":"my","start_ms":49260,"duration_ms":60},{"text":"new","start_ms":49440,"duration_ms":60},{"text":"callback","start_ms":49620,"duration_ms":300},{"text":"number","start_ms":50100,"duration_ms":60},{"text":"is","start_ms":50340,"duration_ms":60},{"text":"","start_ms":50700,"duration_ms":3300},{"text":"and","start_ms":54120,"duration_ms":60},{"text":"my","start_ms":54240,"duration_ms":60},{"text":"employer","start_ms":54360,"duration_ms":300},{"text":"is","start_ms":54780,"duration_ms":60},{"text":"","start_ms":55140,"duration_ms":300},{"text":"","start_ms":55620,"duration_ms":360},{"text":"","start_ms":56160,"duration_ms":60},{"text":"at","start_ms":56820,"duration_ms":60},{"text":"","start_ms":57000,"duration_ms":720},{"text":"","start_ms":57900,"duration_ms":240},{"text":"","start_ms":58260,"duration_ms":300},{"text":"","start_ms":59160,"duration_ms":300},{"text":"","start_ms":59580,"duration_ms":360}]},{"utterance_uuid":"5b16a23c-d4da-492c-bb0b-11d2b9ad1cf6","text":"I see your plan is under policy number <pii:policy_number></pii:policy_number>. And the primary care physician listed is <pii:prefix_suffix></pii:prefix_suffix> <pii:firstname></pii:firstname> <pii:lastname></pii:lastname> at Buckeye Family Clinic, <pii:address></pii:address>, <pii:address></pii:address> <pii:zipcode></pii:zipcode>.","start_ms":60600,"duration_ms":17820,"speaker":1,"language":"en","words":[{"text":"I","start_ms":60600,"duration_ms":60},{"text":"see","start_ms":60720,"duration_ms":120},{"text":"your","start_ms":60900,"duration_ms":120},{"text":"plan","start_ms":61140,"duration_ms":60},{"text":"is","start_ms":61260,"duration_ms":60},{"text":"under","start_ms":61440,"duration_ms":60},{"text":"policy","start_ms":61860,"duration_ms":240},{"text":"number","start_ms":62220,"duration_ms":60},{"text":"","start_ms":62700,"duration_ms":4680},{"text":"And","start_ms":68220,"duration_ms":60},{"text":"the","start_ms":68340,"duration_ms":60},{"text":"primary","start_ms":68520,"duration_ms":300},{"text":"care","start_ms":68940,"duration_ms":60},{"text":"physician","start_ms":69120,"duration_ms":240},{"text":"listed","start_ms":69600,"duration_ms":240},{"text":"is","start_ms":69900,"duration_ms":60},{"text":"","start_ms":70200,"duration_ms":60},{"text":"","start_ms":70620,"duration_ms":300},{"text":"","start_ms":71040,"duration_ms":360},{"text":"at","start_ms":71760,"duration_ms":60},{"text":"Buckeye","start_ms":72060,"duration_ms":300},{"text":"Family","start_ms":72480,"duration_ms":180},{"text":"Clinic,","start_ms":72720,"duration_ms":360},{"text":"","start_ms":74100,"duration_ms":360},{"text":"","start_ms":74700,"duration_ms":60},{"text":"","start_ms":75000,"duration_ms":180},{"text":"","start_ms":75240,"duration_ms":300},{"text":"","start_ms":76020,"duration_ms":360},{"text":"","start_ms":76500,"duration_ms":420},{"text":"","start_ms":77280,"duration_ms":1140}]},{"utterance_uuid":"7d601d0f-36d8-40cd-9ec4-503ac3564fdd","text":"That's correct. I'm calling about a claim for my <phi></phi> from <phi></phi>, after I <pii:insurance_claim></pii:insurance_claim>. The diagnosis code on my paperwork says <phi></phi>, and the imaging center was <phi></phi>.","start_ms":78720,"duration_ms":15060,"speaker":2,"language":"en","words":[{"text":"That's","start_ms":78720,"duration_ms":120},{"text":"correct.","start_ms":78960,"duration_ms":360},{"text":"I'm","start_ms":79620,"duration_ms":180},{"text":"calling","start_ms":79860,"duration_ms":180},{"text":"about","start_ms":80100,"duration_ms":60},{"text":"a","start_ms":80400,"duration_ms":60},{"text":"claim","start_ms":80580,"duration_ms":180},{"text":"for","start_ms":80820,"duration_ms":60},{"text":"my","start_ms":80940,"duration_ms":60},{"text":"","start_ms":81300,"duration_ms":360},{"text":"from","start_ms":81720,"duration_ms":60},{"text":"","start_ms":82020,"duration_ms":60},{"text":"","start_ms":82380,"duration_ms":240},{"text":"","start_ms":82680,"duration_ms":1020},{"text":"after","start_ms":83940,"duration_ms":60},{"text":"I","start_ms":84180,"duration_ms":60},{"text":"","start_ms":84360,"duration_ms":240},{"text":"","start_ms":84660,"duration_ms":60},{"text":"","start_ms":84840,"duration_ms":120},{"text":"","start_ms":85080,"duration_ms":60},{"text":"","start_ms":85440,"duration_ms":240},{"text":"","start_ms":85800,"duration_ms":600},{"text":"The","start_ms":86940,"duration_ms":60},{"text":"diagnosis","start_ms":87120,"duration_ms":540},{"text":"code","start_ms":87840,"duration_ms":120},{"text":"on","start_ms":88020,"duration_ms":60},{"text":"my","start_ms":88140,"duration_ms":60},{"text":"paperwork","start_ms":88260,"duration_ms":360},{"text":"says","start_ms":88800,"duration_ms":120},{"text":"","start_ms":89160,"duration_ms":1620},{"text":"and","start_ms":91080,"duration_ms":60},{"text":"the","start_ms":91200,"duration_ms":60},{"text":"imaging","start_ms":91260,"duration_ms":300},{"text":"center","start_ms":91740,"duration_ms":180},{"text":"was","start_ms":91980,"duration_ms":60},{"text":"","start_ms":92220,"duration_ms":420},{"text":"","start_ms":92820,"duration_ms":480},{"text":"","start_ms":93420,"duration_ms":360}]},{"utterance_uuid":"892edd4b-198c-46c0-a65b-f5a5b933852b","text":"I found that claim. It shows service date <phi></phi>, account number <pii:claim_number></pii:claim_number>, billed amount <pii:transaction></pii:transaction>, and it references your prior authorization number <pii:claim_number></pii:claim_number>.","start_ms":94200,"duration_ms":19380,"speaker":1,"language":"en","words":[{"text":"I","start_ms":94200,"duration_ms":60},{"text":"found","start_ms":94380,"duration_ms":60},{"text":"that","start_ms":94680,"duration_ms":60},{"text":"claim.","start_ms":94980,"duration_ms":540},{"text":"It","start_ms":95820,"duration_ms":60},{"text":"shows","start_ms":96000,"duration_ms":240},{"text":"service","start_ms":96420,"duration_ms":60},{"text":"date","start_ms":96840,"duration_ms":300},{"text":"","start_ms":97500,"duration_ms":3120},{"text":"account","start_ms":101040,"duration_ms":240},{"text":"number","start_ms":101340,"duration_ms":60},{"text":"","start_ms":101820,"duration_ms":3360},{"text":"billed","start_ms":105600,"duration_ms":180},{"text":"amount","start_ms":105840,"duration_ms":240},{"text":"","start_ms":106260,"duration_ms":1800},{"text":"and","start_ms":108420,"duration_ms":60},{"text":"it","start_ms":108540,"duration_ms":60},{"text":"references","start_ms":108660,"duration_ms":420},{"text":"your","start_ms":109080,"duration_ms":180},{"text":"prior","start_ms":109440,"duration_ms":180},{"text":"authorization","start_ms":109740,"duration_ms":480},{"text":"number","start_ms":110340,"duration_ms":60},{"text":"","start_ms":110820,"duration_ms":2760}]},{"utterance_uuid":"0cf5c5e0-ebe5-4941-8784-ae09b005d9f8","text":"I also had a prescription denied. It was for <phi></phi>, prescribed by <pii:prefix_suffix></pii:prefix_suffix> <pii:firstname></pii:firstname> <pii:lastname></pii:lastname> for <phi></phi>, and my pharmacy is CVS number 11472, <pii:address></pii:address>, <pii:address></pii:address>.","start_ms":114060,"duration_ms":16440,"speaker":2,"language":"en","words":[{"text":"I","start_ms":114060,"duration_ms":60},{"text":"also","start_ms":114180,"duration_ms":60},{"text":"had","start_ms":114480,"duration_ms":60},{"text":"a","start_ms":114660,"duration_ms":60},{"text":"prescription","start_ms":114840,"duration_ms":240},{"text":"denied.","start_ms":115560,"duration_ms":540},{"text":"It","start_ms":116760,"duration_ms":60},{"text":"was","start_ms":116820,"duration_ms":60},{"text":"for","start_ms":117000,"duration_ms":60},{"text":"","start_ms":117360,"duration_ms":660},{"text":"","start_ms":118260,"duration_ms":420},{"text":"","start_ms":118740,"duration_ms":300},{"text":"prescribed","start_ms":119820,"duration_ms":360},{"text":"by","start_ms":120240,"duration_ms":60},{"text":"","start_ms":120600,"duration_ms":60},{"text":"","start_ms":121080,"duration_ms":300},{"text":"","start_ms":121560,"duration_ms":300},{"text":"for","start_ms":121980,"duration_ms":60},{"text":"","start_ms":122220,"duration_ms":180},{"text":"","start_ms":122520,"duration_ms":300},{"text":"and","start_ms":123300,"duration_ms":60},{"text":"my","start_ms":123420,"duration_ms":60},{"text":"pharmacy","start_ms":123600,"duration_ms":420},{"text":"is","start_ms":124080,"duration_ms":60},{"text":"CVS","start_ms":124320,"duration_ms":420},{"text":"number","start_ms":124920,"duration_ms":60},{"text":"11472,","start_ms":125280,"duration_ms":1860},{"text":"","start_ms":127320,"duration_ms":840},{"text":"","start_ms":128460,"duration_ms":60},{"text":"","start_ms":128760,"duration_ms":60},{"text":"","start_ms":129120,"duration_ms":300},{"text":"","start_ms":129660,"duration_ms":300},{"text":"","start_ms":130080,"duration_ms":420}]},{"utterance_uuid":"252a1cc4-8c5f-4c8c-9b49-68dbd371029c","text":"I can see that medication request. To verify, your emergency contact is <pii:firstname></pii:firstname> <pii:lastname></pii:lastname>, <pii:emergency_contact></pii:emergency_contact>, at <pii:phone></pii:phone>, and your preferred mailing address is still <pii:mailing_address></pii:mailing_address>?","start_ms":130980,"duration_ms":17460,"speaker":1,"language":"en","words":[{"text":"I","start_ms":130980,"duration_ms":60},{"text":"can","start_ms":131160,"duration_ms":60},{"text":"see","start_ms":131280,"duration_ms":120},{"text":"that","start_ms":131400,"duration_ms":60},{"text":"medication","start_ms":131640,"duration_ms":360},{"text":"request.","start_ms":132120,"duration_ms":540},{"text":"To","start_ms":133200,"duration_ms":60},{"text":"verify,","start_ms":133380,"duration_ms":420},{"text":"your","start_ms":134040,"duration_ms":180},{"text":"emergency","start_ms":134340,"duration_ms":360},{"text":"contact","start_ms":135000,"duration_ms":180},{"text":"is","start_ms":135300,"duration_ms":60},{"text":"","start_ms":135600,"duration_ms":300},{"text":"","start_ms":136080,"duration_ms":300},{"text":"","start_ms":136800,"duration_ms":360},{"text":"at","start_ms":137520,"duration_ms":60},{"text":"","start_ms":137820,"duration_ms":3060},{"text":"and","start_ms":141240,"duration_ms":60},{"text":"your","start_ms":141300,"duration_ms":180},{"text":"preferred","start_ms":141600,"duration_ms":180},{"text":"mailing","start_ms":141900,"duration_ms":240},{"text":"address","start_ms":142140,"duration_ms":180},{"text":"is","start_ms":142500,"duration_ms":60},{"text":"still","start_ms":142740,"duration_ms":60},{"text":"","start_ms":143460,"duration_ms":240},{"text":"","start_ms":143820,"duration_ms":240},{"text":"","start_ms":144420,"duration_ms":1200},{"text":"","start_ms":145920,"duration_ms":300},{"text":"","start_ms":146340,"duration_ms":420},{"text":"","start_ms":147180,"duration_ms":1260}]},{"utterance_uuid":"cb608214-1f67-46b1-a488-bbc95f3d5db5","text":"Yes, and my wife's date of birth is <pii:date_of_birth></pii:date_of_birth>. Also, the hospital can fax records to my attorney, <pii:firstname></pii:firstname> <pii:middleinitial></pii:middleinitial> <pii:lastname></pii:lastname>, at <pii:phone></pii:phone>, because this relates to a workplace injury claim.","start_ms":149100,"duration_ms":15300,"speaker":2,"language":"en","words":[{"text":"Yes,","start_ms":149100,"duration_ms":240},{"text":"and","start_ms":150000,"duration_ms":60},{"text":"my","start_ms":150060,"duration_ms":60},{"text":"wife's","start_ms":150240,"duration_ms":300},{"text":"date","start_ms":150600,"duration_ms":120},{"text":"of","start_ms":150720,"duration_ms":60},{"text":"birth","start_ms":150900,"duration_ms":60},{"text":"is","start_ms":151140,"duration_ms":60},{"text":"","start_ms":151380,"duration_ms":60},{"text":"","start_ms":151860,"duration_ms":360},{"text":"","start_ms":152280,"duration_ms":900},{"text":"Also,","start_ms":153960,"duration_ms":180},{"text":"the","start_ms":154140,"duration_ms":60},{"text":"hospital","start_ms":154380,"duration_ms":240},{"text":"can","start_ms":154860,"duration_ms":60},{"text":"fax","start_ms":155100,"duration_ms":180},{"text":"records","start_ms":155340,"duration_ms":300},{"text":"to","start_ms":155700,"duration_ms":60},{"text":"my","start_ms":155820,"duration_ms":60},{"text":"attorney,","start_ms":156060,"duration_ms":540},{"text":"","start_ms":156960,"duration_ms":240},{"text":"","start_ms":157320,"duration_ms":60},{"text":"","start_ms":157560,"duration_ms":240},{"text":"at","start_ms":158400,"duration_ms":60},{"text":"","start_ms":158580,"duration_ms":3300},{"text":"because","start_ms":162120,"duration_ms":180},{"text":"this","start_ms":162360,"duration_ms":60},{"text":"relates","start_ms":162540,"duration_ms":180},{"text":"to","start_ms":162780,"duration_ms":60},{"text":"a","start_ms":162960,"duration_ms":60},{"text":"workplace","start_ms":163140,"duration_ms":480},{"text":"injury","start_ms":163680,"duration_ms":300},{"text":"claim.","start_ms":164040,"duration_ms":360}]},{"utterance_uuid":"6d69879e-c350-41d7-b467-fbc2eb6d7544","text":"Understood. I also see notes from your recent visit indicating <phi></phi>, <phi></phi>, and an <phi></phi>. The lab order was submitted under requisition number <phi></phi> from St. Anne's Outpatient Center.","start_ms":165060,"duration_ms":16800,"speaker":1,"language":"en","words":[{"text":"Understood.","start_ms":165060,"duration_ms":600},{"text":"I","start_ms":165960,"duration_ms":60},{"text":"also","start_ms":166080,"duration_ms":60},{"text":"see","start_ms":166380,"duration_ms":180},{"text":"notes","start_ms":166680,"duration_ms":180},{"text":"from","start_ms":166920,"duration_ms":60},{"text":"your","start_ms":167040,"duration_ms":180},{"text":"recent","start_ms":167280,"duration_ms":180},{"text":"visit","start_ms":167580,"duration_ms":360},{"text":"indicating","start_ms":168120,"duration_ms":300},{"text":"","start_ms":168720,"duration_ms":60},{"text":"","start_ms":168960,"duration_ms":60},{"text":"","start_ms":169260,"duration_ms":540},{"text":"","start_ms":170100,"duration_ms":660},{"text":"and","start_ms":171000,"duration_ms":60},{"text":"an","start_ms":171300,"duration_ms":60},{"text":"","start_ms":171660,"duration_ms":600},{"text":"","start_ms":172320,"duration_ms":60},{"text":"","start_ms":172680,"duration_ms":1020},{"text":"The","start_ms":174180,"duration_ms":60},{"text":"lab","start_ms":174420,"duration_ms":60},{"text":"order","start_ms":174720,"duration_ms":180},{"text":"was","start_ms":174900,"duration_ms":60},{"text":"submitted","start_ms":175080,"duration_ms":420},{"text":"under","start_ms":175560,"duration_ms":60},{"text":"requisition","start_ms":175920,"duration_ms":360},{"text":"number","start_ms":176520,"duration_ms":60},{"text":"","start_ms":177000,"duration_ms":2760},{"text":"from","start_ms":180240,"duration_ms":60},{"text":"St.","start_ms":180600,"duration_ms":60},{"text":"Anne's","start_ms":180960,"duration_ms":180},{"text":"Outpatient","start_ms":181200,"duration_ms":420},{"text":"Center.","start_ms":181800,"duration_ms":60}]},{"utterance_uuid":"60658940-1288-4540-b6c5-f201cf7e4d2d","text":"Thanks. Please send the appeal form to <pii:email></pii:email>, and mail a copy to <pii:address></pii:address>, <pii:address></pii:address> <pii:zipcode></pii:zipcode>. If you need payment for the balance, my HSA card ending in <pii:bank_account></pii:bank_account> is available.","start_ms":182820,"duration_ms":20100,"speaker":2,"language":"en","words":[{"text":"Thanks.","start_ms":182820,"duration_ms":360},{"text":"Please","start_ms":183660,"duration_ms":240},{"text":"send","start_ms":184020,"duration_ms":60},{"text":"the","start_ms":184200,"duration_ms":60},{"text":"appeal","start_ms":184380,"duration_ms":300},{"text":"form","start_ms":184800,"duration_ms":60},{"text":"to","start_ms":185040,"duration_ms":60},{"text":"","start_ms":185400,"duration_ms":3360},{"text":"and","start_ms":189360,"duration_ms":60},{"text":"mail","start_ms":189540,"duration_ms":180},{"text":"a","start_ms":189780,"duration_ms":60},{"text":"copy","start_ms":189900,"duration_ms":180},{"text":"to","start_ms":190140,"duration_ms":60},{"text":"","start_ms":190500,"duration_ms":780},{"text":"","start_ms":191640,"duration_ms":240},{"text":"","start_ms":191940,"duration_ms":240},{"text":"","start_ms":192300,"duration_ms":480},{"text":"","start_ms":193200,"duration_ms":240},{"text":"","start_ms":193620,"duration_ms":600},{"text":"","start_ms":194520,"duration_ms":360},{"text":"","start_ms":195000,"duration_ms":360},{"text":"","start_ms":195600,"duration_ms":1380},{"text":"If","start_ms":197520,"duration_ms":120},{"text":"you","start_ms":197640,"duration_ms":120},{"text":"need","start_ms":197760,"duration_ms":180},{"text":"payment","start_ms":198000,"duration_ms":240},{"text":"for","start_ms":198300,"duration_ms":60},{"text":"the","start_ms":198360,"duration_ms":60},{"text":"balance,","start_ms":198660,"duration_ms":540},{"text":"my","start_ms":199320,"duration_ms":60},{"text":"HSA","start_ms":199620,"duration_ms":420},{"text":"card","start_ms":200160,"duration_ms":120},{"text":"ending","start_ms":200400,"duration_ms":180},{"text":"in","start_ms":200640,"duration_ms":60},{"text":"","start_ms":200940,"duration_ms":780},{"text":"is","start_ms":202080,"duration_ms":60},{"text":"available.","start_ms":202260,"duration_ms":660}]}],"redaction_ranges":[[3640,4030],[7420,17650],[19960,21250],[24280,25630],[27280,31630],[32680,33430],[39040,47410],[50620,54010],[55060,59950],[62620,67390],[70120,71410],[74020,78430],[81220,86410],[89080,90790],[92140,93790],[97420,100630],[101740,105190],[106180,108070],[110740,113590],[117280,119050],[120520,122830],[127240,130510],[135520,140890],[143380,148450],[151300,153190],[156880,161890],[168640,173710],[176920,179770],[185320,188770],[190420,196990],[200860,201730]]};
   const DEMO_DATA = {"filename":"AIAgentFrustration.mp3","frames":[{"start_time_ms":0,"end_time_ms":4000,"verdict":"synthetic","confidence":0.9848},{"start_time_ms":4000,"end_time_ms":8000,"verdict":"synthetic","confidence":0.9571},{"start_time_ms":8000,"end_time_ms":12000,"verdict":"non-synthetic","confidence":0.9398},{"start_time_ms":12000,"end_time_ms":16000,"verdict":"synthetic","confidence":0.9595},{"start_time_ms":16000,"end_time_ms":20000,"verdict":"non-synthetic","confidence":0.8176},{"start_time_ms":20000,"end_time_ms":24000,"verdict":"non-synthetic","confidence":0.9524},{"start_time_ms":24000,"end_time_ms":28000,"verdict":"synthetic","confidence":0.9089},{"start_time_ms":28000,"end_time_ms":32000,"verdict":"synthetic","confidence":0.9696},{"start_time_ms":32000,"end_time_ms":36000,"verdict":"synthetic","confidence":0.972},{"start_time_ms":36000,"end_time_ms":40000,"verdict":"non-synthetic","confidence":0.9173},{"start_time_ms":40000,"end_time_ms":44000,"verdict":"synthetic","confidence":0.9785},{"start_time_ms":44000,"end_time_ms":48000,"verdict":"non-synthetic","confidence":0.9094},{"start_time_ms":48000,"end_time_ms":52000,"verdict":"non-synthetic","confidence":0.6542},{"start_time_ms":52000,"end_time_ms":56000,"verdict":"synthetic","confidence":0.9671},{"start_time_ms":56000,"end_time_ms":60000,"verdict":"non-synthetic","confidence":0.9443},{"start_time_ms":60000,"end_time_ms":64000,"verdict":"synthetic","confidence":0.9611},{"start_time_ms":64000,"end_time_ms":68000,"verdict":"non-synthetic","confidence":0.9418},{"start_time_ms":68000,"end_time_ms":72000,"verdict":"synthetic","confidence":0.984},{"start_time_ms":72000,"end_time_ms":76000,"verdict":"non-synthetic","confidence":0.9723},{"start_time_ms":76000,"end_time_ms":80000,"verdict":"synthetic","confidence":0.9755},{"start_time_ms":80000,"end_time_ms":84000,"verdict":"non-synthetic","confidence":0.5998},{"start_time_ms":84000,"end_time_ms":88000,"verdict":"synthetic","confidence":0.9757},{"start_time_ms":88000,"end_time_ms":92000,"verdict":"synthetic","confidence":0.9563},{"start_time_ms":92000,"end_time_ms":96000,"verdict":"non-synthetic","confidence":0.9242},{"start_time_ms":96000,"end_time_ms":97698,"verdict":"synthetic","confidence":0.9821}],"duration_ms":97698};
 
   const DEMO_STT_DATA = {"filename":"AIAgentFrustration.mp3","text":"Welcome to Northwest Warehouse's automated customer service system. In a few words, can you describe your reason for calling today? Track an order. Thank you. Can you provide the account ID number or the name on the account? 02738917. Thank you. Let me find your account in our system. Hello, <pii:firstname>Roger</pii:firstname>. Would you like to place an order over the phone today? No, track an order. Thank you. Please provide the item number to place an order. No, no, track an existing order. I'm sorry, I didn't quite catch that. Did you say you'd like to place an order? No. Okay. Can you describe in a few words your reason for calling today? Track an order. Thank you. Did you say you'd like to place an order over the phone? No, track, tracking. I'm sorry, I didn't quite catch that. Can you answer yes or no? No, back, undo. I'm sorry, I didn't quite catch that. Can you describe in a few words your reason for calling today? Track package. Thank you. Did you say you'd like to place an order?","duration_ms":97320,"utterances":[{"utterance_uuid":"59578ed0-acb4-4941-9c4d-b792c9a3760b","text":"Welcome to Northwest Warehouse's automated customer service system. In a few words, can you describe your reason for calling today?","start_ms":240,"duration_ms":7260,"speaker":1,"language":"en","emotion":"Calm","accent":"American","deepfake_score":0.9810000000000001},{"utterance_uuid":"0e0d034a-aef3-44a4-9ea8-9de1eca2af2b","text":"Track an order.","start_ms":9420,"duration_ms":660,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.5392},{"utterance_uuid":"2282571c-b16c-49cc-ac67-1253ddc99ff9","text":"Thank you. Can you provide the account ID number or the name on the account?","start_ms":12300,"duration_ms":4680,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.9783999999999999},{"utterance_uuid":"02b1d2d1-c057-455a-ab1e-6750ee5e5f4c","text":"02738917.","start_ms":19320,"duration_ms":4620,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.2754},{"utterance_uuid":"517e8e3b-8555-419a-af55-60f112763e5b","text":"Thank you. Let me find your account in our system. Hello, <pii:firstname>Roger</pii:firstname>. Would you like to place an order over the phone today?","start_ms":25560,"duration_ms":8820,"speaker":1,"language":"en","emotion":"Interested","accent":"American","deepfake_score":0.9723333333333333},{"utterance_uuid":"46c11e6d-7ffa-44a4-bf75-21ed6482ae95","text":"No, track an order.","start_ms":36720,"duration_ms":1560,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.08640000000000003},{"utterance_uuid":"36ecffcb-834f-43a0-b822-606eddb9efeb","text":"Thank you. Please provide the item number to place an order.","start_ms":40620,"duration_ms":3660,"speaker":1,"language":"en","emotion":"Calm","accent":"American","deepfake_score":0.9796},{"utterance_uuid":"47d3b3ba-71f5-48f9-ba46-c0bdf44f2900","text":"No, no, track an existing order.","start_ms":46080,"duration_ms":2160,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.08150000000000002},{"utterance_uuid":"4ddc44b8-e4ab-4024-875c-5be369a43654","text":"I'm sorry, I didn't quite catch that. Did you say you'd like to place an order?","start_ms":50520,"duration_ms":4620,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.9727},{"utterance_uuid":"00c4dfe6-ac97-4e74-809c-564937cc718a","text":"No.","start_ms":56280,"duration_ms":60,"speaker":2,"language":"en","emotion":"Amused","accent":"American","deepfake_score":null},{"utterance_uuid":"00be4745-849b-4814-94a0-7768aac15c82","text":"Okay. Can you describe in a few words your reason for calling today?","start_ms":59040,"duration_ms":5340,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.78235},{"utterance_uuid":"e9bec06b-a77f-4713-b0e2-17ce89a03dbc","text":"Track an order.","start_ms":66600,"duration_ms":1080,"speaker":2,"language":"en","emotion":"Confident","accent":"American","deepfake_score":0.08599999999999997},{"utterance_uuid":"135317de-c976-497f-918e-9ccfd1dbc0fd","text":"Thank you. Did you say you'd like to place an order over the phone?","start_ms":69180,"duration_ms":3120,"speaker":1,"language":"en","emotion":"Interested","accent":"American","deepfake_score":0.9778},{"utterance_uuid":"66bc4b5f-3be1-44dd-9f0c-8aae8589e5a8","text":"No, track, tracking.","start_ms":73560,"duration_ms":2160,"speaker":2,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":null},{"utterance_uuid":"c8093216-16b3-44ca-b30d-ff8274196cde","text":"I'm sorry, I didn't quite catch that. Can you answer yes or no?","start_ms":77280,"duration_ms":4320,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.9766},{"utterance_uuid":"3de81bf7-a453-4618-a265-962e902c4d50","text":"No, back, undo.","start_ms":82320,"duration_ms":1560,"speaker":2,"language":"en","emotion":"Frustrated","accent":"American","deepfake_score":0.07579999999999998},{"utterance_uuid":"1415b904-e949-4fb2-a3a3-629df8e6610a","text":"I'm sorry, I didn't quite catch that. Can you describe in a few words your reason for calling today?","start_ms":85260,"duration_ms":5640,"speaker":1,"language":"en","emotion":"Neutral","accent":"American","deepfake_score":0.9788},{"utterance_uuid":"ec69b9e7-0fac-4b3e-a4da-ea9773d56aed","text":"Track package.","start_ms":91620,"duration_ms":960,"speaker":2,"language":"en","emotion":"Excited","accent":"American","deepfake_score":0.10909999999999997},{"utterance_uuid":"4003694d-b15d-46b1-9276-80366dc178fc","text":"Thank you. Did you say you'd like to place an order?","start_ms":94320,"duration_ms":3000,"speaker":1,"language":"en","emotion":"Interested","accent":"American","deepfake_score":0.9723}]};
+
+  // Demo Music Detection response — pre-recorded so the page renders instantly
+  // on first load. Frames pasted from the real `music-detection` API output.
+  const DEMO_MUSIC_DATA = (function () {
+    const probs = [
+      [0.8468,0.2799],[0.7939,0.2304],[0.7778,0.1203],[0.8956,0.1110],[0.9288,0.1038],
+      [0.9376,0.1199],[0.9202,0.2461],[0.9533,0.7424],[0.9703,0.9244],[0.9627,0.9686],
+      [0.9580,0.9703],[0.9565,0.9712],[0.9502,0.9703],[0.9358,0.9690],[0.9283,0.9559],
+      [0.9649,0.9285],[0.9878,0.8125],[0.9916,0.5934],[0.9929,0.4063],[0.9934,0.3407],
+      [0.9909,0.4890],[0.9928,0.8453],[0.9942,0.8667],[0.9915,0.9260],[0.9872,0.9364],
+      [0.9863,0.9353],[0.9843,0.9346],[0.9814,0.9332],[0.9787,0.8918],[0.9934,0.8239],
+      [0.9952,0.7318],[0.9962,0.5660],[0.9961,0.4310],[0.9955,0.3765],[0.9932,0.5057],
+      [0.9946,0.8694],[0.9911,0.9147],[0.9858,0.9636],[0.9862,0.9794],[0.9855,0.9794],
+      [0.9795,0.9785],[0.9762,0.9745],[0.9733,0.9744],[0.9800,0.9643],[0.9805,0.9319],
+      [0.9818,0.9008],[0.9801,0.9191],[0.9804,0.9344],[0.9792,0.9325],[0.9808,0.9377],
+      [0.9838,0.9323],[0.9901,0.8817],[0.9903,0.7420],[0.9922,0.6169],[0.9853,0.5500],
+      [0.9825,0.5460],[0.9737,0.5731],[0.9708,0.5466],[0.9687,0.4653],[0.9649,0.4159],
+      [0.9557,0.4822],[0.9528,0.6054],[0.9491,0.8089],[0.9324,0.8846],[0.9298,0.9029],
+      [0.9310,0.9191],[0.9288,0.9223],[0.9145,0.9146],[0.9237,0.9018],[0.9258,0.8982],
+      [0.9254,0.8848],[0.9232,0.8533],[0.9243,0.7957],[0.9059,0.7064],[0.8846,0.7292],
+      [0.8937,0.7922],[0.8843,0.8303],[0.9206,0.8676],
+    ];
+    const FRAME_S = 0.192;
+    const frames = probs.map((p, i) => ({
+      start_time_s: +(i * FRAME_S).toFixed(3),
+      end_time_s:   +((i + 1) * FRAME_S).toFixed(3),
+      music_prob: p[0],
+      speech_prob: p[1],
+    }));
+    // Final frame's end clipped to actual duration (14.976s)
+    if (frames.length) frames[frames.length - 1].end_time_s = 14.976;
+    return {
+      filename: 'demo.opus',
+      duration_s: 14.976,
+      primary_label: 'music',
+      music_pct: 100.0,
+      speech_pct: 80.8,
+      latency_ms: 9904.8,
+      frames,
+    };
+  })();
 
   // ── Verdict helpers ─────────────────────────────────────────────────────────
   function isSyntheticFrame(f) { return f.verdict === 'synthetic'; }
@@ -85,6 +127,18 @@
   const resultsSidebar = document.getElementById('results-sidebar');
   const sttOptions    = document.getElementById('stt-options');
 
+  // Music Detection elements
+  const musicContent      = document.getElementById('music-content');
+  const musicHistogram    = document.getElementById('music-histogram');
+  const musicHistogramFit = document.getElementById('music-histogram-fit');
+  const musicTbody        = document.getElementById('music-tbody');
+  const musicVerdictRing  = document.getElementById('music-verdict-ring');
+  const musicVerdictIcon  = document.getElementById('music-verdict-icon');
+  const musicVerdictLabel = document.getElementById('music-verdict-label');
+  const musicVerdictSplit = document.getElementById('music-verdict-split');
+  const musicSidebar      = document.getElementById('results-music-verdict');
+  const musicViewBtns     = document.querySelectorAll('.music-view-btn');
+
   // Redaction elements
   const redactionContent        = document.getElementById('redaction-content');
   const redactionTimeline       = document.getElementById('redaction-timeline');
@@ -125,6 +179,13 @@
   let lastRedactionAudioUrl = null;
   let lastRedactionOriginalUrl = null;
   let lastRedactionMeta = null;
+  let lastMusicData = null;
+  let lastMusicAudioUrl = null;
+  let lastMusicMeta = null;
+  let musicPlaybackTracker = null;
+  let musicView = 'heatmap'; // 'heatmap' | 'detailed'
+  let musicCells = [];       // cells currently rendered (for playback tracking)
+  let musicResizeObserver = null;
   let isAnalyzing = false;
   let sttChartTracker = null;
 
@@ -144,12 +205,13 @@
   const histogramSection = document.querySelector('.histogram-section');
 
   function applyMobileLayout(isMobile) {
-    if (!resultsVerdict || !resultsLayout || !resultsMain || !histogramSection) return;
-    if (currentMode !== 'deepfake') return;
-    if (isMobile) {
-      resultsMain.insertBefore(resultsVerdict, histogramSection);
-    } else {
-      resultsLayout.appendChild(resultsVerdict);
+    if (!resultsLayout || !resultsMain) return;
+    if (currentMode === 'deepfake' && resultsVerdict && histogramSection) {
+      if (isMobile) resultsMain.insertBefore(resultsVerdict, histogramSection);
+      else resultsLayout.appendChild(resultsVerdict);
+    } else if (currentMode === 'music' && musicSidebar && musicContent) {
+      if (isMobile) resultsMain.insertBefore(musicSidebar, musicContent);
+      else resultsLayout.appendChild(musicSidebar);
     }
   }
 
@@ -162,10 +224,14 @@
     currentMode = mode;
     const isDeepfake    = mode === 'deepfake';
     const isRedaction   = mode === 'redaction';
+    const isMusic       = mode === 'music';
     const isTranscription = mode === 'transcription';
 
     // Update URL
-    const targetPath = isDeepfake ? '/deepfake' : isRedaction ? '/redaction' : '/transcription';
+    const targetPath = isDeepfake ? '/deepfake'
+      : isRedaction ? '/redaction'
+      : isMusic ? '/music'
+      : '/transcription';
     if (pushUrl !== false && location.pathname !== targetPath) {
       history.pushState({ mode: mode }, '', targetPath + location.search);
     }
@@ -178,13 +244,15 @@
     redactionContent.style.display = isRedaction ? 'block' : 'none';
     redactionSidebar.classList.toggle('visible', isRedaction);
     redactionOptions.classList.toggle('visible', isRedaction);
+    if (musicContent) musicContent.style.display = isMusic ? '' : 'none';
+    if (musicSidebar) musicSidebar.style.display = isMusic ? '' : 'none';
     if (playerEntryOriginal) playerEntryOriginal.style.display = isRedaction ? '' : 'none';
     if (redactedLabel) redactedLabel.style.display = isRedaction ? '' : 'none';
     if (streamDemoAction) streamDemoAction.style.display = isTranscription ? '' : 'none';
     if (streamFileAction) streamFileAction.style.display = isTranscription ? '' : 'none';
     if (recordAction) {
-      recordAction.style.display = '';
-      recordAction.classList.toggle('disabled-soon', isRedaction);
+      recordAction.style.display = isRedaction ? 'none' : '';
+      recordAction.classList.toggle('disabled-soon', isRedaction || isMusic);
     }
     renderDebugPanel(true);
 
@@ -193,9 +261,10 @@
     if (sttChartTracker) { cancelAnimationFrame(sttChartTracker); sttChartTracker = null; }
     if (redactionPlaybackTracker) { cancelAnimationFrame(redactionPlaybackTracker); redactionPlaybackTracker = null; }
     if (redactionTranscriptTracker) { cancelAnimationFrame(redactionTranscriptTracker); redactionTranscriptTracker = null; }
+    if (musicPlaybackTracker) { cancelAnimationFrame(musicPlaybackTracker); musicPlaybackTracker = null; }
 
     if (recordAction) {
-      recordAction.classList.remove('disabled-soon');
+      recordAction.classList.toggle('disabled-soon', isRedaction || isMusic);
       const span = recordAction.querySelector('span');
       if (span) span.textContent = 'Start streaming';
     }
@@ -258,6 +327,19 @@
           setupRedactionTranscriptTracking(rData.utterances || []);
         }
       }
+    } else if (isMusic) {
+      const mData = lastMusicData || DEMO_MUSIC_DATA;
+      const mAudio = lastMusicAudioUrl || DEMO_MUSIC_AUDIO_URL;
+      currentMeta = lastMusicMeta || {
+        fileSize: 243900,
+        fileType: 'audio/opus',
+        httpStatus: 200,
+        httpStatusText: 'OK',
+        responseSize: JSON.stringify(DEMO_MUSIC_DATA).length,
+        processingMs: DEMO_MUSIC_DATA.latency_ms || 0,
+      };
+      renderMusicResults(mData, mAudio);
+      applyMobileLayout(mobileQuery.matches);
     } else {
       const sData = lastSttData || DEMO_STT_DATA;
       const sAudio = lastSttAudioUrl || DEMO_STT_AUDIO_URL;
@@ -350,6 +432,8 @@
           startDeepfakeAnalysis(fileInput.files[0]);
         } else if (currentMode === 'redaction') {
           startRedactionBatch(fileInput.files[0]);
+        } else if (currentMode === 'music') {
+          startMusicAnalysis(fileInput.files[0]);
         } else {
           startTranscriptionBatch(fileInput.files[0]);
         }
@@ -368,6 +452,7 @@
       if (e.dataTransfer.files.length > 0) {
         if (currentMode === 'deepfake') startDeepfakeAnalysis(e.dataTransfer.files[0]);
         else if (currentMode === 'redaction') startRedactionBatch(e.dataTransfer.files[0]);
+        else if (currentMode === 'music') startMusicAnalysis(e.dataTransfer.files[0]);
         else startTranscriptionBatch(e.dataTransfer.files[0]);
       }
     });
@@ -1100,6 +1185,403 @@
       redactionTranscriptTracker = requestAnimationFrame(tick);
     }
     redactionTranscriptTracker = requestAnimationFrame(tick);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── MUSIC DETECTION MODE ──────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async function startMusicAnalysis(file) {
+    if (isAnalyzing) return;
+    isAnalyzing = true;
+    const durationMs = await getAudioDuration(file);
+    showOverlay(file.name, 'Detecting music and speech');
+    // Music model is ~1.5x realtime per the demo (≈10s latency for ~15s audio)
+    const estimatedMs = Math.max(MIN_PROGRESS_MS, durationMs / 1.5);
+    startProgress(estimatedMs);
+
+    try {
+      const startedAt = Date.now();
+      const { data, meta } = await uploadAndAnalyze(file, '/api/preview/music-detection');
+      const processingMs = Date.now() - startedAt;
+      await finishProgress();
+      hideOverlay();
+      isAnalyzing = false;
+
+      if (lastMusicAudioUrl) URL.revokeObjectURL(lastMusicAudioUrl);
+      audioObjectUrl = URL.createObjectURL(file);
+
+      currentMeta = {
+        fileSize: file.size,
+        fileType: file.type || file.name.split('.').pop().toUpperCase(),
+        httpStatus: meta.httpStatus,
+        httpStatusText: meta.httpStatusText,
+        responseSize: meta.responseSize,
+        processingMs,
+      };
+
+      lastMusicData = data;
+      lastMusicAudioUrl = audioObjectUrl;
+      lastMusicMeta = { ...currentMeta };
+      renderMusicResults(data, audioObjectUrl);
+      updateRateLimit();
+    } catch (err) {
+      showOverlayError(err.message || 'Music detection failed. Please try again.', err.rawText);
+      isAnalyzing = false;
+    }
+  }
+
+  function renderMusicResults(data, audioSrc) {
+    currentData = data;
+    resultsFilename.textContent = data.filename || 'Audio file';
+    resultsAudio.src = audioSrc;
+
+    const frames = data.frames || [];
+    currentFrames = frames;
+
+    renderMusicVerdict(data);
+    renderMusicHistogram(frames);
+    renderMusicTable(frames);
+    if (frames.length) setupMusicPlaybackTracking(frames);
+    window.scrollTo(0, 0);
+  }
+
+  function renderMusicVerdict(data) {
+    const label = (data.primary_label || 'unknown').toLowerCase();
+    musicVerdictRing.className = 'verdict-ring ' + label;
+
+    const ICONS = {
+      music:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+      speech:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+      neither: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
+      unknown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    };
+    musicVerdictIcon.innerHTML = ICONS[label] || ICONS.unknown;
+
+    const TEXT = { music: 'Music', speech: 'Speech', neither: 'Neither', unknown: 'Unknown' };
+    musicVerdictLabel.textContent = TEXT[label] || 'Unknown';
+
+    const musicPct = (data.music_pct != null) ? data.music_pct : 0;
+    const speechPct = (data.speech_pct != null) ? data.speech_pct : 0;
+    musicVerdictSplit.innerHTML =
+      '<div class="verdict-ring-split-item music"><span class="v">' + musicPct.toFixed(0) + '%</span><span class="l">Music</span></div>' +
+      '<div class="verdict-ring-split-item speech"><span class="v">' + speechPct.toFixed(0) + '%</span><span class="l">Speech</span></div>';
+  }
+
+  // Build the cells we'll render based on current view + available width.
+  // Returns { cells, fit } where fit=true means cells fill the container width
+  // (heatmap mode); fit=false means fixed-width cells with possible scroll.
+  function buildMusicCells(frames, view) {
+    if (!frames.length) return { cells: [], fit: false };
+
+    const DETAILED_PX = 11;       // legacy fixed width
+    const HEATMAP_TARGET_PX = 6;  // ideal cell width when there's room
+    const HEATMAP_MIN_PX = 2;     // smallest readable cell
+
+    if (view === 'detailed') {
+      const cells = frames.map((f, i) => ({
+        cellWidth: DETAILED_PX,
+        music: f.music_prob,
+        speech: f.speech_prob,
+        startMs: f.start_time_s * 1000,
+        endMs: f.end_time_s * 1000,
+        firstFrameIdx: i,
+        lastFrameIdx: i,
+        groupSize: 1,
+      }));
+      return { cells, fit: false };
+    }
+
+    // Heatmap: fit to container
+    const containerWidth = musicHistogramFit
+      ? musicHistogramFit.clientWidth - rowLabelOffsetPx() - 2  // -2 for safe rounding
+      : 800;
+    const W = Math.max(200, containerWidth);
+
+    if (frames.length * HEATMAP_TARGET_PX <= W) {
+      // Plenty of room: one cell per frame at target width
+      const cells = frames.map((f, i) => ({
+        cellWidth: HEATMAP_TARGET_PX,
+        music: f.music_prob,
+        speech: f.speech_prob,
+        startMs: f.start_time_s * 1000,
+        endMs: f.end_time_s * 1000,
+        firstFrameIdx: i,
+        lastFrameIdx: i,
+        groupSize: 1,
+      }));
+      return { cells, fit: true };
+    }
+
+    // Aggregate: max-pool adjacent frames so cells get at least MIN_CELL_PX wide
+    const maxCells = Math.max(1, Math.floor(W / HEATMAP_MIN_PX));
+    const groupSize = Math.ceil(frames.length / maxCells);
+    const numCells = Math.ceil(frames.length / groupSize);
+    const cellWidth = Math.max(HEATMAP_MIN_PX, Math.floor(W / numCells));
+    const cells = [];
+    for (let g = 0; g < numCells; g++) {
+      const start = g * groupSize;
+      const end = Math.min(start + groupSize, frames.length);
+      let mMax = 0, sMax = 0;
+      for (let k = start; k < end; k++) {
+        if (frames[k].music_prob  > mMax) mMax = frames[k].music_prob;
+        if (frames[k].speech_prob > sMax) sMax = frames[k].speech_prob;
+      }
+      cells.push({
+        cellWidth,
+        music: mMax,
+        speech: sMax,
+        startMs: frames[start].start_time_s * 1000,
+        endMs:   frames[end - 1].end_time_s * 1000,
+        firstFrameIdx: start,
+        lastFrameIdx: end - 1,
+        groupSize: end - start,
+      });
+    }
+    return { cells, fit: true };
+  }
+
+  // Width of the row label slot (e.g. "MUSIC") so the bars fill the rest.
+  // Falls back to 4.1rem ≈ 65.6px (3.5rem label + 0.6rem gap).
+  function rowLabelOffsetPx() {
+    const root = document.documentElement;
+    const fs = parseFloat(getComputedStyle(root).fontSize) || 16;
+    return Math.round(4.1 * fs);
+  }
+
+  function renderMusicHistogram(frames) {
+    musicHistogram.innerHTML = '';
+    if (!frames.length) { musicCells = []; return; }
+
+    const { cells, fit } = buildMusicCells(frames, musicView);
+    musicCells = cells;
+
+    if (musicHistogramFit) musicHistogramFit.classList.toggle('scrollable', !fit);
+
+    musicHistogram.appendChild(buildMusicRow('music',  'Music',  cells, fit));
+    musicHistogram.appendChild(buildMusicRow('speech', 'Speech', cells, fit));
+    musicHistogram.appendChild(buildMusicAxis(frames, fit));
+  }
+
+  function buildMusicRow(kind, label, cells, fit) {
+    const row = document.createElement('div');
+    row.className = 'music-histo-row';
+    const lbl = document.createElement('div');
+    lbl.className = 'music-histo-row-label ' + kind;
+    lbl.textContent = label;
+    const bars = document.createElement('div');
+    bars.className = 'music-histo-row-bars' + (fit ? ' fit' : '');
+    cells.forEach((cell, ci) => bars.appendChild(makeMusicCellBar(kind, cell, ci, fit)));
+    row.appendChild(lbl);
+    row.appendChild(bars);
+    return row;
+  }
+
+  function makeMusicCellBar(kind, cell, cellIndex, fit) {
+    const prob = kind === 'music' ? cell.music : cell.speech;
+    const bar = document.createElement('div');
+    bar.className = 'histo-bar ' + kind;
+    bar.dataset.cellIndex = cellIndex;
+    if (fit) {
+      // Heatmap: stretch equally so cells fill the row width
+      bar.style.flex = '1 1 0';
+      bar.style.width = 'auto';
+      bar.style.minWidth = '0';
+    } else {
+      bar.style.flex = '0 0 ' + cell.cellWidth + 'px';
+      bar.style.width = cell.cellWidth + 'px';
+    }
+    bar.style.aspectRatio = 'auto';
+    bar.style.height = '22px';
+    const alpha = Math.max(0.12, Math.pow(prob, 1.4));
+    const rgb = kind === 'music' ? '124,58,237' : '20,184,166';
+    bar.style.background = 'rgba(' + rgb + ',' + alpha.toFixed(3) + ')';
+
+    const labelWord = kind === 'music' ? 'Music' : 'Speech';
+    const labelColor = kind === 'music' ? 'rgb(196,167,255)' : 'rgb(110,232,212)';
+    const groupNote = cell.groupSize > 1
+      ? ' <span style="opacity:0.6">(max of ' + cell.groupSize + ' frames)</span>'
+      : '';
+    const tooltipHtml =
+      formatMs(cell.startMs) + ' – ' + formatMs(cell.endMs) +
+      ' <span style="color:' + labelColor + '">· <span style="font-weight:700">' + labelWord + '</span> ' +
+      (prob * 100).toFixed(1) + '%</span>' + groupNote;
+
+    bar.addEventListener('mouseenter', () => {
+      const rect = bar.getBoundingClientRect();
+      histoTooltip.innerHTML = tooltipHtml;
+      histoTooltip.style.display = 'block';
+      histoTooltip.style.top = (rect.top - 6) + 'px';
+      histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
+      histoTooltip.style.transform = 'translate(-50%, -100%)';
+    });
+    bar.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
+    bar.addEventListener('click', () => seekToMusic(cell.startMs, cellIndex));
+    return bar;
+  }
+
+  // Adaptive time axis: pick a tick interval producing 5–10 ticks total.
+  function buildMusicAxis(frames, fit) {
+    const axisRow = document.createElement('div');
+    axisRow.className = 'histo-axis music-histo-axis' + (fit ? '' : ' gapped');
+    if (!frames.length) return axisRow;
+
+    const lastFrame = frames[frames.length - 1];
+    const totalMs = lastFrame.end_time_s * 1000;
+
+    if (fit) {
+      // Heatmap: position absolute, percentage-based
+      const intervalMs = pickAxisIntervalMs(totalMs);
+      let lastTickMs = 0;
+      for (let t = 0; t <= totalMs; t += intervalMs) {
+        const tick = document.createElement('span');
+        tick.className = 'music-histo-axis-tick-abs';
+        if (t === 0) tick.classList.add('first');
+        tick.style.left = ((t / totalMs) * 100).toFixed(3) + '%';
+        tick.textContent = formatSecCompact(t);
+        axisRow.appendChild(tick);
+        lastTickMs = t;
+      }
+      // Final tick at duration end (only if far enough from previous)
+      if (totalMs - lastTickMs > intervalMs * 0.7) {
+        const endTick = document.createElement('span');
+        endTick.className = 'music-histo-axis-tick-abs last';
+        endTick.style.left = '100%';
+        endTick.textContent = formatSecCompact(totalMs);
+        axisRow.appendChild(endTick);
+      }
+    } else {
+      // Detailed: legacy per-frame ticks every 5 frames
+      frames.forEach((frame, i) => {
+        const tick = document.createElement('div');
+        tick.className = 'histo-tick';
+        if (i % 5 === 0) tick.textContent = formatSecCompact(frame.start_time_s * 1000);
+        axisRow.appendChild(tick);
+      });
+    }
+    return axisRow;
+  }
+
+  function pickAxisIntervalMs(totalMs) {
+    const totalS = totalMs / 1000;
+    const candidates = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 1200];
+    for (const sec of candidates) {
+      if (totalS / sec <= 8) return sec * 1000;
+    }
+    return 1800 * 1000;
+  }
+
+  function renderMusicTable(frames) {
+    musicTbody.innerHTML = '';
+    frames.forEach((frame, i) => {
+      const tr = document.createElement('tr');
+      tr.dataset.index = i;
+      const startMs = frame.start_time_s * 1000;
+      const endMs   = frame.end_time_s * 1000;
+
+      const tdTime = document.createElement('td');
+      tdTime.textContent = formatSecPrecise(frame.start_time_s) + ' – ' + formatSecPrecise(frame.end_time_s);
+
+      tr.appendChild(tdTime);
+      tr.appendChild(buildProbCell(frame.music_prob, 'music'));
+      tr.appendChild(buildProbCell(frame.speech_prob, 'speech'));
+      tr.addEventListener('click', () => seekToMusic(startMs, i));
+      musicTbody.appendChild(tr);
+    });
+  }
+
+  function buildProbCell(prob, kind) {
+    const td = document.createElement('td');
+    const wrap = document.createElement('div');
+    wrap.className = 'confidence-cell';
+    const track = document.createElement('div');
+    track.className = 'confidence-bar-track';
+    const fill = document.createElement('div');
+    fill.className = 'confidence-bar-fill ' + kind;
+    fill.style.width = (prob * 100) + '%';
+    track.appendChild(fill);
+    const text = document.createElement('span');
+    text.textContent = (prob * 100).toFixed(1) + '%';
+    wrap.appendChild(track);
+    wrap.appendChild(text);
+    td.appendChild(wrap);
+    return td;
+  }
+
+  function seekToMusic(startMs, cellIndex) {
+    if (resultsAudio) {
+      resultsAudio.currentTime = startMs / 1000;
+      resultsAudio.play().catch(() => {});
+    }
+    musicHistogram.querySelectorAll('.histo-bar').forEach((bar) => {
+      bar.classList.toggle('active', Number(bar.dataset.cellIndex) === cellIndex);
+    });
+    if (musicCells.length && cellIndex >= 0 && cellIndex < musicCells.length) {
+      const cell = musicCells[cellIndex];
+      musicTbody.querySelectorAll('tr').forEach((row, i) => {
+        row.classList.toggle('active', i >= cell.firstFrameIdx && i <= cell.lastFrameIdx);
+      });
+    }
+  }
+
+  function setupMusicPlaybackTracking(frames) {
+    if (musicPlaybackTracker) cancelAnimationFrame(musicPlaybackTracker);
+    function tick() {
+      if (resultsAudio.paused) { musicPlaybackTracker = requestAnimationFrame(tick); return; }
+      const currentMs = resultsAudio.currentTime * 1000;
+      let activeFrameIdx = -1;
+      for (let i = frames.length - 1; i >= 0; i--) {
+        const startMs = frames[i].start_time_s * 1000;
+        const endMs   = frames[i].end_time_s * 1000;
+        if (currentMs >= startMs && currentMs < endMs) { activeFrameIdx = i; break; }
+      }
+      // Map active frame to its containing cell (in current view)
+      let activeCellIdx = -1;
+      if (activeFrameIdx >= 0 && musicCells.length) {
+        for (let c = 0; c < musicCells.length; c++) {
+          if (activeFrameIdx >= musicCells[c].firstFrameIdx && activeFrameIdx <= musicCells[c].lastFrameIdx) {
+            activeCellIdx = c;
+            break;
+          }
+        }
+      }
+      musicHistogram.querySelectorAll('.histo-bar').forEach((bar) => {
+        bar.classList.toggle('active', Number(bar.dataset.cellIndex) === activeCellIdx);
+      });
+      musicTbody.querySelectorAll('tr').forEach((row, i) => row.classList.toggle('active', i === activeFrameIdx));
+      musicPlaybackTracker = requestAnimationFrame(tick);
+    }
+    musicPlaybackTracker = requestAnimationFrame(tick);
+  }
+
+  // Toggle handler
+  musicViewBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.dataset.view;
+      if (view === musicView) return;
+      musicView = view;
+      musicViewBtns.forEach(b => b.classList.toggle('active', b.dataset.view === view));
+      if (currentMode === 'music' && currentData && currentData.frames) {
+        renderMusicHistogram(currentData.frames);
+      }
+    });
+  });
+
+  // Re-layout heatmap when the container width changes (window resize, sidebar reflow)
+  if (window.ResizeObserver && musicHistogramFit) {
+    let resizeRaf = null;
+    musicResizeObserver = new ResizeObserver(() => {
+      if (currentMode !== 'music') return;
+      if (musicView !== 'heatmap') return;
+      if (!currentData || !currentData.frames) return;
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(() => renderMusicHistogram(currentData.frames));
+    });
+    musicResizeObserver.observe(musicHistogramFit);
+  }
+
+  function formatSecPrecise(s) {
+    return s.toFixed(2) + 's';
   }
 
   function buildSttStreamingParams() {
@@ -2340,6 +2822,8 @@
   document.getElementById('btn-show-stats-stt').addEventListener('click', () => showStatsModal());
   document.getElementById('btn-show-json-stt').addEventListener('click', () => showJsonModal());
   document.getElementById('btn-show-json-redaction').addEventListener('click', () => showJsonModal());
+  document.getElementById('btn-show-stats-music').addEventListener('click', () => showStatsModal());
+  document.getElementById('btn-show-json-music').addEventListener('click', () => showJsonModal());
 
   document.getElementById('stats-modal-close').addEventListener('click', () => statsModal.classList.remove('visible'));
   document.getElementById('json-modal-close').addEventListener('click', () => jsonModal.classList.remove('visible'));
@@ -2391,7 +2875,55 @@
     const m = currentMeta;
     let groups;
 
-    if (currentMode === 'deepfake') {
+    if (currentMode === 'music') {
+      statsModalTitle.textContent = 'Music Detection Statistics';
+      const frames = currentData.frames || [];
+      const durationS = currentData.duration_s || 0;
+      const durationMs = durationS * 1000;
+      const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
+      const procFactor = m.processingMs && durationMs ? (durationMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
+      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
+      const fileType = m.fileType || (currentData.filename ? currentData.filename.split('.').pop().toUpperCase() : 'N/A');
+      const avgMusic  = frames.length ? frames.reduce((s, f) => s + (f.music_prob  || 0), 0) / frames.length : 0;
+      const avgSpeech = frames.length ? frames.reduce((s, f) => s + (f.speech_prob || 0), 0) / frames.length : 0;
+      const maxMusic  = frames.length ? Math.max(...frames.map(f => f.music_prob  || 0)) : 0;
+      const maxSpeech = frames.length ? Math.max(...frames.map(f => f.speech_prob || 0)) : 0;
+      const costVal = durationMs ? '$' + (durationMs / 3600000 * 0.001).toFixed(6) : 'N/A';
+      const serverLatency = currentData.latency_ms != null ? formatDuration(currentData.latency_ms) : 'N/A';
+
+      groups = [
+        { group: 'Detection', rows: [
+          ['Model', 'music-detection (preview)'],
+          ['Primary label', (currentData.primary_label || 'unknown').replace(/^./, c => c.toUpperCase())],
+          ['Music coverage', (currentData.music_pct  != null ? currentData.music_pct.toFixed(1)  : '0.0') + '%'],
+          ['Speech coverage', (currentData.speech_pct != null ? currentData.speech_pct.toFixed(1) : '0.0') + '%'],
+          ['Avg music probability', (avgMusic * 100).toFixed(1) + '%'],
+          ['Avg speech probability', (avgSpeech * 100).toFixed(1) + '%'],
+          ['Max music probability', (maxMusic * 100).toFixed(1) + '%'],
+          ['Max speech probability', (maxSpeech * 100).toFixed(1) + '%'],
+        ]},
+        { group: 'Audio', rows: [
+          ['File Name', currentData.filename || 'N/A'],
+          ['File Size', m.fileSize ? formatBytes(m.fileSize) : 'N/A'],
+          ['File Type', fileType],
+          ['Audio Duration', formatDuration(durationMs)],
+          ['Total frames', String(frames.length)],
+          ['Frame resolution', '~0.192s'],
+        ]},
+        { group: 'Performance', rows: [
+          ['Server latency', serverLatency],
+          ['Round-trip time', procTimeStr],
+          ['Processing Factor', procFactor],
+          ['Cost', costVal],
+          ['Rate', '$0.001/hr'],
+        ]},
+        { group: 'Request', rows: [
+          ['HTTP', httpStr],
+          ['Endpoint', '/api/preview/music-detection'],
+          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
+        ]},
+      ];
+    } else if (currentMode === 'deepfake') {
       statsModalTitle.textContent = 'Detection Statistics';
       const frames = currentData.frames || [];
       const { isSynthetic: isSyn, synFrames } = computeVerdict(frames);
@@ -2719,6 +3251,7 @@
     const path = location.pathname.replace(/\/$/, '');
     if (path === '/deepfake') return 'deepfake';
     if (path === '/redaction') return 'redaction';
+    if (path === '/music') return 'music';
     return 'transcription';
   }
 
@@ -2750,12 +3283,32 @@
     transcriptContainer.classList.remove('visible');
     resultsSidebar.classList.remove('visible');
     redactionContent.style.display = 'none';
+    if (musicContent) musicContent.style.display = 'none';
+    if (musicSidebar) musicSidebar.style.display = 'none';
     currentMeta = {
       fileSize: 1.87 * 1024 * 1024, fileType: 'audio/mpeg',
       httpStatus: 200, httpStatusText: 'OK',
       responseSize: 4.2 * 1024, processingMs: 2660,
     };
     renderDeepfakeResults(DEMO_DATA, DEMO_AUDIO_URL);
+  } else if (initMode === 'music') {
+    // Music Detection init
+    deepfakeContent.style.display = 'none';
+    resultsVerdict.style.display = 'none';
+    transcriptContainer.classList.remove('visible');
+    resultsSidebar.classList.remove('visible');
+    sttOptions.classList.remove('visible');
+    redactionContent.style.display = 'none';
+    if (recordAction) { recordAction.style.display = ''; recordAction.classList.add('disabled-soon'); }
+    if (streamDemoAction) streamDemoAction.style.display = 'none';
+    if (streamFileAction) streamFileAction.style.display = 'none';
+    currentMeta = {
+      fileSize: 243900, fileType: 'audio/opus',
+      httpStatus: 200, httpStatusText: 'OK',
+      responseSize: JSON.stringify(DEMO_MUSIC_DATA).length,
+      processingMs: DEMO_MUSIC_DATA.latency_ms || 0,
+    };
+    renderMusicResults(DEMO_MUSIC_DATA, DEMO_MUSIC_AUDIO_URL);
   } else if (initMode === 'redaction') {
     // Redaction init
     deepfakeContent.style.display = 'none';
@@ -2766,6 +3319,8 @@
     redactionContent.style.display = 'block';
     redactionSidebar.classList.add('visible');
     redactionOptions.classList.add('visible');
+    if (musicContent) musicContent.style.display = 'none';
+    if (musicSidebar) musicSidebar.style.display = 'none';
     if (recordAction) { recordAction.style.display = ''; recordAction.classList.add('disabled-soon'); }
     if (streamDemoAction) streamDemoAction.style.display = 'none';
     if (streamFileAction) streamFileAction.style.display = 'none';
@@ -2798,6 +3353,8 @@
     transcriptContainer.classList.add('visible');
     resultsSidebar.classList.add('visible');
     sttOptions.classList.add('visible');
+    if (musicContent) musicContent.style.display = 'none';
+    if (musicSidebar) musicSidebar.style.display = 'none';
     if (recordAction) {
       recordAction.classList.remove('disabled-soon');
       recordAction.querySelector('span').textContent = 'Start streaming';
@@ -2818,6 +3375,9 @@
   }
 
   // Replace initial state so back button works
-  const initPath = initMode === 'deepfake' ? '/deepfake' : initMode === 'redaction' ? '/redaction' : '/transcription';
+  const initPath = initMode === 'deepfake' ? '/deepfake'
+    : initMode === 'redaction' ? '/redaction'
+    : initMode === 'music' ? '/music'
+    : '/transcription';
   history.replaceState({ mode: initMode }, '', initPath + location.search);
 })();

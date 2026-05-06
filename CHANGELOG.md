@@ -2,6 +2,22 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [3.7.0] - 2026-05-06
+
+### Added
+- New **Music Detection** mode (preview) at `/music` — frame-level music + speech classification.
+  - Verdict ring shows primary label (Music / Speech / Neither) with dual `Music % · Speech %` split.
+  - Stacked dual-row histogram (Music + Speech) with opacity scaled to per-frame probability.
+  - **Heatmap / Detailed view toggle**: Heatmap (default) fits the full row width regardless of clip length, max-pools adjacent frames when there are more frames than pixels (down to ~2px min cell). Detailed shows the original 11px-per-frame scrolling row.
+  - Adaptive time axis (1s/2s/5s/10s/30s/… ticks) keeps ~5–8 evenly-spaced labels regardless of duration.
+  - Per-cell hover tooltip, click-to-seek, playback tracking across both views.
+  - Per-frame table with Music + Speech probability bars.
+  - Stats modal with avg/max music + speech probabilities, server latency, cost (@ $0.001/hr), endpoint.
+- "Start streaming" button shown but ghosted (`disabled-soon`) in Music Detection mode — placeholder until streaming variant ships.
+
+### Changed
+- Server proxy now supports per-endpoint upstream base URL + path + form-field overrides. Music Detection routes `/api/preview/music-detection` → `http://34.228.138.241:8080/MusicDetection` with the `file` form field (per OpenAPI spec); other endpoints unchanged.
+
 ## [3.1.1] - 2026-04-10
 
 ### Fixed
