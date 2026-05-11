@@ -61,19 +61,26 @@ const ALLOWED_ENDPOINTS = new Set([
   '/api/velma-2-stt-batch-english-vfast',
   '/api/velma-2-synthetic-voice-detection-batch',
   '/api/velma-2-pii-phi-redaction-batch',
-  '/api/velma-2-music-detection',
+  '/api/velma-2-music-detection-batch',
 ]);
 
-// Per-endpoint upstream base URL overrides (defaults to API_BASE_URL)
-const ENDPOINT_BASE_URL = {};
+// Per-endpoint upstream base URL overrides (defaults to API_BASE_URL).
+// Music streaming temporarily targets the preview GPU box directly while the
+// gateway routing is being finalized.
+const ENDPOINT_BASE_URL = {
+  '/api/velma-2-music-detection-streaming': 'http://3.88.52.192',
+};
 
-// Per-endpoint upstream path overrides (defaults to the incoming request path)
-const ENDPOINT_UPSTREAM_PATH = {};
+// Per-endpoint upstream path overrides (defaults to the incoming request path).
+// The new GPU-backed music model lives behind the gateway's `/api/preview/` prefix.
+const ENDPOINT_UPSTREAM_PATH = {
+  '/api/velma-2-music-detection-batch': '/api/preview/velma-2-music-detection-batch',
+};
 
 // Per-endpoint upstream form-field name overrides (defaults to "upload_file").
 // Music Detection's spec uses "file" instead.
 const ENDPOINT_UPLOAD_FIELD = {
-  '/api/velma-2-music-detection': 'file',
+  '/api/velma-2-music-detection-batch': 'file',
 };
 
 // ── Usage endpoint ───────────────────────────────────────────────────────────
@@ -241,6 +248,7 @@ server.on('upgrade', (req, socket, head) => {
   const ALLOWED_WS_PATHS = new Set([
     '/api/velma-2-stt-streaming',
     '/api/velma-2-synthetic-voice-detection-streaming',
+    '/api/velma-2-music-detection-streaming',
   ]);
 
   if (!ALLOWED_WS_PATHS.has(url.pathname)) {
