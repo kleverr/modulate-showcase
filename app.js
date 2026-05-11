@@ -248,11 +248,11 @@
     if (musicSidebar) musicSidebar.style.display = isMusic ? '' : 'none';
     if (playerEntryOriginal) playerEntryOriginal.style.display = isRedaction ? '' : 'none';
     if (redactedLabel) redactedLabel.style.display = isRedaction ? '' : 'none';
-    if (streamDemoAction) streamDemoAction.style.display = isTranscription ? '' : 'none';
-    if (streamFileAction) streamFileAction.style.display = isTranscription ? '' : 'none';
+    if (streamDemoAction) streamDemoAction.style.display = (isTranscription || isMusic) ? '' : 'none';
+    if (streamFileAction) streamFileAction.style.display = (isTranscription || isMusic) ? '' : 'none';
     if (recordAction) {
       recordAction.style.display = isRedaction ? 'none' : '';
-      recordAction.classList.toggle('disabled-soon', isRedaction || isMusic);
+      recordAction.classList.toggle('disabled-soon', isRedaction);
     }
     renderDebugPanel(true);
 
@@ -264,7 +264,7 @@
     if (musicPlaybackTracker) { cancelAnimationFrame(musicPlaybackTracker); musicPlaybackTracker = null; }
 
     if (recordAction) {
-      recordAction.classList.toggle('disabled-soon', isRedaction || isMusic);
+      recordAction.classList.toggle('disabled-soon', isRedaction);
       const span = recordAction.querySelector('span');
       if (span) span.textContent = 'Start streaming';
     }
@@ -465,6 +465,7 @@
   let scriptProcessor = null;
   let recordingWs = null;
   let liveFrames = [];
+  let liveMusicFrames = [];
   let recordingStartTime = 0;
   let mediaRecorder = null;
   let recordedChunks = [];
@@ -477,6 +478,7 @@
         stopRecording();
       } else {
         if (currentMode === 'deepfake') startDeepfakeRecording();
+        else if (currentMode === 'music') startMusicRecording();
         else startTranscriptionRecording();
       }
     });
@@ -485,7 +487,8 @@
   if (streamDemoAction) {
     streamDemoAction.addEventListener('click', () => {
       if (isRecording) { stopRecording(); return; }
-      startTranscriptionDemoStream();
+      if (currentMode === 'music') startMusicDemoStream();
+      else startTranscriptionDemoStream();
     });
   }
 
@@ -498,7 +501,8 @@
     });
     streamFileInput.addEventListener('change', () => {
       if (streamFileInput.files.length > 0) {
-        startTranscriptionFileStream(streamFileInput.files[0]);
+        if (currentMode === 'music') startMusicFileStream(streamFileInput.files[0]);
+        else startTranscriptionFileStream(streamFileInput.files[0]);
         streamFileInput.value = '';
       }
     });
@@ -1196,13 +1200,20 @@
     isAnalyzing = true;
     const durationMs = await getAudioDuration(file);
     showOverlay(file.name, 'Detecting music and speech');
-    // Music model is ~1.5x realtime per the demo (≈10s latency for ~15s audio)
-    const estimatedMs = Math.max(MIN_PROGRESS_MS, durationMs / 1.5);
+    // Music model on GPU runs ~35x realtime (e.g. 3.5min clip → ~5–6s).
+    const estimatedMs = Math.max(MIN_PROGRESS_MS, durationMs / 35);
     startProgress(estimatedMs);
 
     try {
       const startedAt = Date.now();
-      const { data, meta } = await uploadAndAnalyze(file, '/api/velma-2-music-detection');
+      const { data, meta } = await uploadAndAnalyze(file, '/api/velma-2-music-detection-batch');
+      // New GPU batch model returns frames keyed by `_ms`; renderer expects `_s`.
+      if (Array.isArray(data.frames)) {
+        for (const f of data.frames) {
+          if (f.start_time_s == null && f.start_time_ms != null) f.start_time_s = f.start_time_ms / 1000;
+          if (f.end_time_s   == null && f.end_time_ms   != null) f.end_time_s   = f.end_time_ms   / 1000;
+        }
+      }
       const processingMs = Date.now() - startedAt;
       await finishProgress();
       hideOverlay();
@@ -1241,9 +1252,216 @@
 
     renderMusicVerdict(data);
     renderMusicHistogram(frames);
-    renderMusicTable(frames);
+    renderMusicTable(frames, musicView);
     if (frames.length) setupMusicPlaybackTracking(frames);
     window.scrollTo(0, 0);
+  }
+
+  function resetMusicLiveUI() {
+    currentData = null;
+    musicVerdictRing.className = 'verdict-ring pending';
+    musicVerdictIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:100%;height:100%"><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>';
+    musicVerdictLabel.textContent = 'Listening';
+    musicVerdictSplit.innerHTML =
+      '<div class="verdict-ring-split-item music"><span class="v">—</span><span class="l">Music</span></div>' +
+      '<div class="verdict-ring-split-item speech"><span class="v">—</span><span class="l">Speech</span></div>';
+    musicHistogram.innerHTML = '';
+    musicTbody.innerHTML = '';
+    const placeholderRow = document.createElement('tr');
+    placeholderRow.style.color = 'var(--text-caption)';
+    const tdTime = document.createElement('td');
+    tdTime.textContent = '0:00 – …';
+    const tdMusic = document.createElement('td');
+    tdMusic.textContent = '—';
+    const tdSpeech = document.createElement('td');
+    tdSpeech.textContent = '—';
+    placeholderRow.appendChild(tdTime);
+    placeholderRow.appendChild(tdMusic);
+    placeholderRow.appendChild(tdSpeech);
+    musicTbody.appendChild(placeholderRow);
+  }
+
+  function handleMusicStreamMessage(msg) {
+    if (msg?.type === 'frame' && msg.frame && typeof msg.frame.music_prob === 'number') {
+      const f = msg.frame;
+      liveMusicFrames.push({
+        start_time_s: (f.start_time_ms || 0) / 1000,
+        end_time_s:   (f.end_time_ms   || 0) / 1000,
+        music_prob:   f.music_prob,
+        speech_prob:  f.speech_prob,
+      });
+      renderMusicLiveResults();
+    } else if (msg?.type === 'done') {
+      stopRecording();
+    } else if (msg?.type === 'error') {
+      showError('Streaming error: ' + (msg.error || 'Unknown'));
+      if (liveMusicFrames.length > 0) stopRecording();
+      else { cleanupRecording(); demoCleanup(); }
+    }
+  }
+
+  function startMusicRecording() {
+    liveMusicFrames = [];
+    startRecordingCommon(
+      '/api/velma-2-music-detection-streaming?audio_format=s16le&sample_rate=16000&num_channels=1',
+      handleMusicStreamMessage,
+      () => {
+        resultsFilename.textContent = 'Live Recording';
+        resultsAudio.removeAttribute('src');
+        resultsAudio.load();
+        if (audioObjectUrl) { URL.revokeObjectURL(audioObjectUrl); audioObjectUrl = null; }
+        resetMusicLiveUI();
+        window.scrollTo(0, 0);
+      }
+    );
+  }
+
+  function startMusicDemoStream() {
+    return startMusicStreamFromUrl(DEMO_MUSIC_AUDIO_URL, 'Demo stream', false);
+  }
+
+  async function startMusicFileStream(file) {
+    const url = URL.createObjectURL(file);
+    await startMusicStreamFromUrl(url, file.name, true);
+  }
+
+  async function startMusicStreamFromUrl(url, filename, isUserFile) {
+    if (isRecording) return;
+    if (currentMode !== 'music') return;
+
+    liveMusicFrames = [];
+
+    resultsFilename.textContent = filename;
+    if (audioObjectUrl) { URL.revokeObjectURL(audioObjectUrl); audioObjectUrl = null; }
+    if (isUserFile) audioObjectUrl = url;
+    resultsAudio.src = url;
+    lastMusicAudioUrl = url;
+    resetMusicLiveUI();
+    window.scrollTo(0, 0);
+
+    // Fetch + decode → 16 kHz mono PCM s16le (same pipeline as transcription demo)
+    let int16;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const arr = await res.arrayBuffer();
+      const actx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+      const audio = await actx.decodeAudioData(arr);
+      const ch = audio.getChannelData(0);
+      int16 = new Int16Array(ch.length);
+      for (let i = 0; i < ch.length; i++) {
+        int16[i] = Math.max(-32768, Math.min(32767, Math.round(ch[i] * 32767)));
+      }
+      actx.close().catch(() => {});
+    } catch (err) {
+      showError('Failed to load audio: ' + (err && err.message ? err.message : err));
+      return;
+    }
+
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = proto + '//' + location.host + '/api/velma-2-music-detection-streaming?audio_format=s16le&sample_rate=16000&num_channels=1';
+    recordingWs = new WebSocket(wsUrl);
+    recordingWs.binaryType = 'arraybuffer';
+    endFrameSent = false;
+    isDemoStreaming = true;
+
+    recordingWs.onopen = () => {
+      isRecording = true;
+      recordingStartTime = Date.now();
+      updateRecordButton();
+
+      try { resultsAudio.currentTime = 0; } catch {}
+      const playPromise = resultsAudio.play();
+      if (playPromise && playPromise.catch) playPromise.catch(() => { /* autoplay blocked — silent */ });
+
+      // Pace at realtime: 4096 samples = 256 ms at 16 kHz
+      const CHUNK = 4096;
+      let offset = 0;
+      function sendNext() {
+        if (!isRecording || !recordingWs || recordingWs.readyState !== WebSocket.OPEN) return;
+        if (offset >= int16.length) {
+          try { recordingWs.send(''); } catch (e) {}
+          endFrameSent = true;
+          return;
+        }
+        const end = Math.min(offset + CHUNK, int16.length);
+        const slice = int16.subarray(offset, end);
+        const ab = new ArrayBuffer(slice.byteLength);
+        new Int16Array(ab).set(slice);
+        recordingWs.send(ab);
+        offset = end;
+        demoChunkTimer = setTimeout(sendNext, 256);
+      }
+      sendNext();
+    };
+
+    recordingWs.addEventListener('message', async (event) => {
+      let text = '';
+      try {
+        if (typeof event.data === 'string') text = event.data;
+        else if (event.data instanceof Blob) text = await event.data.text();
+        else if (event.data instanceof ArrayBuffer) text = new TextDecoder().decode(event.data);
+      } catch { return; }
+      if (!text) return;
+      let msg; try { msg = JSON.parse(text); } catch { return; }
+      handleMusicStreamMessage(msg);
+    });
+
+    recordingWs.onerror = () => { demoCleanup(); };
+
+    recordingWs.onclose = () => {
+      const wasRecording = isRecording;
+      demoCleanup();
+      // Finalize music UI if the stream completed naturally (i.e. user didn't click stop,
+      // which would have routed through stopRecording's music branch already)
+      if (wasRecording && liveMusicFrames.length > 0 && currentMode === 'music') {
+        const data = computeMusicSummary(liveMusicFrames, { filename });
+        currentData = data;
+        currentFrames = liveMusicFrames;
+        lastMusicData = data;
+        lastMusicAudioUrl = url;
+        currentMeta = {
+          fileSize: 0, fileType: 'PCM 16kHz', httpStatus: 101, httpStatusText: 'Switching Protocols',
+          responseSize: JSON.stringify(data).length, processingMs: Date.now() - recordingStartTime,
+        };
+        lastMusicMeta = { ...currentMeta };
+        renderMusicVerdict(data);
+        renderMusicHistogram(liveMusicFrames);
+        renderMusicTable(liveMusicFrames, musicView);
+        setupMusicPlaybackTracking(liveMusicFrames);
+      }
+    };
+  }
+
+  function computeMusicSummary(frames, opts) {
+    let mCount = 0, sCount = 0;
+    for (const f of frames) {
+      if ((f.music_prob  || 0) >= 0.5) mCount++;
+      if ((f.speech_prob || 0) >= 0.5) sCount++;
+    }
+    const music_pct  = frames.length ? (mCount / frames.length) * 100 : 0;
+    const speech_pct = frames.length ? (sCount / frames.length) * 100 : 0;
+    let primary_label = 'neither';
+    if (music_pct >= 50 && music_pct >= speech_pct) primary_label = 'music';
+    else if (speech_pct >= 50) primary_label = 'speech';
+    return {
+      filename: (opts && opts.filename) || 'Live Recording',
+      duration_s: frames.length ? frames[frames.length - 1].end_time_s : 0,
+      primary_label,
+      music_pct,
+      speech_pct,
+      frames,
+    };
+  }
+
+  function renderMusicLiveResults() {
+    if (!liveMusicFrames.length) return;
+    const data = computeMusicSummary(liveMusicFrames, { filename: resultsFilename.textContent });
+    currentData = data;
+    currentFrames = liveMusicFrames;
+    renderMusicVerdict(data);
+    renderMusicHistogram(liveMusicFrames);
+    renderMusicTable(liveMusicFrames, musicView);
   }
 
   function renderMusicVerdict(data) {
@@ -1416,7 +1634,7 @@
       histoTooltip.style.transform = 'translate(-50%, -100%)';
     });
     bar.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
-    bar.addEventListener('click', () => seekToMusic(cell.startMs, cellIndex));
+    bar.addEventListener('click', () => seekToMusic(cell.startMs, cell.firstFrameIdx));
     return bar;
   }
 
@@ -1471,21 +1689,62 @@
     return 1800 * 1000;
   }
 
-  function renderMusicTable(frames) {
+  // Build table rows. In 'detailed' view: one row per ~192ms frame. In 'heatmap' view:
+  // bucket frames into 1-second groups, max-pooling music/speech probabilities. Each row
+  // tracks its underlying frame-index range so click/seek and playback tracking work in
+  // both modes.
+  function renderMusicTable(frames, view) {
     musicTbody.innerHTML = '';
-    frames.forEach((frame, i) => {
+    if (!frames.length) return;
+
+    let groups;
+    if (view === 'detailed') {
+      groups = frames.map((f, i) => ({
+        startMs: f.start_time_s * 1000,
+        endMs:   f.end_time_s   * 1000,
+        music:   f.music_prob,
+        speech:  f.speech_prob,
+        firstFrameIdx: i,
+        lastFrameIdx:  i,
+      }));
+    } else {
+      const BUCKET_MS = 1000;
+      groups = [];
+      let i = 0;
+      while (i < frames.length) {
+        const startMs = frames[i].start_time_s * 1000;
+        const bucketEndMs = Math.floor(startMs / BUCKET_MS + 1) * BUCKET_MS;
+        let j = i;
+        let mMax = 0, sMax = 0;
+        while (j < frames.length && frames[j].start_time_s * 1000 < bucketEndMs) {
+          if (frames[j].music_prob  > mMax) mMax = frames[j].music_prob;
+          if (frames[j].speech_prob > sMax) sMax = frames[j].speech_prob;
+          j++;
+        }
+        groups.push({
+          startMs,
+          endMs: frames[j - 1].end_time_s * 1000,
+          music: mMax,
+          speech: sMax,
+          firstFrameIdx: i,
+          lastFrameIdx:  j - 1,
+        });
+        i = j;
+      }
+    }
+
+    groups.forEach((g) => {
       const tr = document.createElement('tr');
-      tr.dataset.index = i;
-      const startMs = frame.start_time_s * 1000;
-      const endMs   = frame.end_time_s * 1000;
+      tr.dataset.firstFrame = g.firstFrameIdx;
+      tr.dataset.lastFrame  = g.lastFrameIdx;
 
       const tdTime = document.createElement('td');
-      tdTime.textContent = formatSecPrecise(frame.start_time_s) + ' – ' + formatSecPrecise(frame.end_time_s);
+      tdTime.textContent = formatSecPrecise(g.startMs / 1000) + ' – ' + formatSecPrecise(g.endMs / 1000);
 
       tr.appendChild(tdTime);
-      tr.appendChild(buildProbCell(frame.music_prob, 'music'));
-      tr.appendChild(buildProbCell(frame.speech_prob, 'speech'));
-      tr.addEventListener('click', () => seekToMusic(startMs, i));
+      tr.appendChild(buildProbCell(g.music, 'music'));
+      tr.appendChild(buildProbCell(g.speech, 'speech'));
+      tr.addEventListener('click', () => seekToMusic(g.startMs, g.firstFrameIdx));
       musicTbody.appendChild(tr);
     });
   }
@@ -1508,20 +1767,29 @@
     return td;
   }
 
-  function seekToMusic(startMs, cellIndex) {
+  // Highlight whatever histogram cell + table row contain `frameIdx` (a representative
+  // underlying frame index). Used by both click-to-seek and playback tracking so the two
+  // views stay in sync regardless of grouping.
+  function seekToMusic(startMs, frameIdx) {
     if (resultsAudio) {
       resultsAudio.currentTime = startMs / 1000;
       resultsAudio.play().catch(() => {});
     }
-    musicHistogram.querySelectorAll('.histo-bar').forEach((bar) => {
-      bar.classList.toggle('active', Number(bar.dataset.cellIndex) === cellIndex);
-    });
-    if (musicCells.length && cellIndex >= 0 && cellIndex < musicCells.length) {
-      const cell = musicCells[cellIndex];
-      musicTbody.querySelectorAll('tr').forEach((row, i) => {
-        row.classList.toggle('active', i >= cell.firstFrameIdx && i <= cell.lastFrameIdx);
-      });
+    let activeCellIdx = -1;
+    for (let c = 0; c < musicCells.length; c++) {
+      if (frameIdx >= musicCells[c].firstFrameIdx && frameIdx <= musicCells[c].lastFrameIdx) {
+        activeCellIdx = c;
+        break;
+      }
     }
+    musicHistogram.querySelectorAll('.histo-bar').forEach((bar) => {
+      bar.classList.toggle('active', Number(bar.dataset.cellIndex) === activeCellIdx);
+    });
+    musicTbody.querySelectorAll('tr').forEach((row) => {
+      const first = Number(row.dataset.firstFrame);
+      const last  = Number(row.dataset.lastFrame);
+      row.classList.toggle('active', frameIdx >= first && frameIdx <= last);
+    });
   }
 
   function setupMusicPlaybackTracking(frames) {
@@ -1548,7 +1816,11 @@
       musicHistogram.querySelectorAll('.histo-bar').forEach((bar) => {
         bar.classList.toggle('active', Number(bar.dataset.cellIndex) === activeCellIdx);
       });
-      musicTbody.querySelectorAll('tr').forEach((row, i) => row.classList.toggle('active', i === activeFrameIdx));
+      musicTbody.querySelectorAll('tr').forEach((row) => {
+        const first = Number(row.dataset.firstFrame);
+        const last  = Number(row.dataset.lastFrame);
+        row.classList.toggle('active', activeFrameIdx >= first && activeFrameIdx <= last);
+      });
       musicPlaybackTracker = requestAnimationFrame(tick);
     }
     musicPlaybackTracker = requestAnimationFrame(tick);
@@ -1563,6 +1835,7 @@
       musicViewBtns.forEach(b => b.classList.toggle('active', b.dataset.view === view));
       if (currentMode === 'music' && currentData && currentData.frames) {
         renderMusicHistogram(currentData.frames);
+        renderMusicTable(currentData.frames, musicView);
       }
     });
   });
@@ -2720,7 +2993,10 @@
           debugSetPhase('closed', 'code=' + event.code + (event.reason ? ' ' + event.reason : ''));
         }
         if (isRecording) {
-          const hasData = currentMode === 'deepfake' ? liveFrames.length > 0 : sttUtterances.length > 0;
+          const hasData =
+            currentMode === 'deepfake' ? liveFrames.length > 0
+            : currentMode === 'music'  ? liveMusicFrames.length > 0
+            : sttUtterances.length > 0;
           if (hasData) {
             stopRecording();
           } else {
@@ -2785,6 +3061,21 @@
       renderVerdict(isSynthetic, synFrames.length, liveFrames.length, reason);
       renderHistogram(liveFrames);
       renderTable(liveFrames);
+    } else if (currentMode === 'music' && liveMusicFrames.length > 0) {
+      const durationMs = Date.now() - recordingStartTime;
+      const data = computeMusicSummary(liveMusicFrames, { filename: resultsFilename.textContent });
+      currentMeta = {
+        fileSize: 0, fileType: 'PCM 16kHz', httpStatus: 101, httpStatusText: 'Switching Protocols',
+        responseSize: JSON.stringify(data).length, processingMs: durationMs,
+      };
+      currentData = data;
+      currentFrames = liveMusicFrames;
+      lastMusicData = data;
+      lastMusicMeta = { ...currentMeta };
+      renderMusicVerdict(data);
+      renderMusicHistogram(liveMusicFrames);
+      renderMusicTable(liveMusicFrames, musicView);
+      setupMusicPlaybackTracking(liveMusicFrames);
     } else if (currentMode === 'transcription') {
       const durationMs = Date.now() - recordingStartTime;
       currentMeta = {
@@ -2893,7 +3184,7 @@
 
       groups = [
         { group: 'Detection', rows: [
-          ['Model', 'velma-2-music-detection'],
+          ['Model', 'velma-2-music-detection-batch'],
           ['Primary label', (currentData.primary_label || 'unknown').replace(/^./, c => c.toUpperCase())],
           ['Music coverage', (currentData.music_pct  != null ? currentData.music_pct.toFixed(1)  : '0.0') + '%'],
           ['Speech coverage', (currentData.speech_pct != null ? currentData.speech_pct.toFixed(1) : '0.0') + '%'],
@@ -2919,7 +3210,7 @@
         ]},
         { group: 'Request', rows: [
           ['HTTP', httpStr],
-          ['Endpoint', '/api/velma-2-music-detection'],
+          ['Endpoint', '/api/velma-2-music-detection-batch'],
           ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
         ]},
       ];
@@ -3299,9 +3590,9 @@
     resultsSidebar.classList.remove('visible');
     sttOptions.classList.remove('visible');
     redactionContent.style.display = 'none';
-    if (recordAction) { recordAction.style.display = ''; recordAction.classList.add('disabled-soon'); }
-    if (streamDemoAction) streamDemoAction.style.display = 'none';
-    if (streamFileAction) streamFileAction.style.display = 'none';
+    if (recordAction) { recordAction.style.display = ''; recordAction.classList.remove('disabled-soon'); }
+    if (streamDemoAction) streamDemoAction.style.display = '';
+    if (streamFileAction) streamFileAction.style.display = '';
     currentMeta = {
       fileSize: 243900, fileType: 'audio/opus',
       httpStatus: 200, httpStatusText: 'OK',

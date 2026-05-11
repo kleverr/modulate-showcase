@@ -2,6 +2,26 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [3.8.1] - 2026-05-11
+
+### Changed
+- Music Detection batch proxy now hits `/api/preview/velma-2-music-detection-batch` on the gateway — that's the GPU-backed route, ~40 ms server latency on a 15 s clip (~360× real-time). Public proxy path unchanged.
+- Music Detection frame timestamps normalized: new batch model returns `start_time_ms`/`end_time_ms`, renderer expects `start_time_s`/`end_time_s`. Fixed silent breakage in the per-frame table + click-to-seek.
+- Music Detection table now groups rows by 1 s (max-pooled music + speech) in Heatmap view; Detailed view keeps the raw ~192 ms rows. A 7 min clip drops from ~2,400 rows to ~470. Click-to-seek and playback tracking work in both views; row highlighting follows the underlying frame's containing group.
+
+## [3.8.0] - 2026-05-11
+
+### Added
+- **Music Detection streaming** — three entry points, mirroring the streaming-transcription UX:
+  - **Start streaming**: mic capture → PCM 16-bit LE 16kHz mono over WebSocket.
+  - **Stream demo**: pipes the bundled `demo.opus` through the streaming endpoint, paced at realtime.
+  - **Stream file…**: pick any audio file; decoded to PCM and streamed paced at realtime.
+  - Frames render progressively into the heatmap + table; verdict / `music_pct` / `speech_pct` recompute client-side as frames arrive.
+  - WebSocket proxy routes `/api/velma-2-music-detection-streaming` to the preview GPU box (`http://3.88.52.192`) until the gateway adds the route. Note: the model buffers in 20-second windows, so for clips under 20s all frames arrive in one batch at end-of-stream.
+
+### Changed
+- Music Detection now hits `/api/velma-2-music-detection-batch` (was `/api/velma-2-music-detection`). Preview switched to a GPU-accelerated batch model — a 3.5 min clip processes in ~5–6s (~35× real-time, up from ~1.5×). Progress estimate adjusted accordingly. Model/endpoint labels in the stats modal updated to match.
+
 ## [3.7.1] - 2026-05-06
 
 ### Changed
