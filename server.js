@@ -61,10 +61,21 @@ const ALLOWED_ENDPOINTS = new Set([
   '/api/velma-2-stt-batch-english-vfast',
   '/api/velma-2-synthetic-voice-detection-batch',
   '/api/velma-2-pii-phi-redaction-batch',
+  '/api/velma-2-batch',
+]);
+
+const ALLOWED_GET_PROXIES = new Set([
+  '/api/velma-2-batch/list-presets',
 ]);
 
 // Per-endpoint upstream base URL overrides (defaults to API_BASE_URL)
 const ENDPOINT_BASE_URL = {};
+
+// Per-endpoint upstream path overrides — preview models live behind /api/preview/.
+const ENDPOINT_UPSTREAM_PATH = {
+  '/api/velma-2-batch': '/api/preview/velma-2-batch',
+  '/api/velma-2-batch/list-presets': '/api/preview/velma-2-batch/list-presets',
+};
 
 // ── Usage endpoint ───────────────────────────────────────────────────────────
 app.get('/api/usage', (req, res) => {
@@ -151,9 +162,10 @@ app.post('/api/:path(*)', handleUpload, async (req, res) => {
     const body = Buffer.concat(bodyParts);
 
     const baseUrl = ENDPOINT_BASE_URL[endpoint] || API_BASE_URL;
+    const upstreamPath = ENDPOINT_UPSTREAM_PATH[endpoint] || endpoint;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 300_000); // 5 min timeout
-    const upstreamRes = await fetch(`${baseUrl}${endpoint}`, {
+    const upstreamRes = await fetch(`${baseUrl}${upstreamPath}`, {
       method: 'POST',
       headers: {
         'X-API-KEY': API_KEY,
@@ -195,6 +207,33 @@ app.get('/deepfake', (req, res) => {
 
 app.get('/redaction', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/velma', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// GET proxy for read-only Velma endpoints (e.g. list-presets)
+app.get('/api/:path(*)', async (req, res, next) => {
+  const endpoint = req.path;
+  if (!ALLOWED_GET_PROXIES.has(endpoint)) return next();
+
+  try {
+    const baseUrl = ENDPOINT_BASE_URL[endpoint] || API_BASE_URL;
+    const upstreamPath = ENDPOINT_UPSTREAM_PATH[endpoint] || endpoint;
+    const upstreamRes = await fetch(`${baseUrl}${upstreamPath}`, {
+      method: 'GET',
+      headers: { 'X-API-KEY': API_KEY },
+    });
+    const body = await upstreamRes.arrayBuffer();
+    res.status(upstreamRes.status);
+    const ct = upstreamRes.headers.get('content-type');
+    if (ct) res.set('Content-Type', ct);
+    res.send(Buffer.from(body));
+  } catch (err) {
+    console.error('Proxy GET error:', err.message);
+    res.status(502).json({ error: 'Upstream request failed', message: err.message });
+  }
 });
 
 // Redirect standalone deepfake page to the SPA

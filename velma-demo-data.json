@@ -1,0 +1,315 @@
+{
+  "filename": "call-center-demo.mp3",
+  "duration_ms": 202920,
+  "clips": [
+    {
+      "clip_uuid": "8b8cafaf-0323-40a7-b0cb-23d5a4578c1f",
+      "text": "Thank you for calling Green Valley Health member services. This is Mina speaking on a recorded line. Can I confirm I'm speaking with Daniel Mercer, born July 18, 1982, and living at 4827 Willow Creek Drive, Apt 5B, Columbus, Ohio 43215?",
+      "start_ms": 300,
+      "duration_ms": 17340,
+      "speaker_label": "1",
+      "language": "en",
+      "emotion": "Neutral",
+      "accent": "American",
+      "deepfake_score": null,
+      "word_timings": [],
+      "detection_model_results": {}
+    },
+    {
+      "clip_uuid": "dec2782f-3c1c-4e7a-af3a-0f4ad3384188",
+      "text": "Yes, this is Daniel Andrew Mercer. The last four of my Social Security number are 4421, and my member ID is GVH-88394127.",
+      "start_ms": 18300,
+      "duration_ms": 13320,
+      "speaker_label": "2",
+      "language": "en",
+      "emotion": "Neutral",
+      "accent": "American",
+      "deepfake_score": null,
+      "word_timings": [],
+      "detection_model_results": {}
+    },
+    {
+      "clip_uuid": "95ad5d7a-fc3e-4334-ba32-8de2cad036e5",
+      "text": "Thank you, Mr. Mercer. For verification, can you confirm the phone number and email we have on file: 614-555-0198, and daniel.mercer82@protonmail.com?",
+      "start_ms": 32100,
+      "duration_ms": 15300,
+      "speaker_label": "1",
+      "language": "en",
+      "emotion": "Neutral",
+      "accent": "American",
+      "deepfake_score": null,
+      "word_timings": [],
+      "detection_model_results": {}
+    },
+    {
+      "clip_uuid": "4697f92c-1553-4ecb-ae46-daeaf92e8c25",
+      "text": "Yes, that's right, although my new callback number is 380-555-4412, and my employer is Harrison Industrial Company at 2150 Fisher Road, Columbus, Ohio.",
+      "start_ms": 47700,
+      "duration_ms": 12240,
+      "speaker_label": "2",
+      "language": "en",
+      "emotion": "Neutral",
+      "accent": "American",
+      "deepfake_score": null,
+      "word_timings": [],
+      "detection_model_results": {}
+    },
+    {
+      "clip_uuid": "cbb8ad42-b48b-4cbe-b5d8-27c3c03e9278",
+      "text": "I see your plan is under policy number PPO-77-194402, and the primary care physician listed is Dr. Elena Ruiz at Buckeye Family Clinic, 903 East Main Street, Columbus, Ohio 43205.",
+      "start_ms": 60600,
+      "duration_ms": 17820,
+      "speaker_label": "1",
+      "language": "en",
+      "emotion": "Neutral",
+      "accent": "American",
+      "deepfake_score": null,
+      "word_timings": [],
+      "detection_model_results": {}
+    },
+    {
+      "clip_uuid": "dadf135c-092d-4398-8e69-bb34cf5e893f",
+      "text": "That's correct. I'm calling about a claim for my MRI from March 3, 2026, after I injured my lower back lifting equipment. The diagnosis code on my paperwork says M54.5, and the imaging center was Riverside Diagnostic Imaging.",
+      "start_ms": 78720,
+      "duration_ms": 15060,
+      "speaker_label": "2",
+      "language": "en",
+      "emotion": "Neutral",
+      "accent": "American",
+      "deepfake_score": null,
+      "word_timings": [],
+      "detection_model_results": {}
+    },
+    {
+      "clip_uuid": "6697d35a-941c-4259-90a6-ecc4712879a2",
+      "text": "I found that claim. It shows service date 03/03/2026, account number AC-5501938, billed amount $2,480, and it references your prior authorization number PA-2048816.",
+      "start_ms": 94200,
+      "duration_ms": 19380,
+      "speaker_label": "1",
+      "language": "en",
+      "emotion": "Neutral",
+      "accent": "American",
+      "deepfake_score": null,
+      "word_timings": [],
+      "detection_model_results": {}
+    },
+    {
+      "clip_uuid": "849955b1-9bd9-4ebb-8df8-f269022384e5",
+      "text": "I also had a prescription denied. It was for Gabapentin 300 mg, prescribed by Dr. Elena Ruiz for nerve pain, and my pharmacy is CVS number 11472, 3588 West Broad Street, Columbus, Ohio.",
+      "start_ms": 114060,
+      "duration_ms": 16440,
+      "speaker_label": "2",
+      "language": "en",
+      "emotion": "Disappointed",
+      "accent": "American",
+      "deepfake_score": null,
+      "word_timings": [],
+      "detection_model_results": {}
+    },
+    {
+      "clip_uuid": "317eb053-2da0-4c17-b33d-d2217125a761",
+      "text": "I can see that medication request. To verify, your emergency contact is Melissa Mercer, spouse, at 614-555-8871, and your preferred mailing address is still P.O. Box 11842, Columbus, Ohio 43211?",
+      "start_ms": 130980,
+      "duration_ms": 17460,
+      "speaker_label": "1",
+      "language": "en",
+      "emotion": "Neutral",
+      "accent": "American",
+      "deepfake_score": null,
+      "word_timings": [],
+      "detection_model_results": {}
+    },
+    {
+      "clip_uuid": "7a20d08e-a437-40af-869d-8dabc834063f",
+      "text": "Yes, and my wife's date of birth is November 2, 1984. Also, the hospital can fax records to my attorney, Kevin L. Shore, at 216-555-7714, because this relates to a workplace injury claim.",
+      "start_ms": 149100,
+      "duration_ms": 15300,
+      "speaker_label": "2",
+      "language": "en",
+      "emotion": "Neutral",
+      "accent": "American",
+      "deepfake_score": null,
+      "word_timings": [],
+      "detection_model_results": {}
+    },
+    {
+      "clip_uuid": "095d28f3-5286-48a3-ba4d-e1c2ad6cd411",
+      "text": "Understood. I also see notes from your recent visit indicating type 2 diabetes, hypertension, and an A1C of 8.1%. The lab order was submitted under requisition number LAB-662901 from St. Anne's Outpatient Center.",
+      "start_ms": 165060,
+      "duration_ms": 16800,
+      "speaker_label": "1",
+      "language": "en",
+      "emotion": "Neutral",
+      "accent": "American",
+      "deepfake_score": null,
+      "word_timings": [],
+      "detection_model_results": {}
+    },
+    {
+      "clip_uuid": "c250b279-1379-4277-b2d7-495f1edb7e42",
+      "text": "Thanks. Please send the appeal form to Daniel.A.Mercer@outlook.com, and mail a copy to 4827 Willow Creek Drive, Apt 5B, Columbus, Ohio 43215. If you need payment for the balance, my HSA card ending in 9034 is available.",
+      "start_ms": 182820,
+      "duration_ms": 20100,
+      "speaker_label": "2",
+      "language": "en",
+      "emotion": "Neutral",
+      "accent": "American",
+      "deepfake_score": null,
+      "word_timings": [],
+      "detection_model_results": {}
+    }
+  ],
+  "behaviors": [
+    {
+      "behavior_uuid": "33333333-3333-4333-8333-333333333001",
+      "behavior_name": "Issue Resolved",
+      "speaker_label": "1",
+      "detected": false,
+      "confidence": 0.05,
+      "evidence_clip_uuids": [],
+      "definitive_clip_uuid": null,
+      "reasoning": "No customer's stated issue referenced; no resolution confirmation, customer acknowledgment, or closure cues present in clips."
+    },
+    {
+      "behavior_uuid": "33333333-3333-4333-8333-333333333001",
+      "behavior_name": "Issue Resolved",
+      "speaker_label": "2",
+      "detected": false,
+      "confidence": 0.95,
+      "evidence_clip_uuids": [],
+      "definitive_clip_uuid": null,
+      "reasoning": "Customer references issues (MRI claim and prescription denial) but requests appeal form and provides details for further action, with no explicit acknowledgment of resolution, rep confirmation, or definitive closure cues beyond a general 'Thanks.'"
+    },
+    {
+      "behavior_uuid": "33333333-3333-4333-8333-333333333002",
+      "behavior_name": "Issue Not Resolved",
+      "speaker_label": "1",
+      "detected": true,
+      "confidence": 0.75,
+      "evidence_clip_uuids": [
+        "6697d35a-941c-4259-90a6-ecc4712879a2",
+        "317eb053-2da0-4c17-b33d-d2217125a761"
+      ],
+      "definitive_clip_uuid": "6697d35a-941c-4259-90a6-ecc4712879a2",
+      "reasoning": "Rep references customer's claim and medication request but fails to provide concrete resolution (e.g., approval/denial status, payment) or any firm follow-up commitment."
+    },
+    {
+      "behavior_uuid": "33333333-3333-4333-8333-333333333002",
+      "behavior_name": "Issue Not Resolved",
+      "speaker_label": "2",
+      "detected": false,
+      "confidence": 0.95,
+      "evidence_clip_uuids": [],
+      "definitive_clip_uuid": null,
+      "reasoning": "Customer states issues (MRI claim and prescription denial) but does not explicitly state they are unresolved at the end of the call; no representative responses provided to assess failure to resolve or lack of commitment."
+    },
+    {
+      "behavior_uuid": "33333333-3333-4333-8333-333333333003",
+      "behavior_name": "Complaints",
+      "speaker_label": "1",
+      "detected": false,
+      "confidence": 1,
+      "evidence_clip_uuids": [],
+      "definitive_clip_uuid": null,
+      "reasoning": "The speaker is the Customer Service Representative calmly verifying information, confirming details, and providing account data; no statements attributing negative outcomes to the company or explicit dissatisfaction markers present."
+    },
+    {
+      "behavior_uuid": "33333333-3333-4333-8333-333333333003",
+      "behavior_name": "Complaints",
+      "speaker_label": "2",
+      "detected": false,
+      "confidence": 0.05,
+      "evidence_clip_uuids": [],
+      "definitive_clip_uuid": null,
+      "reasoning": "Customer reports claim and prescription denial factually without attributing negative outcomes to company with explicit dissatisfaction markers or negative adjectives."
+    },
+    {
+      "behavior_uuid": "33333333-3333-4333-8333-333333333004",
+      "behavior_name": "Coercion Manipulation",
+      "speaker_label": "1",
+      "detected": false,
+      "confidence": 1,
+      "evidence_clip_uuids": [],
+      "definitive_clip_uuid": null,
+      "reasoning": "Speaker is Customer Service Representative providing polite verifications and information; no threats, ultimatums, reduced empathy, or pressure tactics observed."
+    },
+    {
+      "behavior_uuid": "33333333-3333-4333-8333-333333333004",
+      "behavior_name": "Coercion Manipulation",
+      "speaker_label": "2",
+      "detected": false,
+      "confidence": 0.05,
+      "evidence_clip_uuids": [],
+      "definitive_clip_uuid": null,
+      "reasoning": "Customer provides verification details, claim information, and addresses politely without threats, ultimatums, reduced empathy, or sustained insistence."
+    },
+    {
+      "behavior_uuid": "33333333-3333-4333-8333-333333333005",
+      "behavior_name": "Inappropriate Speech",
+      "speaker_label": "1",
+      "detected": false,
+      "confidence": 0,
+      "evidence_clip_uuids": [],
+      "definitive_clip_uuid": null,
+      "reasoning": "All clips contain professional, factual verification and information sharing with no profanity, slurs, personal attacks, or hostile indicators."
+    },
+    {
+      "behavior_uuid": "33333333-3333-4333-8333-333333333005",
+      "behavior_name": "Inappropriate Speech",
+      "speaker_label": "2",
+      "detected": false,
+      "confidence": 0.98,
+      "evidence_clip_uuids": [],
+      "definitive_clip_uuid": null,
+      "reasoning": "No profanity, slurs, sexually-suggestive content, personal attacks, or hostile prosody observed; speech is polite and factual."
+    }
+  ],
+  "conversation_type_pick": {
+    "conversation_type_uuid": "11111111-1111-4111-8111-111111111001",
+    "name": "Customer Service Call",
+    "confidence": 1,
+    "selection_source": "auto_selected_single_option",
+    "detail": "Auto-chosen as the only available option.",
+    "reasoning": null
+  },
+  "participant_role_picks": [
+    {
+      "speaker_label": "1",
+      "participant_role_uuid": "22222222-2222-4222-8222-222222222002",
+      "name": "Customer Service Representative",
+      "confidence": 1,
+      "selection_source": "inferred",
+      "detail": "Inferred from candidate list.",
+      "reasoning": "The speaker introduces themselves as Mina from Green Valley Health member services, verifies the caller's identity and details, and accesses and discusses specific account, claim, and medical information on file."
+    },
+    {
+      "speaker_label": "2",
+      "participant_role_uuid": "22222222-2222-4222-8222-222222222001",
+      "name": "Customer",
+      "confidence": 1,
+      "selection_source": "inferred",
+      "detail": "Inferred from candidate list.",
+      "reasoning": "The speaker provides personal verification details, describes issues with an MRI claim and denied prescription, and requests appeal forms and related actions, clearly acting as the caller seeking assistance."
+    }
+  ],
+  "topics": [
+    "back injury",
+    "MRI claim",
+    "Gabapentin",
+    "diabetes",
+    "hypertension"
+  ],
+  "topic_sentiments": [
+    { "topic": "back injury", "speaker_label": "1", "sentiment_score": 0, "sentiment_label": "neutral" },
+    { "topic": "back injury", "speaker_label": "2", "sentiment_score": -0.5, "sentiment_label": "very_negative" },
+    { "topic": "MRI claim", "speaker_label": "1", "sentiment_score": 0, "sentiment_label": "neutral" },
+    { "topic": "MRI claim", "speaker_label": "2", "sentiment_score": 0, "sentiment_label": "neutral" },
+    { "topic": "Gabapentin", "speaker_label": "1", "sentiment_score": 0, "sentiment_label": "neutral" },
+    { "topic": "Gabapentin", "speaker_label": "2", "sentiment_score": 0, "sentiment_label": "neutral" },
+    { "topic": "diabetes", "speaker_label": "1", "sentiment_score": 0, "sentiment_label": "neutral" },
+    { "topic": "diabetes", "speaker_label": "2", "sentiment_score": 0, "sentiment_label": "neutral" },
+    { "topic": "hypertension", "speaker_label": "1", "sentiment_score": 0, "sentiment_label": "neutral" },
+    { "topic": "hypertension", "speaker_label": "2", "sentiment_score": 0, "sentiment_label": "neutral" }
+  ],
+  "summary": "<pii:firstname>Daniel</pii:firstname> <pii:lastname>Mercer</pii:lastname> spoke with Green Valley Health member services agent <pii:firstname>Mina</pii:firstname> to verify his identity and discuss an MRI claim (<phi>diagnosis code M54.5</phi>) and denied <phi>Gabapentin 300 mg prescription</phi> for nerve pain related to a workplace back injury. He requested the appeal form be sent to <pii:email>Daniel.A.Mercer@outlook.com</pii:email> and <pii:address>4827 Willow Creek Drive, Apt 5B, Columbus, Ohio 43215</pii:address>."
+}
