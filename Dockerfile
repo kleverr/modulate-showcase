@@ -4,5 +4,6 @@ COPY package.json package-lock.json ./
 RUN npm ci --production
 COPY server.js db.js index.html app.js ./
 COPY deepfake/ ./deepfake/
+COPY music/ ./music/
 EXPOSE 8080
 CMD ["node", "server.js"]

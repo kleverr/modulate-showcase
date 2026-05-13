@@ -61,6 +61,7 @@ const ALLOWED_ENDPOINTS = new Set([
   '/api/velma-2-stt-batch-english-vfast',
   '/api/velma-2-synthetic-voice-detection-batch',
   '/api/velma-2-pii-phi-redaction-batch',
+  '/api/velma-2-music-detection-batch',
   '/api/velma-2-batch',
 ]);
 
@@ -68,13 +69,24 @@ const ALLOWED_GET_PROXIES = new Set([
   '/api/velma-2-batch/list-presets',
 ]);
 
-// Per-endpoint upstream base URL overrides (defaults to API_BASE_URL)
-const ENDPOINT_BASE_URL = {};
+// Per-endpoint upstream base URL overrides (defaults to API_BASE_URL).
+// Music streaming temporarily targets the preview GPU box directly while the
+// gateway routing is being finalized.
+const ENDPOINT_BASE_URL = {
+  '/api/velma-2-music-detection-streaming': 'http://3.88.52.192',
+};
 
 // Per-endpoint upstream path overrides — preview models live behind /api/preview/.
 const ENDPOINT_UPSTREAM_PATH = {
+  '/api/velma-2-music-detection-batch': '/api/preview/velma-2-music-detection-batch',
   '/api/velma-2-batch': '/api/preview/velma-2-batch',
   '/api/velma-2-batch/list-presets': '/api/preview/velma-2-batch/list-presets',
+};
+
+// Per-endpoint upstream form-field name overrides (defaults to "upload_file").
+// Music Detection's spec uses "file" instead.
+const ENDPOINT_UPLOAD_FIELD = {
+  '/api/velma-2-music-detection-batch': 'file',
 };
 
 // ── Usage endpoint ───────────────────────────────────────────────────────────
@@ -136,9 +148,10 @@ app.post('/api/:path(*)', handleUpload, async (req, res) => {
     const parts = [];
 
     // File part
+    const uploadFieldName = ENDPOINT_UPLOAD_FIELD[endpoint] || 'upload_file';
     parts.push(
       `--${boundary}\r\n` +
-      `Content-Disposition: form-data; name="upload_file"; filename="${safeFilename}"\r\n` +
+      `Content-Disposition: form-data; name="${uploadFieldName}"; filename="${safeFilename}"\r\n` +
       `Content-Type: ${req.file.mimetype || 'application/octet-stream'}\r\n\r\n`
     );
     parts.push(req.file.buffer);
@@ -213,6 +226,10 @@ app.get('/velma', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+app.get('/music', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // GET proxy for read-only Velma endpoints (e.g. list-presets)
 app.get('/api/:path(*)', async (req, res, next) => {
   const endpoint = req.path;
@@ -235,6 +252,7 @@ app.get('/api/:path(*)', async (req, res, next) => {
     res.status(502).json({ error: 'Upstream request failed', message: err.message });
   }
 });
+
 
 // Redirect standalone deepfake page to the SPA
 app.get('/deepfake/index.html', (req, res) => {
@@ -264,6 +282,7 @@ server.on('upgrade', (req, socket, head) => {
   const ALLOWED_WS_PATHS = new Set([
     '/api/velma-2-stt-streaming',
     '/api/velma-2-synthetic-voice-detection-streaming',
+    '/api/velma-2-music-detection-streaming',
   ]);
 
   if (!ALLOWED_WS_PATHS.has(url.pathname)) {

@@ -584,6 +584,8 @@ body {
 .histo-bar.synthetic { background: var(--ui-error); }
 .histo-bar.authentic { background: var(--ui-success); }
 .histo-bar.no-content { background: var(--ui-border); }
+.histo-bar.music { background: var(--purple); }
+.histo-bar.speech { background: rgb(20, 184, 166); }
 
 .histo-bar.active {
   outline: 2px solid var(--bg-accent);
@@ -672,6 +674,19 @@ body {
   color: var(--text-caption);
 }
 
+.verdict-pill.music {
+  background: color-mix(in srgb, var(--purple) 12%, transparent);
+  color: var(--purple);
+}
+.verdict-pill.speech {
+  background: color-mix(in srgb, rgb(20, 184, 166) 14%, transparent);
+  color: rgb(15, 140, 125);
+}
+.verdict-pill.neither {
+  background: color-mix(in srgb, var(--ui-border) 40%, transparent);
+  color: var(--text-caption);
+}
+
 /* Smaller inline variant for transcript header */
 .verdict-pill.sm {
   font-size: 0.65rem;
@@ -699,6 +714,85 @@ body {
 .confidence-bar-fill.synthetic { background: var(--ui-error); }
 .confidence-bar-fill.authentic { background: var(--ui-success); }
 .confidence-bar-fill.no-content { background: var(--ui-border); }
+.confidence-bar-fill.music { background: var(--purple); }
+.confidence-bar-fill.speech { background: rgb(20, 184, 166); }
+
+/* Music detection: view toggle */
+.music-view-toggle {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: var(--space-xs);
+}
+.music-view-btn {
+  border: 1px solid var(--ui-border);
+  background: var(--bg);
+  color: var(--text-caption);
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.music-view-btn:hover { color: var(--text-color); }
+.music-view-btn.active {
+  background: var(--bg-accent);
+  color: var(--text-inverted);
+  border-color: var(--bg-accent);
+}
+
+/* Music histogram: fit-to-width container (heatmap mode) */
+.music-histogram-fit {
+  width: 100%;
+  overflow: hidden;
+}
+.music-histogram-fit.scrollable { overflow-x: auto; }
+
+/* Music detection: dual-row stacked histogram (music + speech sharing time axis) */
+.music-histo-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 2px 0;
+}
+.music-histo-row-label {
+  flex: 0 0 3.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.music-histo-row-label.music { color: var(--purple); }
+.music-histo-row-label.speech { color: rgb(15, 140, 125); }
+.music-histo-row-bars {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+.music-histo-row-bars.fit { gap: 0; }
+.music-histo-row-bars.fit .histo-bar { border-radius: 0; }
+.music-histo-axis {
+  display: flex;
+  margin-left: calc(3.5rem + 0.6rem);
+  position: relative;
+  height: 1rem;
+}
+.music-histo-axis.gapped { gap: 1px; }
+.music-histo-axis-tick-abs {
+  position: absolute;
+  top: 0;
+  font-size: 0.6rem;
+  color: var(--text-caption);
+  line-height: 1rem;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+.music-histo-axis-tick-abs.first { transform: none; }
+.music-histo-axis-tick-abs.last { transform: translateX(-100%); }
 
 /* Overall Verdict */
 .results-verdict {
@@ -745,6 +839,42 @@ body {
 
 .verdict-ring.synthetic .verdict-ring-icon { color: var(--ui-error); }
 .verdict-ring.authentic .verdict-ring-icon { color: var(--ui-success); }
+.verdict-ring.music .verdict-ring-icon { color: var(--purple); }
+.verdict-ring.speech .verdict-ring-icon { color: rgb(20, 184, 166); }
+.verdict-ring.neither .verdict-ring-icon { color: var(--text-caption); }
+
+.verdict-ring.music {
+  background: color-mix(in srgb, var(--purple) 6%, transparent);
+  box-shadow: 0 0 0 3px var(--purple), 0 0 50px color-mix(in srgb, var(--purple) 12%, transparent);
+}
+.verdict-ring.speech {
+  background: color-mix(in srgb, rgb(20, 184, 166) 6%, transparent);
+  box-shadow: 0 0 0 3px rgb(20, 184, 166), 0 0 50px color-mix(in srgb, rgb(20, 184, 166) 12%, transparent);
+}
+.verdict-ring.neither {
+  background: color-mix(in srgb, var(--text-caption) 6%, transparent);
+  box-shadow: 0 0 0 3px var(--ui-border), 0 0 50px color-mix(in srgb, var(--text-caption) 8%, transparent);
+}
+.verdict-ring.music .verdict-ring-label { color: var(--purple); }
+.verdict-ring.speech .verdict-ring-label { color: rgb(15, 140, 125); }
+.verdict-ring.neither .verdict-ring-label { color: var(--text-caption); }
+.verdict-ring.music .verdict-ring-count { color: color-mix(in srgb, var(--purple) 70%, var(--text-color)); }
+.verdict-ring.speech .verdict-ring-count { color: var(--text-caption); }
+.verdict-ring.neither .verdict-ring-count { color: var(--text-caption); }
+
+/* Music: dual probability split inside ring */
+.verdict-ring-split {
+  display: flex;
+  gap: 0.6rem;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+.verdict-ring-split-item { display: flex; flex-direction: column; align-items: center; gap: 0.05rem; line-height: 1; }
+.verdict-ring-split-item .v { font-size: var(--font-m); font-weight: 700; }
+.verdict-ring-split-item .l { font-size: 0.6rem; opacity: 0.7; letter-spacing: 0.04em; text-transform: uppercase; }
+.verdict-ring-split-item.music .v { color: var(--purple); }
+.verdict-ring-split-item.speech .v { color: rgb(15, 140, 125); }
 
 .verdict-ring-label {
   font-size: var(--font-xl);
@@ -2286,6 +2416,8 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     <label for="mode-deepfake">Deepfake</label>
     <input type="radio" name="mode" id="mode-redaction" value="redaction">
     <label for="mode-redaction">PII/PHI Redaction</label>
+    <input type="radio" name="mode" id="mode-music" value="music">
+    <label for="mode-music">Music Detection</label>
     <input type="radio" name="mode" id="mode-velma" value="velma">
     <label for="mode-velma">Velma<span class="mode-pill">Preview</span></label>
   </div>
@@ -2440,6 +2572,25 @@ body:has(#stt-debug-panel:not([hidden])) .page {
           </div>
         </div>
 
+        <!-- Music Detection content -->
+        <div id="music-content">
+          <div class="music-view-toggle">
+            <button class="music-view-btn active" data-view="heatmap">Heatmap</button>
+            <button class="music-view-btn" data-view="detailed">Detailed</button>
+          </div>
+          <div class="histogram-section">
+            <div class="music-histogram-fit" id="music-histogram-fit">
+              <div class="histogram" id="music-histogram"></div>
+            </div>
+          </div>
+          <div class="results-table-section">
+            <table class="results-table">
+              <thead><tr><th>Timestamp</th><th>Music</th><th>Speech</th></tr></thead>
+              <tbody id="music-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- PII/PHI Redaction content -->
         <div id="redaction-content">
           <div class="redaction-timeline-section">
@@ -2467,6 +2618,25 @@ body:has(#stt-debug-panel:not([hidden])) .page {
             Full Statistics
           </button>
           <button class="verdict-link" id="btn-show-json">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            JSON Response
+          </button>
+        </div>
+      </aside>
+
+      <!-- Music Detection sidebar -->
+      <aside class="results-verdict" id="results-music-verdict">
+        <div class="verdict-ring" id="music-verdict-ring">
+          <div class="verdict-ring-icon" id="music-verdict-icon"></div>
+          <div class="verdict-ring-label" id="music-verdict-label"></div>
+          <div class="verdict-ring-split" id="music-verdict-split"></div>
+        </div>
+        <div class="verdict-links">
+          <button class="verdict-link" id="btn-show-stats-music">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Full Statistics
+          </button>
+          <button class="verdict-link" id="btn-show-json-music">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             JSON Response
           </button>
@@ -2551,7 +2721,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
 
   <!-- Footer -->
   <footer class="footer">
-    Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a> &middot; &copy; 2026 Modulate, Inc. &middot; v3.6.0 (Apr 27, 2026)
+    Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a> &middot; &copy; 2026 Modulate, Inc. &middot; v3.9.0 (May 13, 2026)
   </footer>
 
 </div>
@@ -2678,7 +2848,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     </div>
   </div>
   <div class="overlay-footer">
-    Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a> &middot; &copy; 2026 Modulate, Inc. &middot; v3.6.0 (Apr 27, 2026)
+    Powered by <a href="https://modulate.ai" target="_blank" rel="noopener">Modulate AI</a> &middot; &copy; 2026 Modulate, Inc. &middot; v3.9.0 (May 13, 2026)
   </div>
 </div>
 

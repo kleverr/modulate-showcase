@@ -2,6 +2,77 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [3.9.0] - 2026-05-13
+
+### Added
+- New **Velma** mode (preview) at `/velma` — ensemble batch analysis combining
+  STT, emotion/accent signals, behavior detection, topic extraction, topic
+  sentiments, and conversation summarization in a single batch call.
+  Pre-cached demo loads on first visit (no API call).
+- **Config editor** with split layout — structured form on the left (4
+  conversation types, 5 participant roles, 15 curated behaviors with full
+  short/detailed descriptions, "Add custom" rows with auto-generated UUIDs);
+  live `BatchConfig` JSON preview on the right with optional raw-JSON edit
+  mode.
+- **Per-speaker emotion stacked bar chart**, **topics grouped by speaker**
+  with sentiment-colored chips (red/green/grey + raw score), and a
+  **debug-friendly behaviors table** that surfaces raw API output: detected
+  status pill (DETECTED/NOT DETECTED/SKIPPED/ERROR), raw confidence %, evidence
+  clip count, and the model's reasoning. Behavior names link to the first
+  evidence clip in the transcript — clicking scrolls + flashes the bubble and
+  seeks audio to that clip.
+- Surfaces `conversation_type_pick.reasoning`, `participant_role_pick.reasoning`,
+  and `clips[].detection_model_results` inline (previously only in JSON).
+
+### Changed
+- Server proxy gains `ENDPOINT_UPSTREAM_PATH['/api/velma-2-batch']` →
+  `/api/preview/velma-2-batch` so the preview model lives behind the same
+  `/api/preview/` prefix as Music Detection. Client posts to the un-prefixed
+  path.
+- PII/PHI tags in the Velma summary are always blurred when present
+  (regardless of the STT `pii_phi_tagging` option).
+
+## [3.8.1] - 2026-05-11
+
+### Changed
+- Music Detection batch proxy now hits `/api/preview/velma-2-music-detection-batch` on the gateway — that's the GPU-backed route, ~40 ms server latency on a 15 s clip (~360× real-time). Public proxy path unchanged.
+- Music Detection frame timestamps normalized: new batch model returns `start_time_ms`/`end_time_ms`, renderer expects `start_time_s`/`end_time_s`. Fixed silent breakage in the per-frame table + click-to-seek.
+- Music Detection table now groups rows by 1 s (max-pooled music + speech) in Heatmap view; Detailed view keeps the raw ~192 ms rows. A 7 min clip drops from ~2,400 rows to ~470. Click-to-seek and playback tracking work in both views; row highlighting follows the underlying frame's containing group.
+
+## [3.8.0] - 2026-05-11
+
+### Added
+- **Music Detection streaming** — three entry points, mirroring the streaming-transcription UX:
+  - **Start streaming**: mic capture → PCM 16-bit LE 16kHz mono over WebSocket.
+  - **Stream demo**: pipes the bundled `demo.opus` through the streaming endpoint, paced at realtime.
+  - **Stream file…**: pick any audio file; decoded to PCM and streamed paced at realtime.
+  - Frames render progressively into the heatmap + table; verdict / `music_pct` / `speech_pct` recompute client-side as frames arrive.
+  - WebSocket proxy routes `/api/velma-2-music-detection-streaming` to the preview GPU box (`http://3.88.52.192`) until the gateway adds the route. Note: the model buffers in 20-second windows, so for clips under 20s all frames arrive in one batch at end-of-stream.
+
+### Changed
+- Music Detection now hits `/api/velma-2-music-detection-batch` (was `/api/velma-2-music-detection`). Preview switched to a GPU-accelerated batch model — a 3.5 min clip processes in ~5–6s (~35× real-time, up from ~1.5×). Progress estimate adjusted accordingly. Model/endpoint labels in the stats modal updated to match.
+
+## [3.7.1] - 2026-05-06
+
+### Changed
+- Music Detection now goes through the developer-apis gateway at `/api/velma-2-music-detection` (was the dedicated host `34.228.138.241:8080/MusicDetection`). Per-endpoint base URL + upstream-path overrides removed; only the `file` form-field override remains.
+
+## [3.7.0] - 2026-05-06
+
+### Added
+- New **Music Detection** mode (preview) at `/music` — frame-level music + speech classification.
+  - Verdict ring shows primary label (Music / Speech / Neither) with dual `Music % · Speech %` split.
+  - Stacked dual-row histogram (Music + Speech) with opacity scaled to per-frame probability.
+  - **Heatmap / Detailed view toggle**: Heatmap (default) fits the full row width regardless of clip length, max-pools adjacent frames when there are more frames than pixels (down to ~2px min cell). Detailed shows the original 11px-per-frame scrolling row.
+  - Adaptive time axis (1s/2s/5s/10s/30s/… ticks) keeps ~5–8 evenly-spaced labels regardless of duration.
+  - Per-cell hover tooltip, click-to-seek, playback tracking across both views.
+  - Per-frame table with Music + Speech probability bars.
+  - Stats modal with avg/max music + speech probabilities, server latency, cost (@ $0.001/hr), endpoint.
+- "Start streaming" button shown but ghosted (`disabled-soon`) in Music Detection mode — placeholder until streaming variant ships.
+
+### Changed
+- Server proxy now supports per-endpoint upstream base URL + path + form-field overrides. Music Detection routes `/api/preview/music-detection` → `http://34.228.138.241:8080/MusicDetection` with the `file` form field (per OpenAPI spec); other endpoints unchanged.
+
 ## [3.1.1] - 2026-04-10
 
 ### Fixed
