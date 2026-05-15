@@ -2,6 +2,30 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.0.0] - 2026-05-15
+
+### Added
+- New **Language Detection** mode (preview) at `/language` — flag / name /
+  confidence hero with a low-confidence warning band, and a caption noting
+  that only the first 30 seconds of audio are analyzed. Server proxy entry
+  routes directly to the preview GPU host until the developer-apis gateway
+  forwarding URL is wired up.
+- STT debug panel surfaces the **active model** (e.g.
+  `velma-2-stt-batch-english-vfast` vs `velma-2-stt-batch`) in a pill, in
+  the raw-message dump header, and in the JSONL download filename.
+- **Server-side + SPA page-view logging** — every tab switch beacons through
+  `/api/track-view` and lands in the analytics table, including the new
+  `/language` route.
+
+### Changed
+- Top menu refreshed: "Music Detection" → "Music", new "Language" tab with a
+  Preview pill, tighter toggle spacing that wraps on narrow viewports.
+- Music demo swapped to **A Case of Spring Fever** (1940 public-domain
+  narration) and extended to 30 s.
+
+### Removed
+- Modulate logo and footer attribution.
+
 ## [3.9.0] - 2026-05-13
 
 ### Added
