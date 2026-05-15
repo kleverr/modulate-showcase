@@ -1022,6 +1022,12 @@ body {
   max-width: min(480px, 90%);
 }
 
+.lang-hero-note {
+  margin-top: var(--space-m);
+  font-size: var(--font-xs);
+  color: var(--text-caption);
+}
+
 @media (max-width: 768px) {
   .lang-hero-flag { font-size: 5rem; }
   .lang-hero-name { font-size: 3rem; }
@@ -2717,6 +2723,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
             <div class="lang-hero-flag" id="lang-hero-flag">🌐</div>
             <div class="lang-hero-name" id="lang-hero-name">—</div>
             <div class="lang-hero-code" id="lang-hero-code">Upload an audio clip to detect its language</div>
+            <div class="lang-hero-note">Only the first 30 seconds of audio are analyzed.</div>
             <div class="lang-hero-conf-row" id="lang-hero-conf-row" style="display:none">
               <div class="lang-hero-conf-val" id="lang-hero-conf-val">—</div>
               <div class="lang-hero-conf-label">confidence</div>
