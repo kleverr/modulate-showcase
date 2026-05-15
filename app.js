@@ -4826,7 +4826,6 @@
     const path = location.pathname.replace(/\/$/, '');
     if (path === '/deepfake') return 'deepfake';
     if (path === '/redaction') return 'redaction';
-    if (path === '/music') return 'music';
     if (path === '/velma') return 'velma';
     return 'transcription';
   }
