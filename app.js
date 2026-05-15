@@ -252,6 +252,11 @@
       : '/transcription';
     if (pushUrl !== false && location.pathname !== targetPath) {
       history.pushState({ mode: mode }, '', targetPath + location.search);
+      try {
+        const beaconUrl = `/api/track-view?path=${encodeURIComponent(targetPath)}`;
+        if (navigator.sendBeacon) navigator.sendBeacon(beaconUrl);
+        else fetch(beaconUrl, { method: 'POST', keepalive: true }).catch(() => {});
+      } catch (e) {}
     }
 
     deepfakeContent.style.display = isDeepfake ? '' : 'none';
@@ -1927,6 +1932,23 @@
     return params;
   }
 
+  // v2 (vfast) streaming accepts no feature toggles — just raw PCM format params.
+  function buildSttStreamingV2Params() {
+    const params = new URLSearchParams();
+    params.set('audio_format', 's16le');
+    params.set('sample_rate', '16000');
+    params.set('num_channels', '1');
+    return params;
+  }
+
+  function sttStreamingPath() {
+    return isFastMode() ? '/api/velma-2-stt-streaming-v2' : '/api/velma-2-stt-streaming';
+  }
+
+  function sttStreamingQuery() {
+    return (isFastMode() ? buildSttStreamingV2Params() : buildSttStreamingParams()).toString();
+  }
+
   function handleTranscriptionStreamMessage(msg) {
     if (msg?.type === 'utterance' && msg.utterance) {
       debugOnMessage();
@@ -1977,7 +1999,7 @@
     currentData = null;
     debugReset();
 
-    startRecordingCommon('/api/velma-2-stt-streaming?' + buildSttStreamingParams().toString(), handleTranscriptionStreamMessage, () => {
+    startRecordingCommon(sttStreamingPath() + '?' + sttStreamingQuery(), handleTranscriptionStreamMessage, () => {
       resultsFilename.textContent = 'Live Recording';
       resultsAudio.removeAttribute('src');
       resultsAudio.load();
@@ -2037,7 +2059,7 @@
     }
 
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = proto + '//' + location.host + '/api/velma-2-stt-streaming?' + buildSttStreamingParams().toString();
+    const wsUrl = proto + '//' + location.host + sttStreamingPath() + '?' + sttStreamingQuery();
     recordingWs = new WebSocket(wsUrl);
     recordingWs.binaryType = 'arraybuffer';
     endFrameSent = false;

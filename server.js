@@ -4,7 +4,7 @@ const http = require('http');
 const multer = require('multer');
 const { WebSocket, WebSocketServer } = require('ws');
 const path = require('path');
-const { countRecentByIp, insertRequest } = require('./db');
+const { countRecentByIp, insertRequest, insertPageView } = require('./db');
 
 // ── Config ───────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 8080;
@@ -74,6 +74,7 @@ const ALLOWED_GET_PROXIES = new Set([
 // gateway routing is being finalized.
 const ENDPOINT_BASE_URL = {
   '/api/velma-2-music-detection-streaming': 'http://3.88.52.192',
+  '/api/velma-2-stt-streaming-v2': 'http://ec2-100-30-188-43.compute-1.amazonaws.com:8080',
 };
 
 // Per-endpoint upstream path overrides — preview models live behind /api/preview/.
@@ -88,6 +89,19 @@ const ENDPOINT_UPSTREAM_PATH = {
 const ENDPOINT_UPLOAD_FIELD = {
   '/api/velma-2-music-detection-batch': 'file',
 };
+
+// ── Page-view tracking (client beacon for SPA tab switches) ─────────────────
+const TRACKABLE_PATHS = new Set([
+  '/', '/transcription', '/deepfake', '/redaction', '/music', '/velma',
+]);
+
+app.post('/api/track-view', (req, res) => {
+  const p = req.query.path;
+  if (typeof p === 'string' && TRACKABLE_PATHS.has(p)) {
+    insertPageView(p, getClientIp(req), req.headers['user-agent'] || null);
+  }
+  res.status(204).end();
+});
 
 // ── Usage endpoint ───────────────────────────────────────────────────────────
 app.get('/api/usage', (req, res) => {
@@ -209,24 +223,38 @@ app.post('/api/:path(*)', handleUpload, async (req, res) => {
   }
 });
 
+function logView(req) {
+  insertPageView(req.path, getClientIp(req), req.headers['user-agent'] || null);
+}
+
 // ── SPA routes (before static so /deepfake serves main page, not deepfake/) ──
+app.get('/', (req, res, next) => {
+  logView(req);
+  next();
+});
+
 app.get('/transcription', (req, res) => {
+  logView(req);
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.get('/deepfake', (req, res) => {
+  logView(req);
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.get('/redaction', (req, res) => {
+  logView(req);
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.get('/velma', (req, res) => {
+  logView(req);
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.get('/music', (req, res) => {
+  logView(req);
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
@@ -281,6 +309,7 @@ server.on('upgrade', (req, socket, head) => {
 
   const ALLOWED_WS_PATHS = new Set([
     '/api/velma-2-stt-streaming',
+    '/api/velma-2-stt-streaming-v2',
     '/api/velma-2-synthetic-voice-detection-streaming',
     '/api/velma-2-music-detection-streaming',
   ]);

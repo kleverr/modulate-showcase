@@ -20,6 +20,15 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_requests_ip_date
     ON requests (user_ip, created_at);
+  CREATE TABLE IF NOT EXISTS page_views (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    path TEXT NOT NULL,
+    user_ip TEXT,
+    user_agent TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_page_views_path_date
+    ON page_views (path, created_at);
 `);
 
 const countStmt = db.prepare(`
@@ -32,6 +41,11 @@ const insertStmt = db.prepare(`
   VALUES (?, ?, ?, ?)
 `);
 
+const insertPageViewStmt = db.prepare(`
+  INSERT INTO page_views (path, user_ip, user_agent)
+  VALUES (?, ?, ?)
+`);
+
 function countRecentByIp(ip, windowMinutes) {
   const result = countStmt.get(ip, `-${windowMinutes} minutes`);
   return result.count;
@@ -41,4 +55,12 @@ function insertRequest(ip, model, fileName, fileSize) {
   insertStmt.run(ip, model, fileName, fileSize);
 }
 
-module.exports = { countRecentByIp, insertRequest };
+function insertPageView(pagePath, ip, userAgent) {
+  try {
+    insertPageViewStmt.run(pagePath, ip, userAgent);
+  } catch (err) {
+    console.error('insertPageView failed:', err.message);
+  }
+}
+
+module.exports = { countRecentByIp, insertRequest, insertPageView };
