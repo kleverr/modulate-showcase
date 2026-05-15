@@ -62,6 +62,7 @@ const ALLOWED_ENDPOINTS = new Set([
   '/api/velma-2-synthetic-voice-detection-batch',
   '/api/velma-2-pii-phi-redaction-batch',
   '/api/velma-2-music-detection-batch',
+  '/api/velma-2-language-detection-batch',
   '/api/velma-2-batch',
 ]);
 
@@ -75,11 +76,18 @@ const ALLOWED_GET_PROXIES = new Set([
 const ENDPOINT_BASE_URL = {
   '/api/velma-2-music-detection-streaming': 'http://3.88.52.192',
   '/api/velma-2-stt-streaming-v2': 'http://ec2-100-30-188-43.compute-1.amazonaws.com:8080',
+  // Language detection batch — temporarily targets the preview GPU box directly
+  // while the developer-apis gateway forwarding URL is being configured.
+  // Once the gateway is wired up, remove this entry so we go back through prod.
+  '/api/velma-2-language-detection-batch': 'http://54.211.253.95:8080',
 };
 
 // Per-endpoint upstream path overrides — preview models live behind /api/preview/.
 const ENDPOINT_UPSTREAM_PATH = {
   '/api/velma-2-music-detection-batch': '/api/preview/velma-2-music-detection-batch',
+  // Note: language detection currently goes direct to the GPU box (see
+  // ENDPOINT_BASE_URL above), so we do NOT remap to /api/preview/... yet.
+  // When the gateway is wired up, restore: '/api/velma-2-language-detection-batch': '/api/preview/velma-2-language-detection-batch'.
   '/api/velma-2-batch': '/api/preview/velma-2-batch',
   '/api/velma-2-batch/list-presets': '/api/preview/velma-2-batch/list-presets',
 };
@@ -92,7 +100,7 @@ const ENDPOINT_UPLOAD_FIELD = {
 
 // ── Page-view tracking (client beacon for SPA tab switches) ─────────────────
 const TRACKABLE_PATHS = new Set([
-  '/', '/transcription', '/deepfake', '/redaction', '/music', '/velma',
+  '/', '/transcription', '/deepfake', '/redaction', '/music', '/language', '/velma',
 ]);
 
 app.post('/api/track-view', (req, res) => {
@@ -254,6 +262,11 @@ app.get('/velma', (req, res) => {
 });
 
 app.get('/music', (req, res) => {
+  logView(req);
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/language', (req, res) => {
   logView(req);
   res.sendFile(path.join(__dirname, 'index.html'));
 });

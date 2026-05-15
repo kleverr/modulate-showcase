@@ -103,6 +103,45 @@
     return 'Authentic';
   }
 
+  // ── Language Detection: code → country tables for flag emoji ────────────────
+  // Maps each ISO 639-1 language code returned by the API to a 2-letter ISO 3166
+  // country code; the flag emoji is composed from regional-indicator symbols.
+  // Codes without a clean country mapping (Latin, Tibetan, etc.) fall back to 🌐.
+  const LANG_COUNTRY = {
+    af: 'ZA', sq: 'AL', am: 'ET', ar: 'SA', hy: 'AM', as: 'IN', az: 'AZ',
+    ba: 'RU', eu: 'ES', be: 'BY', bn: 'BD', bs: 'BA', br: 'FR', bg: 'BG',
+    yue: 'HK', ca: 'ES', zh: 'CN', hr: 'HR', cs: 'CZ', da: 'DK', nl: 'NL',
+    en: 'US', et: 'EE', fo: 'FO', fi: 'FI', fr: 'FR', gl: 'ES', ka: 'GE',
+    de: 'DE', el: 'GR', gu: 'IN', ht: 'HT', ha: 'NG', haw: 'US', he: 'IL',
+    hi: 'IN', hu: 'HU', is: 'IS', id: 'ID', it: 'IT', ja: 'JP', jw: 'ID',
+    kn: 'IN', kk: 'KZ', km: 'KH', ko: 'KR', lo: 'LA',          lv: 'LV',
+    ln: 'CD', lt: 'LT', lb: 'LU', mk: 'MK', mg: 'MG', ms: 'MY', ml: 'IN',
+    mt: 'MT', mi: 'NZ', mr: 'IN', mn: 'MN', my: 'MM', ne: 'NP', no: 'NO',
+    nn: 'NO', oc: 'FR', ps: 'AF', fa: 'IR', pl: 'PL', pt: 'PT', pa: 'IN',
+    ro: 'RO', ru: 'RU', sa: 'IN', sr: 'RS', sn: 'ZW', sd: 'PK', si: 'LK',
+    sk: 'SK', sl: 'SI', so: 'SO', es: 'ES', su: 'ID', sw: 'KE', sv: 'SE',
+    tl: 'PH', tg: 'TJ', ta: 'IN', tt: 'RU', te: 'IN', th: 'TH',
+    tr: 'TR', tk: 'TM', uk: 'UA', ur: 'PK', uz: 'UZ', vi: 'VN',
+    yi: 'IL', yo: 'NG',
+    // Codes without a country flag — use globe fallback:
+    // la (Latin), bo (Tibetan), cy (Welsh — subdivision flag, not country)
+  };
+  // Welsh has a subdivision flag (not derivable from a 2-letter country code).
+  const LANG_FLAG_OVERRIDES = { cy: '\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}' };
+
+  function flagFromCountryCode(cc) {
+    if (!cc || cc.length !== 2) return null;
+    const A = 0x1F1E6;
+    const code = cc.toUpperCase();
+    return String.fromCodePoint(A + (code.charCodeAt(0) - 65), A + (code.charCodeAt(1) - 65));
+  }
+  function flagForLanguage(code) {
+    if (!code) return '\u{1F310}';
+    if (LANG_FLAG_OVERRIDES[code]) return LANG_FLAG_OVERRIDES[code];
+    const cc = LANG_COUNTRY[code];
+    return flagFromCountryCode(cc) || '\u{1F310}';
+  }
+
   // ── Mode State ──────────────────────────────────────────────────────────────
   let currentMode = 'transcription'; // 'deepfake' | 'transcription'
 
@@ -155,6 +194,18 @@
   const musicSidebar      = document.getElementById('results-music-verdict');
   const musicViewBtns     = document.querySelectorAll('.music-view-btn');
 
+  // Language Detection elements
+  const languageContent      = document.getElementById('language-content');
+  const languageSidebar      = document.getElementById('results-language-verdict');
+  const langHero             = document.getElementById('lang-hero');
+  const langHeroFlag         = document.getElementById('lang-hero-flag');
+  const langHeroName         = document.getElementById('lang-hero-name');
+  const langHeroCode         = document.getElementById('lang-hero-code');
+  const langHeroConfRow      = document.getElementById('lang-hero-conf-row');
+  const langHeroConfVal      = document.getElementById('lang-hero-conf-val');
+  const langHeroMeta         = document.getElementById('lang-hero-meta');
+  const langHeroWarning      = document.getElementById('lang-hero-warning');
+
   // Redaction elements
   const redactionContent        = document.getElementById('redaction-content');
   const redactionTimeline       = document.getElementById('redaction-timeline');
@@ -198,6 +249,10 @@
   let lastMusicData = null;
   let lastMusicAudioUrl = null;
   let lastMusicMeta = null;
+  let lastLanguageData = null;
+  let lastLanguageAudioUrl = null;
+  let lastLanguageMeta = null;
+  let lastLanguageFilename = null;
   let musicPlaybackTracker = null;
   let musicView = 'heatmap'; // 'heatmap' | 'detailed'
   let musicCells = [];       // cells currently rendered (for playback tracking)
@@ -228,6 +283,9 @@
     } else if (currentMode === 'music' && musicSidebar && musicContent) {
       if (isMobile) resultsMain.insertBefore(musicSidebar, musicContent);
       else resultsLayout.appendChild(musicSidebar);
+    } else if (currentMode === 'language' && languageSidebar && languageContent) {
+      if (isMobile) resultsMain.insertBefore(languageSidebar, languageContent);
+      else resultsLayout.appendChild(languageSidebar);
     }
   }
 
@@ -241,6 +299,7 @@
     const isDeepfake    = mode === 'deepfake';
     const isRedaction   = mode === 'redaction';
     const isMusic       = mode === 'music';
+    const isLanguage    = mode === 'language';
     const isTranscription = mode === 'transcription';
     const isVelma       = mode === 'velma';
 
@@ -248,6 +307,7 @@
     const targetPath = isDeepfake ? '/deepfake'
       : isRedaction ? '/redaction'
       : isMusic ? '/music'
+      : isLanguage ? '/language'
       : isVelma ? '/velma'
       : '/transcription';
     if (pushUrl !== false && location.pathname !== targetPath) {
@@ -270,6 +330,8 @@
     redactionOptions.classList.toggle('visible', isRedaction);
     if (musicContent) musicContent.style.display = isMusic ? '' : 'none';
     if (musicSidebar) musicSidebar.style.display = isMusic ? '' : 'none';
+    if (languageContent) languageContent.classList.toggle('visible', isLanguage);
+    if (languageSidebar) languageSidebar.style.display = isLanguage ? '' : 'none';
     if (velmaContent) velmaContent.classList.toggle('visible', isVelma);
     if (velmaSidebar) velmaSidebar.classList.toggle('visible', isVelma);
     if (velmaOptions) velmaOptions.classList.toggle('visible', isVelma);
@@ -279,8 +341,8 @@
     if (streamDemoAction) streamDemoAction.style.display = (isTranscription || isMusic) ? '' : 'none';
     if (streamFileAction) streamFileAction.style.display = (isTranscription || isMusic) ? '' : 'none';
     if (recordAction) {
-      // Velma is batch-only; redaction is no-streaming-yet — hide record in both.
-      recordAction.style.display = (isVelma || isRedaction) ? 'none' : '';
+      // Velma + redaction + language are batch-only — hide live record.
+      recordAction.style.display = (isVelma || isRedaction || isLanguage) ? 'none' : '';
       recordAction.classList.toggle('disabled-soon', isRedaction);
     }
     renderDebugPanel(true);
@@ -369,6 +431,17 @@
       };
       renderMusicResults(mData, mAudio);
       applyMobileLayout(mobileQuery.matches);
+    } else if (isLanguage) {
+      if (lastLanguageData) {
+        currentData = lastLanguageData;
+        currentMeta = lastLanguageMeta || {};
+        resultsFilename.textContent = lastLanguageFilename || '';
+        if (lastLanguageAudioUrl) resultsAudio.src = lastLanguageAudioUrl;
+        renderLanguageResult(lastLanguageData);
+      } else {
+        resetLanguageHero();
+      }
+      applyMobileLayout(mobileQuery.matches);
     } else if (isVelma) {
       if (lastVelmaData) {
         velmaData = lastVelmaData;
@@ -422,6 +495,7 @@
   const richOpts = [optDiarization, optDeepfake, optEmotion, optAccent, optPii];
 
   const debugPanel          = document.getElementById('stt-debug-panel');
+  const debugModelEl        = document.getElementById('stt-debug-model');
   const debugPhaseEl        = document.getElementById('stt-debug-phase');
   const debugSinceEl        = document.getElementById('stt-debug-since');
   const debugCountersEl     = document.getElementById('stt-debug-counters');
@@ -431,6 +505,7 @@
   const debugPartialsCount  = document.getElementById('stt-debug-partials-count');
   const debugFinalsCount    = document.getElementById('stt-debug-finals-count');
   const debugReverseBtn     = document.getElementById('stt-debug-reverse-btn');
+  const debugCopyRawBtn     = document.getElementById('stt-debug-copy-raw-btn');
 
   optFast.addEventListener('change', () => {
     if (optFast.checked) richOpts.forEach(cb => { cb.checked = false; });
@@ -489,6 +564,8 @@
           startRedactionBatch(fileInput.files[0]);
         } else if (currentMode === 'music') {
           startMusicAnalysis(fileInput.files[0]);
+        } else if (currentMode === 'language') {
+          startLanguageDetection(fileInput.files[0]);
         } else if (currentMode === 'velma') {
           startVelmaBatch(fileInput.files[0]);
         } else {
@@ -510,6 +587,7 @@
         if (currentMode === 'deepfake') startDeepfakeAnalysis(e.dataTransfer.files[0]);
         else if (currentMode === 'redaction') startRedactionBatch(e.dataTransfer.files[0]);
         else if (currentMode === 'music') startMusicAnalysis(e.dataTransfer.files[0]);
+        else if (currentMode === 'language') startLanguageDetection(e.dataTransfer.files[0]);
         else if (currentMode === 'velma') startVelmaBatch(e.dataTransfer.files[0]);
         else startTranscriptionBatch(e.dataTransfer.files[0]);
       }
@@ -859,6 +937,8 @@
       const startedAt = Date.now();
       const fast = isFastMode();
       const endpoint = fast ? '/api/velma-2-stt-batch-english-vfast' : '/api/velma-2-stt-batch';
+      currentSttModel = endpoint.replace(/^\/api\//, '');
+      debugReset();
       const opts = fast ? {} : getSttOptions();
       const { data, meta } = await uploadAndAnalyze(file, endpoint, opts);
       const processingMs = Date.now() - startedAt;
@@ -1313,6 +1393,140 @@
     renderMusicTable(frames, musicView);
     if (frames.length) setupMusicPlaybackTracking(frames);
     window.scrollTo(0, 0);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── LANGUAGE DETECTION MODE ──────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // The hero card itself acts as a click + drop target so the user doesn't
+  // have to use the small "Upload or drop a file" button at the top.
+  if (langHero && fileInput) {
+    langHero.addEventListener('click', (e) => {
+      // Don't intercept clicks on interactive children (e.g. the embedded audio).
+      if (e.target.closest('button, a, audio, input')) return;
+      fileInput.click();
+    });
+    let langDragCtr = 0;
+    langHero.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      langDragCtr++;
+      langHero.classList.add('drag-over');
+    });
+    langHero.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      langDragCtr--;
+      if (langDragCtr <= 0) { langDragCtr = 0; langHero.classList.remove('drag-over'); }
+    });
+    langHero.addEventListener('dragover', (e) => e.preventDefault());
+    langHero.addEventListener('drop', (e) => {
+      e.preventDefault();
+      langDragCtr = 0;
+      langHero.classList.remove('drag-over');
+      if (e.dataTransfer.files.length > 0) {
+        startLanguageDetection(e.dataTransfer.files[0]);
+      }
+    });
+  }
+
+  function resetLanguageHero() {
+    if (!langHeroFlag) return;
+    langHeroFlag.textContent = '\u{1F310}';
+    langHeroName.textContent = '—';
+    langHeroCode.textContent = 'Upload an audio clip to detect its language';
+    langHeroConfRow.style.display = 'none';
+    langHeroConfVal.classList.remove('low');
+    langHeroConfVal.textContent = '—';
+    langHeroMeta.textContent = '';
+    langHeroWarning.style.display = 'none';
+  }
+
+  async function startLanguageDetection(file) {
+    if (isAnalyzing) return;
+    isAnalyzing = true;
+    showOverlay(file.name, 'Identifying spoken language');
+    // Language detection only looks at the first 30s, so it's fast regardless
+    // of file length. Pace the progress bar to ~3 seconds.
+    startProgress(3000);
+
+    try {
+      const startedAt = Date.now();
+      const { data, meta } = await uploadAndAnalyze(file, '/api/velma-2-language-detection-batch');
+      const processingMs = Date.now() - startedAt;
+      await finishProgress();
+      hideOverlay();
+      isAnalyzing = false;
+
+      if (lastLanguageAudioUrl) URL.revokeObjectURL(lastLanguageAudioUrl);
+      audioObjectUrl = URL.createObjectURL(file);
+
+      currentMeta = {
+        fileSize: file.size,
+        fileType: file.type || file.name.split('.').pop().toUpperCase(),
+        httpStatus: meta.httpStatus,
+        httpStatusText: meta.httpStatusText,
+        responseSize: meta.responseSize,
+        processingMs,
+      };
+
+      // The API doesn't echo the filename, so we keep it ourselves.
+      lastLanguageData = data;
+      lastLanguageAudioUrl = audioObjectUrl;
+      lastLanguageMeta = { ...currentMeta };
+      lastLanguageFilename = file.name;
+
+      currentData = data;
+      resultsFilename.textContent = file.name;
+      resultsAudio.src = audioObjectUrl;
+      renderLanguageResult(data);
+      window.scrollTo(0, 0);
+      updateRateLimit();
+    } catch (err) {
+      showOverlayError(err.message || 'Language detection failed. Please try again.', err.rawText);
+      isAnalyzing = false;
+    }
+  }
+
+  function renderLanguageResult(data) {
+    const code = data.predicted_language_code || '';
+    const name = data.predicted_language || 'Unknown';
+    const conf = typeof data.confidence === 'number' ? data.confidence : 0;
+    const durMs = typeof data.duration_ms === 'number' ? data.duration_ms : null;
+
+    langHeroFlag.textContent = flagForLanguage(code);
+    langHeroName.textContent = name;
+    langHeroCode.textContent = code ? code.toUpperCase() : '—';
+
+    langHeroConfRow.style.display = '';
+    const pct = Math.max(0, Math.min(1, conf));
+    langHeroConfVal.textContent = (pct * 100).toFixed(1) + '%';
+    langHeroConfVal.classList.toggle('low', conf < 0.5);
+
+    const parts = [];
+    if (durMs != null) {
+      const secs = (durMs / 1000).toFixed(1);
+      parts.push(`Audio: ${secs} s`);
+      if (durMs > 30000) parts.push('first 30 s analyzed');
+    }
+    // Processing time is captured per-request in currentMeta and persisted in
+    // lastLanguageMeta, so it survives mode-switches too.
+    const procMs = currentMeta && currentMeta.processingMs;
+    if (procMs) {
+      parts.push(`Processed in ${(procMs / 1000).toFixed(2)} s`);
+      // Compare against the actually-analyzed audio (capped at 30 s) for an
+      // honest real-time multiplier — otherwise a 5-minute clip would show
+      // a misleading 200x factor when the model only looked at 30 s.
+      if (durMs != null) {
+        const analyzedMs = Math.min(durMs, 30000);
+        const factor = analyzedMs / procMs;
+        if (factor > 0 && isFinite(factor)) {
+          parts.push(`${factor.toFixed(1)}× real-time`);
+        }
+      }
+    }
+    langHeroMeta.textContent = parts.join(' · ');
+
+    langHeroWarning.style.display = conf < 0.5 ? '' : 'none';
   }
 
   function resetMusicLiveUI() {
@@ -1997,6 +2211,7 @@
     sttPartial = null;
     sttData = null;
     currentData = null;
+    currentSttModel = sttStreamingPath().replace(/^\/api\//, '');
     debugReset();
 
     startRecordingCommon(sttStreamingPath() + '?' + sttStreamingQuery(), handleTranscriptionStreamMessage, () => {
@@ -2030,6 +2245,7 @@
     sttPartial = null;
     sttData = null;
     currentData = null;
+    currentSttModel = sttStreamingPath().replace(/^\/api\//, '');
     debugReset();
 
     resultsFilename.textContent = filename;
@@ -2108,6 +2324,7 @@
         else if (event.data instanceof ArrayBuffer) text = new TextDecoder().decode(event.data);
       } catch { return; }
       if (!text) return;
+      debugLogRaw(text);
       let msg; try { msg = JSON.parse(text); } catch { return; }
       handleTranscriptionStreamMessage(msg);
     });
@@ -2160,6 +2377,7 @@
 
   // ── Streaming debug panel ────────────────────────────────────────────────
   let sttDebug = false;
+  let currentSttModel = '';    // displayed in debug panel; set whenever we invoke an STT endpoint
   let debugPartials = [];      // { seq, t, partial: {text, start_ms, speaker} }
   let debugFinals = [];        // { seq, t, utterance: {...} }
   let debugPartialSeq = 0;     // arrival counter for partials
@@ -2173,6 +2391,7 @@
   let debugFrozen = null;      // { streamMs, lastMsgOffsetMs } when phase is terminal
   let expandedPartialGroups = new Set();  // keys: String(start_ms)
   let expandedFinals = new Set();         // keys: final seq number
+  let debugRawMessages = [];   // every raw upstream WS frame, unmodified — for engineering diagnosis
 
   const DEBUG_TERMINAL = ['done', 'closed', 'error'];
   function isDebugTerminal() { return DEBUG_TERMINAL.indexOf(debugPhase) !== -1; }
@@ -2194,7 +2413,13 @@
     debugFrozen = null;
     expandedPartialGroups = new Set();
     expandedFinals = new Set();
+    debugRawMessages = [];
     if (debugActive()) renderDebugPanel(true);
+  }
+
+  function debugLogRaw(text) {
+    if (currentMode !== 'transcription') return;
+    debugRawMessages.push({ t_ms: Date.now() - debugStreamStart, text });
   }
 
   function debugSetPhase(phase, info) {
@@ -2262,6 +2487,15 @@
       return;
     }
     debugPanel.removeAttribute('hidden');
+
+    if (debugModelEl) {
+      if (currentSttModel) {
+        debugModelEl.textContent = currentSttModel;
+        debugModelEl.removeAttribute('hidden');
+      } else {
+        debugModelEl.setAttribute('hidden', '');
+      }
+    }
 
     // Phase pill + counters
     debugPhaseEl.className = 'stt-debug-phase ' + debugPhase;
@@ -2589,6 +2823,35 @@
       debugReverseTranscript = !debugReverseTranscript;
       debugReverseBtn.classList.toggle('active', debugReverseTranscript);
       renderTranscript();
+    });
+  }
+
+  if (debugCopyRawBtn) {
+    debugCopyRawBtn.addEventListener('click', async () => {
+      if (!debugRawMessages.length) {
+        const original = debugCopyRawBtn.textContent;
+        debugCopyRawBtn.textContent = 'No messages yet';
+        setTimeout(() => { debugCopyRawBtn.textContent = original; }, 1500);
+        return;
+      }
+      const header = '# model=' + (currentSttModel || 'unknown') + ' · messages=' + debugRawMessages.length;
+      const jsonl = debugRawMessages.map(r => JSON.stringify(r)).join('\n');
+      const payload = header + '\n' + jsonl + '\n';
+      try {
+        await navigator.clipboard.writeText(payload);
+        const original = debugCopyRawBtn.textContent;
+        debugCopyRawBtn.textContent = '✓ Copied ' + debugRawMessages.length;
+        setTimeout(() => { debugCopyRawBtn.textContent = original; }, 1500);
+      } catch {
+        // Fallback: trigger a download
+        const blob = new Blob([payload], { type: 'application/jsonl' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = (currentSttModel || 'stt') + '-raw-' + Date.now() + '.jsonl';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+      }
     });
   }
 
@@ -3051,6 +3314,7 @@
           else if (event.data instanceof ArrayBuffer) text = new TextDecoder().decode(event.data);
         } catch { return; }
         if (!text) return;
+        debugLogRaw(text);
 
         let msg;
         try { msg = JSON.parse(text); } catch { return; }
@@ -3190,6 +3454,8 @@
   document.getElementById('btn-show-json-redaction').addEventListener('click', () => showJsonModal());
   document.getElementById('btn-show-stats-music').addEventListener('click', () => showStatsModal());
   document.getElementById('btn-show-json-music').addEventListener('click', () => showJsonModal());
+  document.getElementById('btn-show-stats-language').addEventListener('click', () => showStatsModal());
+  document.getElementById('btn-show-json-language').addEventListener('click', () => showJsonModal());
 
   document.getElementById('stats-modal-close').addEventListener('click', () => statsModal.classList.remove('visible'));
   document.getElementById('json-modal-close').addEventListener('click', () => jsonModal.classList.remove('visible'));
@@ -3286,6 +3552,41 @@
         { group: 'Request', rows: [
           ['HTTP', httpStr],
           ['Endpoint', '/api/velma-2-music-detection-batch'],
+          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
+        ]},
+      ];
+    } else if (currentMode === 'language') {
+      statsModalTitle.textContent = 'Language Detection Statistics';
+      const durationMs = currentData.duration_ms || 0;
+      const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
+      const procFactor = m.processingMs && durationMs ? (durationMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
+      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
+      const fileType = m.fileType || (lastLanguageFilename ? lastLanguageFilename.split('.').pop().toUpperCase() : 'N/A');
+      const conf = currentData.confidence;
+      const analyzedMs = Math.min(durationMs, 30000);
+
+      groups = [
+        { group: 'Detection', rows: [
+          ['Model', 'velma-2-language-detection-batch'],
+          ['Predicted language', currentData.predicted_language || 'N/A'],
+          ['ISO 639-1 code', currentData.predicted_language_code || 'N/A'],
+          ['Confidence', typeof conf === 'number' ? (conf * 100).toFixed(2) + '%' : 'N/A'],
+          ['Threshold guidance', typeof conf === 'number' && conf < 0.5 ? 'Low — consider fallback' : 'Acceptable'],
+        ]},
+        { group: 'Audio', rows: [
+          ['File Name', lastLanguageFilename || 'N/A'],
+          ['File Size', m.fileSize ? formatBytes(m.fileSize) : 'N/A'],
+          ['File Type', fileType],
+          ['Audio Duration', durationMs ? formatDuration(durationMs) : 'N/A'],
+          ['Audio analyzed', formatDuration(analyzedMs) + (durationMs > 30000 ? ' (first 30 s)' : '')],
+        ]},
+        { group: 'Performance', rows: [
+          ['Processing Time', procTimeStr],
+          ['Processing Factor', procFactor],
+        ]},
+        { group: 'Request', rows: [
+          ['HTTP', httpStr],
+          ['Endpoint', '/api/velma-2-language-detection-batch'],
           ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
         ]},
       ];
@@ -4865,6 +5166,7 @@
     if (path === '/deepfake') return 'deepfake';
     if (path === '/redaction') return 'redaction';
     if (path === '/music') return 'music';
+    if (path === '/language') return 'language';
     if (path === '/velma') return 'velma';
     return 'transcription';
   }
@@ -4923,6 +5225,22 @@
       processingMs: DEMO_MUSIC_DATA.latency_ms || 0,
     };
     renderMusicResults(DEMO_MUSIC_DATA, DEMO_MUSIC_AUDIO_URL);
+  } else if (initMode === 'language') {
+    // Language Detection init — no demo, just the hero placeholder.
+    deepfakeContent.style.display = 'none';
+    resultsVerdict.style.display = 'none';
+    transcriptContainer.classList.remove('visible');
+    resultsSidebar.classList.remove('visible');
+    sttOptions.classList.remove('visible');
+    redactionContent.style.display = 'none';
+    if (musicContent) musicContent.style.display = 'none';
+    if (musicSidebar) musicSidebar.style.display = 'none';
+    if (languageContent) languageContent.classList.add('visible');
+    if (languageSidebar) languageSidebar.style.display = '';
+    if (recordAction) recordAction.style.display = 'none';
+    if (streamDemoAction) streamDemoAction.style.display = 'none';
+    if (streamFileAction) streamFileAction.style.display = 'none';
+    resetLanguageHero();
   } else if (initMode === 'velma') {
     // Velma init — render pre-cached demo (matches transcription/deepfake/redaction UX)
     deepfakeContent.style.display = 'none';
@@ -5012,6 +5330,7 @@
   const initPath = initMode === 'deepfake' ? '/deepfake'
     : initMode === 'redaction' ? '/redaction'
     : initMode === 'music' ? '/music'
+    : initMode === 'language' ? '/language'
     : initMode === 'velma' ? '/velma'
     : '/transcription';
   history.replaceState({ mode: initMode }, '', initPath + location.search);
