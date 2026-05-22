@@ -2,6 +2,25 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.2.0] - 2026-05-22
+
+### Added
+- New **AI Music Detection** mode (preview) at `/ai-music` — orchestrator
+  ensemble that combines synthetic voice detection with a fakeprint
+  instrumental model to detect AI-generated music. Clip-level verdict
+  (`ai-vocal-music` / `ai-instrumental` / `not-ai-music`) plus
+  `vocal_ai_pct` and `instrumental_ai_prob` breakdown. Single batch upload,
+  no streaming. Pre-cached demo (Big Mac Papelão, a chirp-v3 sample) loads
+  on first visit. Server proxy targets the preview gateway at
+  `/api/preview/velma-2-ai-music-detection-batch`.
+- Caveat panel surfaces the known limitations: weak on AI techno/metal and
+  hip-hop beats, can false-positive on minimalist piano and heavily
+  compressed rap vocals.
+
+### Changed
+- Top menu: "Music & Speech Detection" → "Music Detection" to make room for
+  the new AI Music Detection tab next to it.
+
 ## [4.1.0] - 2026-05-22
 
 ### Changed

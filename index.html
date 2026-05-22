@@ -1028,6 +1028,132 @@ body {
   color: var(--text-caption);
 }
 
+/* ── AI Music Detection Hero ────────────────────────────────────────── */
+#aimusic-content { display: none; }
+#aimusic-content.visible { display: block; }
+#results-aimusic-verdict { display: none; }
+
+.aimusic-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-l) var(--space-m);
+  min-height: 26rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-l);
+  background: linear-gradient(180deg, rgb(248, 246, 255) 0%, var(--bg) 100%);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.aimusic-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.95rem;
+  border-radius: 999px;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-m);
+}
+.aimusic-hero-badge svg { width: 1rem; height: 1rem; }
+
+.aimusic-hero.ai-vocal-music .aimusic-hero-badge {
+  background: color-mix(in srgb, var(--ui-error) 10%, transparent);
+  color: var(--ui-error);
+  border: 1px solid color-mix(in srgb, var(--ui-error) 35%, transparent);
+}
+.aimusic-hero.ai-instrumental .aimusic-hero-badge {
+  background: color-mix(in srgb, rgb(220, 130, 30) 10%, transparent);
+  color: rgb(180, 100, 10);
+  border: 1px solid color-mix(in srgb, rgb(220, 130, 30) 35%, transparent);
+}
+.aimusic-hero.not-ai-music .aimusic-hero-badge {
+  background: color-mix(in srgb, var(--ui-success) 10%, transparent);
+  color: rgb(10, 150, 95);
+  border: 1px solid color-mix(in srgb, var(--ui-success) 35%, transparent);
+}
+.aimusic-hero.pending .aimusic-hero-badge {
+  background: color-mix(in srgb, var(--text-caption) 8%, transparent);
+  color: var(--text-caption);
+  border: 1px solid var(--ui-border);
+}
+
+.aimusic-hero-headline {
+  font-size: 3.6rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  color: var(--text-color);
+  margin-bottom: 0.4rem;
+}
+.aimusic-hero.ai-vocal-music .aimusic-hero-headline { color: var(--ui-error); }
+.aimusic-hero.ai-instrumental .aimusic-hero-headline { color: rgb(180, 100, 10); }
+.aimusic-hero.not-ai-music .aimusic-hero-headline { color: rgb(10, 150, 95); }
+
+.aimusic-hero-sub {
+  font-size: var(--font-m);
+  color: var(--text-caption);
+  margin-bottom: var(--space-l);
+  max-width: 36rem;
+}
+
+.aimusic-stats-row {
+  display: flex;
+  gap: var(--space-l);
+  margin-bottom: var(--space-m);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.aimusic-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  min-width: 8rem;
+}
+.aimusic-stat-val {
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--text-color);
+}
+.aimusic-stat-val.muted { color: var(--text-caption); }
+.aimusic-stat-label {
+  font-size: var(--font-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-caption);
+  font-weight: 600;
+}
+
+.aimusic-hero-meta {
+  font-size: var(--font-s);
+  color: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: var(--space-s);
+}
+
+.aimusic-hero-caveat {
+  margin-top: var(--space-m);
+  font-size: var(--font-xs);
+  color: var(--text-caption);
+  background: color-mix(in srgb, var(--purple) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--purple) 18%, transparent);
+  border-radius: var(--radius-m);
+  padding: 0.55rem 0.9rem;
+  max-width: 44rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .aimusic-hero-headline { font-size: 2.4rem; }
+  .aimusic-hero { min-height: 20rem; }
+}
+
 @media (max-width: 768px) {
   .lang-hero-flag { font-size: 5rem; }
   .lang-hero-name { font-size: 3rem; }
@@ -2541,7 +2667,9 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     <input type="radio" name="mode" id="mode-redaction" value="redaction">
     <label for="mode-redaction">PII/PHI Redaction</label>
     <input type="radio" name="mode" id="mode-music" value="music">
-    <label for="mode-music">Music &amp; Speech Detection</label>
+    <label for="mode-music">Music Detection</label>
+    <input type="radio" name="mode" id="mode-aimusic" value="aimusic">
+    <label for="mode-aimusic">AI Music Detection<span class="mode-pill">Preview</span></label>
     <input type="radio" name="mode" id="mode-language" value="language" hidden>
     <label for="mode-language" hidden style="display:none">Language<span class="mode-pill">Preview</span></label>
     <input type="radio" name="mode" id="mode-velma" value="velma" hidden>
@@ -2728,6 +2856,32 @@ body:has(#stt-debug-panel:not([hidden])) .page {
           </div>
         </div>
 
+        <!-- AI Music Detection content -->
+        <div id="aimusic-content">
+          <div class="aimusic-hero pending" id="aimusic-hero">
+            <div class="aimusic-hero-badge" id="aimusic-hero-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+              <span id="aimusic-hero-badge-text">Awaiting audio</span>
+            </div>
+            <div class="aimusic-hero-headline" id="aimusic-hero-headline">—</div>
+            <div class="aimusic-hero-sub" id="aimusic-hero-sub">Upload an audio clip to detect AI-generated music.</div>
+            <div class="aimusic-stats-row" id="aimusic-stats-row" style="display:none">
+              <div class="aimusic-stat">
+                <div class="aimusic-stat-val" id="aimusic-stat-vocal">—</div>
+                <div class="aimusic-stat-label">Vocal AI %</div>
+              </div>
+              <div class="aimusic-stat">
+                <div class="aimusic-stat-val" id="aimusic-stat-instrumental">—</div>
+                <div class="aimusic-stat-label">Instrumental AI prob</div>
+              </div>
+            </div>
+            <div class="aimusic-hero-meta" id="aimusic-hero-meta"></div>
+            <div class="aimusic-hero-caveat">
+              Preview model. Best at AI vocal music and Suno-style instrumentals. Can miss AI techno/metal and hip-hop beats; can false-positive on minimalist piano and heavily compressed rap vocals.
+            </div>
+          </div>
+        </div>
+
         <!-- Language Detection content -->
         <div id="language-content">
           <div class="lang-hero" id="lang-hero">
@@ -2792,6 +2946,20 @@ body:has(#stt-debug-panel:not([hidden])) .page {
             Full Statistics
           </button>
           <button class="verdict-link" id="btn-show-json-music">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            JSON Response
+          </button>
+        </div>
+      </aside>
+
+      <!-- AI Music Detection sidebar -->
+      <aside class="results-verdict" id="results-aimusic-verdict">
+        <div class="verdict-links">
+          <button class="verdict-link" id="btn-show-stats-aimusic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Full Statistics
+          </button>
+          <button class="verdict-link" id="btn-show-json-aimusic">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             JSON Response
           </button>
@@ -2892,7 +3060,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
 
   <!-- Footer -->
   <footer class="footer">
-    v4.1.0 (May 22, 2026)
+    v4.2.0 (May 22, 2026)
   </footer>
 
 </div>
@@ -3019,7 +3187,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     </div>
   </div>
   <div class="overlay-footer">
-    v4.1.0 (May 22, 2026)
+    v4.2.0 (May 22, 2026)
   </div>
 </div>
 

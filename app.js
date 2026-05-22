@@ -73,6 +73,18 @@
     };
   })();
 
+  // Pre-recorded AI Music Detection response so the demo page renders instantly.
+  // Captured live from the preview endpoint on the Big Mac Papelão sample.
+  const DEMO_AIMUSIC_AUDIO_URL = '/ai-music/big-mac-papelao.mp3';
+  const DEMO_AIMUSIC_DATA = {
+    filename: 'big-mac-papelao.mp3',
+    duration_s: 89.28,
+    primary_verdict: 'ai-vocal-music',
+    vocal_ai_pct: 55.8,
+    instrumental_ai_prob: null,
+    latency_ms: 523.1,
+  };
+
   // ── Verdict helpers ─────────────────────────────────────────────────────────
   function isSyntheticFrame(f) { return f.verdict === 'synthetic'; }
 
@@ -194,6 +206,19 @@
   const musicSidebar      = document.getElementById('results-music-verdict');
   const musicViewBtns     = document.querySelectorAll('.music-view-btn');
 
+  // AI Music Detection elements
+  const aimusicContent       = document.getElementById('aimusic-content');
+  const aimusicSidebar       = document.getElementById('results-aimusic-verdict');
+  const aimusicHero          = document.getElementById('aimusic-hero');
+  const aimusicHeroBadge     = document.getElementById('aimusic-hero-badge');
+  const aimusicHeroBadgeText = document.getElementById('aimusic-hero-badge-text');
+  const aimusicHeroHeadline  = document.getElementById('aimusic-hero-headline');
+  const aimusicHeroSub       = document.getElementById('aimusic-hero-sub');
+  const aimusicStatsRow      = document.getElementById('aimusic-stats-row');
+  const aimusicStatVocal     = document.getElementById('aimusic-stat-vocal');
+  const aimusicStatInstrumental = document.getElementById('aimusic-stat-instrumental');
+  const aimusicHeroMeta      = document.getElementById('aimusic-hero-meta');
+
   // Language Detection elements
   const languageContent      = document.getElementById('language-content');
   const languageSidebar      = document.getElementById('results-language-verdict');
@@ -249,6 +274,10 @@
   let lastMusicData = null;
   let lastMusicAudioUrl = null;
   let lastMusicMeta = null;
+  let lastAimusicData = null;
+  let lastAimusicAudioUrl = null;
+  let lastAimusicMeta = null;
+  let lastAimusicFilename = null;
   let lastLanguageData = null;
   let lastLanguageAudioUrl = null;
   let lastLanguageMeta = null;
@@ -286,6 +315,9 @@
     } else if (currentMode === 'language' && languageSidebar && languageContent) {
       if (isMobile) resultsMain.insertBefore(languageSidebar, languageContent);
       else resultsLayout.appendChild(languageSidebar);
+    } else if (currentMode === 'aimusic' && aimusicSidebar && aimusicContent) {
+      if (isMobile) resultsMain.insertBefore(aimusicSidebar, aimusicContent);
+      else resultsLayout.appendChild(aimusicSidebar);
     }
   }
 
@@ -299,6 +331,7 @@
     const isDeepfake    = mode === 'deepfake';
     const isRedaction   = mode === 'redaction';
     const isMusic       = mode === 'music';
+    const isAimusic     = mode === 'aimusic';
     const isLanguage    = mode === 'language';
     const isTranscription = mode === 'transcription';
     const isVelma       = mode === 'velma';
@@ -307,6 +340,7 @@
     const targetPath = isDeepfake ? '/deepfake'
       : isRedaction ? '/redaction'
       : isMusic ? '/music'
+      : isAimusic ? '/ai-music'
       : isLanguage ? '/language'
       : isVelma ? '/velma'
       : '/transcription';
@@ -330,6 +364,8 @@
     redactionOptions.classList.toggle('visible', isRedaction);
     if (musicContent) musicContent.style.display = isMusic ? '' : 'none';
     if (musicSidebar) musicSidebar.style.display = isMusic ? '' : 'none';
+    if (aimusicContent) aimusicContent.classList.toggle('visible', isAimusic);
+    if (aimusicSidebar) aimusicSidebar.style.display = isAimusic ? '' : 'none';
     if (languageContent) languageContent.classList.toggle('visible', isLanguage);
     if (languageSidebar) languageSidebar.style.display = isLanguage ? '' : 'none';
     if (velmaContent) velmaContent.classList.toggle('visible', isVelma);
@@ -341,8 +377,8 @@
     if (streamDemoAction) streamDemoAction.style.display = (isTranscription || isMusic) ? '' : 'none';
     if (streamFileAction) streamFileAction.style.display = (isTranscription || isMusic) ? '' : 'none';
     if (recordAction) {
-      // Velma + redaction + language are batch-only — hide live record.
-      recordAction.style.display = (isVelma || isRedaction || isLanguage) ? 'none' : '';
+      // Velma + redaction + language + ai music are batch-only — hide live record.
+      recordAction.style.display = (isVelma || isRedaction || isLanguage || isAimusic) ? 'none' : '';
       recordAction.classList.toggle('disabled-soon', isRedaction);
     }
     renderDebugPanel(true);
@@ -430,6 +466,22 @@
         processingMs: DEMO_MUSIC_DATA.latency_ms || 0,
       };
       renderMusicResults(mData, mAudio);
+      applyMobileLayout(mobileQuery.matches);
+    } else if (isAimusic) {
+      const aData = lastAimusicData || DEMO_AIMUSIC_DATA;
+      const aAudio = lastAimusicAudioUrl || DEMO_AIMUSIC_AUDIO_URL;
+      currentData = aData;
+      currentMeta = lastAimusicMeta || {
+        fileSize: 2124230,
+        fileType: 'audio/mpeg',
+        httpStatus: 200,
+        httpStatusText: 'OK',
+        responseSize: JSON.stringify(DEMO_AIMUSIC_DATA).length,
+        processingMs: DEMO_AIMUSIC_DATA.latency_ms || 0,
+      };
+      resultsFilename.textContent = lastAimusicFilename || aData.filename || 'big-mac-papelao.mp3';
+      resultsAudio.src = aAudio;
+      renderAimusicResult(aData);
       applyMobileLayout(mobileQuery.matches);
     } else if (isLanguage) {
       if (lastLanguageData) {
@@ -564,6 +616,8 @@
           startRedactionBatch(fileInput.files[0]);
         } else if (currentMode === 'music') {
           startMusicAnalysis(fileInput.files[0]);
+        } else if (currentMode === 'aimusic') {
+          startAimusicAnalysis(fileInput.files[0]);
         } else if (currentMode === 'language') {
           startLanguageDetection(fileInput.files[0]);
         } else if (currentMode === 'velma') {
@@ -587,6 +641,7 @@
         if (currentMode === 'deepfake') startDeepfakeAnalysis(e.dataTransfer.files[0]);
         else if (currentMode === 'redaction') startRedactionBatch(e.dataTransfer.files[0]);
         else if (currentMode === 'music') startMusicAnalysis(e.dataTransfer.files[0]);
+        else if (currentMode === 'aimusic') startAimusicAnalysis(e.dataTransfer.files[0]);
         else if (currentMode === 'language') startLanguageDetection(e.dataTransfer.files[0]);
         else if (currentMode === 'velma') startVelmaBatch(e.dataTransfer.files[0]);
         else startTranscriptionBatch(e.dataTransfer.files[0]);
@@ -1527,6 +1582,105 @@
     langHeroMeta.textContent = parts.join(' · ');
 
     langHeroWarning.style.display = conf < 0.5 ? '' : 'none';
+  }
+
+  // ── AI Music Detection ─────────────────────────────────────────────────────
+  async function startAimusicAnalysis(file) {
+    if (isAnalyzing) return;
+    isAnalyzing = true;
+    showOverlay(file.name, 'Detecting AI-generated music');
+    // The preview model takes ~0.5-2.5s depending on the file; pace progress
+    // bar to a reasonable middle estimate.
+    startProgress(Math.max(2500, Math.min(8000, file.size / 50000)));
+
+    try {
+      const startedAt = Date.now();
+      const { data, meta } = await uploadAndAnalyze(file, '/api/velma-2-ai-music-detection-batch');
+      const processingMs = Date.now() - startedAt;
+      await finishProgress();
+      hideOverlay();
+      isAnalyzing = false;
+
+      if (lastAimusicAudioUrl && lastAimusicAudioUrl !== DEMO_AIMUSIC_AUDIO_URL) {
+        URL.revokeObjectURL(lastAimusicAudioUrl);
+      }
+      audioObjectUrl = URL.createObjectURL(file);
+
+      currentMeta = {
+        fileSize: file.size,
+        fileType: file.type || file.name.split('.').pop().toUpperCase(),
+        httpStatus: meta.httpStatus,
+        httpStatusText: meta.httpStatusText,
+        responseSize: meta.responseSize,
+        processingMs,
+      };
+
+      lastAimusicData = data;
+      lastAimusicAudioUrl = audioObjectUrl;
+      lastAimusicMeta = { ...currentMeta };
+      lastAimusicFilename = file.name;
+
+      currentData = data;
+      resultsFilename.textContent = file.name;
+      resultsAudio.src = audioObjectUrl;
+      renderAimusicResult(data);
+      window.scrollTo(0, 0);
+      updateRateLimit();
+    } catch (err) {
+      showOverlayError(err.message || 'AI music detection failed. Please try again.', err.rawText);
+      isAnalyzing = false;
+    }
+  }
+
+  function renderAimusicResult(data) {
+    if (!aimusicHero) return;
+    const verdict = data.primary_verdict || 'unknown';
+    aimusicHero.className = 'aimusic-hero ' + verdict;
+
+    const headlines = {
+      'ai-vocal-music':   'AI Vocal Music',
+      'ai-instrumental':  'AI Instrumental',
+      'not-ai-music':     'Not AI Music',
+    };
+    const subs = {
+      'ai-vocal-music':   'Synthetic voice detected in a musical context — likely an AI song or AI-generated topline.',
+      'ai-instrumental':  'No synthetic voice, but the instrumental fingerprint matches AI-generated music.',
+      'not-ai-music':     'Neither the vocal nor the instrumental path crossed the AI-generation threshold.',
+    };
+    const badges = {
+      'ai-vocal-music':   { text: 'AI Detected', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>' },
+      'ai-instrumental':  { text: 'AI Detected', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>' },
+      'not-ai-music':     { text: 'Clean', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' },
+    };
+    const badge = badges[verdict] || { text: 'Unknown', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>' };
+    aimusicHeroBadge.innerHTML = badge.icon + '<span>' + badge.text + '</span>';
+    aimusicHeroHeadline.textContent = headlines[verdict] || verdict;
+    aimusicHeroSub.textContent = subs[verdict] || '';
+
+    const vocalPct = typeof data.vocal_ai_pct === 'number' ? data.vocal_ai_pct : 0;
+    const instProb = typeof data.instrumental_ai_prob === 'number' ? data.instrumental_ai_prob : null;
+    aimusicStatVocal.textContent = vocalPct.toFixed(1) + '%';
+    aimusicStatVocal.classList.toggle('muted', vocalPct === 0);
+    if (instProb == null) {
+      aimusicStatInstrumental.textContent = '—';
+      aimusicStatInstrumental.classList.add('muted');
+    } else {
+      aimusicStatInstrumental.textContent = (instProb * 100).toFixed(1) + '%';
+      aimusicStatInstrumental.classList.toggle('muted', instProb < 0.5);
+    }
+    aimusicStatsRow.style.display = '';
+
+    const parts = [];
+    if (typeof data.duration_s === 'number') parts.push(`Audio: ${data.duration_s.toFixed(1)} s`);
+    const procMs = currentMeta && currentMeta.processingMs;
+    if (procMs) {
+      parts.push(`Processed in ${(procMs / 1000).toFixed(2)} s`);
+      if (typeof data.duration_s === 'number' && data.duration_s > 0) {
+        const factor = (data.duration_s * 1000) / procMs;
+        if (factor > 0 && isFinite(factor)) parts.push(`${factor.toFixed(1)}× real-time`);
+      }
+    }
+    aimusicHeroMeta.textContent = parts.join(' · ');
   }
 
   function resetMusicLiveUI() {
@@ -3454,6 +3608,8 @@
   document.getElementById('btn-show-json-redaction').addEventListener('click', () => showJsonModal());
   document.getElementById('btn-show-stats-music').addEventListener('click', () => showStatsModal());
   document.getElementById('btn-show-json-music').addEventListener('click', () => showJsonModal());
+  document.getElementById('btn-show-stats-aimusic').addEventListener('click', () => showStatsModal());
+  document.getElementById('btn-show-json-aimusic').addEventListener('click', () => showJsonModal());
   document.getElementById('btn-show-stats-language').addEventListener('click', () => showStatsModal());
   document.getElementById('btn-show-json-language').addEventListener('click', () => showJsonModal());
 
@@ -3552,6 +3708,45 @@
         { group: 'Request', rows: [
           ['HTTP', httpStr],
           ['Endpoint', '/api/velma-2-music-detection-batch'],
+          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
+        ]},
+      ];
+    } else if (currentMode === 'aimusic') {
+      statsModalTitle.textContent = 'AI Music Detection Statistics';
+      const durationS = currentData.duration_s || 0;
+      const durationMs = durationS * 1000;
+      const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
+      const procFactor = m.processingMs && durationMs ? (durationMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
+      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
+      const fileType = m.fileType || (currentData.filename ? currentData.filename.split('.').pop().toUpperCase() : 'N/A');
+      const serverLatency = currentData.latency_ms != null ? formatDuration(currentData.latency_ms) : 'N/A';
+      const verdictMap = { 'ai-vocal-music': 'AI Vocal Music', 'ai-instrumental': 'AI Instrumental', 'not-ai-music': 'Not AI Music' };
+      const verdictLabel = verdictMap[currentData.primary_verdict] || currentData.primary_verdict || 'Unknown';
+      const vocalPct = currentData.vocal_ai_pct != null ? currentData.vocal_ai_pct.toFixed(1) + '%' : '0.0%';
+      const instProb = currentData.instrumental_ai_prob;
+      const instProbStr = instProb == null ? '—' : (instProb * 100).toFixed(1) + '%';
+
+      groups = [
+        { group: 'Detection', rows: [
+          ['Model', 'velma-2-ai-music-detection-batch (preview)'],
+          ['Primary verdict', verdictLabel],
+          ['Vocal AI coverage', vocalPct],
+          ['Instrumental AI probability', instProbStr],
+        ]},
+        { group: 'Audio', rows: [
+          ['File Name', currentData.filename || 'N/A'],
+          ['File Size', m.fileSize ? formatBytes(m.fileSize) : 'N/A'],
+          ['File Type', fileType],
+          ['Audio Duration', formatDuration(durationMs)],
+        ]},
+        { group: 'Performance', rows: [
+          ['Server latency', serverLatency],
+          ['Round-trip time', procTimeStr],
+          ['Processing Factor', procFactor],
+        ]},
+        { group: 'Request', rows: [
+          ['HTTP', httpStr],
+          ['Endpoint', '/api/velma-2-ai-music-detection-batch'],
           ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
         ]},
       ];
@@ -5166,6 +5361,7 @@
     if (path === '/deepfake') return 'deepfake';
     if (path === '/redaction') return 'redaction';
     if (path === '/music') return 'music';
+    if (path === '/ai-music') return 'aimusic';
     if (path === '/language') return 'language';
     if (path === '/velma') return 'velma';
     return 'transcription';
@@ -5225,6 +5421,32 @@
       processingMs: DEMO_MUSIC_DATA.latency_ms || 0,
     };
     renderMusicResults(DEMO_MUSIC_DATA, DEMO_MUSIC_AUDIO_URL);
+  } else if (initMode === 'aimusic') {
+    // AI Music Detection init — render pre-cached demo so the page lights up
+    // without an API call on first load.
+    deepfakeContent.style.display = 'none';
+    resultsVerdict.style.display = 'none';
+    transcriptContainer.classList.remove('visible');
+    resultsSidebar.classList.remove('visible');
+    sttOptions.classList.remove('visible');
+    redactionContent.style.display = 'none';
+    if (musicContent) musicContent.style.display = 'none';
+    if (musicSidebar) musicSidebar.style.display = 'none';
+    if (aimusicContent) aimusicContent.classList.add('visible');
+    if (aimusicSidebar) aimusicSidebar.style.display = '';
+    if (recordAction) recordAction.style.display = 'none';
+    if (streamDemoAction) streamDemoAction.style.display = 'none';
+    if (streamFileAction) streamFileAction.style.display = 'none';
+    currentData = DEMO_AIMUSIC_DATA;
+    currentMeta = {
+      fileSize: 2124230, fileType: 'audio/mpeg',
+      httpStatus: 200, httpStatusText: 'OK',
+      responseSize: JSON.stringify(DEMO_AIMUSIC_DATA).length,
+      processingMs: DEMO_AIMUSIC_DATA.latency_ms || 0,
+    };
+    resultsFilename.textContent = DEMO_AIMUSIC_DATA.filename || 'big-mac-papelao.mp3';
+    resultsAudio.src = DEMO_AIMUSIC_AUDIO_URL;
+    renderAimusicResult(DEMO_AIMUSIC_DATA);
   } else if (initMode === 'language') {
     // Language Detection init — no demo, just the hero placeholder.
     deepfakeContent.style.display = 'none';
@@ -5330,6 +5552,7 @@
   const initPath = initMode === 'deepfake' ? '/deepfake'
     : initMode === 'redaction' ? '/redaction'
     : initMode === 'music' ? '/music'
+    : initMode === 'aimusic' ? '/ai-music'
     : initMode === 'language' ? '/language'
     : initMode === 'velma' ? '/velma'
     : '/transcription';
