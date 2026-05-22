@@ -5,5 +5,6 @@ RUN npm ci --production
 COPY server.js db.js index.html app.js velma-demo-data.json ./
 COPY deepfake/ ./deepfake/
 COPY music/ ./music/
+COPY ai-music/ ./ai-music/
 EXPOSE 8080
 CMD ["node", "server.js"]
