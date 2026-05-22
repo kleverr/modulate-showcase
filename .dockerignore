@@ -1,4 +1,34 @@
-fly.toml
-Dockerfile
-.dockerignore
+# Deny-list for the Docker build context. The Dockerfile does `COPY . .`,
+# so anything NOT listed here ends up in the image. Adding new asset
+# folders (e.g. ai-music/, deepfake/, music/) just works — no Dockerfile
+# edit needed. If you add something here, make sure it isn't a runtime
+# dependency.
+
+# VCS + tooling
 .git
+.gitignore
+.dockerignore
+.claude/
+.gstack/
+.vscode/
+.DS_Store
+
+# Local-only files (gitignored, but defense-in-depth)
+.env
+.env.*
+node_modules/
+*.db
+*.db-shm
+*.db-wal
+
+# Build/deploy config — not runtime
+Dockerfile
+fly.toml
+
+# Docs — not loaded at runtime
+CHANGELOG.md
+TODOS.md
+README.md
+
+# Local scratch directories
+weather-clips/
