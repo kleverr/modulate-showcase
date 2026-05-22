@@ -85,6 +85,18 @@
     latency_ms: 523.1,
   };
 
+  // Pre-recorded Language Detection response. Same audio file as transcription
+  // (AIAgentFrustration.mp3 served from /deepfake/demo.mp3) so we don't ship
+  // a separate asset.
+  const DEMO_LANGUAGE_AUDIO_URL = '/deepfake/demo.mp3';
+  const DEMO_LANGUAGE_FILENAME = 'AIAgentFrustration.mp3';
+  const DEMO_LANGUAGE_DATA = {
+    predicted_language: 'English',
+    predicted_language_code: 'en',
+    confidence: 0.99609375,
+    duration_ms: 97698,
+  };
+
   // ── Verdict helpers ─────────────────────────────────────────────────────────
   function isSyntheticFrame(f) { return f.verdict === 'synthetic'; }
 
@@ -214,10 +226,15 @@
   const aimusicHeroBadgeText = document.getElementById('aimusic-hero-badge-text');
   const aimusicHeroHeadline  = document.getElementById('aimusic-hero-headline');
   const aimusicHeroSub       = document.getElementById('aimusic-hero-sub');
-  const aimusicStatsRow      = document.getElementById('aimusic-stats-row');
-  const aimusicStatVocal     = document.getElementById('aimusic-stat-vocal');
-  const aimusicStatInstrumental = document.getElementById('aimusic-stat-instrumental');
-  const aimusicHeroMeta      = document.getElementById('aimusic-hero-meta');
+  const aimusicPaths           = document.getElementById('aimusic-paths');
+  const aimusicPathVocal       = document.getElementById('aimusic-path-vocal');
+  const aimusicPathVocalIcon   = document.getElementById('aimusic-path-vocal-icon');
+  const aimusicPathVocalValue  = document.getElementById('aimusic-path-vocal-value');
+  const aimusicPathInstr       = document.getElementById('aimusic-path-instr');
+  const aimusicPathInstrIcon   = document.getElementById('aimusic-path-instr-icon');
+  const aimusicPathInstrValue  = document.getElementById('aimusic-path-instr-value');
+  const aimusicPathNote        = document.getElementById('aimusic-path-note');
+  const aimusicHeroMeta        = document.getElementById('aimusic-hero-meta');
 
   // Language Detection elements
   const languageContent      = document.getElementById('language-content');
@@ -484,15 +501,17 @@
       renderAimusicResult(aData);
       applyMobileLayout(mobileQuery.matches);
     } else if (isLanguage) {
-      if (lastLanguageData) {
-        currentData = lastLanguageData;
-        currentMeta = lastLanguageMeta || {};
-        resultsFilename.textContent = lastLanguageFilename || '';
-        if (lastLanguageAudioUrl) resultsAudio.src = lastLanguageAudioUrl;
-        renderLanguageResult(lastLanguageData);
-      } else {
-        resetLanguageHero();
-      }
+      const lData = lastLanguageData || DEMO_LANGUAGE_DATA;
+      currentData = lData;
+      currentMeta = lastLanguageMeta || {
+        fileSize: 1.87 * 1024 * 1024, fileType: 'audio/mpeg',
+        httpStatus: 200, httpStatusText: 'OK',
+        responseSize: JSON.stringify(DEMO_LANGUAGE_DATA).length,
+        processingMs: 1100,
+      };
+      resultsFilename.textContent = lastLanguageFilename || DEMO_LANGUAGE_FILENAME;
+      resultsAudio.src = lastLanguageAudioUrl || DEMO_LANGUAGE_AUDIO_URL;
+      renderLanguageResult(lData);
       applyMobileLayout(mobileQuery.matches);
     } else if (isVelma) {
       if (lastVelmaData) {
@@ -1647,9 +1666,10 @@
       'ai-instrumental':  'No synthetic voice, but the instrumental fingerprint matches AI-generated music.',
       'not-ai-music':     'Neither the vocal nor the instrumental path crossed the AI-generation threshold.',
     };
+    const robotIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><circle cx="8.5" cy="16" r="1" fill="currentColor"/><circle cx="15.5" cy="16" r="1" fill="currentColor"/></svg>';
     const badges = {
-      'ai-vocal-music':   { text: 'AI Detected', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>' },
-      'ai-instrumental':  { text: 'AI Detected', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>' },
+      'ai-vocal-music':   { text: 'AI Detected', icon: robotIcon },
+      'ai-instrumental':  { text: 'AI Detected', icon: robotIcon },
       'not-ai-music':     { text: 'Clean', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' },
     };
     const badge = badges[verdict] || { text: 'Unknown', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>' };
@@ -1657,18 +1677,36 @@
     aimusicHeroHeadline.textContent = headlines[verdict] || verdict;
     aimusicHeroSub.textContent = subs[verdict] || '';
 
+    // Two-path flow diagram. The vocal path always runs; the instrumental
+    // path is gated by a low-speech check and is skipped (null) when the
+    // SVD path already produced a verdict.
     const vocalPct = typeof data.vocal_ai_pct === 'number' ? data.vocal_ai_pct : 0;
     const instProb = typeof data.instrumental_ai_prob === 'number' ? data.instrumental_ai_prob : null;
-    aimusicStatVocal.textContent = vocalPct.toFixed(1) + '%';
-    aimusicStatVocal.classList.toggle('muted', vocalPct === 0);
-    if (instProb == null) {
-      aimusicStatInstrumental.textContent = '—';
-      aimusicStatInstrumental.classList.add('muted');
+    const VOCAL_THRESHOLD = 30;     // server-side ai-vocal-music threshold
+    const INSTR_THRESHOLD = 0.97;   // server-side ai-instrumental threshold
+
+    const vocalFired = vocalPct >= VOCAL_THRESHOLD;
+    const instrSkipped = instProb == null;
+    const instrFired = !instrSkipped && instProb >= INSTR_THRESHOLD;
+
+    aimusicPathVocal.className = 'aimusic-path' + (vocalFired ? ' fired-ai' : '');
+    aimusicPathVocalIcon.textContent = vocalFired ? '✓' : '○';
+    aimusicPathVocalValue.textContent = vocalPct.toFixed(1) + '% AI';
+
+    if (instrSkipped) {
+      aimusicPathInstr.className = 'aimusic-path skipped';
+      aimusicPathInstrIcon.textContent = '—';
+      aimusicPathInstrValue.textContent = 'not evaluated';
     } else {
-      aimusicStatInstrumental.textContent = (instProb * 100).toFixed(1) + '%';
-      aimusicStatInstrumental.classList.toggle('muted', instProb < 0.5);
+      aimusicPathInstr.className = 'aimusic-path' + (instrFired ? ' fired-ai' : '');
+      aimusicPathInstrIcon.textContent = instrFired ? '✓' : '○';
+      aimusicPathInstrValue.textContent = (instProb * 100).toFixed(1) + '% AI';
     }
-    aimusicStatsRow.style.display = '';
+
+    // No path-level note — the hero sub-headline already says why.
+    aimusicPathNote.textContent = '';
+
+    aimusicPaths.style.display = '';
 
     const parts = [];
     if (typeof data.duration_s === 'number') parts.push(`Audio: ${data.duration_s.toFixed(1)} s`);
@@ -5448,7 +5486,8 @@
     resultsAudio.src = DEMO_AIMUSIC_AUDIO_URL;
     renderAimusicResult(DEMO_AIMUSIC_DATA);
   } else if (initMode === 'language') {
-    // Language Detection init — no demo, just the hero placeholder.
+    // Language Detection init — render pre-cached demo so the page lights up
+    // without an API call on first load.
     deepfakeContent.style.display = 'none';
     resultsVerdict.style.display = 'none';
     transcriptContainer.classList.remove('visible');
@@ -5462,7 +5501,17 @@
     if (recordAction) recordAction.style.display = 'none';
     if (streamDemoAction) streamDemoAction.style.display = 'none';
     if (streamFileAction) streamFileAction.style.display = 'none';
-    resetLanguageHero();
+    currentData = DEMO_LANGUAGE_DATA;
+    currentMeta = {
+      fileSize: 1.87 * 1024 * 1024, fileType: 'audio/mpeg',
+      httpStatus: 200, httpStatusText: 'OK',
+      responseSize: JSON.stringify(DEMO_LANGUAGE_DATA).length,
+      processingMs: 1100,
+    };
+    resultsFilename.textContent = DEMO_LANGUAGE_FILENAME;
+    resultsAudio.src = DEMO_LANGUAGE_AUDIO_URL;
+    lastLanguageFilename = DEMO_LANGUAGE_FILENAME;
+    renderLanguageResult(DEMO_LANGUAGE_DATA);
   } else if (initMode === 'velma') {
     // Velma init — render pre-cached demo (matches transcription/deepfake/redaction UX)
     deepfakeContent.style.display = 'none';

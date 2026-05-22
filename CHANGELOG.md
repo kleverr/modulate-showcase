@@ -2,6 +2,37 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.3.0] - 2026-05-22
+
+### Added
+- **Language Detection** preview tab is back on the public site, sharing a
+  visual "Preview" group with AI Music Detection. Cached demo loads
+  instantly using the same `AIAgentFrustration.mp3` clip as transcription
+  (English · 99.6% confidence). Velma stays localhost-only.
+- Shared **Preview divider** in the top menu: one `| PREVIEW` marker
+  separates production tabs from preview models instead of a pill on
+  every tab.
+
+### Changed
+- **AI Music Detection** result panel polished:
+  - Two-path flow diagram (Vocal · Instrumental) replaces the duplicate
+    `%` stat tiles, making the SVD + Fakeprint architecture transparent.
+    Null `instrumental_ai_prob` now renders as "not evaluated" instead
+    of a cryptic dash.
+  - Robot icon on the "AI Detected" badge (was a warning triangle).
+  - Removed the redundant path-level note — the hero sub-headline
+    already explains the verdict.
+  - Caveat panel uses subtle background tint instead of a nested border.
+- "Music & Speech Detection" stays renamed to "Music Detection".
+
+### Fixed
+- AI Music + Language sidebars (Full Statistics, JSON Response) now
+  render correctly. Sidebar visibility is fully JS-controlled instead of
+  fighting a stale `display: none` CSS rule.
+- HubSpot embed script is skipped on `localhost` so the preview sandbox
+  no longer pops a "Link to js.hsforms.net was blocked" toast on every
+  reload. Still loads normally on production.
+
 ## [4.2.0] - 2026-05-22
 
 ### Added

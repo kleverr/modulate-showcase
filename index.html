@@ -926,7 +926,6 @@ body {
 /* ── Language Detection Hero ─────────────────────────────────────────── */
 #language-content { display: none; }
 #language-content.visible { display: block; }
-#results-language-verdict { display: none; }
 
 .lang-hero {
   display: flex;
@@ -1031,7 +1030,6 @@ body {
 /* ── AI Music Detection Hero ────────────────────────────────────────── */
 #aimusic-content { display: none; }
 #aimusic-content.visible { display: block; }
-#results-aimusic-verdict { display: none; }
 
 .aimusic-hero {
   display: flex;
@@ -1100,34 +1098,56 @@ body {
   max-width: 36rem;
 }
 
-.aimusic-stats-row {
-  display: flex;
-  gap: var(--space-l);
-  margin-bottom: var(--space-m);
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.aimusic-stat {
+.aimusic-paths {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
-  min-width: 8rem;
+  gap: 0.35rem;
+  margin-bottom: var(--space-m);
+  padding: var(--space-s) var(--space-m);
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--purple) 3%, transparent);
+  min-width: 22rem;
 }
-.aimusic-stat-val {
-  font-size: 2rem;
-  font-weight: 700;
+.aimusic-path {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr auto auto;
+  align-items: baseline;
+  gap: 0.55rem;
+  font-size: var(--font-m);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  text-align: left;
+}
+.aimusic-path-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--text-caption);
+  text-align: center;
+}
+.aimusic-path-name {
+  font-weight: 600;
   color: var(--text-color);
 }
-.aimusic-stat-val.muted { color: var(--text-caption); }
-.aimusic-stat-label {
-  font-size: var(--font-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.aimusic-path-sep {
   color: var(--text-caption);
-  font-weight: 600;
+  opacity: 0.5;
+}
+.aimusic-path-value {
+  font-weight: 700;
+  color: var(--text-color);
+}
+.aimusic-path.fired .aimusic-path-icon { color: var(--ui-success); }
+.aimusic-path.fired-ai .aimusic-path-icon { color: var(--ui-error); }
+.aimusic-path.fired-ai .aimusic-path-value { color: var(--ui-error); }
+.aimusic-path.skipped { opacity: 0.6; }
+.aimusic-path.skipped .aimusic-path-icon { color: var(--text-caption); }
+.aimusic-path.skipped .aimusic-path-value { color: var(--text-caption); font-weight: 500; font-style: italic; }
+
+.aimusic-path-note {
+  grid-column: 2 / -1;
+  font-size: var(--font-xs);
+  color: var(--text-caption);
+  padding-left: 2.05rem;
+  margin-top: -0.1rem;
 }
 
 .aimusic-hero-meta {
@@ -1141,12 +1161,9 @@ body {
   margin-top: var(--space-m);
   font-size: var(--font-xs);
   color: var(--text-caption);
-  background: color-mix(in srgb, var(--purple) 4%, transparent);
-  border: 1px solid color-mix(in srgb, var(--purple) 18%, transparent);
-  border-radius: var(--radius-m);
-  padding: 0.55rem 0.9rem;
   max-width: 44rem;
-  line-height: 1.4;
+  line-height: 1.45;
+  padding: 0 var(--space-s);
 }
 
 @media (max-width: 768px) {
@@ -1950,20 +1967,28 @@ body:has(#stt-debug-panel:not([hidden])) .page {
   margin-top: var(--space-m);
 }
 
-/* ── Mode toggle "Preview" pill (Velma) ─────────────────────────────── */
+/* ── Mode toggle "Preview" divider ──────────────────────────────────── */
+.mode-toggle-divider {
+  display: inline-flex;
+  align-items: center;
+  height: 1.4rem;
+  margin: 0 0.15rem;
+  padding-left: 0.6rem;
+  border-left: 1.5px solid var(--ui-border);
+  user-select: none;
+}
 .mode-pill {
   display: inline-block;
-  margin-left: 0.35rem;
-  padding: 0.05rem 0.4rem;
-  font-size: 0.55rem;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  vertical-align: 0.4em;
   color: #fff;
   background: linear-gradient(135deg, #430f92, #fb3958);
   border-radius: 3px;
   user-select: none;
+  line-height: 1.2;
 }
 
 /* ── Velma options row ──────────────────────────────────────────────── */
@@ -2668,22 +2693,21 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     <label for="mode-redaction">PII/PHI Redaction</label>
     <input type="radio" name="mode" id="mode-music" value="music">
     <label for="mode-music">Music Detection</label>
+    <span class="mode-toggle-divider" aria-hidden="true"><span class="mode-pill">Preview</span></span>
     <input type="radio" name="mode" id="mode-aimusic" value="aimusic">
-    <label for="mode-aimusic">AI Music Detection<span class="mode-pill">Preview</span></label>
-    <input type="radio" name="mode" id="mode-language" value="language" hidden>
-    <label for="mode-language" hidden style="display:none">Language<span class="mode-pill">Preview</span></label>
+    <label for="mode-aimusic">AI Music Detection</label>
+    <input type="radio" name="mode" id="mode-language" value="language">
+    <label for="mode-language">Language</label>
     <input type="radio" name="mode" id="mode-velma" value="velma" hidden>
-    <label for="mode-velma" hidden style="display:none">Velma<span class="mode-pill">Preview</span></label>
+    <label for="mode-velma" hidden style="display:none">Velma</label>
   </div>
   <script>
-    // Show Language + Velma tabs only on localhost (hidden on production).
+    // Show Velma tab only on localhost (hidden on production).
     if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-      for (const id of ['mode-language', 'mode-velma']) {
-        const input = document.getElementById(id);
-        const label = document.querySelector('label[for="' + id + '"]');
-        if (input) input.hidden = false;
-        if (label) { label.hidden = false; label.style.display = ''; }
-      }
+      const input = document.getElementById('mode-velma');
+      const label = document.querySelector('label[for="mode-velma"]');
+      if (input) input.hidden = false;
+      if (label) { label.hidden = false; label.style.display = ''; }
     }
   </script>
 
@@ -2865,15 +2889,20 @@ body:has(#stt-debug-panel:not([hidden])) .page {
             </div>
             <div class="aimusic-hero-headline" id="aimusic-hero-headline">—</div>
             <div class="aimusic-hero-sub" id="aimusic-hero-sub">Upload an audio clip to detect AI-generated music.</div>
-            <div class="aimusic-stats-row" id="aimusic-stats-row" style="display:none">
-              <div class="aimusic-stat">
-                <div class="aimusic-stat-val" id="aimusic-stat-vocal">—</div>
-                <div class="aimusic-stat-label">Vocal AI %</div>
+            <div class="aimusic-paths" id="aimusic-paths" style="display:none">
+              <div class="aimusic-path" id="aimusic-path-vocal">
+                <span class="aimusic-path-icon" id="aimusic-path-vocal-icon">○</span>
+                <span class="aimusic-path-name">Vocal path</span>
+                <span class="aimusic-path-sep">·</span>
+                <span class="aimusic-path-value" id="aimusic-path-vocal-value">—</span>
               </div>
-              <div class="aimusic-stat">
-                <div class="aimusic-stat-val" id="aimusic-stat-instrumental">—</div>
-                <div class="aimusic-stat-label">Instrumental AI prob</div>
+              <div class="aimusic-path" id="aimusic-path-instr">
+                <span class="aimusic-path-icon" id="aimusic-path-instr-icon">○</span>
+                <span class="aimusic-path-name">Instrumental path</span>
+                <span class="aimusic-path-sep">·</span>
+                <span class="aimusic-path-value" id="aimusic-path-instr-value">—</span>
               </div>
+              <div class="aimusic-path-note" id="aimusic-path-note"></div>
             </div>
             <div class="aimusic-hero-meta" id="aimusic-hero-meta"></div>
             <div class="aimusic-hero-caveat">
@@ -2953,7 +2982,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
       </aside>
 
       <!-- AI Music Detection sidebar -->
-      <aside class="results-verdict" id="results-aimusic-verdict">
+      <aside class="results-verdict" id="results-aimusic-verdict" style="display:none">
         <div class="verdict-links">
           <button class="verdict-link" id="btn-show-stats-aimusic">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
@@ -2967,7 +2996,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
       </aside>
 
       <!-- Language Detection sidebar -->
-      <aside class="results-verdict" id="results-language-verdict">
+      <aside class="results-verdict" id="results-language-verdict" style="display:none">
         <div class="verdict-links">
           <button class="verdict-link" id="btn-show-stats-language">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
@@ -3060,7 +3089,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
 
   <!-- Footer -->
   <footer class="footer">
-    v4.2.0 (May 22, 2026)
+    v4.3.0 (May 22, 2026)
   </footer>
 
 </div>
@@ -3187,7 +3216,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     </div>
   </div>
   <div class="overlay-footer">
-    v4.2.0 (May 22, 2026)
+    v4.3.0 (May 22, 2026)
   </div>
 </div>
 
@@ -3216,6 +3245,15 @@ body:has(#stt-debug-panel:not([hidden])) .page {
 </div>
 
 <script src="/app.js?v=3"></script>
-<script src="https://js.hsforms.net/forms/embed/22677265.js" defer></script>
+<script>
+  // Skip the HubSpot embed on localhost — the preview sandbox blocks
+  // non-localhost URLs and the resulting toast is just noise during dev.
+  if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    const s = document.createElement('script');
+    s.src = 'https://js.hsforms.net/forms/embed/22677265.js';
+    s.defer = true;
+    document.body.appendChild(s);
+  }
+</script>
 </body>
 </html>
