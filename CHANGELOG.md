@@ -2,6 +2,21 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.1.0] - 2026-05-22
+
+### Changed
+- **Music Detection** moved to the production gateway. Batch proxy now hits
+  `https://modulate-developer-apis.com/api/velma-2-music-detection-batch`
+  (was `/api/preview/velma-2-music-detection-batch`); WebSocket proxy routes
+  streaming through the same production host instead of the dedicated GPU
+  box at `http://3.88.52.192`. Matches the public quickstart docs.
+
+### Removed
+- Velma and Language tabs hidden from the top-of-page mode toggle. The
+  pages, JS, config editor, and demo data are all still present — only the
+  entry points are hidden. Direct navigation to `/velma` and `/language`
+  still works.
+
 ## [4.0.0] - 2026-05-15
 
 ### Added

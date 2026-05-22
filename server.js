@@ -71,10 +71,7 @@ const ALLOWED_GET_PROXIES = new Set([
 ]);
 
 // Per-endpoint upstream base URL overrides (defaults to API_BASE_URL).
-// Music streaming temporarily targets the preview GPU box directly while the
-// gateway routing is being finalized.
 const ENDPOINT_BASE_URL = {
-  '/api/velma-2-music-detection-streaming': 'http://3.88.52.192',
   '/api/velma-2-stt-streaming-v2': 'http://ec2-100-30-188-43.compute-1.amazonaws.com:8080',
   // Language detection batch — temporarily targets the preview GPU box directly
   // while the developer-apis gateway forwarding URL is being configured.
@@ -84,7 +81,6 @@ const ENDPOINT_BASE_URL = {
 
 // Per-endpoint upstream path overrides — preview models live behind /api/preview/.
 const ENDPOINT_UPSTREAM_PATH = {
-  '/api/velma-2-music-detection-batch': '/api/preview/velma-2-music-detection-batch',
   // Note: language detection currently goes direct to the GPU box (see
   // ENDPOINT_BASE_URL above), so we do NOT remap to /api/preview/... yet.
   // When the gateway is wired up, restore: '/api/velma-2-language-detection-batch': '/api/preview/velma-2-language-detection-batch'.
