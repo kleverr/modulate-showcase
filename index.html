@@ -2698,18 +2698,9 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     <label for="mode-aimusic">AI Music Detection</label>
     <input type="radio" name="mode" id="mode-language" value="language">
     <label for="mode-language">Language</label>
-    <input type="radio" name="mode" id="mode-velma" value="velma" hidden>
-    <label for="mode-velma" hidden style="display:none">Velma</label>
+    <input type="radio" name="mode" id="mode-velma" value="velma">
+    <label for="mode-velma">Velma</label>
   </div>
-  <script>
-    // Show Velma tab only on localhost (hidden on production).
-    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-      const input = document.getElementById('mode-velma');
-      const label = document.querySelector('label[for="mode-velma"]');
-      if (input) input.hidden = false;
-      if (label) { label.hidden = false; label.style.display = ''; }
-    }
-  </script>
 
   <!-- Options row (reserved space in both modes for alignment) -->
   <div class="options-row" id="options-row">
@@ -3089,7 +3080,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
 
   <!-- Footer -->
   <footer class="footer">
-    v4.3.0 (May 22, 2026)
+    v4.4.0 (May 26, 2026)
   </footer>
 
 </div>
@@ -3216,7 +3207,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     </div>
   </div>
   <div class="overlay-footer">
-    v4.3.0 (May 22, 2026)
+    v4.4.0 (May 26, 2026)
   </div>
 </div>
 

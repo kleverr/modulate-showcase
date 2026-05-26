@@ -2,6 +2,13 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.4.0] - 2026-05-26
+
+### Added
+- **Velma** preview tab is now visible on the public site (previously
+  localhost-only). Removed the `hidden` attributes and the hostname-gating
+  script so the model is selectable everywhere.
+
 ## [4.3.0] - 2026-05-22
 
 ### Added
