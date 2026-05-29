@@ -2,6 +2,24 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.5.0] - 2026-05-29
+
+### Changed
+- **Language Detection** is now a **released** model. Moved its tab ahead of the
+  "Preview" divider (Preview now holds only AI Music Detection + Velma) and routed
+  it through the prod gateway — retired the temporary GPU-box override
+  (`54.211.253.95`). Verified live against `/api/velma-2-language-detection-batch`.
+- **Fast (vfast) streaming** now points at the correct released path
+  `velma-2-stt-streaming-english-v2` and routes through the prod gateway — retired
+  the EC2 "Preview Forwarding URL" override. The previous `velma-2-stt-streaming-v2`
+  path (still listed in the public docs) does not route on the gateway.
+
+### Fixed
+- **Debug** option is now properly hidden in **Fast** streaming mode. It was meant
+  to be hidden (the debug panel only understands the rich v1 stream) but a
+  `.stt-option { display: flex }` rule overrode the `hidden` attribute, leaving the
+  checkbox visible; added `.stt-option[hidden] { display: none !important; }`.
+
 ## [4.4.0] - 2026-05-26
 
 ### Added

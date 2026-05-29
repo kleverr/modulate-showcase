@@ -72,20 +72,16 @@ const ALLOWED_GET_PROXIES = new Set([
 ]);
 
 // Per-endpoint upstream base URL overrides (defaults to API_BASE_URL).
-const ENDPOINT_BASE_URL = {
-  '/api/velma-2-stt-streaming-v2': 'http://ec2-100-30-188-43.compute-1.amazonaws.com:8080',
-  // Language detection batch — temporarily targets the preview GPU box directly
-  // while the developer-apis gateway forwarding URL is being configured.
-  // Once the gateway is wired up, remove this entry so we go back through prod.
-  '/api/velma-2-language-detection-batch': 'http://54.211.253.95:8080',
-};
+// Released models route through the prod gateway (API_BASE_URL) with no override:
+//   - velma-2-stt-streaming-english-v2 (EC2 "Preview Forwarding URL" retired)
+//   - velma-2-language-detection-batch (temporary GPU box 54.211.253.95 retired)
+const ENDPOINT_BASE_URL = {};
 
 // Per-endpoint upstream path overrides — preview models live behind /api/preview/.
 const ENDPOINT_UPSTREAM_PATH = {
   '/api/velma-2-ai-music-detection-batch': '/api/preview/velma-2-ai-music-detection-batch',
-  // Note: language detection currently goes direct to the GPU box (see
-  // ENDPOINT_BASE_URL above), so we do NOT remap to /api/preview/... yet.
-  // When the gateway is wired up, restore: '/api/velma-2-language-detection-batch': '/api/preview/velma-2-language-detection-batch'.
+  // Language detection is released — it serves on the plain prod path, NOT under
+  // /api/preview/..., so no remap here.
   '/api/velma-2-batch': '/api/preview/velma-2-batch',
   '/api/velma-2-batch/list-presets': '/api/preview/velma-2-batch/list-presets',
 };
@@ -326,7 +322,7 @@ server.on('upgrade', (req, socket, head) => {
 
   const ALLOWED_WS_PATHS = new Set([
     '/api/velma-2-stt-streaming',
-    '/api/velma-2-stt-streaming-v2',
+    '/api/velma-2-stt-streaming-english-v2',
     '/api/velma-2-synthetic-voice-detection-streaming',
     '/api/velma-2-music-detection-streaming',
   ]);

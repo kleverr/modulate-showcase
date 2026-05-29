@@ -237,6 +237,8 @@ body {
   user-select: none;
 }
 
+.stt-option[hidden] { display: none !important; }
+
 .stt-option {
   display: flex;
   align-items: center;
@@ -2693,11 +2695,11 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     <label for="mode-redaction">PII/PHI Redaction</label>
     <input type="radio" name="mode" id="mode-music" value="music">
     <label for="mode-music">Music Detection</label>
+    <input type="radio" name="mode" id="mode-language" value="language">
+    <label for="mode-language">Language</label>
     <span class="mode-toggle-divider" aria-hidden="true"><span class="mode-pill">Preview</span></span>
     <input type="radio" name="mode" id="mode-aimusic" value="aimusic">
     <label for="mode-aimusic">AI Music Detection</label>
-    <input type="radio" name="mode" id="mode-language" value="language">
-    <label for="mode-language">Language</label>
     <input type="radio" name="mode" id="mode-velma" value="velma">
     <label for="mode-velma">Velma</label>
   </div>

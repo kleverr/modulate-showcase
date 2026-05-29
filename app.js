@@ -580,14 +580,33 @@
 
   optFast.addEventListener('change', () => {
     if (optFast.checked) richOpts.forEach(cb => { cb.checked = false; });
+    syncFastDebugExclusion();
   });
   richOpts.forEach(cb => {
     cb.addEventListener('change', () => {
       if (cb.checked) optFast.checked = false;
+      syncFastDebugExclusion();
     });
   });
 
   function isFastMode() { return optFast.checked; }
+
+  // The streaming debug panel only understands the rich v1 stream (speakers,
+  // clusters, claims). Fast (v2) streaming emits a plain {text, is_final} shape,
+  // so Debug is unavailable in Fast mode — hide and force it off.
+  function syncFastDebugExclusion() {
+    if (!optDebug) return;
+    const debugLabel = optDebug.closest('.stt-option');
+    if (optFast.checked) {
+      if (optDebug.checked) { optDebug.checked = false; sttDebug = false; }
+      optDebug.disabled = true;
+      if (debugLabel) debugLabel.hidden = true;
+      renderDebugPanel(true); // debugActive() is now false → panel hides
+    } else {
+      optDebug.disabled = false;
+      if (debugLabel) debugLabel.hidden = false;
+    }
+  }
 
   function getSttOptions() {
     // In Velma mode, the STT options come from velmaConfig.stt (set via the Velma editor),
@@ -2348,7 +2367,7 @@
   }
 
   function sttStreamingPath() {
-    return isFastMode() ? '/api/velma-2-stt-streaming-v2' : '/api/velma-2-stt-streaming';
+    return isFastMode() ? '/api/velma-2-stt-streaming-english-v2' : '/api/velma-2-stt-streaming';
   }
 
   function sttStreamingQuery() {
@@ -3007,6 +3026,7 @@
       renderTranscript();
     });
     sttDebug = optDebug.checked;
+    syncFastDebugExclusion();
   }
 
   let debugReverseTranscript = false;
