@@ -82,8 +82,17 @@ const ENDPOINT_UPSTREAM_PATH = {
   '/api/velma-2-ai-music-detection-batch': '/api/preview/velma-2-ai-music-detection-batch',
   // Language detection is released — it serves on the plain prod path, NOT under
   // /api/preview/..., so no remap here.
+
+  // ── VELMA-2 LAUNCH FLIP ──────────────────────────────────────────────────
+  // While velma-2 is in preview, batch + streaming + list-presets all live
+  // behind /api/preview/. The published spec documents the GA paths WITHOUT
+  // the /preview/ prefix (e.g. POST /api/velma-2-batch, WS /api/velma-2-streaming).
+  // At launch, DELETE these three remaps so we hit the GA gateway directly
+  // (same move already done for music-detection — see CHANGELOG).
   '/api/velma-2-batch': '/api/preview/velma-2-batch',
   '/api/velma-2-batch/list-presets': '/api/preview/velma-2-batch/list-presets',
+  '/api/velma-2-streaming': '/api/preview/velma-2-streaming',
+  // ─────────────────────────────────────────────────────────────────────────
 };
 
 // Per-endpoint upstream form-field name overrides (defaults to "upload_file").
@@ -325,6 +334,7 @@ server.on('upgrade', (req, socket, head) => {
     '/api/velma-2-stt-streaming-english-v2',
     '/api/velma-2-synthetic-voice-detection-streaming',
     '/api/velma-2-music-detection-streaming',
+    '/api/velma-2-streaming',
   ]);
 
   if (!ALLOWED_WS_PATHS.has(url.pathname)) {
@@ -355,7 +365,9 @@ server.on('upgrade', (req, socket, head) => {
     const wsBaseOverride = ENDPOINT_BASE_URL[url.pathname]
       ? ENDPOINT_BASE_URL[url.pathname].replace(/^https:\/\//i, 'wss://').replace(/^http:\/\//i, 'ws://')
       : API_WS_BASE_URL;
-    const upstreamUrl = `${wsBaseOverride}${url.pathname}?${upstreamParams.toString()}`;
+    // Honor preview path remaps (e.g. /api/velma-2-streaming → /api/preview/velma-2-streaming).
+    const upstreamWsPath = ENDPOINT_UPSTREAM_PATH[url.pathname] || url.pathname;
+    const upstreamUrl = `${wsBaseOverride}${upstreamWsPath}?${upstreamParams.toString()}`;
     console.log('WS proxy connecting to:', upstreamUrl.replace(/api_key=[^&]+/, 'api_key=***'));
 
     const upstreamWs = new WebSocket(upstreamUrl, {

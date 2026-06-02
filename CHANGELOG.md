@@ -2,6 +2,43 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.6.0] - 2026-06-02
+
+### Added
+- **Velma streaming demo** over WebSocket (`/api/velma-2-streaming`). The Velma
+  tab now mirrors transcription's streaming trio — **Start streaming** (mic),
+  **Stream demo**, and **Stream file…** — following the velma-2-streaming
+  protocol (config text frame first, then PCM, then an empty end frame). Server
+  events (`clip` / `conversation_type` / `participant_role` / `behavior_detection`
+  / `topics` / `topic_sentiment` / `summary` / `done`) render progressively.
+- **Live behavior presets**: the config editor loads the server preset catalog
+  (`list-presets`) and adds selections as `preset:<id>` refs. Each preset can be
+  **Expanded** into a full editable `BehaviorDef` (catalog text + generated UUID)
+  and **Collapsed** back to a reference.
+
+### Changed
+- **Rebuilt the Velma config editor to be true to the API contract.** Removed the
+  fabricated conversation-type / participant-role / behavior libraries and their
+  default selections. The editor is now a single honest state: the `config` is the
+  literal string `"default"` until you change something, then it becomes an explicit
+  `BatchConfig` — shown live in the right pane exactly as it's sent. Conversation
+  types and roles start empty with opt-in **Load example** buttons. Model options
+  (STT signals incl. deepfake, language, and `produce_*` outputs) are surfaced in
+  settings and moved above the long behaviors list.
+- Velma starts empty on load (no pre-cached demo) — run batch or streaming to populate.
+
+### Fixed
+- Surface a long-standing API gotcha: behaviors are only evaluated when the config
+  also defines conversation types **and** participant roles — otherwise the API
+  returns an empty `behaviors` array with no error. The editor now warns before you
+  run, and the results show a "behaviors requested but none returned" note after a run.
+
+### Server
+- Allowlist `/api/velma-2-streaming` for the WebSocket proxy and honor preview
+  path remaps (`→ /api/preview/velma-2-streaming`). Grouped the velma-2 preview
+  remaps (batch + list-presets + streaming) behind a clear "launch flip" comment so
+  the GA cutover (dropping `/api/preview/`) is a single edit.
+
 ## [4.5.0] - 2026-05-29
 
 ### Changed

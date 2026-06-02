@@ -2563,6 +2563,49 @@ body:has(#stt-debug-panel:not([hidden])) .page {
 }
 .velma-cfg-add-btn:hover { background: color-mix(in srgb, var(--purple) 6%, transparent); }
 .velma-cfg-add-btn svg { width: 0.8rem; height: 0.8rem; }
+.velma-cfg-add-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.velma-cfg-example-btn {
+  align-self: flex-start;
+  padding: 0.35rem 0.65rem;
+  font-size: var(--font-xs);
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-caption);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+}
+.velma-cfg-example-btn:hover { color: var(--text-color); border-color: var(--text-caption); }
+
+/* Behaviors warning (behaviors need conversation types + roles to be evaluated) */
+.velma-cfg-warning {
+  margin: 0 0 0.6rem;
+  padding: 0.5rem 0.7rem;
+  font-size: var(--font-xs);
+  line-height: 1.45;
+  color: #8a5800;
+  background: color-mix(in srgb, #f5a623 14%, transparent);
+  border: 1px solid color-mix(in srgb, #f5a623 45%, transparent);
+  border-radius: var(--radius-s);
+}
+
+/* "Use default" shortcut */
+.velma-cfg-default-opt {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-size: var(--font-s); font-weight: 600; cursor: pointer; color: var(--text-color);
+}
+.velma-cfg-default-opt input { accent-color: var(--purple); }
+.velma-cfg-default-opt code { font-weight: 500; }
+
+/* Preset row: expand/collapse control + expanded editable body */
+.velma-cfg-preset-toggle {
+  margin-left: auto; padding: 0.15rem 0.5rem; font-size: var(--font-xs); font-family: inherit;
+  color: var(--purple); background: transparent; border: 1px solid color-mix(in srgb, var(--purple) 35%, transparent);
+  border-radius: var(--radius-s); cursor: pointer; white-space: nowrap;
+}
+.velma-cfg-preset-toggle:hover { background: color-mix(in srgb, var(--purple) 6%, transparent); }
+.velma-cfg-row.expanded-preset { border-color: color-mix(in srgb, var(--purple) 30%, transparent); }
 
 .velma-cfg-stt-opts {
   display: flex;
@@ -2755,10 +2798,6 @@ body:has(#stt-debug-panel:not([hidden])) .page {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             <span>Stream demo</span>
           </div>
-          <div class="results-action results-action-demo" id="results-velma-demo-action" title="Run Velma on a pre-recorded customer service call" style="display:none">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <span>Try demo audio</span>
-          </div>
           <div class="results-action results-action-stream-file" id="results-stream-file-action" title="Pick any audio file and stream it over the streaming API">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             <span>Stream file&hellip;</span>
@@ -2826,6 +2865,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
 
           <section class="velma-behaviors-section" id="velma-behaviors-section">
             <h3 class="velma-section-h">Behaviors</h3>
+            <div class="velma-cfg-warning" id="velma-results-behaviors-note" style="display:none"></div>
             <table class="velma-table velma-behaviors-table">
               <thead>
                 <tr>
@@ -3082,7 +3122,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
 
   <!-- Footer -->
   <footer class="footer">
-    v4.4.0 (May 26, 2026)
+    v4.6.0 (June 2, 2026)
   </footer>
 
 </div>
@@ -3123,7 +3163,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     <div class="modal-header">
       <div>
         <h3>Velma Config</h3>
-        <p class="velma-config-hint">Pick a conversation type, the participants, and which behaviors to detect. The right pane shows the <code>BatchConfig</code> JSON that will be sent to <code>/api/velma-2-batch</code>.</p>
+        <p class="velma-config-hint">Use the endpoint's built-in default, or build a custom configuration (conversation types, roles, behaviors, model signals). The right pane shows exactly what's sent as <code>config</code> to <code>/api/velma-2-batch</code> (batch) or as the first frame on <code>/api/velma-2-streaming</code> (streaming).</p>
       </div>
       <button class="modal-close" id="velma-config-modal-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
@@ -3131,43 +3171,79 @@ body:has(#stt-debug-panel:not([hidden])) .page {
       <div class="velma-config-split">
         <!-- Structured form (left) -->
         <div class="velma-config-form" id="velma-config-form">
-          <!-- Conversation type -->
+          <!-- The config is the literal "default" until the tester changes something below. -->
           <section class="velma-cfg-section">
-            <h4 class="velma-cfg-h">Conversation type</h4>
-            <select class="velma-cfg-select" id="velma-cfg-conv-type-select"></select>
-            <div class="velma-cfg-defn" id="velma-cfg-conv-type-defn"></div>
+            <p class="velma-cfg-defn">The pane on the right is the exact <code>config</code> that will be sent. It stays the literal <code>"default"</code> — the server's built-in configuration — until you add or change something below, at which point it becomes an explicit <code>BatchConfig</code>. <strong>Reset</strong> returns it to <code>"default"</code>.</p>
           </section>
 
-          <!-- Participant roles -->
-          <section class="velma-cfg-section">
-            <h4 class="velma-cfg-h">Participant roles</h4>
-            <div class="velma-cfg-list" id="velma-cfg-roles-list"></div>
-            <button class="velma-cfg-add-btn" id="velma-cfg-add-role-btn" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add custom role
-            </button>
-          </section>
+          <div id="velma-cfg-custom">
+            <!-- STT signals (kept at the top — quick model toggles, above the long behaviors list) -->
+            <section class="velma-cfg-section">
+              <h4 class="velma-cfg-h">STT signals</h4>
+              <div class="velma-cfg-stt-opts">
+                <label><input type="checkbox" id="velma-cfg-stt-diar"> Speaker diarization</label>
+                <label><input type="checkbox" id="velma-cfg-stt-emot"> Emotion signal</label>
+                <label><input type="checkbox" id="velma-cfg-stt-acc"> Accent signal</label>
+                <label><input type="checkbox" id="velma-cfg-stt-deepfake"> Deepfake signal</label>
+                <label><input type="checkbox" id="velma-cfg-stt-pii"> PII/PHI tagging</label>
+              </div>
+              <label class="velma-cfg-field">
+                <span class="velma-cfg-field-label">Language (optional — blank to auto-detect)</span>
+                <input type="text" class="velma-cfg-input" id="velma-cfg-language" placeholder="e.g. en, es, fr">
+              </label>
+            </section>
 
-          <!-- Behaviors -->
-          <section class="velma-cfg-section">
-            <h4 class="velma-cfg-h">Behaviors to detect</h4>
-            <div class="velma-cfg-list" id="velma-cfg-behaviors-list"></div>
-            <button class="velma-cfg-add-btn" id="velma-cfg-add-behavior-btn" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add custom behavior
-            </button>
-          </section>
+            <!-- Outputs -->
+            <section class="velma-cfg-section">
+              <h4 class="velma-cfg-h">Outputs</h4>
+              <div class="velma-cfg-stt-opts">
+                <label><input type="checkbox" id="velma-cfg-prod-topics"> Topics</label>
+                <label><input type="checkbox" id="velma-cfg-prod-sentiments"> Topic sentiments</label>
+                <label><input type="checkbox" id="velma-cfg-prod-summary"> Summary</label>
+              </div>
+            </section>
 
-          <!-- STT options -->
-          <section class="velma-cfg-section">
-            <h4 class="velma-cfg-h">STT signals</h4>
-            <div class="velma-cfg-stt-opts">
-              <label><input type="checkbox" id="velma-cfg-stt-diar"> Speaker diarization</label>
-              <label><input type="checkbox" id="velma-cfg-stt-emot"> Emotion signal</label>
-              <label><input type="checkbox" id="velma-cfg-stt-acc"> Accent signal</label>
-              <label><input type="checkbox" id="velma-cfg-stt-pii"> PII/PHI tagging</label>
-            </div>
-          </section>
+            <!-- Conversation types -->
+            <section class="velma-cfg-section">
+              <h4 class="velma-cfg-h">Conversation types</h4>
+              <p class="velma-cfg-defn">Candidate types the model picks one of (or none). The endpoint has no built-in catalog — you define them.</p>
+              <div class="velma-cfg-list" id="velma-cfg-conv-list"></div>
+              <div class="velma-cfg-add-row">
+                <button class="velma-cfg-add-btn" id="velma-cfg-add-conv-btn" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Add conversation type
+                </button>
+                <button class="velma-cfg-example-btn" id="velma-cfg-conv-example-btn" type="button">Load example</button>
+              </div>
+            </section>
+
+            <!-- Participant roles -->
+            <section class="velma-cfg-section">
+              <h4 class="velma-cfg-h">Participant roles</h4>
+              <p class="velma-cfg-defn">Candidate roles the model assigns to each speaker. You define them.</p>
+              <div class="velma-cfg-list" id="velma-cfg-roles-list"></div>
+              <div class="velma-cfg-add-row">
+                <button class="velma-cfg-add-btn" id="velma-cfg-add-role-btn" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Add role
+                </button>
+                <button class="velma-cfg-example-btn" id="velma-cfg-roles-example-btn" type="button">Load example</button>
+              </div>
+            </section>
+
+            <!-- Behaviors: server presets + custom defs (long list — kept last) -->
+            <section class="velma-cfg-section">
+              <h4 class="velma-cfg-h">Behaviors to detect</h4>
+              <p class="velma-cfg-defn">Pick server <strong>presets</strong> (added as <code>preset:&lt;id&gt;</code> refs the server expands), or define your own. Each becomes an entry in <code>behaviors</code>.</p>
+              <div class="velma-cfg-warning" id="velma-cfg-behaviors-warning" style="display:none"></div>
+              <div class="velma-cfg-list" id="velma-cfg-presets-list"></div>
+              <div class="velma-cfg-list" id="velma-cfg-behaviors-list"></div>
+              <button class="velma-cfg-add-btn" id="velma-cfg-add-behavior-btn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add custom behavior
+              </button>
+            </section>
+          </div>
         </div>
 
         <!-- Live JSON (right) -->
@@ -3183,7 +3259,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
       </div>
       <div class="velma-config-error" id="velma-config-error"></div>
       <div class="velma-config-actions">
-        <button class="velma-config-action-secondary" id="velma-config-reset-btn" type="button">Reset to default</button>
+        <button class="velma-config-action-secondary" id="velma-config-reset-btn" type="button">Reset</button>
         <button class="velma-config-action-primary" id="velma-config-apply-btn" type="button">Apply</button>
       </div>
     </div>
@@ -3209,7 +3285,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     </div>
   </div>
   <div class="overlay-footer">
-    v4.4.0 (May 26, 2026)
+    v4.6.0 (June 2, 2026)
   </div>
 </div>
 

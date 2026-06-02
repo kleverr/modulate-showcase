@@ -391,11 +391,12 @@
     if (velmaDemoAction) velmaDemoAction.style.display = isVelma ? '' : 'none';
     if (playerEntryOriginal) playerEntryOriginal.style.display = isRedaction ? '' : 'none';
     if (redactedLabel) redactedLabel.style.display = isRedaction ? '' : 'none';
-    if (streamDemoAction) streamDemoAction.style.display = (isTranscription || isMusic) ? '' : 'none';
-    if (streamFileAction) streamFileAction.style.display = (isTranscription || isMusic) ? '' : 'none';
+    if (streamDemoAction) streamDemoAction.style.display = (isTranscription || isMusic || isVelma) ? '' : 'none';
+    if (streamFileAction) streamFileAction.style.display = (isTranscription || isMusic || isVelma) ? '' : 'none';
     if (recordAction) {
-      // Velma + redaction + language + ai music are batch-only — hide live record.
-      recordAction.style.display = (isVelma || isRedaction || isLanguage || isAimusic) ? 'none' : '';
+      // Redaction + language + ai music are batch-only — hide live record.
+      // Velma supports mic streaming, so it keeps the record button.
+      recordAction.style.display = (isRedaction || isLanguage || isAimusic) ? 'none' : '';
       recordAction.classList.toggle('disabled-soon', isRedaction);
     }
     renderDebugPanel(true);
@@ -521,10 +522,8 @@
         resultsFilename.textContent = lastVelmaFilename || '';
         if (lastVelmaAudioUrl) resultsAudio.src = lastVelmaAudioUrl;
         renderVelmaResults(lastVelmaData);
-      } else if (DEMO_VELMA_DATA) {
-        renderVelmaDemo();
       } else {
-        loadDemoVelmaData().then(() => { if (currentMode === 'velma') renderVelmaDemo(); });
+        // No pre-cached demo — start empty until the tester runs an analysis.
         clearVelmaResults();
       }
       updateVelmaConfigSummary();
@@ -708,6 +707,7 @@
       } else {
         if (currentMode === 'deepfake') startDeepfakeRecording();
         else if (currentMode === 'music') startMusicRecording();
+        else if (currentMode === 'velma') startVelmaMicStream();
         else startTranscriptionRecording();
       }
     });
@@ -716,7 +716,8 @@
   if (streamDemoAction) {
     streamDemoAction.addEventListener('click', () => {
       if (isRecording) { stopRecording(); return; }
-      if (currentMode === 'music') startMusicDemoStream();
+      if (currentMode === 'velma') startVelmaDemoStream();
+      else if (currentMode === 'music') startMusicDemoStream();
       else startTranscriptionDemoStream();
     });
   }
@@ -730,7 +731,8 @@
     });
     streamFileInput.addEventListener('change', () => {
       if (streamFileInput.files.length > 0) {
-        if (currentMode === 'music') startMusicFileStream(streamFileInput.files[0]);
+        if (currentMode === 'velma') startVelmaFileStream(streamFileInput.files[0]);
+        else if (currentMode === 'music') startMusicFileStream(streamFileInput.files[0]);
         else startTranscriptionFileStream(streamFileInput.files[0]);
         streamFileInput.value = '';
       }
@@ -4168,13 +4170,15 @@
   const DEMO_VELMA_DATA_URL = '/velma-demo-data.json';
   let DEMO_VELMA_DATA = null;
 
-  // Curated library of selectable conversation types. UUIDs are stable.
-  const VELMA_CONV_TYPE_LIBRARY = [
+  // Velma has no built-in catalog of conversation types or participant roles —
+  // integrators author their own. These are a couple of *examples* a tester can
+  // opt into via "Load example"; they are NOT defaults and are not pre-selected.
+  const VELMA_EXAMPLE_CONV_TYPES = [
     {
       conversation_type_uuid: '11111111-1111-4111-8111-111111111001',
       name: 'Customer Service Call',
       short_description: 'A phone call between a customer and a service representative.',
-      detailed_description: 'An inbound or outbound voice call where one participant (the Customer Service Representative) is acting on behalf of a company to assist or resolve issues raised by another participant (the Customer). Typically includes greeting and identification, issue identification, troubleshooting or resolution attempt, and closure. Should not include automated IVR-only conversations with no human agent.',
+      detailed_description: 'An inbound or outbound voice call where one participant (the Customer Service Representative) is acting on behalf of a company to assist or resolve issues raised by another participant (the Customer). Typically includes greeting and identification, issue identification, troubleshooting or resolution attempt, and closure.',
     },
     {
       conversation_type_uuid: '11111111-1111-4111-8111-111111111002',
@@ -4182,21 +4186,9 @@
       short_description: 'A sales conversation between a representative and a prospect.',
       detailed_description: 'An outbound or inbound voice call where a sales representative presents, discusses, or attempts to close a transaction with a prospect or potential customer. Typically includes discovery, presentation, objection handling, and a call-to-action.',
     },
-    {
-      conversation_type_uuid: '11111111-1111-4111-8111-111111111003',
-      name: 'AI Agent Customer Support Call',
-      short_description: 'A customer support call handled by an AI voice agent.',
-      detailed_description: 'A voice call where one participant is an AI-powered voice agent handling customer support requests (IVR with NLU, conversational AI, voicebot). The AI agent attempts to identify the caller, understand the request, and provide self-service resolution or escalate to a human.',
-    },
-    {
-      conversation_type_uuid: '11111111-1111-4111-8111-111111111004',
-      name: 'Technical Support Call',
-      short_description: 'A technical support call about a product or service.',
-      detailed_description: 'A voice call where a support specialist troubleshoots a product or service issue with a user. Typically follows: issue identification, diagnostic questions, attempted fixes, and resolution or escalation.',
-    },
   ];
 
-  const VELMA_ROLE_LIBRARY = [
+  const VELMA_EXAMPLE_ROLES = [
     {
       participant_role_uuid: '22222222-2222-4222-8222-222222222001',
       name: 'Customer',
@@ -4207,150 +4199,38 @@
       participant_role_uuid: '22222222-2222-4222-8222-222222222002',
       name: 'Customer Service Representative',
       short_description: 'The company-side agent assisting the caller.',
-      detailed_description: 'The company representative handling the call. CSRs greet the caller, verify identity, gather details, follow scripts and processes, troubleshoot, and attempt to resolve the customer\'s issue. They use professional, procedural language.',
+      detailed_description: 'The company representative handling the call. CSRs greet the caller, verify identity, gather details, follow scripts and processes, troubleshoot, and attempt to resolve the customer\'s issue.',
     },
     {
       participant_role_uuid: '22222222-2222-4222-8222-222222222003',
       name: 'Sales Representative',
       short_description: 'The seller-side participant on a sales call.',
-      detailed_description: 'The participant attempting to advance or close a sale. Sales reps qualify, present features and benefits, handle objections, and ask for the close. They typically speak from a sales script or playbook.',
-    },
-    {
-      participant_role_uuid: '22222222-2222-4222-8222-222222222004',
-      name: 'Prospect',
-      short_description: 'A potential buyer being sold to.',
-      detailed_description: 'The participant being sold to who has not yet purchased. Prospects ask questions about the product, raise objections, and signal interest or disinterest. They are not bound by a sales script.',
-    },
-    {
-      participant_role_uuid: '22222222-2222-4222-8222-222222222005',
-      name: 'AI Agent',
-      short_description: 'An AI-powered voice agent on the call.',
-      detailed_description: 'A non-human participant. AI agents follow a structured prompt or playbook, use natural speech, and may struggle with off-script or ambiguous user input. Often introduces itself as a virtual assistant.',
+      detailed_description: 'The participant attempting to advance or close a sale. Sales reps qualify, present features and benefits, handle objections, and ask for the close.',
     },
   ];
 
-  const VELMA_BEHAVIOR_LIBRARY = [
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333001',
-      name: 'Issue Resolved',
-      short_description: 'Customer\'s problem successfully addressed before the conversation ends.',
-      detailed_description: 'Present if all of these hold: (1) the customer\'s stated issue is referenced; (2) the representative confirms a concrete resolution OR the customer explicitly acknowledges the issue is resolved; (3) closure cues are present (e.g., "that\'s all set", "is there anything else?"). Should not be flagged if the customer ends the call still expressing frustration with the same issue, or if resolution is contingent on a future event with no commitment made.',
-    },
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333002',
-      name: 'Issue Not Resolved',
-      short_description: 'Customer\'s problem remains unaddressed at the close of the conversation.',
-      detailed_description: 'Present if: (1) the customer\'s stated issue is referenced; (2) the representative fails to provide a concrete resolution and makes no firm follow-up commitment, OR the customer explicitly states the issue is unresolved. Should not be flagged if the issue is resolved, the call ends with a clear follow-up commitment, or the concern was a clarifying question rather than a problem requiring resolution.',
-    },
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333003',
-      name: 'Complaints',
-      short_description: 'Customer expresses dissatisfaction with a product, service, or experience.',
-      detailed_description: 'Present if the customer\'s speech contains (1) a statement attributing a negative outcome to the company, AND (2) explicit dissatisfaction markers such as evaluative phrases ("this is unacceptable", "I\'m disappointed", "this is ridiculous") or negative adjectives applied to the product/service ("broken", "useless"). Should not be flagged when the customer is calmly reporting a fact, asking a question, or describing a third-party experience.',
-    },
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333006',
-      name: 'Customer Gratitude',
-      short_description: 'Customer expresses sincere thanks or appreciation toward the representative.',
-      detailed_description: 'Present if the customer\'s speech contains an explicit expression of gratitude beyond a perfunctory call-closing "thanks" — e.g., specific acknowledgment of the representative\'s effort, naming what the rep did well, or warm prosody markers around the thanks. Should not be flagged for terse, scripted "thank you" responses at the end of a call.',
-    },
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333007',
-      name: 'Rapport Building',
-      short_description: 'Participants establish a positive social connection beyond the transactional task.',
-      detailed_description: 'Present if speech contains at least two of: (1) personal small talk unrelated to the task (weather, weekend, sports); (2) named-acknowledgment ("thanks, Sarah", "I appreciate that, John"); (3) shared-experience statements ("I had that happen too"); (4) warm prosody markers — laughter, friendly pacing. Should not be flagged for perfunctory greetings or single-word affirmations.',
-    },
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333008',
-      name: 'Action Plan Created',
-      short_description: 'Participants agree on a concrete next-step plan with owner and timing.',
-      detailed_description: 'Present if speech contains an explicit articulation of a future action that names (1) what will happen, (2) who will do it, and (3) approximately when. Examples: "I\'ll send the appeal form to your email by Friday", "we will follow up Tuesday at 2pm". Should not be flagged for vague intentions ("we\'ll be in touch") that lack owner or time.',
-    },
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333009',
-      name: 'Future Planning',
-      short_description: 'Participants discuss plans, intentions, or arrangements for future actions or events.',
-      detailed_description: 'Present if speech contains forward-looking statements about non-immediate actions — schedule discussions, contingency planning, follow-up arrangements. Distinct from Action Plan Created in that it covers planning discourse without requiring owner/time commitments. Should not be flagged for present-tense procedural statements about what is being done in the moment.',
-    },
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333010',
-      name: 'Unaddressed Question',
-      short_description: 'A direct question is asked but goes unanswered or receives a non-answer.',
-      detailed_description: 'Present if all hold: (1) speech contains a direct interrogative from one participant; (2) the response either changes the subject, gives a vague non-answer ("we\'re looking into it", "that\'s a good question"), or no response is offered before the conversation moves on. Should not be flagged for follow-up questions used to clarify before answering.',
-    },
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333004',
-      name: 'Coercion Manipulation',
-      short_description: 'Social engineering through intimidation, threats, or dominance pressure.',
-      detailed_description: 'Present if the speech meets at least two of: (1) explicit threats of negative consequences toward the other participant or company (escalation, legal action, defamation); (2) commands or ultimatums in dominance-oriented tone ("you will do X", "I won\'t leave until"); (3) reduced empathy markers — no acknowledgment of the other party\'s constraints; (4) pressure timing — sustained insistence without pause. Should not be flagged for normal escalation requests or polite firm requests.',
-    },
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333011',
-      name: 'Bargaining Manipulation',
-      short_description: 'Persuasion through cajoling, false urgency, or strategic emotional pressure.',
-      detailed_description: 'Present if speech contains at least two of: (1) pressure-based phrasing without explicit threat ("just this once", "between you and me", "if you really cared"); (2) strategic silence or pacing changes to extract concessions; (3) inconsistent emotional framing (alternating warmth and coldness); (4) appeals to non-procedural reasons for an exception. Should not be flagged for ordinary requests for accommodation.',
-    },
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333012',
-      name: 'Threat-based Harassment',
-      short_description: 'Targeted threats toward an individual in a professional context.',
-      detailed_description: 'Present if speech contains: (1) explicit verbal threats directed at the other participant — physical harm, doxxing, retaliation, or harm to family/career; (2) sustained hostile prosody (aggressive volume, growling, snarling tone); (3) personalized language ("you specifically", "I know where you"). Should not be flagged for statements about pursuing legitimate channels (escalation, complaints, legal action), even when emotionally charged.',
-    },
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333013',
-      name: 'Vishing',
-      short_description: 'Voice phishing — impersonation to extract credentials or sensitive information.',
-      detailed_description: 'Present if speech contains at least two of: (1) the speaker requests credentials, access codes, or authentication factors they should not need (e.g., asking the agent to read out the customer\'s full SSN); (2) urgent framing ("this needs to be resolved immediately or your account will be closed"); (3) impersonation cues — claiming to be from internal IT, fraud team, or executive without verifying identity; (4) abnormal call-center background, stress markers, or scripted-but-mismatched pacing. Should not be flagged for legitimate caller verification questions from the agent side.',
-    },
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333014',
-      name: 'Return Fraud Attempt',
-      short_description: 'Customer attempting a fraudulent product return or refund.',
-      detailed_description: 'Present if speech contains: (1) inconsistencies in the stated reason for return that the customer steers around when probed; (2) scripted or rehearsed explanations with low affective variation; (3) attempts to bypass normal return procedures (e.g., refusing to provide an order number, demanding immediate refund without inspection); (4) suspicious timing relative to the original purchase. Should not be flagged for legitimate refund requests where the customer cooperates with verification.',
-    },
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333005',
-      name: 'Inappropriate Speech',
-      short_description: 'Unprofessional or unsuitable spoken content for the conversation context.',
-      detailed_description: 'Present if speech contains at least one of: (1) profanity, slurs, or sexually-suggestive content; (2) personal remarks targeting another participant\'s identity, appearance, intelligence, or competence ("you\'re stupid", "you people"); (3) hostile prosody markers — yelling, sarcasm-as-mockery, contempt — combined with boundary-crossing content. Should not be flagged for firm professional disagreement or product-directed complaints that don\'t target a person.',
-    },
-    {
-      behavior_uuid: '33333333-3333-4333-8333-333333333015',
-      name: 'Sexual Harassment',
-      short_description: 'Unwanted sexual advances, remarks, or content directed at a participant.',
-      detailed_description: 'Present if speech contains: (1) sexually-suggestive or explicit remarks directed at the other participant; (2) repeated personal compliments about appearance after the recipient signals disinterest; (3) propositions, invitations, or boundary-crossing personal questions. Should not be flagged for incidental references to relationships or sexuality unrelated to the recipient.',
-    },
-  ];
+  // Behaviors are NOT preconfigured. The endpoint's only behavior catalog is the
+  // server-defined presets (GET list-presets), referenced as "preset:<id>".
+  // Testers pick presets or author their own custom behavior objects.
 
-  // Default selection (UUIDs into the libraries above)
-  const DEFAULT_SELECTED_CONV_TYPE = '11111111-1111-4111-8111-111111111001';
-  const DEFAULT_SELECTED_ROLE_UUIDS = [
-    '22222222-2222-4222-8222-222222222001',
-    '22222222-2222-4222-8222-222222222002',
-  ];
-  const DEFAULT_SELECTED_BEHAVIOR_UUIDS = [
-    '33333333-3333-4333-8333-333333333001', // Issue Resolved
-    '33333333-3333-4333-8333-333333333002', // Issue Not Resolved
-    '33333333-3333-4333-8333-333333333003', // Complaints
-    '33333333-3333-4333-8333-333333333004', // Coercion Manipulation
-    '33333333-3333-4333-8333-333333333005', // Inappropriate Speech
-  ];
+  // The endpoint's `config` form field / first stream frame accepts the literal
+  // string "default" (server applies its built-in configuration) or a full
+  // BatchConfig object. The editor always builds an explicit BatchConfig (shown
+  // live in the right pane) so developers see exactly what's sent; a single
+  // "use default" checkbox swaps the payload for the literal string "default".
 
-  function buildDefaultVelmaConfig() {
+  // Documented BatchConfig / STTOptions defaults (straight from the spec). This
+  // is the editor's starting state: nothing selected (empty conversation_types /
+  // participant_roles / behaviors), STT + produce_* at their documented defaults.
+  function buildCustomConfigSeed() {
     return {
-      conversation_types: VELMA_CONV_TYPE_LIBRARY
-        .filter(c => c.conversation_type_uuid === DEFAULT_SELECTED_CONV_TYPE)
-        .map(c => JSON.parse(JSON.stringify(c))),
-      participant_roles: VELMA_ROLE_LIBRARY
-        .filter(r => DEFAULT_SELECTED_ROLE_UUIDS.includes(r.participant_role_uuid))
-        .map(r => JSON.parse(JSON.stringify(r))),
-      behaviors: VELMA_BEHAVIOR_LIBRARY
-        .filter(b => DEFAULT_SELECTED_BEHAVIOR_UUIDS.includes(b.behavior_uuid))
-        .map(b => JSON.parse(JSON.stringify(b))),
+      conversation_types: [],
+      participant_roles: [],
+      behaviors: [],
       stt: {
         speaker_diarization: true,
-        emotion_signal: true,
-        accent_signal: true,
+        emotion_signal: false,
+        accent_signal: false,
         deepfake_signal: false,
         pii_phi_tagging: false,
       },
@@ -4360,7 +4240,28 @@
     };
   }
 
-  // Active Velma config (mutable via the editor modal)
+  // Fresh state is the literal string "default" — exactly the spec's contract:
+  // `config` is either "default" (server's built-in config) or a BatchConfig.
+  function buildDefaultVelmaConfig() {
+    return 'default';
+  }
+
+  function isDefaultConfig() {
+    return velmaConfig === 'default';
+  }
+
+  // First time the tester changes anything, replace "default" with an explicit
+  // BatchConfig seeded with the documented defaults, then apply their edit.
+  function ensureCustomConfig() {
+    if (velmaConfig === 'default') velmaConfig = buildCustomConfigSeed();
+    return velmaConfig;
+  }
+
+  // Tracks presets that have been expanded into editable BehaviorDefs:
+  // behavior_uuid → preset identifier (ephemeral, lets us collapse back to a ref).
+  const velmaPresetExpansions = new Map();
+
+  // Active Velma config — the single config state: "default" or a BatchConfig object.
   let velmaConfig = buildDefaultVelmaConfig();
 
   // Velma DOM refs
@@ -4376,6 +4277,8 @@
   const velmaRolePicks     = document.getElementById('velma-role-picks');
   const velmaSpeakersTbody = document.getElementById('velma-speakers-tbody');
   const velmaBehaviorsTbody= document.getElementById('velma-behaviors-tbody');
+  const velmaBehaviorsTable = document.querySelector('.velma-behaviors-table');
+  const velmaResultsBehaviorsNote = document.getElementById('velma-results-behaviors-note');
   const velmaTopicsBySpeaker = document.getElementById('velma-topics-by-speaker');
   const velmaSummarySection      = document.getElementById('velma-summary-section');
   const velmaPicksSection        = document.getElementById('velma-picks-section');
@@ -4388,23 +4291,44 @@
   const velmaConfigError     = document.getElementById('velma-config-error');
   const velmaConfigApplyBtn  = document.getElementById('velma-config-apply-btn');
   const velmaConfigResetBtn  = document.getElementById('velma-config-reset-btn');
-  const velmaCfgConvSelect   = document.getElementById('velma-cfg-conv-type-select');
-  const velmaCfgConvDefn     = document.getElementById('velma-cfg-conv-type-defn');
+  const velmaCfgConvList     = document.getElementById('velma-cfg-conv-list');
+  const velmaCfgAddConvBtn   = document.getElementById('velma-cfg-add-conv-btn');
+  const velmaCfgConvExampleBtn = document.getElementById('velma-cfg-conv-example-btn');
   const velmaCfgRolesList    = document.getElementById('velma-cfg-roles-list');
+  const velmaCfgRolesExampleBtn = document.getElementById('velma-cfg-roles-example-btn');
   const velmaCfgBehaviorsList= document.getElementById('velma-cfg-behaviors-list');
+  const velmaCfgBehaviorsWarning = document.getElementById('velma-cfg-behaviors-warning');
+  const velmaCfgPresetsList  = document.getElementById('velma-cfg-presets-list');
   const velmaCfgAddRoleBtn   = document.getElementById('velma-cfg-add-role-btn');
   const velmaCfgAddBehaviorBtn = document.getElementById('velma-cfg-add-behavior-btn');
   const velmaCfgRawToggle    = document.getElementById('velma-config-raw-toggle');
   const velmaCfgSttDiar      = document.getElementById('velma-cfg-stt-diar');
   const velmaCfgSttEmot      = document.getElementById('velma-cfg-stt-emot');
   const velmaCfgSttAcc       = document.getElementById('velma-cfg-stt-acc');
+  const velmaCfgSttDeepfake  = document.getElementById('velma-cfg-stt-deepfake');
   const velmaCfgSttPii       = document.getElementById('velma-cfg-stt-pii');
+  const velmaCfgLanguage     = document.getElementById('velma-cfg-language');
+  const velmaCfgProdTopics   = document.getElementById('velma-cfg-prod-topics');
+  const velmaCfgProdSentiments = document.getElementById('velma-cfg-prod-sentiments');
+  const velmaCfgProdSummary  = document.getElementById('velma-cfg-prod-summary');
   const btnShowStatsVelma    = document.getElementById('btn-show-stats-velma');
   const btnShowJsonVelma     = document.getElementById('btn-show-json-velma');
   const btnEditConfigVelma   = document.getElementById('btn-edit-config-velma');
 
   // Velma state
   let velmaData = null;
+  // What the most recent run asked for — used to flag "behaviors requested but
+  // none came back" (the API drops behaviors when no conversation types/roles).
+  let velmaLastRequest = null;
+  function captureVelmaRequest() {
+    if (isDefaultConfig()) { velmaLastRequest = { behaviorsRequested: false }; return; }
+    const c = velmaConfig || {};
+    velmaLastRequest = {
+      behaviorsRequested: (c.behaviors || []).length > 0,
+      hasConvTypes: (c.conversation_types || []).length > 0,
+      hasRoles: (c.participant_roles || []).length > 0,
+    };
+  }
   let lastVelmaData = null;
   let lastVelmaAudioUrl = null;
   let lastVelmaMeta = null;
@@ -4415,12 +4339,20 @@
 
   function updateVelmaConfigSummary() {
     if (!velmaConfigSummary) return;
+    if (isDefaultConfig()) {
+      velmaConfigSummary.textContent = 'Endpoint default configuration';
+      return;
+    }
     const c = velmaConfig;
-    const nT = (c.conversation_types || []).length + (c.presets || []).length;
+    const nT = (c.conversation_types || []).length;
     const nR = (c.participant_roles || []).length;
-    const nB = (c.behaviors || []).length;
+    const behaviors = c.behaviors || [];
+    const nB = behaviors.length;
+    const nPreset = behaviors.filter(b => typeof b === 'string').length;
+    const behaviorLabel = `${nB} behavior${nB === 1 ? '' : 's'}` +
+      (nPreset ? ` (${nPreset} preset${nPreset === 1 ? '' : 's'})` : '');
     velmaConfigSummary.textContent =
-      `${nT} conversation type${nT === 1 ? '' : 's'} · ${nR} role${nR === 1 ? '' : 's'} · ${nB} behavior${nB === 1 ? '' : 's'}`;
+      `Custom · ${nT} conversation type${nT === 1 ? '' : 's'} · ${nR} role${nR === 1 ? '' : 's'} · ${behaviorLabel}`;
   }
 
   function clearVelmaResults() {
@@ -4433,6 +4365,8 @@
     velmaSpeakersTbody.innerHTML = '';
     velmaBehaviorsTbody.innerHTML = '';
     velmaTopicsBySpeaker.innerHTML = '';
+    if (velmaResultsBehaviorsNote) velmaResultsBehaviorsNote.style.display = 'none';
+    if (velmaBehaviorsTable) velmaBehaviorsTable.style.display = '';
     if (velmaSummarySection)   velmaSummarySection.style.display = 'none';
     if (velmaPicksSection)     velmaPicksSection.style.display = 'none';
     if (velmaSpeakersSection)  velmaSpeakersSection.style.display = 'none';
@@ -4481,8 +4415,10 @@
 
     try {
       const startedAt = Date.now();
-      const configJson = JSON.stringify(velmaConfig);
-      const { data, meta } = await uploadAndAnalyze(file, '/api/velma-2-batch', { config: configJson });
+      // The `config` form field is either the literal string `default` or a JSON BatchConfig.
+      captureVelmaRequest();
+      const configField = isDefaultConfig() ? 'default' : JSON.stringify(velmaConfig);
+      const { data, meta } = await uploadAndAnalyze(file, '/api/velma-2-batch', { config: configField });
       const processingMs = Date.now() - startedAt;
       await finishProgress();
       hideOverlay();
@@ -4537,9 +4473,254 @@
     });
   }
 
+  // ── Velma Streaming (WebSocket /api/velma-2-streaming) ──────────────────────
+  // Mirrors the STT streaming transport (decode → 16 kHz mono s16le → paced
+  // 256 ms chunks) but follows the velma-2-streaming protocol: send the config
+  // text frame FIRST, then binary audio, then an empty text frame to end. Server
+  // events (clip / conversation_type / participant_role / behavior_detection /
+  // topics / topic_sentiment / summary / done) are accumulated into a
+  // batch-shaped object and rendered progressively via renderVelmaResults.
+
+  let velmaStreamData = null;
+  let velmaStreamRenderPending = false;
+
+  function newVelmaStreamData() {
+    return {
+      clips: [],
+      behaviors: [],
+      participant_role_picks: [],
+      conversation_type_pick: null,
+      topics: [],
+      topic_sentiments: [],
+      summary: null,
+      duration_ms: 0,
+    };
+  }
+
+  function scheduleVelmaStreamRender() {
+    if (velmaStreamRenderPending) return;
+    velmaStreamRenderPending = true;
+    setTimeout(() => {
+      velmaStreamRenderPending = false;
+      // Mid-stream render — not final, so the "no behaviors returned" note stays
+      // suppressed until the `done` event arrives.
+      if (velmaStreamData) renderVelmaResults(velmaStreamData, false);
+    }, 150);
+  }
+
+  function handleVelmaStreamMessage(msg) {
+    if (!msg || !velmaStreamData) return;
+    switch (msg.type) {
+      case 'clip':
+        if (msg.clip) velmaStreamData.clips.push(msg.clip);
+        break;
+      case 'conversation_type':
+        if (msg.pick) velmaStreamData.conversation_type_pick = msg.pick;
+        break;
+      case 'participant_role':
+        if (msg.pick) {
+          // Replace any existing pick for the same speaker (events may re-fire).
+          const i = velmaStreamData.participant_role_picks
+            .findIndex(p => p.speaker_label === msg.pick.speaker_label);
+          if (i >= 0) velmaStreamData.participant_role_picks[i] = msg.pick;
+          else velmaStreamData.participant_role_picks.push(msg.pick);
+        }
+        break;
+      case 'behavior_detection':
+        if (msg.detection) velmaStreamData.behaviors.push(msg.detection);
+        break;
+      case 'topics':
+        if (Array.isArray(msg.topics)) velmaStreamData.topics = msg.topics;
+        break;
+      case 'topic_sentiment':
+        if (msg.topic_sentiment) velmaStreamData.topic_sentiments.push(msg.topic_sentiment);
+        break;
+      case 'summary':
+        if (typeof msg.text === 'string') velmaStreamData.summary = msg.text;
+        break;
+      case 'error':
+        showError('Streaming error: ' + (msg.error || 'Unknown error'));
+        return;
+      case 'done':
+        if (typeof msg.duration_ms === 'number') velmaStreamData.duration_ms = msg.duration_ms;
+        velmaStreamFinalize();
+        return;
+      default:
+        return; // ignore unknown event types
+    }
+    scheduleVelmaStreamRender();
+  }
+
+  function velmaStreamFinalize() {
+    velmaData = velmaStreamData;
+    currentData = velmaStreamData;
+    lastVelmaData = velmaStreamData;
+    currentMeta = {
+      fileSize: 0,
+      fileType: 'PCM 16 kHz mono',
+      httpStatus: 101,
+      httpStatusText: 'Switching Protocols',
+      responseSize: JSON.stringify(velmaStreamData).length,
+      processingMs: velmaStreamData.duration_ms || 0,
+    };
+    lastVelmaMeta = { ...currentMeta };
+    renderVelmaResults(velmaStreamData, true); // final — surface the empty-behaviors note if applicable
+    updateRateLimit();
+    // The model has finished; flip the record button back to its idle state
+    // (the socket closes right after `done`).
+    isRecording = false;
+    updateRecordButton();
+  }
+
+  function startVelmaDemoStream() {
+    return runVelmaStream(DEMO_VELMA_AUDIO_URL, 'call-center-demo.mp3', false);
+  }
+
+  async function startVelmaFileStream(file) {
+    const url = URL.createObjectURL(file);
+    await runVelmaStream(url, file.name, true);
+  }
+
+  // Live mic streaming — mirrors transcription's record button, but talks the
+  // velma-2-streaming protocol (config frame first, then PCM, then empty frame).
+  function startVelmaMicStream() {
+    if (currentMode !== 'velma' || isRecording || isAnalyzing) return;
+    captureVelmaRequest();
+    clearVelmaResults();
+    velmaStreamData = newVelmaStreamData();
+    velmaData = velmaStreamData;
+    currentData = velmaStreamData;
+    resultsFilename.textContent = 'Live recording';
+    resultsAudio.removeAttribute('src');
+    startRecordingCommon(
+      '/api/velma-2-streaming?audio_format=s16le&sample_rate=16000&num_channels=1',
+      handleVelmaStreamMessage,
+      () => {
+        // First frame must be the config (before any audio chunk).
+        try { recordingWs.send(isDefaultConfig() ? 'default' : JSON.stringify(velmaConfig)); } catch (e) {}
+      }
+    );
+  }
+
+  async function runVelmaStream(url, filename, isUserFile) {
+    if (isRecording || isAnalyzing) return;
+    if (currentMode !== 'velma') return;
+
+    captureVelmaRequest();
+    clearVelmaResults();
+    velmaStreamData = newVelmaStreamData();
+    velmaData = velmaStreamData;
+    currentData = velmaStreamData;
+
+    resultsFilename.textContent = filename;
+    if (lastVelmaAudioUrl) { URL.revokeObjectURL(lastVelmaAudioUrl); lastVelmaAudioUrl = null; }
+    if (isUserFile) lastVelmaAudioUrl = url; // track blob url so we can revoke later
+    resultsAudio.src = url;
+    lastVelmaFilename = filename;
+    window.scrollTo(0, 0);
+
+    // Fetch + decode → 16 kHz mono PCM s16le (same as the STT streaming transport)
+    let int16;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const arr = await res.arrayBuffer();
+      const actx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+      const audio = await actx.decodeAudioData(arr);
+      const ch = audio.getChannelData(0);
+      int16 = new Int16Array(ch.length);
+      for (let i = 0; i < ch.length; i++) {
+        int16[i] = Math.max(-32768, Math.min(32767, Math.round(ch[i] * 32767)));
+      }
+      actx.close().catch(() => {});
+    } catch (err) {
+      showError('Failed to load audio: ' + (err && err.message ? err.message : err));
+      return;
+    }
+
+    // Raw/headerless PCM requires audio_format + sample_rate + num_channels.
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = proto + '//' + location.host +
+      '/api/velma-2-streaming?audio_format=s16le&sample_rate=16000&num_channels=1';
+    recordingWs = new WebSocket(wsUrl);
+    recordingWs.binaryType = 'arraybuffer';
+    endFrameSent = false;
+
+    recordingWs.onopen = () => {
+      isRecording = true;
+      recordingStartTime = Date.now();
+
+      // Protocol step 1: first text frame is the config — literal `default` or JSON BatchConfig.
+      try { recordingWs.send(isDefaultConfig() ? 'default' : JSON.stringify(velmaConfig)); } catch (e) {}
+
+      // Play the source audio alongside the stream so the user hears what the model hears.
+      try { resultsAudio.currentTime = 0; } catch {}
+      const playPromise = resultsAudio.play();
+      if (playPromise && playPromise.catch) playPromise.catch(() => { /* autoplay blocked — silent */ });
+
+      // Protocol step 2: paced binary audio (4096 samples = 256 ms at 16 kHz).
+      const CHUNK = 4096;
+      let offset = 0;
+      function sendNext() {
+        if (!isRecording || !recordingWs || recordingWs.readyState !== WebSocket.OPEN) return;
+        if (offset >= int16.length) {
+          // Protocol step 3: empty text frame signals end of audio.
+          try { recordingWs.send(''); } catch (e) {}
+          endFrameSent = true;
+          return;
+        }
+        const end = Math.min(offset + CHUNK, int16.length);
+        const slice = int16.subarray(offset, end);
+        const ab = new ArrayBuffer(slice.byteLength);
+        new Int16Array(ab).set(slice);
+        recordingWs.send(ab);
+        offset = end;
+        demoChunkTimer = setTimeout(sendNext, 256);
+      }
+      sendNext();
+    };
+
+    recordingWs.addEventListener('message', async (event) => {
+      let text = '';
+      try {
+        if (typeof event.data === 'string') text = event.data;
+        else if (event.data instanceof Blob) text = await event.data.text();
+        else if (event.data instanceof ArrayBuffer) text = new TextDecoder().decode(event.data);
+      } catch { return; }
+      if (!text) return;
+      let msg; try { msg = JSON.parse(text); } catch { return; }
+      handleVelmaStreamMessage(msg);
+    });
+
+    recordingWs.onerror = () => {
+      if (demoChunkTimer) { clearTimeout(demoChunkTimer); demoChunkTimer = null; }
+      isRecording = false;
+      updateRecordButton();
+    };
+
+    recordingWs.onclose = (event) => {
+      if (demoChunkTimer) { clearTimeout(demoChunkTimer); demoChunkTimer = null; }
+      isRecording = false;
+      updateRecordButton();
+      // Surface abnormal closes (a clean run ends via the `done` event, code 1000).
+      const code = event.code;
+      const reason = event.reason || '';
+      if (code !== 1000 && !(velmaStreamData && velmaStreamData.duration_ms)) {
+        let m;
+        if (code === 4029) m = 'Insufficient credits to complete the request.';
+        else if (code === 4003) m = 'This request is not permitted.';
+        else if (code === 1003) m = 'Protocol error: ' + (reason || 'invalid config or unsupported audio format.');
+        else if (code === 1011) m = 'Upstream server error: ' + (reason || 'the service is temporarily unavailable.');
+        else if (code === 1006) m = 'Could not connect to the server. You may have reached the rate limit — please wait a minute and try again.';
+        else m = 'Connection closed' + (reason ? ': ' + reason : '') + ' (code ' + code + ').';
+        showError(m);
+      }
+    };
+  }
+
   // ── Velma Rendering ────────────────────────────────────────────────────────
 
-  function renderVelmaResults(data) {
+  function renderVelmaResults(data, isFinal = true) {
     if (!data) { clearVelmaResults(); return; }
 
     // ── Summary. The model tags PII/PHI inline; always blur when present (they're
@@ -4588,26 +4769,47 @@
     // ── Behaviors table
     velmaBehaviorsTbody.innerHTML = '';
     const behaviors = data.behaviors || [];
-    if (behaviors.length) {
+    // Did this run request behaviors but get none back? The API drops behaviors
+    // when the config has no conversation types / participant roles — flag it
+    // (only on the final render, so streaming-in-progress doesn't false-alarm).
+    const behaviorsEmptyButRequested = isFinal && behaviors.length === 0 &&
+      velmaLastRequest && velmaLastRequest.behaviorsRequested;
+    if (behaviors.length || behaviorsEmptyButRequested) {
       velmaBehaviorsSection.style.display = '';
-      // Sort: detected first (by speaker_label asc, then confidence desc), then undetected, then skipped/errored
-      const sorted = [...behaviors].sort((a, b) => {
-        const rank = (x) => x.error_reason ? 3 : x.skipped ? 2 : x.detected ? 0 : 1;
-        const ra = rank(a), rb = rank(b);
-        if (ra !== rb) return ra - rb;
-        const sa = a.speaker_label || '';
-        const sb = b.speaker_label || '';
-        if (sa !== sb) return sa.localeCompare(sb);
-        return (b.confidence || 0) - (a.confidence || 0);
-      });
-      // Group consecutive rows by speaker to render speaker cell once per group
-      let lastSpeaker = null;
-      sorted.forEach(b => {
-        const speakerKey = b.speaker_label || '—';
-        const isNewGroup = speakerKey !== lastSpeaker;
-        velmaBehaviorsTbody.appendChild(buildBehaviorRow(b, speakerToRole[b.speaker_label], isNewGroup));
-        lastSpeaker = speakerKey;
-      });
+      if (behaviorsEmptyButRequested) {
+        if (velmaBehaviorsTable) velmaBehaviorsTable.style.display = 'none';
+        if (velmaResultsBehaviorsNote) {
+          const missing = [];
+          if (!velmaLastRequest.hasConvTypes) missing.push('a conversation type');
+          if (!velmaLastRequest.hasRoles) missing.push('participant roles');
+          velmaResultsBehaviorsNote.innerHTML = missing.length
+            ? '⚠ You requested behaviors but the API returned none. Behaviors are only evaluated when the config also defines ' +
+              missing.join(' and ') + '. Add ' + missing.join(' and ') + ' in the config (or use <strong>Load example</strong>) and re-run.'
+            : '⚠ You requested behaviors but the API returned none for this audio.';
+          velmaResultsBehaviorsNote.style.display = '';
+        }
+      } else {
+        if (velmaBehaviorsTable) velmaBehaviorsTable.style.display = '';
+        if (velmaResultsBehaviorsNote) velmaResultsBehaviorsNote.style.display = 'none';
+        // Sort: detected first (by speaker_label asc, then confidence desc), then undetected, then skipped/errored
+        const sorted = [...behaviors].sort((a, b) => {
+          const rank = (x) => x.error_reason ? 3 : x.skipped ? 2 : x.detected ? 0 : 1;
+          const ra = rank(a), rb = rank(b);
+          if (ra !== rb) return ra - rb;
+          const sa = a.speaker_label || '';
+          const sb = b.speaker_label || '';
+          if (sa !== sb) return sa.localeCompare(sb);
+          return (b.confidence || 0) - (a.confidence || 0);
+        });
+        // Group consecutive rows by speaker to render speaker cell once per group
+        let lastSpeaker = null;
+        sorted.forEach(b => {
+          const speakerKey = b.speaker_label || '—';
+          const isNewGroup = speakerKey !== lastSpeaker;
+          velmaBehaviorsTbody.appendChild(buildBehaviorRow(b, speakerToRole[b.speaker_label], isNewGroup));
+          lastSpeaker = speakerKey;
+        });
+      }
     } else {
       velmaBehaviorsSection.style.display = 'none';
     }
@@ -4993,6 +5195,9 @@
     renderVelmaEditorJson();
     setRawJsonEditable(false);
     velmaConfigModal.classList.add('visible');
+    // Presets load lazily (read-only, no usage cost) and re-render when ready.
+    renderVelmaPresetsList();
+    loadVelmaPresets().then(renderVelmaPresetsList);
   }
   function closeVelmaConfigModal() {
     velmaConfigModal.classList.remove('visible');
@@ -5000,102 +5205,266 @@
 
   // ── Form rendering (left pane) ─────────────────────────────────────────────
 
-  function renderVelmaEditorForm() {
-    renderVelmaConvTypeSelect();
-    renderVelmaRolesList();
-    renderVelmaBehaviorsList();
-    renderVelmaSttToggles();
+  function cfgKindMeta(kind) {
+    if (kind === 'conv') return { uuidField: 'conversation_type_uuid', listField: 'conversation_types' };
+    if (kind === 'role') return { uuidField: 'participant_role_uuid', listField: 'participant_roles' };
+    return { uuidField: 'behavior_uuid', listField: 'behaviors' };
   }
 
-  function renderVelmaConvTypeSelect() {
-    if (!velmaCfgConvSelect) return;
-    velmaCfgConvSelect.innerHTML = '';
-    // Build options: every library entry + any custom conv_types from current config
-    const merged = [...VELMA_CONV_TYPE_LIBRARY];
-    (velmaConfig.conversation_types || []).forEach(c => {
-      if (!merged.find(x => x.conversation_type_uuid === c.conversation_type_uuid)) {
-        merged.push({ ...c, __custom: true });
-      }
-    });
-    const activeUuid = (velmaConfig.conversation_types && velmaConfig.conversation_types[0])
-      ? velmaConfig.conversation_types[0].conversation_type_uuid : '';
-    merged.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.conversation_type_uuid;
-      opt.textContent = c.name + (c.__custom ? '  (custom)' : '');
-      if (c.conversation_type_uuid === activeUuid) opt.selected = true;
-      velmaCfgConvSelect.appendChild(opt);
-    });
-    const active = merged.find(c => c.conversation_type_uuid === activeUuid);
-    velmaCfgConvDefn.textContent = active ? active.detailed_description : '';
+  // Any edit replaces the literal "default" with an explicit BatchConfig.
+  function markCustom() {
+    ensureCustomConfig();
+  }
+
+  function renderVelmaEditorForm() {
+    renderVelmaConvList();
+    renderVelmaRolesList();
+    renderVelmaBehaviorsList();
+    renderVelmaPresetsList();
+    renderVelmaSttToggles();
+    renderVelmaOutputToggles();
+    updateBehaviorsWarning();
+  }
+
+  // The API only evaluates behaviors when the config ALSO defines at least one
+  // conversation type and participant roles — otherwise it silently returns an
+  // empty `behaviors` array. Warn so testers don't build a no-op config.
+  function updateBehaviorsWarning() {
+    if (!velmaCfgBehaviorsWarning) return;
+    const cfg = (typeof velmaConfig === 'object') ? velmaConfig : {};
+    const nBeh = (cfg.behaviors || []).length;
+    const nConv = (cfg.conversation_types || []).length;
+    const nRoles = (cfg.participant_roles || []).length;
+    if (nBeh > 0 && (nConv === 0 || nRoles === 0)) {
+      const missing = [];
+      if (nConv === 0) missing.push('a conversation type');
+      if (nRoles === 0) missing.push('participant roles');
+      velmaCfgBehaviorsWarning.innerHTML =
+        '⚠ Behaviors are only evaluated when the config also defines ' + missing.join(' and ') +
+        '. As-is the API returns <strong>no behavior results</strong> — add ' + missing.join(' and ') +
+        ' above (or use <strong>Load example</strong>).';
+      velmaCfgBehaviorsWarning.style.display = '';
+    } else {
+      velmaCfgBehaviorsWarning.style.display = 'none';
+    }
+  }
+
+  function renderVelmaConvList() {
+    if (!velmaCfgConvList) return;
+    velmaCfgConvList.innerHTML = '';
+    (velmaConfig.conversation_types || []).forEach(c => velmaCfgConvList.appendChild(buildCfgRow('conv', c)));
   }
 
   function renderVelmaRolesList() {
     if (!velmaCfgRolesList) return;
     velmaCfgRolesList.innerHTML = '';
-    // Build merged list: library + any custom in current config (preserves order)
-    const merged = [...VELMA_ROLE_LIBRARY];
-    (velmaConfig.participant_roles || []).forEach(r => {
-      if (!merged.find(x => x.participant_role_uuid === r.participant_role_uuid)) {
-        merged.push({ ...r, __custom: true });
-      }
-    });
-    merged.forEach(r => velmaCfgRolesList.appendChild(buildCfgRow('role', r)));
+    (velmaConfig.participant_roles || []).forEach(r => velmaCfgRolesList.appendChild(buildCfgRow('role', r)));
   }
 
   function renderVelmaBehaviorsList() {
     if (!velmaCfgBehaviorsList) return;
     velmaCfgBehaviorsList.innerHTML = '';
-    const merged = [...VELMA_BEHAVIOR_LIBRARY];
+    // Hand-authored behaviors only. preset:<id> strings AND preset-expanded
+    // BehaviorDefs both live in the presets list above.
     (velmaConfig.behaviors || []).forEach(b => {
-      if (!merged.find(x => x.behavior_uuid === b.behavior_uuid)) {
-        merged.push({ ...b, __custom: true });
-      }
+      if (typeof b === 'string') return;
+      if (b.behavior_uuid && velmaPresetExpansions.has(b.behavior_uuid)) return;
+      velmaCfgBehaviorsList.appendChild(buildCfgRow('behavior', b));
     });
-    merged.forEach(b => velmaCfgBehaviorsList.appendChild(buildCfgRow('behavior', b)));
   }
 
-  function buildCfgRow(kind, entry) {
-    // kind: 'role' | 'behavior'
-    const uuidField = kind === 'role' ? 'participant_role_uuid' : 'behavior_uuid';
-    const listField = kind === 'role' ? 'participant_roles' : 'behaviors';
-    const uuid = entry[uuidField];
-    const inConfig = (velmaConfig[listField] || []).find(x => x[uuidField] === uuid);
-    // Show the user's edited def from config if present; otherwise the library def
-    const def = inConfig || entry;
+  // ── Behavior presets (server-defined, referenced as "preset:<identifier>") ──
+  let velmaPresetsCache = null;
 
+  function presetRef(identifier) { return 'preset:' + identifier; }
+
+  // The expanded BehaviorDef (if any) that originated from this preset.
+  function expandedPresetBehavior(identifier) {
+    let foundUuid = null;
+    velmaPresetExpansions.forEach((id, uuid) => { if (id === identifier) foundUuid = uuid; });
+    if (!foundUuid) return null;
+    return (velmaConfig.behaviors || []).find(b => typeof b === 'object' && b.behavior_uuid === foundUuid) || null;
+  }
+
+  // 'off' | 'ref' | 'expanded'
+  function presetState(identifier) {
+    if ((velmaConfig.behaviors || []).some(b => b === presetRef(identifier))) return 'ref';
+    if (expandedPresetBehavior(identifier)) return 'expanded';
+    return 'off';
+  }
+
+  function setPresetIncluded(identifier, included) {
+    markCustom();
+    velmaConfig.behaviors = velmaConfig.behaviors || [];
+    if (included && presetState(identifier) === 'off') {
+      velmaConfig.behaviors.push(presetRef(identifier));
+    } else if (!included) {
+      const ref = presetRef(identifier);
+      const exp = expandedPresetBehavior(identifier);
+      velmaConfig.behaviors = velmaConfig.behaviors.filter(b => b !== ref && b !== exp);
+      if (exp) velmaPresetExpansions.delete(exp.behavior_uuid);
+    }
+    renderVelmaEditorForm();
+    renderVelmaEditorJson();
+    updateVelmaConfigSummary();
+  }
+
+  // Turn a preset:<id> reference into a full, editable BehaviorDef (catalog text
+  // + a generated UUID). Reversible via collapsePreset.
+  function expandPreset(p) {
+    markCustom();
+    velmaConfig.behaviors = velmaConfig.behaviors || [];
+    const uuid = newUuid();
+    const def = {
+      behavior_uuid: uuid,
+      name: p.name || p.identifier,
+      short_description: p.short_description || '',
+      detailed_description: p.detailed_description || '',
+    };
+    const idx = velmaConfig.behaviors.indexOf(presetRef(p.identifier));
+    if (idx >= 0) velmaConfig.behaviors.splice(idx, 1, def);
+    else velmaConfig.behaviors.push(def);
+    velmaPresetExpansions.set(uuid, p.identifier);
+    renderVelmaEditorForm();
+    renderVelmaEditorJson();
+    updateVelmaConfigSummary();
+  }
+
+  function collapsePreset(identifier) {
+    markCustom();
+    const exp = expandedPresetBehavior(identifier);
+    if (exp) {
+      const i = velmaConfig.behaviors.indexOf(exp);
+      if (i >= 0) velmaConfig.behaviors.splice(i, 1, presetRef(identifier));
+      velmaPresetExpansions.delete(exp.behavior_uuid);
+    }
+    renderVelmaEditorForm();
+    renderVelmaEditorJson();
+    updateVelmaConfigSummary();
+  }
+
+  async function loadVelmaPresets() {
+    if (velmaPresetsCache) return velmaPresetsCache;
+    try {
+      const res = await fetch('/api/velma-2-batch/list-presets');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const body = await res.json();
+      velmaPresetsCache = Array.isArray(body.presets) ? body.presets : [];
+    } catch (err) {
+      console.warn('Velma presets failed to load:', err);
+      velmaPresetsCache = [];
+    }
+    return velmaPresetsCache;
+  }
+
+  function renderVelmaPresetsList() {
+    if (!velmaCfgPresetsList) return;
+    const presets = velmaPresetsCache;
+    if (presets == null) {
+      velmaCfgPresetsList.innerHTML = '<div class="velma-cfg-defn">Loading presets…</div>';
+      return;
+    }
+    if (!presets.length) {
+      velmaCfgPresetsList.innerHTML = '<div class="velma-cfg-defn">No presets available.</div>';
+      return;
+    }
+    velmaCfgPresetsList.innerHTML = '';
+    presets.forEach(p => velmaCfgPresetsList.appendChild(buildPresetRow(p)));
+  }
+
+  function buildPresetRow(p) {
+    const state = presetState(p.identifier);
     const row = document.createElement('div');
-    row.className = 'velma-cfg-row';
-    row.dataset.uuid = uuid;
-    row.dataset.kind = kind;
+    row.className = 'velma-cfg-row' + (state === 'expanded' ? ' expanded-preset expanded' : '');
 
-    // Head: checkbox + name + short + expand
     const head = document.createElement('div');
     head.className = 'velma-cfg-row-head';
 
     const cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.className = 'velma-cfg-row-checkbox';
-    cb.checked = !!inConfig;
+    cb.checked = state !== 'off';
     cb.addEventListener('click', e => e.stopPropagation());
-    cb.addEventListener('change', () => toggleCfgEntry(kind, def, cb.checked));
+    cb.addEventListener('change', () => setPresetIncluded(p.identifier, cb.checked));
     head.appendChild(cb);
 
     const title = document.createElement('div');
     title.className = 'velma-cfg-row-title';
     const name = document.createElement('span');
     name.className = 'velma-cfg-row-name';
-    name.textContent = def.name;
+    name.textContent = p.name || p.identifier;
     title.appendChild(name);
-    if (entry.__custom) {
-      const badge = document.createElement('span');
-      badge.className = 'velma-cfg-row-badge';
-      badge.textContent = 'Custom';
-      title.appendChild(badge);
-    }
+    const badge = document.createElement('span');
+    badge.className = 'velma-cfg-row-badge';
+    badge.textContent = state === 'expanded' ? 'expanded def' : ('preset:' + p.identifier);
+    title.appendChild(badge);
     const short = document.createElement('span');
     short.className = 'velma-cfg-row-short';
-    short.textContent = def.short_description || '';
+    short.textContent = p.short_description || '';
+    title.appendChild(short);
+    head.appendChild(title);
+
+    // Expand ↔ collapse control (only when the preset is included).
+    if (state === 'ref') {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'velma-cfg-preset-toggle';
+      btn.textContent = 'Expand to JSON';
+      btn.addEventListener('click', (e) => { e.stopPropagation(); expandPreset(p); });
+      head.appendChild(btn);
+    } else if (state === 'expanded') {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'velma-cfg-preset-toggle';
+      btn.textContent = 'Collapse to ref';
+      btn.addEventListener('click', (e) => { e.stopPropagation(); collapsePreset(p.identifier); });
+      head.appendChild(btn);
+    }
+
+    if (p.detailed_description && state !== 'expanded') head.title = p.detailed_description;
+    row.appendChild(head);
+
+    // Expanded: editable BehaviorDef fields inline (the row carries .expanded).
+    if (state === 'expanded') {
+      const def = expandedPresetBehavior(p.identifier);
+      if (def) {
+        const uuid = def.behavior_uuid;
+        const body = document.createElement('div');
+        body.className = 'velma-cfg-row-body';
+        body.appendChild(buildField('Name', 'input', def.name || '', val => { updateCfgEntryField('behavior', uuid, 'name', val); name.textContent = val || '(unnamed)'; }));
+        body.appendChild(buildField('Short description', 'textarea', def.short_description || '', val => { updateCfgEntryField('behavior', uuid, 'short_description', val); short.textContent = val; }, '2.5rem'));
+        body.appendChild(buildField('Detailed description', 'textarea', def.detailed_description || '', val => updateCfgEntryField('behavior', uuid, 'detailed_description', val), '6rem'));
+        row.appendChild(body);
+      }
+    }
+
+    return row;
+  }
+
+  function buildCfgRow(kind, entry) {
+    // kind: 'conv' | 'role' | 'behavior'. Every row is a config member the tester
+    // authored, so it's always editable + removable (no library / checkbox).
+    const { uuidField } = cfgKindMeta(kind);
+    const uuid = entry[uuidField];
+
+    const row = document.createElement('div');
+    row.className = 'velma-cfg-row';
+    row.dataset.uuid = uuid;
+    row.dataset.kind = kind;
+
+    // Head: name + short + expand
+    const head = document.createElement('div');
+    head.className = 'velma-cfg-row-head';
+
+    const title = document.createElement('div');
+    title.className = 'velma-cfg-row-title';
+    const name = document.createElement('span');
+    name.className = 'velma-cfg-row-name';
+    name.textContent = entry.name || '(unnamed)';
+    title.appendChild(name);
+    const short = document.createElement('span');
+    short.className = 'velma-cfg-row-short';
+    short.textContent = entry.short_description || '';
     title.appendChild(short);
     head.appendChild(title);
 
@@ -5115,17 +5484,19 @@
     // Body: editable fields
     const body = document.createElement('div');
     body.className = 'velma-cfg-row-body';
-    body.appendChild(buildField('Name', 'input', def.name, val => updateCfgEntryField(kind, uuid, 'name', val)));
-    body.appendChild(buildField('Short description', 'textarea', def.short_description || '', val => updateCfgEntryField(kind, uuid, 'short_description', val), '2.5rem'));
-    body.appendChild(buildField('Detailed description', 'textarea', def.detailed_description || '', val => updateCfgEntryField(kind, uuid, 'detailed_description', val), '6rem'));
-    if (entry.__custom) {
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'velma-cfg-row-remove';
-      remove.textContent = 'Remove this custom entry';
-      remove.addEventListener('click', () => removeCustomCfgEntry(kind, uuid));
-      body.appendChild(remove);
-    }
+    body.appendChild(buildField('Name', 'input', entry.name || '', val => {
+      updateCfgEntryField(kind, uuid, 'name', val); name.textContent = val || '(unnamed)';
+    }));
+    body.appendChild(buildField('Short description', 'textarea', entry.short_description || '', val => {
+      updateCfgEntryField(kind, uuid, 'short_description', val); short.textContent = val;
+    }, '2.5rem'));
+    body.appendChild(buildField('Detailed description', 'textarea', entry.detailed_description || '', val => updateCfgEntryField(kind, uuid, 'detailed_description', val), '6rem'));
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'velma-cfg-row-remove';
+    remove.textContent = 'Remove';
+    remove.addEventListener('click', () => removeCustomCfgEntry(kind, uuid));
+    body.appendChild(remove);
     row.appendChild(body);
 
     return row;
@@ -5149,87 +5520,90 @@
   }
 
   function renderVelmaSttToggles() {
-    if (!velmaCfgSttDiar) return;
-    const s = velmaConfig.stt || {};
-    velmaCfgSttDiar.checked = !!s.speaker_diarization;
-    velmaCfgSttEmot.checked = !!s.emotion_signal;
-    velmaCfgSttAcc.checked  = !!s.accent_signal;
-    velmaCfgSttPii.checked  = !!s.pii_phi_tagging;
+    // In the "default" state, preview the documented STTOptions defaults so the
+    // toggles aren't misleadingly all-off; they materialize on first change.
+    const s = (typeof velmaConfig === 'object' && velmaConfig.stt) ? velmaConfig.stt : buildCustomConfigSeed().stt;
+    if (velmaCfgSttDiar)     velmaCfgSttDiar.checked     = !!s.speaker_diarization;
+    if (velmaCfgSttEmot)     velmaCfgSttEmot.checked     = !!s.emotion_signal;
+    if (velmaCfgSttAcc)      velmaCfgSttAcc.checked      = !!s.accent_signal;
+    if (velmaCfgSttDeepfake) velmaCfgSttDeepfake.checked = !!s.deepfake_signal;
+    if (velmaCfgSttPii)      velmaCfgSttPii.checked      = !!s.pii_phi_tagging;
+    if (velmaCfgLanguage)    velmaCfgLanguage.value      = (s.language == null ? '' : s.language);
+  }
+
+  function renderVelmaOutputToggles() {
+    const c = (typeof velmaConfig === 'object') ? velmaConfig : buildCustomConfigSeed();
+    // produce_* default to true per spec when unset.
+    if (velmaCfgProdTopics)     velmaCfgProdTopics.checked     = c.produce_topics !== false;
+    if (velmaCfgProdSentiments) velmaCfgProdSentiments.checked = c.produce_topic_sentiments !== false;
+    if (velmaCfgProdSummary)    velmaCfgProdSummary.checked    = c.produce_summary !== false;
   }
 
   // ── Form → velmaConfig mutations ───────────────────────────────────────────
 
-  function toggleCfgEntry(kind, defn, checked) {
-    const uuidField = kind === 'role' ? 'participant_role_uuid' : 'behavior_uuid';
-    const listField = kind === 'role' ? 'participant_roles' : 'behaviors';
-    velmaConfig[listField] = velmaConfig[listField] || [];
-    const idx = velmaConfig[listField].findIndex(x => x[uuidField] === defn[uuidField]);
-    if (checked && idx === -1) {
-      // Add a deep clone of the definition (library or custom)
-      const clone = JSON.parse(JSON.stringify(defn));
-      delete clone.__custom;
-      velmaConfig[listField].push(clone);
-    } else if (!checked && idx >= 0) {
-      velmaConfig[listField].splice(idx, 1);
-    }
-    updateVelmaConfigSummary();
-    renderVelmaEditorJson();
-  }
-
   function updateCfgEntryField(kind, uuid, field, value) {
-    const uuidField = kind === 'role' ? 'participant_role_uuid' : 'behavior_uuid';
-    const listField = kind === 'role' ? 'participant_roles' : 'behaviors';
-    const entry = (velmaConfig[listField] || []).find(x => x[uuidField] === uuid);
+    markCustom();
+    const { uuidField, listField } = cfgKindMeta(kind);
+    const entry = (velmaConfig[listField] || []).find(x => typeof x === 'object' && x[uuidField] === uuid);
     if (entry) {
       entry[field] = value;
       updateVelmaConfigSummary();
       renderVelmaEditorJson();
     }
-    // If the entry isn't in the config (unchecked library entry), the edit is dropped.
-    // The user can check it first, then edit.
   }
 
   function removeCustomCfgEntry(kind, uuid) {
-    const uuidField = kind === 'role' ? 'participant_role_uuid' : 'behavior_uuid';
-    const listField = kind === 'role' ? 'participant_roles' : 'behaviors';
-    velmaConfig[listField] = (velmaConfig[listField] || []).filter(x => x[uuidField] !== uuid);
+    markCustom();
+    const { uuidField, listField } = cfgKindMeta(kind);
+    velmaConfig[listField] = (velmaConfig[listField] || [])
+      .filter(x => typeof x === 'string' || x[uuidField] !== uuid);
     renderVelmaEditorForm();
     renderVelmaEditorJson();
     updateVelmaConfigSummary();
   }
 
   function addCustomCfgEntry(kind) {
-    if (kind === 'role') {
-      const uuid = newUuid();
-      velmaConfig.participant_roles = velmaConfig.participant_roles || [];
-      velmaConfig.participant_roles.push({
-        participant_role_uuid: uuid,
-        name: 'Custom role',
-        short_description: '',
-        detailed_description: '',
-      });
+    markCustom();
+    const { listField } = cfgKindMeta(kind);
+    velmaConfig[listField] = velmaConfig[listField] || [];
+    const uuid = newUuid();
+    if (kind === 'conv') {
+      velmaConfig[listField].push({ conversation_type_uuid: uuid, name: 'New conversation type', short_description: '', detailed_description: '' });
+    } else if (kind === 'role') {
+      velmaConfig[listField].push({ participant_role_uuid: uuid, name: 'New role', short_description: '', detailed_description: '' });
     } else {
-      const uuid = newUuid();
-      velmaConfig.behaviors = velmaConfig.behaviors || [];
-      velmaConfig.behaviors.push({
-        behavior_uuid: uuid,
-        name: 'Custom behavior',
-        short_description: '',
-        detailed_description: '',
-      });
+      velmaConfig[listField].push({ behavior_uuid: uuid, name: 'New behavior', short_description: '', detailed_description: '' });
     }
     renderVelmaEditorForm();
     renderVelmaEditorJson();
     updateVelmaConfigSummary();
     // Auto-expand the newly added row
-    const newRow = (kind === 'role' ? velmaCfgRolesList : velmaCfgBehaviorsList).lastElementChild;
+    const listEl = kind === 'conv' ? velmaCfgConvList : (kind === 'role' ? velmaCfgRolesList : velmaCfgBehaviorsList);
+    const newRow = listEl && listEl.lastElementChild;
     if (newRow) {
       newRow.classList.add('expanded');
-      newRow.querySelector('.velma-cfg-row-expand').textContent = '▴';
+      const exp = newRow.querySelector('.velma-cfg-row-expand');
+      if (exp) exp.textContent = '▴';
       newRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       const firstInput = newRow.querySelector('input[type="text"]');
       if (firstInput) firstInput.focus();
     }
+  }
+
+  // Opt-in example loader for conversation types / roles (NOT defaults).
+  function loadCfgExample(kind) {
+    markCustom();
+    const { uuidField, listField } = cfgKindMeta(kind);
+    const examples = kind === 'conv' ? VELMA_EXAMPLE_CONV_TYPES : VELMA_EXAMPLE_ROLES;
+    velmaConfig[listField] = velmaConfig[listField] || [];
+    examples.forEach(ex => {
+      if (!velmaConfig[listField].some(x => typeof x === 'object' && x[uuidField] === ex[uuidField])) {
+        velmaConfig[listField].push(JSON.parse(JSON.stringify(ex)));
+      }
+    });
+    renderVelmaEditorForm();
+    renderVelmaEditorJson();
+    updateVelmaConfigSummary();
   }
 
   // ── JSON pane (right) ──────────────────────────────────────────────────────
@@ -5237,6 +5611,8 @@
   function renderVelmaEditorJson() {
     if (!velmaConfigTextarea) return;
     if (velmaCfgRawToggle && velmaCfgRawToggle.checked) return; // user is editing, don't clobber
+    // The pane always shows the exact `config` value that will be sent — the
+    // literal "default" string, or the explicit BatchConfig object.
     velmaConfigTextarea.value = JSON.stringify(velmaConfig, null, 2);
   }
 
@@ -5261,31 +5637,51 @@
     });
   }
 
-  if (velmaCfgConvSelect) {
-    velmaCfgConvSelect.addEventListener('change', () => {
-      const uuid = velmaCfgConvSelect.value;
-      // Look up in library + any custom entries already in config
-      const fromLib = VELMA_CONV_TYPE_LIBRARY.find(c => c.conversation_type_uuid === uuid);
-      const fromCfg = (velmaConfig.conversation_types || []).find(c => c.conversation_type_uuid === uuid);
-      const defn = fromCfg || fromLib;
-      if (!defn) return;
-      velmaConfig.conversation_types = [JSON.parse(JSON.stringify(defn))];
-      delete velmaConfig.conversation_types[0].__custom;
-      velmaCfgConvDefn.textContent = defn.detailed_description || '';
-      updateVelmaConfigSummary();
+  if (velmaCfgAddConvBtn) velmaCfgAddConvBtn.addEventListener('click', () => addCustomCfgEntry('conv'));
+  if (velmaCfgAddRoleBtn) velmaCfgAddRoleBtn.addEventListener('click', () => addCustomCfgEntry('role'));
+  if (velmaCfgAddBehaviorBtn) velmaCfgAddBehaviorBtn.addEventListener('click', () => addCustomCfgEntry('behavior'));
+  if (velmaCfgConvExampleBtn) velmaCfgConvExampleBtn.addEventListener('click', () => loadCfgExample('conv'));
+  if (velmaCfgRolesExampleBtn) velmaCfgRolesExampleBtn.addEventListener('click', () => loadCfgExample('role'));
+
+  // STT signal toggles (5 booleans on stt).
+  [
+    [velmaCfgSttDiar, 'speaker_diarization'],
+    [velmaCfgSttEmot, 'emotion_signal'],
+    [velmaCfgSttAcc, 'accent_signal'],
+    [velmaCfgSttDeepfake, 'deepfake_signal'],
+    [velmaCfgSttPii, 'pii_phi_tagging'],
+  ].forEach(([cb, field]) => {
+    if (!cb) return;
+    cb.addEventListener('change', () => {
+      markCustom();
+      velmaConfig.stt = velmaConfig.stt || {};
+      velmaConfig.stt[field] = cb.checked;
+      renderVelmaEditorJson();
+    });
+  });
+
+  // Optional STT language (blank = auto-detect → omit).
+  if (velmaCfgLanguage) {
+    velmaCfgLanguage.addEventListener('input', () => {
+      markCustom();
+      velmaConfig.stt = velmaConfig.stt || {};
+      const v = velmaCfgLanguage.value.trim();
+      if (v) velmaConfig.stt.language = v;
+      else delete velmaConfig.stt.language;
       renderVelmaEditorJson();
     });
   }
 
-  if (velmaCfgAddRoleBtn) velmaCfgAddRoleBtn.addEventListener('click', () => addCustomCfgEntry('role'));
-  if (velmaCfgAddBehaviorBtn) velmaCfgAddBehaviorBtn.addEventListener('click', () => addCustomCfgEntry('behavior'));
-
-  [velmaCfgSttDiar, velmaCfgSttEmot, velmaCfgSttAcc, velmaCfgSttPii].forEach((cb, i) => {
+  // Output toggles (produce_*).
+  [
+    [velmaCfgProdTopics, 'produce_topics'],
+    [velmaCfgProdSentiments, 'produce_topic_sentiments'],
+    [velmaCfgProdSummary, 'produce_summary'],
+  ].forEach(([cb, field]) => {
     if (!cb) return;
     cb.addEventListener('change', () => {
-      velmaConfig.stt = velmaConfig.stt || {};
-      const fields = ['speaker_diarization', 'emotion_signal', 'accent_signal', 'pii_phi_tagging'];
-      velmaConfig.stt[fields[i]] = cb.checked;
+      markCustom();
+      velmaConfig[field] = cb.checked;
       renderVelmaEditorJson();
     });
   });
@@ -5300,7 +5696,7 @@
         // Try to parse current textarea; if valid, adopt it
         try {
           const parsed = JSON.parse(velmaConfigTextarea.value);
-          if (parsed && typeof parsed === 'object') velmaConfig = parsed;
+          if (parsed === 'default' || (parsed && typeof parsed === 'object')) velmaConfig = parsed;
           velmaConfigError.textContent = '';
         } catch (e) {
           velmaConfigError.textContent = 'JSON didn\'t parse — discarded raw edits.';
@@ -5317,7 +5713,7 @@
       if (!velmaCfgRawToggle || !velmaCfgRawToggle.checked) return;
       try {
         const parsed = JSON.parse(velmaConfigTextarea.value);
-        if (parsed && typeof parsed === 'object') {
+        if (parsed === 'default' || (parsed && typeof parsed === 'object')) {
           velmaConfig = parsed;
           velmaConfigError.textContent = '';
           updateVelmaConfigSummary();
@@ -5334,7 +5730,7 @@
       if (velmaCfgRawToggle && velmaCfgRawToggle.checked) {
         try {
           const parsed = JSON.parse(velmaConfigTextarea.value);
-          if (!parsed || typeof parsed !== 'object') throw new Error('Config must be a JSON object');
+          if (parsed !== 'default' && (!parsed || typeof parsed !== 'object')) throw new Error('Config must be a JSON object or the string "default"');
           velmaConfig = parsed;
           velmaConfigError.textContent = '';
         } catch (err) {
@@ -5349,6 +5745,7 @@
   if (velmaConfigResetBtn) {
     velmaConfigResetBtn.addEventListener('click', () => {
       velmaConfig = buildDefaultVelmaConfig();
+      velmaPresetExpansions.clear();
       velmaConfigError.textContent = '';
       if (velmaCfgRawToggle) velmaCfgRawToggle.checked = false;
       setRawJsonEditable(false);
@@ -5533,7 +5930,7 @@
     lastLanguageFilename = DEMO_LANGUAGE_FILENAME;
     renderLanguageResult(DEMO_LANGUAGE_DATA);
   } else if (initMode === 'velma') {
-    // Velma init — render pre-cached demo (matches transcription/deepfake/redaction UX)
+    // Velma init — start empty (no pre-cached demo); tester runs batch or streaming.
     deepfakeContent.style.display = 'none';
     resultsVerdict.style.display = 'none';
     transcriptContainer.classList.add('visible'); // reuse stt-chart + transcript-list
@@ -5546,12 +5943,13 @@
     if (velmaSidebar) velmaSidebar.classList.add('visible');
     if (velmaOptions) velmaOptions.classList.add('visible');
     if (velmaDemoAction) velmaDemoAction.style.display = '';
-    if (recordAction) recordAction.style.display = 'none';
-    if (streamDemoAction) streamDemoAction.style.display = 'none';
-    if (streamFileAction) streamFileAction.style.display = 'none';
+    // Velma supports mic + file streaming AND batch — show the same streaming
+    // trio as transcription (mic record + stream demo + stream file).
+    if (recordAction) recordAction.style.display = '';
+    if (streamDemoAction) streamDemoAction.style.display = '';
+    if (streamFileAction) streamFileAction.style.display = '';
     clearVelmaResults();
     updateVelmaConfigSummary();
-    loadDemoVelmaData().then(() => { if (currentMode === 'velma') renderVelmaDemo(); });
   } else if (initMode === 'redaction') {
     // Redaction init
     deepfakeContent.style.display = 'none';
