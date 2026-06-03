@@ -2,6 +2,18 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.6.2] - 2026-06-03
+
+### Added
+- **Velma cached demo.** The Velma tab now opens pre-loaded with a cached
+  analysis (like the Transcription/Music/Language tabs) instead of starting
+  empty — instant, no live API call. Uses a dedicated irate-caller support call
+  (`deepfake/irate-caller-demo.mp3`) whose `config=default` run surfaces a rich
+  result: 6 behaviors (Threat-based harassment, Inappropriate Speech, Coercion
+  Manipulation, Issue Not Resolved ×2, Refund or Credit Issued), 3 topics +
+  sentiments, conversation type, roles, and summary. The "Stream demo" button
+  uses the same file. Cached results live in `velma-demo-data.json`.
+
 ## [4.6.1] - 2026-06-03
 
 ### Changed

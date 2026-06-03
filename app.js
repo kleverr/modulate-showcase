@@ -523,8 +523,8 @@
         if (lastVelmaAudioUrl) resultsAudio.src = lastVelmaAudioUrl;
         renderVelmaResults(lastVelmaData);
       } else {
-        // No pre-cached demo — start empty until the tester runs an analysis.
-        clearVelmaResults();
+        // No prior run — show the pre-cached demo, like the other model tabs.
+        showVelmaDemo();
       }
       updateVelmaConfigSummary();
     } else {
@@ -4166,7 +4166,7 @@
   // ── VELMA MODE (ensemble listening: clips + behaviors + summary + topics)
   // ══════════════════════════════════════════════════════════════════════════
 
-  const DEMO_VELMA_AUDIO_URL = '/deepfake/call-center-demo.mp3';
+  const DEMO_VELMA_AUDIO_URL = '/deepfake/irate-caller-demo.mp3';
   const DEMO_VELMA_DATA_URL = '/velma-demo-data.json';
   let DEMO_VELMA_DATA = null;
 
@@ -4392,16 +4392,24 @@
     velmaData = DEMO_VELMA_DATA;
     currentData = DEMO_VELMA_DATA;
     currentMeta = {
-      fileSize: 1.7 * 1024 * 1024,
+      fileSize: 5385320,
       fileType: 'audio/mpeg',
       httpStatus: 200,
       httpStatusText: 'OK',
       responseSize: JSON.stringify(DEMO_VELMA_DATA).length,
-      processingMs: 28000,
+      processingMs: 42000,
     };
-    resultsFilename.textContent = DEMO_VELMA_DATA.filename || 'call-center-demo.mp3';
+    resultsFilename.textContent = DEMO_VELMA_DATA.filename || 'Irate_Caller_Final.mp3';
     resultsAudio.src = DEMO_VELMA_AUDIO_URL;
     renderVelmaResults(DEMO_VELMA_DATA);
+  }
+
+  // Show the pre-cached Velma demo (fetches the JSON once, then renders), so the
+  // Velma tab opens populated like the other model tabs do with their DEMO_*_DATA.
+  async function showVelmaDemo() {
+    const data = await loadDemoVelmaData();
+    if (!data) { clearVelmaResults(); return; }
+    renderVelmaDemo();
   }
 
   async function startVelmaBatch(file) {
@@ -4573,7 +4581,7 @@
   }
 
   function startVelmaDemoStream() {
-    return runVelmaStream(DEMO_VELMA_AUDIO_URL, 'call-center-demo.mp3', false);
+    return runVelmaStream(DEMO_VELMA_AUDIO_URL, 'Irate_Caller_Final.mp3', false);
   }
 
   async function startVelmaFileStream(file) {
@@ -5931,7 +5939,7 @@
     lastLanguageFilename = DEMO_LANGUAGE_FILENAME;
     renderLanguageResult(DEMO_LANGUAGE_DATA);
   } else if (initMode === 'velma') {
-    // Velma init — start empty (no pre-cached demo); tester runs batch or streaming.
+    // Velma init — open pre-loaded with the cached demo, like the other model tabs.
     deepfakeContent.style.display = 'none';
     resultsVerdict.style.display = 'none';
     transcriptContainer.classList.add('visible'); // reuse stt-chart + transcript-list
@@ -5949,7 +5957,7 @@
     if (recordAction) recordAction.style.display = '';
     if (streamDemoAction) streamDemoAction.style.display = '';
     if (streamFileAction) streamFileAction.style.display = '';
-    clearVelmaResults();
+    showVelmaDemo();
     updateVelmaConfigSummary();
   } else if (initMode === 'redaction') {
     // Redaction init

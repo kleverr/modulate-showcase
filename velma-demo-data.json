@@ -1,315 +1,447 @@
 {
-  "filename": "call-center-demo.mp3",
-  "duration_ms": 202920,
-  "clips": [
-    {
-      "clip_uuid": "8b8cafaf-0323-40a7-b0cb-23d5a4578c1f",
-      "text": "Thank you for calling Green Valley Health member services. This is Mina speaking on a recorded line. Can I confirm I'm speaking with Daniel Mercer, born July 18, 1982, and living at 4827 Willow Creek Drive, Apt 5B, Columbus, Ohio 43215?",
-      "start_ms": 300,
-      "duration_ms": 17340,
-      "speaker_label": "1",
-      "language": "en",
-      "emotion": "Neutral",
-      "accent": "American",
-      "deepfake_score": null,
-      "word_timings": [],
-      "detection_model_results": {}
-    },
-    {
-      "clip_uuid": "dec2782f-3c1c-4e7a-af3a-0f4ad3384188",
-      "text": "Yes, this is Daniel Andrew Mercer. The last four of my Social Security number are 4421, and my member ID is GVH-88394127.",
-      "start_ms": 18300,
-      "duration_ms": 13320,
-      "speaker_label": "2",
-      "language": "en",
-      "emotion": "Neutral",
-      "accent": "American",
-      "deepfake_score": null,
-      "word_timings": [],
-      "detection_model_results": {}
-    },
-    {
-      "clip_uuid": "95ad5d7a-fc3e-4334-ba32-8de2cad036e5",
-      "text": "Thank you, Mr. Mercer. For verification, can you confirm the phone number and email we have on file: 614-555-0198, and daniel.mercer82@protonmail.com?",
-      "start_ms": 32100,
-      "duration_ms": 15300,
-      "speaker_label": "1",
-      "language": "en",
-      "emotion": "Neutral",
-      "accent": "American",
-      "deepfake_score": null,
-      "word_timings": [],
-      "detection_model_results": {}
-    },
-    {
-      "clip_uuid": "4697f92c-1553-4ecb-ae46-daeaf92e8c25",
-      "text": "Yes, that's right, although my new callback number is 380-555-4412, and my employer is Harrison Industrial Company at 2150 Fisher Road, Columbus, Ohio.",
-      "start_ms": 47700,
-      "duration_ms": 12240,
-      "speaker_label": "2",
-      "language": "en",
-      "emotion": "Neutral",
-      "accent": "American",
-      "deepfake_score": null,
-      "word_timings": [],
-      "detection_model_results": {}
-    },
-    {
-      "clip_uuid": "cbb8ad42-b48b-4cbe-b5d8-27c3c03e9278",
-      "text": "I see your plan is under policy number PPO-77-194402, and the primary care physician listed is Dr. Elena Ruiz at Buckeye Family Clinic, 903 East Main Street, Columbus, Ohio 43205.",
-      "start_ms": 60600,
-      "duration_ms": 17820,
-      "speaker_label": "1",
-      "language": "en",
-      "emotion": "Neutral",
-      "accent": "American",
-      "deepfake_score": null,
-      "word_timings": [],
-      "detection_model_results": {}
-    },
-    {
-      "clip_uuid": "dadf135c-092d-4398-8e69-bb34cf5e893f",
-      "text": "That's correct. I'm calling about a claim for my MRI from March 3, 2026, after I injured my lower back lifting equipment. The diagnosis code on my paperwork says M54.5, and the imaging center was Riverside Diagnostic Imaging.",
-      "start_ms": 78720,
-      "duration_ms": 15060,
-      "speaker_label": "2",
-      "language": "en",
-      "emotion": "Neutral",
-      "accent": "American",
-      "deepfake_score": null,
-      "word_timings": [],
-      "detection_model_results": {}
-    },
-    {
-      "clip_uuid": "6697d35a-941c-4259-90a6-ecc4712879a2",
-      "text": "I found that claim. It shows service date 03/03/2026, account number AC-5501938, billed amount $2,480, and it references your prior authorization number PA-2048816.",
-      "start_ms": 94200,
-      "duration_ms": 19380,
-      "speaker_label": "1",
-      "language": "en",
-      "emotion": "Neutral",
-      "accent": "American",
-      "deepfake_score": null,
-      "word_timings": [],
-      "detection_model_results": {}
-    },
-    {
-      "clip_uuid": "849955b1-9bd9-4ebb-8df8-f269022384e5",
-      "text": "I also had a prescription denied. It was for Gabapentin 300 mg, prescribed by Dr. Elena Ruiz for nerve pain, and my pharmacy is CVS number 11472, 3588 West Broad Street, Columbus, Ohio.",
-      "start_ms": 114060,
-      "duration_ms": 16440,
-      "speaker_label": "2",
-      "language": "en",
-      "emotion": "Disappointed",
-      "accent": "American",
-      "deepfake_score": null,
-      "word_timings": [],
-      "detection_model_results": {}
-    },
-    {
-      "clip_uuid": "317eb053-2da0-4c17-b33d-d2217125a761",
-      "text": "I can see that medication request. To verify, your emergency contact is Melissa Mercer, spouse, at 614-555-8871, and your preferred mailing address is still P.O. Box 11842, Columbus, Ohio 43211?",
-      "start_ms": 130980,
-      "duration_ms": 17460,
-      "speaker_label": "1",
-      "language": "en",
-      "emotion": "Neutral",
-      "accent": "American",
-      "deepfake_score": null,
-      "word_timings": [],
-      "detection_model_results": {}
-    },
-    {
-      "clip_uuid": "7a20d08e-a437-40af-869d-8dabc834063f",
-      "text": "Yes, and my wife's date of birth is November 2, 1984. Also, the hospital can fax records to my attorney, Kevin L. Shore, at 216-555-7714, because this relates to a workplace injury claim.",
-      "start_ms": 149100,
-      "duration_ms": 15300,
-      "speaker_label": "2",
-      "language": "en",
-      "emotion": "Neutral",
-      "accent": "American",
-      "deepfake_score": null,
-      "word_timings": [],
-      "detection_model_results": {}
-    },
-    {
-      "clip_uuid": "095d28f3-5286-48a3-ba4d-e1c2ad6cd411",
-      "text": "Understood. I also see notes from your recent visit indicating type 2 diabetes, hypertension, and an A1C of 8.1%. The lab order was submitted under requisition number LAB-662901 from St. Anne's Outpatient Center.",
-      "start_ms": 165060,
-      "duration_ms": 16800,
-      "speaker_label": "1",
-      "language": "en",
-      "emotion": "Neutral",
-      "accent": "American",
-      "deepfake_score": null,
-      "word_timings": [],
-      "detection_model_results": {}
-    },
-    {
-      "clip_uuid": "c250b279-1379-4277-b2d7-495f1edb7e42",
-      "text": "Thanks. Please send the appeal form to Daniel.A.Mercer@outlook.com, and mail a copy to 4827 Willow Creek Drive, Apt 5B, Columbus, Ohio 43215. If you need payment for the balance, my HSA card ending in 9034 is available.",
-      "start_ms": 182820,
-      "duration_ms": 20100,
-      "speaker_label": "2",
-      "language": "en",
-      "emotion": "Neutral",
-      "accent": "American",
-      "deepfake_score": null,
-      "word_timings": [],
-      "detection_model_results": {}
-    }
-  ],
-  "behaviors": [
-    {
-      "behavior_uuid": "33333333-3333-4333-8333-333333333001",
-      "behavior_name": "Issue Resolved",
-      "speaker_label": "1",
-      "detected": false,
-      "confidence": 0.05,
-      "evidence_clip_uuids": [],
-      "definitive_clip_uuid": null,
-      "reasoning": "No customer's stated issue referenced; no resolution confirmation, customer acknowledgment, or closure cues present in clips."
-    },
-    {
-      "behavior_uuid": "33333333-3333-4333-8333-333333333001",
-      "behavior_name": "Issue Resolved",
-      "speaker_label": "2",
-      "detected": false,
-      "confidence": 0.95,
-      "evidence_clip_uuids": [],
-      "definitive_clip_uuid": null,
-      "reasoning": "Customer references issues (MRI claim and prescription denial) but requests appeal form and provides details for further action, with no explicit acknowledgment of resolution, rep confirmation, or definitive closure cues beyond a general 'Thanks.'"
-    },
-    {
-      "behavior_uuid": "33333333-3333-4333-8333-333333333002",
-      "behavior_name": "Issue Not Resolved",
-      "speaker_label": "1",
-      "detected": true,
-      "confidence": 0.75,
-      "evidence_clip_uuids": [
-        "6697d35a-941c-4259-90a6-ecc4712879a2",
-        "317eb053-2da0-4c17-b33d-d2217125a761"
-      ],
-      "definitive_clip_uuid": "6697d35a-941c-4259-90a6-ecc4712879a2",
-      "reasoning": "Rep references customer's claim and medication request but fails to provide concrete resolution (e.g., approval/denial status, payment) or any firm follow-up commitment."
-    },
-    {
-      "behavior_uuid": "33333333-3333-4333-8333-333333333002",
-      "behavior_name": "Issue Not Resolved",
-      "speaker_label": "2",
-      "detected": false,
-      "confidence": 0.95,
-      "evidence_clip_uuids": [],
-      "definitive_clip_uuid": null,
-      "reasoning": "Customer states issues (MRI claim and prescription denial) but does not explicitly state they are unresolved at the end of the call; no representative responses provided to assess failure to resolve or lack of commitment."
-    },
-    {
-      "behavior_uuid": "33333333-3333-4333-8333-333333333003",
-      "behavior_name": "Complaints",
-      "speaker_label": "1",
-      "detected": false,
-      "confidence": 1,
-      "evidence_clip_uuids": [],
-      "definitive_clip_uuid": null,
-      "reasoning": "The speaker is the Customer Service Representative calmly verifying information, confirming details, and providing account data; no statements attributing negative outcomes to the company or explicit dissatisfaction markers present."
-    },
-    {
-      "behavior_uuid": "33333333-3333-4333-8333-333333333003",
-      "behavior_name": "Complaints",
-      "speaker_label": "2",
-      "detected": false,
-      "confidence": 0.05,
-      "evidence_clip_uuids": [],
-      "definitive_clip_uuid": null,
-      "reasoning": "Customer reports claim and prescription denial factually without attributing negative outcomes to company with explicit dissatisfaction markers or negative adjectives."
-    },
-    {
-      "behavior_uuid": "33333333-3333-4333-8333-333333333004",
-      "behavior_name": "Coercion Manipulation",
-      "speaker_label": "1",
-      "detected": false,
-      "confidence": 1,
-      "evidence_clip_uuids": [],
-      "definitive_clip_uuid": null,
-      "reasoning": "Speaker is Customer Service Representative providing polite verifications and information; no threats, ultimatums, reduced empathy, or pressure tactics observed."
-    },
-    {
-      "behavior_uuid": "33333333-3333-4333-8333-333333333004",
-      "behavior_name": "Coercion Manipulation",
-      "speaker_label": "2",
-      "detected": false,
-      "confidence": 0.05,
-      "evidence_clip_uuids": [],
-      "definitive_clip_uuid": null,
-      "reasoning": "Customer provides verification details, claim information, and addresses politely without threats, ultimatums, reduced empathy, or sustained insistence."
-    },
-    {
-      "behavior_uuid": "33333333-3333-4333-8333-333333333005",
-      "behavior_name": "Inappropriate Speech",
-      "speaker_label": "1",
-      "detected": false,
-      "confidence": 0,
-      "evidence_clip_uuids": [],
-      "definitive_clip_uuid": null,
-      "reasoning": "All clips contain professional, factual verification and information sharing with no profanity, slurs, personal attacks, or hostile indicators."
-    },
-    {
-      "behavior_uuid": "33333333-3333-4333-8333-333333333005",
-      "behavior_name": "Inappropriate Speech",
-      "speaker_label": "2",
-      "detected": false,
-      "confidence": 0.98,
-      "evidence_clip_uuids": [],
-      "definitive_clip_uuid": null,
-      "reasoning": "No profanity, slurs, sexually-suggestive content, personal attacks, or hostile prosody observed; speech is polite and factual."
-    }
-  ],
-  "conversation_type_pick": {
-    "conversation_type_uuid": "11111111-1111-4111-8111-111111111001",
-    "name": "Customer Service Call",
-    "confidence": 1,
-    "selection_source": "auto_selected_single_option",
-    "detail": "Auto-chosen as the only available option.",
-    "reasoning": null
-  },
-  "participant_role_picks": [
-    {
-      "speaker_label": "1",
-      "participant_role_uuid": "22222222-2222-4222-8222-222222222002",
-      "name": "Customer Service Representative",
-      "confidence": 1,
-      "selection_source": "inferred",
-      "detail": "Inferred from candidate list.",
-      "reasoning": "The speaker introduces themselves as Mina from Green Valley Health member services, verifies the caller's identity and details, and accesses and discusses specific account, claim, and medical information on file."
-    },
-    {
-      "speaker_label": "2",
-      "participant_role_uuid": "22222222-2222-4222-8222-222222222001",
-      "name": "Customer",
-      "confidence": 1,
-      "selection_source": "inferred",
-      "detail": "Inferred from candidate list.",
-      "reasoning": "The speaker provides personal verification details, describes issues with an MRI claim and denied prescription, and requests appeal forms and related actions, clearly acting as the caller seeking assistance."
-    }
-  ],
-  "topics": [
-    "back injury",
-    "MRI claim",
-    "Gabapentin",
-    "diabetes",
-    "hypertension"
-  ],
-  "topic_sentiments": [
-    { "topic": "back injury", "speaker_label": "1", "sentiment_score": 0, "sentiment_label": "neutral" },
-    { "topic": "back injury", "speaker_label": "2", "sentiment_score": -0.5, "sentiment_label": "very_negative" },
-    { "topic": "MRI claim", "speaker_label": "1", "sentiment_score": 0, "sentiment_label": "neutral" },
-    { "topic": "MRI claim", "speaker_label": "2", "sentiment_score": 0, "sentiment_label": "neutral" },
-    { "topic": "Gabapentin", "speaker_label": "1", "sentiment_score": 0, "sentiment_label": "neutral" },
-    { "topic": "Gabapentin", "speaker_label": "2", "sentiment_score": 0, "sentiment_label": "neutral" },
-    { "topic": "diabetes", "speaker_label": "1", "sentiment_score": 0, "sentiment_label": "neutral" },
-    { "topic": "diabetes", "speaker_label": "2", "sentiment_score": 0, "sentiment_label": "neutral" },
-    { "topic": "hypertension", "speaker_label": "1", "sentiment_score": 0, "sentiment_label": "neutral" },
-    { "topic": "hypertension", "speaker_label": "2", "sentiment_score": 0, "sentiment_label": "neutral" }
-  ],
-  "summary": "<pii:firstname>Daniel</pii:firstname> <pii:lastname>Mercer</pii:lastname> spoke with Green Valley Health member services agent <pii:firstname>Mina</pii:firstname> to verify his identity and discuss an MRI claim (<phi>diagnosis code M54.5</phi>) and denied <phi>Gabapentin 300 mg prescription</phi> for nerve pain related to a workplace back injury. He requested the appeal form be sent to <pii:email>Daniel.A.Mercer@outlook.com</pii:email> and <pii:address>4827 Willow Creek Drive, Apt 5B, Columbus, Ohio 43215</pii:address>."
+"filename": "Irate_Caller_Final.mp3",
+"duration_ms": 268680,
+"clips": [
+{
+"clip_uuid": "81a0793e-265f-41ab-8b27-b08a2d9e7a71",
+"text": "You've reached home-supply-plus.com customer support. Can you provide your name and account email?",
+"start_ms": 900,
+"duration_ms": 4260,
+"speaker_label": "1",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "93ba970e-6bab-44cf-af18-ea4c70040ad9",
+"text": "You better be a real person because I'm sick and tired of you people passing me off.",
+"start_ms": 5820,
+"duration_ms": 3720,
+"speaker_label": "2",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "2fd34bef-c6fc-41d1-83bb-471fe0e5473f",
+"text": "I am a real person, sir. Can I have your name and account email?",
+"start_ms": 10200,
+"duration_ms": 2880,
+"speaker_label": "1",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "60fb7388-32d1-4ab0-b012-1d2b1876c911",
+"text": "My name's John Sampson, and my account email is jsampson, J-S-A-M-P-S-O-N, at yahoo.com.",
+"start_ms": 13560,
+"duration_ms": 8040,
+"speaker_label": "2",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "dad364bf-0962-4d71-8436-8296e63eec6e",
+"text": "Thank you, John. What can I assist you with today?",
+"start_ms": 23220,
+"duration_ms": 2880,
+"speaker_label": "1",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "0d683463-7d12-4fd2-a105-96049732fd99",
+"text": "Assist me? Let me tell you something. You better be helpful. Because there's a lot riding on this for me and your people who have wasted my time. Do you know how long I've been waiting for this order? I mean, my backyard trawler was a total nightmare because of you people.",
+"start_ms": 27060,
+"duration_ms": 13020,
+"speaker_label": "2",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "5bcecb40-6899-4fbd-bb28-0dc1013c1d09",
+"text": "I'm sorry to hear that, sir. Can you give me the order number for this order?",
+"start_ms": 40380,
+"duration_ms": 3480,
+"speaker_label": "1",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "2eb0b640-8245-4e4a-813b-3ad41dec15ef",
+"text": "I might as well have memorized by now, but it's tattooed on me somewhere, the number 0022578938. I was supposed to have those extra chairs from you guys a week ago. No one had anywhere to sit. I mean, what are you guys doing over there? A circus? A clown show? Come on.",
+"start_ms": 45240,
+"duration_ms": 18540,
+"speaker_label": "2",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "f6c80299-9fa1-4e97-a763-31bb95826351",
+"text": "I'm sorry, sir. Let me check on that order for you.",
+"start_ms": 65520,
+"duration_ms": 2220,
+"speaker_label": "1",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "c40db43c-d1e8-4b5c-b121-03a730ba6bf8",
+"text": "Check on it? You better get me those chairs as soon as humanly possible, or I'm going to sue your company for false advertising. I mean, it's been a week and a half already. Two-day delivery in my ass. Those chairs have been stolen by pirates and sank to the bottom of the Atlantic Ocean at this point. Come on.",
+"start_ms": 69000,
+"duration_ms": 16500,
+"speaker_label": "2",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "9b97e089-75fa-4174-b7a9-29bd5a05a234",
+"text": "I'm sorry, sir. It looks like they're still on their way for you, but it's been delayed.",
+"start_ms": 87600,
+"duration_ms": 3900,
+"speaker_label": "1",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "4df43b7b-1c7b-432c-b59a-b7b97496aeae",
+"text": "I'm not aware from where. Seriously, from Siberia? What kind of scam operations are you guys running here? I mean, are you smuggling them across international borders? Do you find them with a treasure map? Where are those chairs?",
+"start_ms": 91740,
+"duration_ms": 13140,
+"speaker_label": "2",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "123a0322-1bce-474b-bebb-fa78daa57c8f",
+"text": "I'm sorry, sir. It looks like intense rains have caused some roads to flood, so we have had a delay with many packages.",
+"start_ms": 105840,
+"duration_ms": 6960,
+"speaker_label": "1",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "bb60a865-a0cf-492b-ba13-b4f723914e0b",
+"text": "Christ, if I wanted them shipped from the rainforest, I would have ordered them from Amazon, you nitwit. How much time does it take to load up some chairs, drive a fucking truck, and put them on my porch? Isn't your warehouse down the street? I paid for expedited delivery. Is that a complete fucking scam, or is that part of your promise?",
+"start_ms": 115080,
+"duration_ms": 16260,
+"speaker_label": "2",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "8f4ca9ef-c378-46b2-83eb-d206b37c24d0",
+"text": "No, sir. Usually, they deliver these things on time. It's just we've had some extreme weather in your area.",
+"start_ms": 133020,
+"duration_ms": 5820,
+"speaker_label": "1",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "0a6e1232-9599-4bfe-8eed-b077007ea490",
+"text": "Well, it wasn't a fucking hurricane, was it? I didn't see hurricane fucked up my chairs in the news, did you? You need to be giving me my chairs today, or I'm suing your company and tagging your name in the lawsuit. What's your name?",
+"start_ms": 139260,
+"duration_ms": 12180,
+"speaker_label": "2",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "5ea3e1e5-0ee2-43c0-b19e-a4b6f97d8523",
+"text": "I'm sorry, sir. My name is Fred.",
+"start_ms": 152460,
+"duration_ms": 1920,
+"speaker_label": "1",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "249af7e7-9840-4075-a51b-f492f1b1759f",
+"text": "Well, Fred, that's the name I'm writing the complaint when I rip your company a goddamn new asshole in court. What a fucking joke. Two-day shipping, all-day customer service, total fucking scam.",
+"start_ms": 155580,
+"duration_ms": 11580,
+"speaker_label": "2",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "426b3cfd-5f7a-4cd2-85eb-64cfabc5b494",
+"text": "I'm sorry, sir. Is there any information I can give to help you give you some assurance?",
+"start_ms": 168900,
+"duration_ms": 5880,
+"speaker_label": "1",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "cf6709a5-1495-4185-a867-d3bf68fedb62",
+"text": "Fuck assurance, fuck this, and fuck you. You can give me my fucking chairs, or you can sue me in court after I get my refund.",
+"start_ms": 175500,
+"duration_ms": 7260,
+"speaker_label": "2",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "9efd8bf9-9323-47a9-9dd9-3cc1c82b464b",
+"text": "I understand this has been frustrating, sir, and I'm hoping we can resolve this issue for you as soon as possible. It would be helpful if you could calm down so that we can.",
+"start_ms": 184380,
+"duration_ms": 8520,
+"speaker_label": "1",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "f02826cf-cd8d-4e5f-8207-5c405a62660c",
+"text": "What the fuck do you mean calm down? I've been so compliant with you people. Now you want me to calm down? What a terrible fucking attitude from a complete fucking shit-brand idiot of a person. In what world do you think it's only okay to imply I'm overreacting? You people made this problem when you didn't deliver my fucking chairs, and now you're blaming me for it?",
+"start_ms": 193020,
+"duration_ms": 19140,
+"speaker_label": "2",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "4163fc5c-9ea7-4488-a5c2-5df6ae21c58f",
+"text": "It was out of our control, sir.",
+"start_ms": 214260,
+"duration_ms": 1740,
+"speaker_label": "1",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "3c57d827-f9fa-4cba-bdbe-5ca98ce73e5d",
+"text": "Yeah, right. Out of your control, my ass. Apparently, people have always been lazy, good-for-nothing, shit-brand, fuck-wits on idiot sandwich time right from the goddamn beginning.",
+"start_ms": 218220,
+"duration_ms": 11760,
+"speaker_label": "2",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "e01ab7b3-4535-4502-b59d-2bba3f595c1f",
+"text": "I am sorry, sir. I can issue you a credit on your account for the inconvenience.",
+"start_ms": 231600,
+"duration_ms": 5100,
+"speaker_label": "1",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+},
+{
+"clip_uuid": "9aee3a65-506b-436a-a77a-bc06ab71ad42",
+"text": "Are you even fucking listening to me, you ham-headed fart mouth? I swear this court citation is going to be so fucking satisfying. What the fuck do you think a \"credit on my account\" is going to do for me, Fred? Is it going to get me my fucking chairs on my fucking porch? Absolutely not. Your ass is grass, Fred, and I'm the lawnmower. You know what? This is fucking useless. You're fucking useless, and I'm sick and fucking tired of it. See you in court, motherfucker. Goodbye.",
+"start_ms": 236820,
+"duration_ms": 31860,
+"speaker_label": "2",
+"language": "en",
+"emotion": null,
+"accent": null,
+"deepfake_score": null
+}
+],
+"behaviors": [
+{
+"behavior_uuid": "33333333-3333-4333-8333-033333333008",
+"behavior_name": "Coercion Manipulation",
+"speaker_label": "2",
+"detected": true,
+"confidence": 0.8955669135611077,
+"evidence_clip_uuids": [
+"c40db43c-d1e8-4b5c-b121-03a730ba6bf8",
+"0a6e1232-9599-4bfe-8eed-b077007ea490",
+"cf6709a5-1495-4185-a867-d3bf68fedb62"
+],
+"definitive_clip_uuid": "c40db43c-d1e8-4b5c-b121-03a730ba6bf8",
+"reasoning": "Speaker issues repeated explicit threats of lawsuits and court action unless the representative immediately complies with the demand for chairs, meeting the threat/conditional consequence criterion for coercion manipulation."
+},
+{
+"behavior_uuid": "33333333-3333-4333-8333-033333333036",
+"behavior_name": "Inappropriate Speech",
+"speaker_label": "2",
+"detected": true,
+"confidence": 0.9213109566586996,
+"evidence_clip_uuids": [
+"bb60a865-a0cf-492b-ba13-b4f723914e0b",
+"cf6709a5-1495-4185-a867-d3bf68fedb62",
+"f02826cf-cd8d-4e5f-8207-5c405a62660c"
+],
+"definitive_clip_uuid": "f02826cf-cd8d-4e5f-8207-5c405a62660c",
+"reasoning": "Multiple instances of profanity, aggressive outbursts, and insults targeting the representative directly."
+},
+{
+"behavior_uuid": "33333333-3333-4333-8333-033333333035",
+"behavior_name": "Issue Not Resolved",
+"speaker_label": "1",
+"detected": true,
+"confidence": 0.8177440861880216,
+"evidence_clip_uuids": [
+"426b3cfd-5f7a-4cd2-85eb-64cfabc5b494",
+"9efd8bf9-9323-47a9-9dd9-3cc1c82b464b",
+"e01ab7b3-4535-4502-b59d-2bba3f595c1f"
+],
+"definitive_clip_uuid": "e01ab7b3-4535-4502-b59d-2bba3f595c1f",
+"reasoning": "Near end of transcript, CSR offers only a credit after repeated delays; caller immediately rejects it and ends call without any resolution of the chair delivery request, and no satisfaction is expressed in final lines."
+},
+{
+"behavior_uuid": "33333333-3333-4333-8333-033333333035",
+"behavior_name": "Issue Not Resolved",
+"speaker_label": "2",
+"detected": true,
+"confidence": 0.8738878605239848,
+"evidence_clip_uuids": [
+"cf6709a5-1495-4185-a867-d3bf68fedb62",
+"9aee3a65-506b-436a-a77a-bc06ab71ad42"
+],
+"definitive_clip_uuid": "9aee3a65-506b-436a-a77a-bc06ab71ad42",
+"reasoning": "Customer ends call abruptly at 236.82s after explicitly rejecting credit and affirming chairs/refund not resolved, with no prior resolution affirmation."
+},
+{
+"behavior_uuid": "33333333-3333-4333-8333-033333333034",
+"behavior_name": "Refund or Credit Issued",
+"speaker_label": "1",
+"detected": true,
+"confidence": 0.8738458382198696,
+"evidence_clip_uuids": [
+"e01ab7b3-4535-4502-b59d-2bba3f595c1f"
+],
+"definitive_clip_uuid": "e01ab7b3-4535-4502-b59d-2bba3f595c1f",
+"reasoning": "Speaker explicitly states 'I can issue you a credit on your account for the inconvenience,' which meets the criteria of asserting a credit has been issued without threat phrasing."
+},
+{
+"behavior_uuid": "33333333-3333-4333-8333-033333333041",
+"behavior_name": "Threat-based harassment",
+"speaker_label": "2",
+"detected": true,
+"confidence": 0.9556627232327303,
+"evidence_clip_uuids": [
+"c40db43c-d1e8-4b5c-b121-03a730ba6bf8",
+"0a6e1232-9599-4bfe-8eed-b077007ea490",
+"9aee3a65-506b-436a-a77a-bc06ab71ad42"
+],
+"definitive_clip_uuid": "0a6e1232-9599-4bfe-8eed-b077007ea490",
+"reasoning": "Speaker explicitly threatens to sue the company and name the employee in the lawsuit, and references filing a court citation against the company and individual."
+}
+],
+"conversation_type_pick": {
+"conversation_type_uuid": "11111111-1111-4111-8111-111111111008",
+"name": "General Customer Support Call",
+"confidence": 0.95,
+"selection_source": "inferred",
+"detail": "Inferred from candidate list.",
+"reasoning": "The transcript shows a customer contacting a business support line to resolve an order delivery issue with a service provider."
+},
+"participant_role_picks": [
+{
+"speaker_label": "1",
+"participant_role_uuid": "22222222-2222-4222-8222-222222222012",
+"name": "Customer Service Representative",
+"confidence": 0.98,
+"selection_source": "inferred",
+"detail": "Inferred from candidate list.",
+"reasoning": "The speaker repeatedly greets the caller, requests account details, apologizes for delays, checks order status, offers credits, and identifies themselves as support staff, which are all typical CSR behaviors."
+},
+{
+"speaker_label": "2",
+"participant_role_uuid": "22222222-2222-4222-8222-222222222017",
+"name": "Customer",
+"confidence": 0.98,
+"selection_source": "inferred",
+"detail": "Inferred from candidate list.",
+"reasoning": "The speaker identifies themselves by name and email, complains about a delayed order of chairs, threatens legal action, and repeatedly demands assistance from the other party, all of which match the Customer role."
+}
+],
+"topics": [
+"Customer service",
+"Delivery delays",
+"Refund policy"
+],
+"topic_sentiments": [
+{
+"topic": "Customer service",
+"speaker_label": "1",
+"sentiment_score": -0.1,
+"sentiment_label": "negative"
+},
+{
+"topic": "Customer service",
+"speaker_label": "2",
+"sentiment_score": -0.95,
+"sentiment_label": "very_negative"
+},
+{
+"topic": "Delivery delays",
+"speaker_label": "1",
+"sentiment_score": -0.1,
+"sentiment_label": "negative"
+},
+{
+"topic": "Delivery delays",
+"speaker_label": "2",
+"sentiment_score": -0.95,
+"sentiment_label": "very_negative"
+},
+{
+"topic": "Refund policy",
+"speaker_label": "1",
+"sentiment_score": -0.1,
+"sentiment_label": "negative"
+},
+{
+"topic": "Refund policy",
+"speaker_label": "2",
+"sentiment_score": -0.95,
+"sentiment_label": "very_negative"
+}
+],
+"summary": "John Sampson called home-supply-plus.com customer support to complain about delayed chairs from order 0022578938, repeatedly threatening to sue, and ended the call after the agent offered a credit."
 }
