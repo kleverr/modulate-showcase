@@ -2,6 +2,14 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.6.1] - 2026-06-03
+
+### Changed
+- **Velma is now the default landing tab** on the public site. Visiting `/` opens
+  the Velma (ensemble) demo first; the mode selector lists Velma ahead of
+  Transcription. (Ships the previously-merged `0bd3ac4` / `6cbb02d` work that had
+  not yet been deployed to production.)
+
 ## [4.6.0] - 2026-06-02
 
 ### Added
