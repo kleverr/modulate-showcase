@@ -3673,10 +3673,21 @@
   document.getElementById('btn-show-stats-language').addEventListener('click', () => showStatsModal());
   document.getElementById('btn-show-json-language').addEventListener('click', () => showJsonModal());
 
+  // Close a modal on a genuine backdrop click — but NOT when the click is the tail
+  // end of a text-selection drag that started inside the modal. Dragging to select
+  // text and releasing the mouse over the backdrop synthesizes a `click` whose
+  // target is the backdrop, which would otherwise close the modal mid-edit. Only
+  // close when the press AND the release both happened on the backdrop itself.
+  function closeOnBackdrop(modalEl, closeFn) {
+    let downOnBackdrop = false;
+    modalEl.addEventListener('mousedown', (e) => { downOnBackdrop = (e.target === modalEl); });
+    modalEl.addEventListener('click', (e) => { if (e.target === modalEl && downOnBackdrop) closeFn(); });
+  }
+
   document.getElementById('stats-modal-close').addEventListener('click', () => statsModal.classList.remove('visible'));
   document.getElementById('json-modal-close').addEventListener('click', () => jsonModal.classList.remove('visible'));
-  statsModal.addEventListener('click', (e) => { if (e.target === statsModal) statsModal.classList.remove('visible'); });
-  jsonModal.addEventListener('click', (e) => { if (e.target === jsonModal) jsonModal.classList.remove('visible'); });
+  closeOnBackdrop(statsModal, () => statsModal.classList.remove('visible'));
+  closeOnBackdrop(jsonModal, () => jsonModal.classList.remove('visible'));
 
   jsonCopyBtn.addEventListener('click', () => {
     const text = JSON.stringify(currentData, null, 2);
@@ -3700,7 +3711,7 @@
   if (ctaBtn && hsModal) {
     ctaBtn.addEventListener('click', () => hsModal.classList.add('visible'));
     hsClose.addEventListener('click', () => hsModal.classList.remove('visible'));
-    hsModal.addEventListener('click', (e) => { if (e.target === hsModal) hsModal.classList.remove('visible'); });
+    closeOnBackdrop(hsModal, () => hsModal.classList.remove('visible'));
   }
 
   function fallbackCopy(text, onSuccess) {
@@ -5640,9 +5651,7 @@
   if (btnEditConfigVelma) btnEditConfigVelma.addEventListener('click', openVelmaConfigModal);
   if (velmaConfigModalClose) velmaConfigModalClose.addEventListener('click', closeVelmaConfigModal);
   if (velmaConfigModal) {
-    velmaConfigModal.addEventListener('click', (e) => {
-      if (e.target === velmaConfigModal) closeVelmaConfigModal();
-    });
+    closeOnBackdrop(velmaConfigModal, closeVelmaConfigModal);
   }
 
   if (velmaCfgAddConvBtn) velmaCfgAddConvBtn.addEventListener('click', () => addCustomCfgEntry('conv'));

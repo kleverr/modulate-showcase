@@ -2,6 +2,17 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.6.3] - 2026-06-03
+
+### Fixed
+- **Config modal no longer closes when selecting text.** Dragging to highlight a
+  field value (e.g. the autofilled "New behavior" title) and releasing the mouse
+  over the dim backdrop synthesized a click whose target was the backdrop, which
+  tripped click-outside-to-close and shut the whole modal mid-edit. Backdrop close
+  now requires the press *and* release to both land on the backdrop (tracked via
+  `mousedown`), so selection drags that start inside an input no longer close it.
+  Applied to all backdrop-dismissable modals (Velma config, stats, JSON, access).
+
 ## [4.6.2] - 2026-06-03
 
 ### Added
