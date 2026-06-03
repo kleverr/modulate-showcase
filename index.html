@@ -2730,7 +2730,9 @@ body:has(#stt-debug-panel:not([hidden])) .page {
 
   <!-- Mode Toggle -->
   <div class="mode-toggle">
-    <input type="radio" name="mode" id="mode-transcription" value="transcription" checked>
+    <input type="radio" name="mode" id="mode-velma" value="velma" checked>
+    <label for="mode-velma">Velma</label>
+    <input type="radio" name="mode" id="mode-transcription" value="transcription">
     <label for="mode-transcription">Transcription</label>
     <input type="radio" name="mode" id="mode-deepfake" value="deepfake">
     <label for="mode-deepfake">Deepfake</label>
@@ -2743,8 +2745,6 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     <span class="mode-toggle-divider" aria-hidden="true"><span class="mode-pill">Preview</span></span>
     <input type="radio" name="mode" id="mode-aimusic" value="aimusic">
     <label for="mode-aimusic">AI Music Detection</label>
-    <input type="radio" name="mode" id="mode-velma" value="velma">
-    <label for="mode-velma">Velma</label>
   </div>
 
   <!-- Options row (reserved space in both modes for alignment) -->

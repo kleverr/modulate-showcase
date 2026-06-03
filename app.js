@@ -5818,8 +5818,9 @@
     if (path === '/music') return 'music';
     if (path === '/ai-music') return 'aimusic';
     if (path === '/language') return 'language';
-    if (path === '/velma') return 'velma';
-    return 'transcription';
+    if (path === '/transcription') return 'transcription';
+    // Velma is the released headline model and the default landing mode for '/'.
+    return 'velma';
   }
 
   // ── Scrollbar: show only while scrolling ──────────────────────────────

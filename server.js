@@ -69,6 +69,10 @@ const ALLOWED_ENDPOINTS = new Set([
 
 const ALLOWED_GET_PROXIES = new Set([
   '/api/velma-2-batch/list-presets',
+  // Streaming exposes an identical list-presets catalog (same BehaviorPresetListing
+  // schema). The app only calls the batch path today, but we wire both to stay 1:1
+  // with the published batch + streaming specs.
+  '/api/velma-2-streaming/list-presets',
 ]);
 
 // Per-endpoint upstream base URL overrides (defaults to API_BASE_URL).
@@ -83,15 +87,11 @@ const ENDPOINT_UPSTREAM_PATH = {
   // Language detection is released — it serves on the plain prod path, NOT under
   // /api/preview/..., so no remap here.
 
-  // ── VELMA-2 LAUNCH FLIP ──────────────────────────────────────────────────
-  // While velma-2 is in preview, batch + streaming + list-presets all live
-  // behind /api/preview/. The published spec documents the GA paths WITHOUT
-  // the /preview/ prefix (e.g. POST /api/velma-2-batch, WS /api/velma-2-streaming).
-  // At launch, DELETE these three remaps so we hit the GA gateway directly
-  // (same move already done for music-detection — see CHANGELOG).
-  '/api/velma-2-batch': '/api/preview/velma-2-batch',
-  '/api/velma-2-batch/list-presets': '/api/preview/velma-2-batch/list-presets',
-  '/api/velma-2-streaming': '/api/preview/velma-2-streaming',
+  // ── VELMA-2 LAUNCHED (GA) ────────────────────────────────────────────────
+  // velma-2 batch + streaming + list-presets are now released and serve on the
+  // plain prod GA paths (POST /api/velma-2-batch, WS /api/velma-2-streaming),
+  // so the /api/preview/ remaps were removed at launch — same move already done
+  // for music-detection. See CHANGELOG.
   // ─────────────────────────────────────────────────────────────────────────
 };
 
