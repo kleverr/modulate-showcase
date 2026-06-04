@@ -76,13 +76,46 @@
   // Pre-recorded AI Music Detection response so the demo page renders instantly.
   // Captured live from the preview endpoint on the Big Mac Papelão sample.
   const DEMO_AIMUSIC_AUDIO_URL = '/ai-music/big-mac-papelao.mp3';
+  // Pre-recorded AI Music Detection response (captured live from the preview
+  // batch endpoint for big-mac-papelao.mp3). New schema: clip-level content +
+  // dual AI scores/confidence, plus a per-4s-window breakdown.
   const DEMO_AIMUSIC_DATA = {
     filename: 'big-mac-papelao.mp3',
     duration_s: 89.28,
     primary_verdict: 'ai-vocal-music',
-    vocal_ai_pct: 55.8,
-    instrumental_ai_prob: null,
-    latency_ms: 523.1,
+    vocal_percentage: 91.45,
+    vocal_ai_percentage: 62.72,
+    vocal_ai_confidence: 0.9701,
+    instrumental_percentage: 86.74,
+    instrumental_ai_percentage: 1.1,
+    instrumental_ai_confidence: 0.978,
+    silence_percentage: 3.99,
+    latency_ms: 1526.3,
+    windows: [
+      { start_time_ms: 0,     end_time_ms: 4000,  vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9743, instrumental_percentage: 30,  instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 4000,  end_time_ms: 8000,  vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.977,  instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 8000,  end_time_ms: 12000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9734, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 12000, end_time_ms: 16000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.974,  instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 16000, end_time_ms: 20000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9659, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 20000, end_time_ms: 24000, vocal_percentage: 100, vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 24000, end_time_ms: 28000, vocal_percentage: 100, vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 28000, end_time_ms: 32000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9785, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 32000, end_time_ms: 36000, vocal_percentage: 60,  vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 36000, end_time_ms: 40000, vocal_percentage: 75,  vocal_ai_percentage: 100, vocal_ai_confidence: 0.9768, instrumental_percentage: 70,  instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 40000, end_time_ms: 44000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.974,  instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 44000, end_time_ms: 48000, vocal_percentage: 100, vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 48000, end_time_ms: 52000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9755, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 52000, end_time_ms: 56000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9682, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 56000, end_time_ms: 60000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9348, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 60000, end_time_ms: 64000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9706, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 64000, end_time_ms: 68000, vocal_percentage: 100, vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 68000, end_time_ms: 72000, vocal_percentage: 100, vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 72000, end_time_ms: 76000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9663, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 76000, end_time_ms: 80000, vocal_percentage: 100, vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
+      { start_time_ms: 80000, end_time_ms: 84000, vocal_percentage: 55,  vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 95,  instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 5 },
+      { start_time_ms: 84000, end_time_ms: 88000, vocal_percentage: 80,  vocal_ai_percentage: 100, vocal_ai_confidence: 0.9718, instrumental_percentage: 0,   instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 20 },
+      { start_time_ms: 88000, end_time_ms: 89280, vocal_percentage: 33.33, vocal_ai_percentage: 0, vocal_ai_confidence: 0,      instrumental_percentage: 0,   instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 66.67 },
+    ],
   };
 
   // Pre-recorded Language Detection response. Same audio file as transcription
@@ -235,6 +268,11 @@
   const aimusicPathInstrValue  = document.getElementById('aimusic-path-instr-value');
   const aimusicPathNote        = document.getElementById('aimusic-path-note');
   const aimusicHeroMeta        = document.getElementById('aimusic-hero-meta');
+  const aimusicTimelineWrap    = document.getElementById('aimusic-timeline-wrap');
+  const aimusicTimeline        = document.getElementById('aimusic-timeline');
+  const aimusicAxis            = document.getElementById('aimusic-axis');
+  const aimusicTimelineStatus  = document.getElementById('aimusic-timeline-status');
+  const aimusicTbody           = document.getElementById('aimusic-tbody');
 
   // Language Detection elements
   const languageContent      = document.getElementById('language-content');
@@ -300,6 +338,7 @@
   let lastLanguageMeta = null;
   let lastLanguageFilename = null;
   let musicPlaybackTracker = null;
+  let aimusicPlaybackTracker = null;
   let musicView = 'heatmap'; // 'heatmap' | 'detailed'
   let musicCells = [];       // cells currently rendered (for playback tracking)
   let musicResizeObserver = null;
@@ -394,8 +433,10 @@
     if (streamDemoAction) streamDemoAction.style.display = (isTranscription || isMusic || isVelma) ? '' : 'none';
     if (streamFileAction) streamFileAction.style.display = (isTranscription || isMusic || isVelma) ? '' : 'none';
     if (recordAction) {
-      // Redaction + language + ai music are batch-only — hide live record.
-      // Velma supports mic streaming, so it keeps the record button.
+      // Redaction + language + AI Music are batch-only in the UI — hide live
+      // record. (AI Music streaming is built but hidden pending the upstream
+      // streaming endpoint; flip these back on to re-enable.) Velma + Music
+      // support mic streaming, so they keep the record button.
       recordAction.style.display = (isRedaction || isLanguage || isAimusic) ? 'none' : '';
       recordAction.classList.toggle('disabled-soon', isRedaction);
     }
@@ -407,6 +448,7 @@
     if (redactionPlaybackTracker) { cancelAnimationFrame(redactionPlaybackTracker); redactionPlaybackTracker = null; }
     if (redactionTranscriptTracker) { cancelAnimationFrame(redactionTranscriptTracker); redactionTranscriptTracker = null; }
     if (musicPlaybackTracker) { cancelAnimationFrame(musicPlaybackTracker); musicPlaybackTracker = null; }
+    if (aimusicPlaybackTracker) { cancelAnimationFrame(aimusicPlaybackTracker); aimusicPlaybackTracker = null; }
 
     if (recordAction) {
       recordAction.classList.toggle('disabled-soon', isRedaction);
@@ -694,6 +736,8 @@
   let recordingWs = null;
   let liveFrames = [];
   let liveMusicFrames = [];
+  let liveAimusicWindows = [];   // accumulated `window` messages during AI-music streaming
+  let aimusicDoneData = null;    // the streaming `done` clip-level summary, once received
   let recordingStartTime = 0;
   let mediaRecorder = null;
   let recordedChunks = [];
@@ -707,6 +751,7 @@
       } else {
         if (currentMode === 'deepfake') startDeepfakeRecording();
         else if (currentMode === 'music') startMusicRecording();
+        else if (currentMode === 'aimusic') startAimusicRecording();
         else if (currentMode === 'velma') startVelmaMicStream();
         else startTranscriptionRecording();
       }
@@ -718,6 +763,7 @@
       if (isRecording) { stopRecording(); return; }
       if (currentMode === 'velma') startVelmaDemoStream();
       else if (currentMode === 'music') startMusicDemoStream();
+      else if (currentMode === 'aimusic') startAimusicDemoStream();
       else startTranscriptionDemoStream();
     });
   }
@@ -733,6 +779,7 @@
       if (streamFileInput.files.length > 0) {
         if (currentMode === 'velma') startVelmaFileStream(streamFileInput.files[0]);
         else if (currentMode === 'music') startMusicFileStream(streamFileInput.files[0]);
+        else if (currentMode === 'aimusic') startAimusicFileStream(streamFileInput.files[0]);
         else startTranscriptionFileStream(streamFileInput.files[0]);
         streamFileInput.value = '';
       }
@@ -1698,48 +1745,481 @@
     aimusicHeroHeadline.textContent = headlines[verdict] || verdict;
     aimusicHeroSub.textContent = subs[verdict] || '';
 
-    // Two-path flow diagram. The vocal path always runs; the instrumental
-    // path is gated by a low-speech check and is skipped (null) when the
-    // SVD path already produced a verdict.
-    const vocalPct = typeof data.vocal_ai_pct === 'number' ? data.vocal_ai_pct : 0;
-    const instProb = typeof data.instrumental_ai_prob === 'number' ? data.instrumental_ai_prob : null;
-    const VOCAL_THRESHOLD = 30;     // server-side ai-vocal-music threshold
-    const INSTR_THRESHOLD = 0.97;   // server-side ai-instrumental threshold
-
-    const vocalFired = vocalPct >= VOCAL_THRESHOLD;
-    const instrSkipped = instProb == null;
-    const instrFired = !instrSkipped && instProb >= INSTR_THRESHOLD;
+    // Two-path summary. The server now derives `primary_verdict`; we surface
+    // each path's AI score + confidence and highlight whichever drove the
+    // verdict. Both paths are always reported in the new schema.
+    const n = (x) => (typeof x === 'number' && isFinite(x)) ? x : 0;
+    const vAiPct = n(data.vocal_ai_percentage);
+    const vConf  = n(data.vocal_ai_confidence);
+    const iAiPct = n(data.instrumental_ai_percentage);
+    const iConf  = n(data.instrumental_ai_confidence);
+    const vocalFired = verdict === 'ai-vocal-music';
+    const instrFired = verdict === 'ai-instrumental';
 
     aimusicPathVocal.className = 'aimusic-path' + (vocalFired ? ' fired-ai' : '');
     aimusicPathVocalIcon.textContent = vocalFired ? '✓' : '○';
-    aimusicPathVocalValue.textContent = vocalPct.toFixed(1) + '% AI';
+    aimusicPathVocalValue.textContent = vAiPct.toFixed(1) + '% AI' + (vConf > 0 ? ' · conf ' + vConf.toFixed(2) : '');
 
-    if (instrSkipped) {
-      aimusicPathInstr.className = 'aimusic-path skipped';
-      aimusicPathInstrIcon.textContent = '—';
-      aimusicPathInstrValue.textContent = 'not evaluated';
-    } else {
-      aimusicPathInstr.className = 'aimusic-path' + (instrFired ? ' fired-ai' : '');
-      aimusicPathInstrIcon.textContent = instrFired ? '✓' : '○';
-      aimusicPathInstrValue.textContent = (instProb * 100).toFixed(1) + '% AI';
-    }
+    aimusicPathInstr.className = 'aimusic-path' + (instrFired ? ' fired-ai' : '');
+    aimusicPathInstrIcon.textContent = instrFired ? '✓' : '○';
+    aimusicPathInstrValue.textContent = iAiPct.toFixed(1) + '% AI' + (iConf > 0 ? ' · conf ' + iConf.toFixed(2) : '');
 
-    // No path-level note — the hero sub-headline already says why.
-    aimusicPathNote.textContent = '';
+    // Content breakdown — vocals can overlap instrumental, so these need not sum to 100.
+    aimusicPathNote.textContent =
+      'Content — vocals ' + n(data.vocal_percentage).toFixed(0) + '%' +
+      ' · instrumental ' + n(data.instrumental_percentage).toFixed(0) + '%' +
+      ' · silence ' + n(data.silence_percentage).toFixed(0) + '%';
 
     aimusicPaths.style.display = '';
 
+    const durationS = (typeof data.duration_s === 'number') ? data.duration_s
+      : (typeof data.duration_ms === 'number') ? data.duration_ms / 1000 : 0;
     const parts = [];
-    if (typeof data.duration_s === 'number') parts.push(`Audio: ${data.duration_s.toFixed(1)} s`);
+    if (durationS) parts.push('Audio: ' + durationS.toFixed(1) + ' s');
     const procMs = currentMeta && currentMeta.processingMs;
     if (procMs) {
-      parts.push(`Processed in ${(procMs / 1000).toFixed(2)} s`);
-      if (typeof data.duration_s === 'number' && data.duration_s > 0) {
-        const factor = (data.duration_s * 1000) / procMs;
-        if (factor > 0 && isFinite(factor)) parts.push(`${factor.toFixed(1)}× real-time`);
+      parts.push('Processed in ' + (procMs / 1000).toFixed(2) + ' s');
+      if (durationS > 0) {
+        const factor = (durationS * 1000) / procMs;
+        if (factor > 0 && isFinite(factor)) parts.push(factor.toFixed(1) + '× real-time');
       }
     }
     aimusicHeroMeta.textContent = parts.join(' · ');
+
+    // Per-window timeline. Batch ships windows[]; streaming's final render
+    // passes the accumulated windows through data.windows.
+    const windows = (Array.isArray(data.windows) && data.windows.length) ? data.windows : liveAimusicWindows;
+    renderAimusicTimeline(windows);
+    if (aimusicTimelineStatus) {
+      const wc = (typeof data.window_count === 'number') ? data.window_count : (windows ? windows.length : 0);
+      aimusicTimelineStatus.textContent = wc ? (wc + ' window' + (wc !== 1 ? 's' : '')) : '';
+    }
+    setupAimusicPlaybackTracking(windows);
+  }
+
+  // ── AI Music per-window timeline + table (shared by batch + streaming) ────
+  let aimusicWindows = [];   // windows backing the current timeline/table (for seek + playback)
+
+  function aimusicWinDurMs(w) {
+    return Math.max(0, (w.end_time_ms || 0) - (w.start_time_ms || 0));
+  }
+
+  // The headline question is "AI or not?", so the timeline + pills collapse to
+  // three states: `ai` (synthetic vocals OR AI instrumental), `human` (real
+  // content, not flagged), `silence`. The vocal/instrumental nuance lives in
+  // the table's Type column instead.
+  function aimusicVerdict(w) {
+    const vC = w.vocal_percentage || 0, iC = w.instrumental_percentage || 0, sil = w.silence_percentage || 0;
+    if (sil >= 60 && vC < 50 && iC < 50) return 'silence';
+    const iAi = w.instrumental_ai_percentage;   // batch: 0-1 probability; absent on streaming windows
+    if ((w.vocal_ai_percentage || 0) >= 50 || (typeof iAi === 'number' && iAi >= 0.5)) return 'ai';
+    return 'human';
+  }
+
+  // Which detection path the window was routed to, from its content mix.
+  function aimusicType(w) {
+    const vC = w.vocal_percentage || 0, iC = w.instrumental_percentage || 0, sil = w.silence_percentage || 0;
+    if (sil >= 60 && vC < 50 && iC < 50) return 'silence';
+    if (vC >= 50) return 'vocal';
+    if (iC >= 50) return 'instrumental';
+    return 'silence';
+  }
+
+  // The window's AI-detection confidence (only meaningful when verdict is `ai`).
+  function aimusicWindowConfidence(w) {
+    const t = aimusicType(w);
+    if (t === 'vocal') return w.vocal_ai_confidence || 0;
+    if (t === 'instrumental') return w.instrumental_ai_confidence || 0;
+    return 0;
+  }
+
+  function aimusicClock(ms) {
+    const total = Math.round((ms || 0) / 1000);
+    const m = Math.floor(total / 60);
+    return m + ':' + String(total % 60).padStart(2, '0');
+  }
+
+  const AIMUSIC_VERDICT_TEXT = { ai: 'AI', human: 'Not AI', silence: 'Silence' };
+  const AIMUSIC_TYPE_TEXT    = { vocal: 'Vocal', instrumental: 'Instrumental', silence: 'Silence' };
+  // Map our 3 states onto the existing deepfake pill/bar colour classes.
+  const AIMUSIC_PILL_CLASS   = { ai: 'synthetic', human: 'authentic', silence: 'no-content' };
+
+  // HTML for the shared floating hover tooltip (#histo-tooltip), styled like the
+  // Deepfake histogram: "time · Type · **Verdict** · conf%", verdict coloured.
+  function aimusicTooltipHtml(w) {
+    const v = aimusicVerdict(w), t = aimusicType(w);
+    const color = v === 'ai' ? 'rgb(255,53,84)' : v === 'human' ? 'rgb(21,207,135)' : 'rgb(170,170,180)';
+    const time = aimusicClock(w.start_time_ms) + ' – ' + aimusicClock(w.end_time_ms);
+    if (t === 'silence') {
+      return time + ' <span style="color:' + color + '">· <span style="font-weight:700">Silence</span></span>';
+    }
+    const c = aimusicWindowConfidence(w);
+    const confStr = (v === 'ai' && c > 0) ? ' · ' + (c * 100).toFixed(0) + '%' : '';
+    return time +
+      ' <span style="opacity:0.7">· ' + AIMUSIC_TYPE_TEXT[t] + '</span>' +
+      ' <span style="color:' + color + '">· <span style="font-weight:700">' + AIMUSIC_VERDICT_TEXT[v] + '</span>' + confStr + '</span>';
+  }
+
+  function aimusicShowTooltip(el, html) {
+    const rect = el.getBoundingClientRect();
+    histoTooltip.innerHTML = html;
+    histoTooltip.style.display = 'block';
+    histoTooltip.style.top = (rect.top - 6) + 'px';
+    histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
+    histoTooltip.style.transform = 'translate(-50%, -100%)';
+  }
+
+  function renderAimusicTimeline(windows) {
+    if (!aimusicTimeline) return;
+    windows = windows || [];
+    aimusicWindows = windows;
+    aimusicTimeline.innerHTML = '';
+    if (aimusicTbody) aimusicTbody.innerHTML = '';
+    if (!windows.length) {
+      if (aimusicTimelineWrap) aimusicTimelineWrap.style.display = 'none';
+      return;
+    }
+    if (aimusicTimelineWrap) aimusicTimelineWrap.style.display = '';
+
+    windows.forEach((w, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'aimusic-cell ' + aimusicVerdict(w);
+      cell.style.flexGrow = String(Math.max(1, aimusicWinDurMs(w)));
+      cell.style.flexBasis = '0';
+      cell.dataset.index = i;
+      const tip = aimusicTooltipHtml(w);
+      cell.addEventListener('mouseenter', () => aimusicShowTooltip(cell, tip));
+      cell.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
+      cell.addEventListener('click', () => seekAimusic(w.start_time_ms, i));
+      aimusicTimeline.appendChild(cell);
+    });
+    if (aimusicAxis) {
+      aimusicAxis.innerHTML =
+        '<span>' + aimusicClock(windows[0].start_time_ms || 0) + '</span>' +
+        '<span>' + aimusicClock(windows[windows.length - 1].end_time_ms || 0) + '</span>';
+    }
+    renderAimusicTable(windows);
+  }
+
+  // Per-window table, styled like the Deepfake detection table.
+  function renderAimusicTable(windows) {
+    if (!aimusicTbody) return;
+    aimusicTbody.innerHTML = '';
+    windows.forEach((w, i) => {
+      const v = aimusicVerdict(w), t = aimusicType(w);
+      const tr = document.createElement('tr');
+      tr.dataset.index = i;
+
+      const tdTime = document.createElement('td');
+      tdTime.textContent = aimusicClock(w.start_time_ms) + ' – ' + aimusicClock(w.end_time_ms);
+
+      const tdType = document.createElement('td');
+      tdType.textContent = AIMUSIC_TYPE_TEXT[t];
+      tdType.style.color = 'var(--text-caption)';
+
+      const tdVerdict = document.createElement('td');
+      const pill = document.createElement('span');
+      pill.className = 'verdict-pill ' + AIMUSIC_PILL_CLASS[v];
+      pill.textContent = AIMUSIC_VERDICT_TEXT[v];
+      tdVerdict.appendChild(pill);
+
+      const tdConf = document.createElement('td');
+      const c = aimusicWindowConfidence(w);
+      if (v === 'ai' && c > 0) {
+        const wrap = document.createElement('div');
+        wrap.className = 'confidence-cell';
+        const track = document.createElement('div');
+        track.className = 'confidence-bar-track';
+        const fill = document.createElement('div');
+        fill.className = 'confidence-bar-fill synthetic';
+        fill.style.width = (c * 100) + '%';
+        track.appendChild(fill);
+        const txt = document.createElement('span');
+        txt.textContent = (c * 100).toFixed(1) + '%';
+        wrap.appendChild(track);
+        wrap.appendChild(txt);
+        tdConf.appendChild(wrap);
+      } else {
+        tdConf.textContent = '—';
+        tdConf.style.color = 'var(--text-caption)';
+      }
+
+      tr.appendChild(tdTime);
+      tr.appendChild(tdType);
+      tr.appendChild(tdVerdict);
+      tr.appendChild(tdConf);
+      tr.addEventListener('click', () => seekAimusic(w.start_time_ms, i));
+      aimusicTbody.appendChild(tr);
+    });
+  }
+
+  function aimusicSetActive(index) {
+    if (aimusicTimeline) aimusicTimeline.querySelectorAll('.aimusic-cell').forEach((c, i) => c.classList.toggle('active', i === index));
+    if (aimusicTbody) aimusicTbody.querySelectorAll('tr').forEach((r, i) => r.classList.toggle('active', i === index));
+  }
+
+  function seekAimusic(startMs, index) {
+    if (resultsAudio) {
+      try { resultsAudio.currentTime = (startMs || 0) / 1000; } catch (e) {}
+      resultsAudio.play().catch(() => {});
+    }
+    aimusicSetActive(index);
+  }
+
+  function setupAimusicPlaybackTracking(windows) {
+    if (aimusicPlaybackTracker) cancelAnimationFrame(aimusicPlaybackTracker);
+    if (!windows || !windows.length || !resultsAudio) return;
+    function tick() {
+      if (currentMode !== 'aimusic') { aimusicPlaybackTracker = null; return; }
+      if (resultsAudio.paused) { aimusicPlaybackTracker = requestAnimationFrame(tick); return; }
+      const ms = resultsAudio.currentTime * 1000;
+      let active = -1;
+      for (let i = 0; i < windows.length; i++) {
+        if (ms >= windows[i].start_time_ms && ms < windows[i].end_time_ms) { active = i; break; }
+      }
+      aimusicSetActive(active);
+      aimusicPlaybackTracker = requestAnimationFrame(tick);
+    }
+    aimusicPlaybackTracker = requestAnimationFrame(tick);
+  }
+
+  // ── AI Music Detection: streaming (mirrors the Music Detection demo) ──────
+  // Reset the hero to a "listening" state and clear the timeline at stream start.
+  function resetAimusicLiveUI() {
+    liveAimusicWindows = [];
+    aimusicDoneData = null;
+    if (!aimusicHero) return;
+    aimusicHero.className = 'aimusic-hero pending';
+    if (aimusicHeroBadge) aimusicHeroBadge.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Analyzing…</span>';
+    if (aimusicHeroHeadline) aimusicHeroHeadline.textContent = 'Listening';
+    if (aimusicHeroSub) aimusicHeroSub.textContent = 'Streaming audio — per-window verdicts appear below as they arrive.';
+    if (aimusicPaths) aimusicPaths.style.display = 'none';
+    if (aimusicHeroMeta) aimusicHeroMeta.textContent = '';
+    renderAimusicTimeline([]);
+    if (aimusicTimelineWrap) aimusicTimelineWrap.style.display = '';
+    if (aimusicTimelineStatus) aimusicTimelineStatus.textContent = 'Listening…';
+  }
+
+  function renderAimusicLive() {
+    renderAimusicTimeline(liveAimusicWindows);
+    if (aimusicTimelineWrap) aimusicTimelineWrap.style.display = '';
+    if (aimusicTimelineStatus) {
+      const aiN = liveAimusicWindows.filter(w => aimusicVerdict(w) === 'ai').length;
+      aimusicTimelineStatus.textContent =
+        liveAimusicWindows.length + ' window' + (liveAimusicWindows.length !== 1 ? 's' : '') +
+        ' · ' + aiN + ' AI';
+    }
+  }
+
+  function handleAimusicStreamMessage(msg) {
+    if (msg?.type === 'window' && msg.window) {
+      liveAimusicWindows.push(msg.window);
+      renderAimusicLive();
+    } else if (msg?.type === 'done') {
+      aimusicDoneData = msg;
+      stopRecording();   // routes to the aimusic finalize branch below
+    } else if (msg?.type === 'error') {
+      showError('Streaming error: ' + (msg.error || 'Unknown'));
+      if (liveAimusicWindows.length > 0) stopRecording();
+      else { cleanupRecording(); demoCleanup(); }
+    }
+  }
+
+  function startAimusicRecording() {
+    liveAimusicWindows = [];
+    aimusicDoneData = null;
+    startRecordingCommon(
+      '/api/velma-2-ai-music-detection-streaming?audio_format=s16le&sample_rate=16000&num_channels=1',
+      handleAimusicStreamMessage,
+      () => {
+        resultsFilename.textContent = 'Live Recording';
+        resultsAudio.removeAttribute('src');
+        resultsAudio.load();
+        if (audioObjectUrl) { URL.revokeObjectURL(audioObjectUrl); audioObjectUrl = null; }
+        resetAimusicLiveUI();
+        window.scrollTo(0, 0);
+      }
+    );
+  }
+
+  function startAimusicDemoStream() {
+    return startAimusicStreamFromUrl(DEMO_AIMUSIC_AUDIO_URL, 'Demo stream', false);
+  }
+
+  async function startAimusicFileStream(file) {
+    const url = URL.createObjectURL(file);
+    await startAimusicStreamFromUrl(url, file.name, true);
+  }
+
+  async function startAimusicStreamFromUrl(url, filename, isUserFile) {
+    if (isRecording) return;
+    if (currentMode !== 'aimusic') return;
+
+    liveAimusicWindows = [];
+    aimusicDoneData = null;
+
+    resultsFilename.textContent = filename;
+    if (audioObjectUrl) { URL.revokeObjectURL(audioObjectUrl); audioObjectUrl = null; }
+    if (isUserFile) audioObjectUrl = url;
+    resultsAudio.src = url;
+    lastAimusicAudioUrl = url;
+    resetAimusicLiveUI();
+    window.scrollTo(0, 0);
+
+    // Fetch + decode → 16 kHz mono PCM s16le (same pipeline as the music demo)
+    let int16;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const arr = await res.arrayBuffer();
+      const actx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+      const audio = await actx.decodeAudioData(arr);
+      const ch = audio.getChannelData(0);
+      int16 = new Int16Array(ch.length);
+      for (let i = 0; i < ch.length; i++) {
+        int16[i] = Math.max(-32768, Math.min(32767, Math.round(ch[i] * 32767)));
+      }
+      actx.close().catch(() => {});
+    } catch (err) {
+      showError('Failed to load audio: ' + (err && err.message ? err.message : err));
+      return;
+    }
+
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = proto + '//' + location.host + '/api/velma-2-ai-music-detection-streaming?audio_format=s16le&sample_rate=16000&num_channels=1';
+    recordingWs = new WebSocket(wsUrl);
+    recordingWs.binaryType = 'arraybuffer';
+    endFrameSent = false;
+    isDemoStreaming = true;
+
+    recordingWs.onopen = () => {
+      isRecording = true;
+      recordingStartTime = Date.now();
+      updateRecordButton();
+
+      try { resultsAudio.currentTime = 0; } catch {}
+      const playPromise = resultsAudio.play();
+      if (playPromise && playPromise.catch) playPromise.catch(() => { /* autoplay blocked — silent */ });
+
+      // Pace at realtime: 4096 samples = 256 ms at 16 kHz
+      const CHUNK = 4096;
+      let offset = 0;
+      function sendNext() {
+        if (!isRecording || !recordingWs || recordingWs.readyState !== WebSocket.OPEN) return;
+        if (offset >= int16.length) {
+          try { recordingWs.send(''); } catch (e) {}
+          endFrameSent = true;
+          return;
+        }
+        const end = Math.min(offset + CHUNK, int16.length);
+        const slice = int16.subarray(offset, end);
+        const ab = new ArrayBuffer(slice.byteLength);
+        new Int16Array(ab).set(slice);
+        recordingWs.send(ab);
+        offset = end;
+        demoChunkTimer = setTimeout(sendNext, 256);
+      }
+      sendNext();
+    };
+
+    recordingWs.addEventListener('message', async (event) => {
+      let text = '';
+      try {
+        if (typeof event.data === 'string') text = event.data;
+        else if (event.data instanceof Blob) text = await event.data.text();
+        else if (event.data instanceof ArrayBuffer) text = new TextDecoder().decode(event.data);
+      } catch { return; }
+      if (!text) return;
+      let msg; try { msg = JSON.parse(text); } catch { return; }
+      handleAimusicStreamMessage(msg);
+    });
+
+    recordingWs.onerror = () => { demoCleanup(); };
+
+    recordingWs.onclose = () => {
+      const wasRecording = isRecording;
+      demoCleanup();
+      if (wasRecording && currentMode === 'aimusic' && (aimusicDoneData || liveAimusicWindows.length > 0)) {
+        // Finalize if the stream produced data and stopRecording's aimusic
+        // branch hasn't already done so.
+        finalizeAimusicStream(filename, url);
+      } else if (wasRecording && currentMode === 'aimusic') {
+        // Connected but closed before any window/done arrived — don't leave the
+        // hero stuck on "Listening…". Surface a notice and restore the last
+        // (batch) result so the page stays meaningful.
+        showError('AI Music streaming returned no results before the connection closed. Streaming is in preview — try the batch upload, which is fully live.');
+        renderAimusicResult(lastAimusicData || DEMO_AIMUSIC_DATA);
+      }
+    };
+  }
+
+  // Build a clip-level result from the streamed windows + `done` summary, then
+  // render the final verdict. Idempotent — may be called from the `done`
+  // handler (via stopRecording) and again from onclose.
+  function finalizeAimusicStream(filename, url) {
+    const windows = liveAimusicWindows.slice();
+    const done = aimusicDoneData;
+    const durationMs = done && typeof done.duration_ms === 'number'
+      ? done.duration_ms
+      : (windows.length ? windows[windows.length - 1].end_time_ms : (Date.now() - recordingStartTime));
+    const fname = filename || resultsFilename.textContent || 'Live stream';
+
+    const data = done ? {
+      filename: fname,
+      duration_s: durationMs / 1000,
+      primary_verdict: done.primary_verdict,
+      vocal_percentage: done.vocal_percentage,
+      vocal_ai_percentage: done.vocal_ai_percentage,
+      vocal_ai_confidence: done.vocal_ai_confidence,
+      instrumental_percentage: done.instrumental_percentage,
+      instrumental_ai_percentage: done.instrumental_ai_percentage,
+      instrumental_ai_confidence: done.instrumental_ai_confidence,
+      silence_percentage: done.silence_percentage,
+      window_count: typeof done.window_count === 'number' ? done.window_count : windows.length,
+      windows,
+    } : computeAimusicSummaryFromWindows(windows, fname, durationMs);
+
+    currentData = data;
+    currentMeta = {
+      fileSize: 0, fileType: 'PCM 16kHz', httpStatus: 101, httpStatusText: 'Switching Protocols',
+      responseSize: JSON.stringify(data).length, processingMs: Date.now() - recordingStartTime,
+    };
+    lastAimusicData = data;
+    if (url) lastAimusicAudioUrl = url;
+    lastAimusicMeta = { ...currentMeta };
+    lastAimusicFilename = fname;
+    renderAimusicResult(data);
+  }
+
+  // Fallback clip-level summary when the stream is stopped before the `done`
+  // message arrives (so instrumental AI — which runs only at clip end — is 0).
+  function computeAimusicSummaryFromWindows(windows, filename, durationMs) {
+    const cnt = windows.length || 1;
+    const avg = (key) => windows.reduce((a, w) => a + (w[key] || 0), 0) / cnt;
+    let aiMs = 0, totMs = 0;
+    for (const w of windows) {
+      const d = aimusicWinDurMs(w);
+      totMs += d;
+      if ((w.vocal_ai_percentage || 0) >= 50) aiMs += d;
+    }
+    const vAiPct = totMs ? (aiMs / totMs) * 100 : 0;
+    const vConfWins = windows.filter(w => (w.vocal_percentage || 0) >= 50 && (w.vocal_ai_confidence || 0) > 0);
+    const vConf = vConfWins.length ? vConfWins.reduce((a, w) => a + w.vocal_ai_confidence, 0) / vConfWins.length : 0;
+    return {
+      filename: filename || 'Live stream',
+      duration_s: durationMs / 1000,
+      primary_verdict: vAiPct >= 30 ? 'ai-vocal-music' : 'not-ai-music',
+      vocal_percentage: avg('vocal_percentage'),
+      vocal_ai_percentage: vAiPct,
+      vocal_ai_confidence: vConf,
+      instrumental_percentage: avg('instrumental_percentage'),
+      instrumental_ai_percentage: 0,
+      instrumental_ai_confidence: 0,
+      silence_percentage: avg('silence_percentage'),
+      window_count: windows.length,
+      windows: windows.slice(),
+    };
   }
 
   function resetMusicLiveUI() {
@@ -3549,6 +4029,7 @@
           const hasData =
             currentMode === 'deepfake' ? liveFrames.length > 0
             : currentMode === 'music'  ? liveMusicFrames.length > 0
+            : currentMode === 'aimusic' ? (aimusicDoneData || liveAimusicWindows.length > 0)
             : sttUtterances.length > 0;
           if (hasData) {
             stopRecording();
@@ -3629,6 +4110,8 @@
       renderMusicHistogram(liveMusicFrames);
       renderMusicTable(liveMusicFrames, musicView);
       setupMusicPlaybackTracking(liveMusicFrames);
+    } else if (currentMode === 'aimusic' && (aimusicDoneData || liveAimusicWindows.length > 0)) {
+      finalizeAimusicStream();
     } else if (currentMode === 'transcription') {
       const durationMs = Date.now() - recordingStartTime;
       currentMeta = {
@@ -3793,20 +4276,31 @@
       const serverLatency = currentData.latency_ms != null ? formatDuration(currentData.latency_ms) : 'N/A';
       const verdictMap = { 'ai-vocal-music': 'AI Vocal Music', 'ai-instrumental': 'AI Instrumental', 'not-ai-music': 'Not AI Music' };
       const verdictLabel = verdictMap[currentData.primary_verdict] || currentData.primary_verdict || 'Unknown';
-      const vocalPct = currentData.vocal_ai_pct != null ? currentData.vocal_ai_pct.toFixed(1) + '%' : '0.0%';
-      const instProb = currentData.instrumental_ai_prob;
-      const instProbStr = instProb == null ? '—' : (instProb * 100).toFixed(1) + '%';
+      const isStream = m.httpStatus === 101;
+      const num = (x) => (typeof x === 'number' && isFinite(x)) ? x : null;
+      const pct = (x) => num(x) != null ? num(x).toFixed(1) + '%' : '—';
+      const conf = (x) => (num(x) != null && num(x) > 0) ? num(x).toFixed(4) : '—';
+      const windowCount = (typeof currentData.window_count === 'number') ? currentData.window_count
+        : (Array.isArray(currentData.windows) ? currentData.windows.length : null);
 
       groups = [
         { group: 'Detection', rows: [
-          ['Model', 'velma-2-ai-music-detection-batch (preview)'],
+          ['Model', isStream ? 'velma-2-ai-music-detection-streaming (preview)' : 'velma-2-ai-music-detection-batch (preview)'],
           ['Primary verdict', verdictLabel],
-          ['Vocal AI coverage', vocalPct],
-          ['Instrumental AI probability', instProbStr],
+          ['Vocal AI coverage', pct(currentData.vocal_ai_percentage)],
+          ['Vocal AI confidence', conf(currentData.vocal_ai_confidence)],
+          ['Instrumental AI score', pct(currentData.instrumental_ai_percentage)],
+          ['Instrumental AI confidence', conf(currentData.instrumental_ai_confidence)],
+        ]},
+        { group: 'Content', rows: [
+          ['Vocal content', pct(currentData.vocal_percentage)],
+          ['Instrumental content', pct(currentData.instrumental_percentage)],
+          ['Silence', pct(currentData.silence_percentage)],
+          ['Windows analysed', windowCount != null ? String(windowCount) : '—'],
         ]},
         { group: 'Audio', rows: [
           ['File Name', currentData.filename || 'N/A'],
-          ['File Size', m.fileSize ? formatBytes(m.fileSize) : 'N/A'],
+          ['File Size', m.fileSize ? formatBytes(m.fileSize) : (isStream ? '— (live stream)' : 'N/A')],
           ['File Type', fileType],
           ['Audio Duration', formatDuration(durationMs)],
         ]},
@@ -3817,7 +4311,7 @@
         ]},
         { group: 'Request', rows: [
           ['HTTP', httpStr],
-          ['Endpoint', '/api/velma-2-ai-music-detection-batch'],
+          ['Endpoint', isStream ? '/api/velma-2-ai-music-detection-streaming' : '/api/velma-2-ai-music-detection-batch'],
           ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
         ]},
       ];
@@ -5907,6 +6401,8 @@
     if (musicSidebar) musicSidebar.style.display = 'none';
     if (aimusicContent) aimusicContent.classList.add('visible');
     if (aimusicSidebar) aimusicSidebar.style.display = '';
+    // AI Music streaming is built but hidden pending the upstream endpoint —
+    // batch-only buttons for now.
     if (recordAction) recordAction.style.display = 'none';
     if (streamDemoAction) streamDemoAction.style.display = 'none';
     if (streamFileAction) streamFileAction.style.display = 'none';

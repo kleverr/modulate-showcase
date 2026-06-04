@@ -1168,6 +1168,82 @@ body {
   padding: 0 var(--space-s);
 }
 
+/* ── Per-window timeline (shared by batch + streaming) ───────────────────── */
+.aimusic-timeline-wrap {
+  width: 100%;
+  max-width: 56rem;
+  margin: var(--space-m) auto 0;
+}
+.aimusic-timeline-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.aimusic-timeline-title {
+  font-size: var(--font-s);
+  font-weight: 700;
+  color: var(--text-color);
+  letter-spacing: -0.01em;
+}
+.aimusic-timeline-status {
+  font-size: var(--font-xs);
+  color: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+.aimusic-timeline {
+  display: flex;
+  width: 100%;
+  height: 2.5rem;
+  gap: 1px;
+  border-radius: var(--radius-s);
+  overflow: hidden;
+  background: var(--ui-border);
+}
+.aimusic-cell {
+  min-width: 2px;
+  transition: filter 0.12s;
+  cursor: pointer;
+}
+.aimusic-cell:hover { filter: brightness(1.12) saturate(1.1); }
+.aimusic-cell.active { box-shadow: inset 0 0 0 2px var(--text-color); }
+.aimusic-cell.ai      { background: var(--ui-error); }
+.aimusic-cell.human   { background: var(--ui-success); }
+.aimusic-cell.silence { background: color-mix(in srgb, var(--text-caption) 22%, transparent); }
+.aimusic-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  font-size: var(--font-xs);
+  color: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+.aimusic-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  justify-content: center;
+  margin-top: 0.8rem;
+}
+.aimusic-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--font-xs);
+  color: var(--text-caption);
+}
+.aimusic-sw {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 2px;
+  display: inline-block;
+}
+.aimusic-sw.ai      { background: var(--ui-error); }
+.aimusic-sw.human   { background: var(--ui-success); }
+.aimusic-sw.silence { background: color-mix(in srgb, var(--text-caption) 30%, transparent); }
+
+.aimusic-table-section { margin-top: var(--space-m); margin-bottom: 0; }
+
 @media (max-width: 768px) {
   .aimusic-hero-headline { font-size: 2.4rem; }
   .aimusic-hero { min-height: 20rem; }
@@ -2942,6 +3018,26 @@ body:has(#stt-debug-panel:not([hidden])) .page {
               Preview model. Best at AI vocal music and Suno-style instrumentals. Can miss AI techno/metal and hip-hop beats; can false-positive on minimalist piano and heavily compressed rap vocals.
             </div>
           </div>
+
+          <div class="aimusic-timeline-wrap" id="aimusic-timeline-wrap" style="display:none">
+            <div class="aimusic-timeline-head">
+              <span class="aimusic-timeline-title">Per-window timeline</span>
+              <span class="aimusic-timeline-status" id="aimusic-timeline-status"></span>
+            </div>
+            <div class="aimusic-timeline" id="aimusic-timeline"></div>
+            <div class="aimusic-axis" id="aimusic-axis"></div>
+            <div class="aimusic-legend">
+              <span class="aimusic-legend-item"><i class="aimusic-sw ai"></i>AI-generated</span>
+              <span class="aimusic-legend-item"><i class="aimusic-sw human"></i>Not AI</span>
+              <span class="aimusic-legend-item"><i class="aimusic-sw silence"></i>Silence</span>
+            </div>
+            <div class="results-table-section aimusic-table-section">
+              <table class="results-table">
+                <thead><tr><th>Window</th><th>Type</th><th>Verdict</th><th>AI confidence</th></tr></thead>
+                <tbody id="aimusic-tbody"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         <!-- Language Detection content -->
@@ -3122,7 +3218,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
 
   <!-- Footer -->
   <footer class="footer">
-    v4.6.3 (June 3, 2026)
+    v4.7.0 (June 4, 2026)
   </footer>
 
 </div>
@@ -3285,7 +3381,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     </div>
   </div>
   <div class="overlay-footer">
-    v4.6.3 (June 3, 2026)
+    v4.7.0 (June 4, 2026)
   </div>
 </div>
 

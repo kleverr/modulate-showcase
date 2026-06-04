@@ -84,6 +84,7 @@ const ENDPOINT_BASE_URL = {};
 // Per-endpoint upstream path overrides — preview models live behind /api/preview/.
 const ENDPOINT_UPSTREAM_PATH = {
   '/api/velma-2-ai-music-detection-batch': '/api/preview/velma-2-ai-music-detection-batch',
+  '/api/velma-2-ai-music-detection-streaming': '/api/preview/velma-2-ai-music-detection-streaming',
   // Language detection is released — it serves on the plain prod path, NOT under
   // /api/preview/..., so no remap here.
 
@@ -96,10 +97,10 @@ const ENDPOINT_UPSTREAM_PATH = {
 };
 
 // Per-endpoint upstream form-field name overrides (defaults to "upload_file").
-// Music + AI Music Detection specs use "file" instead.
+// Music Detection's spec uses "file"; the updated AI Music Detection batch spec
+// uses the default "upload_file" (verified against the live preview endpoint).
 const ENDPOINT_UPLOAD_FIELD = {
   '/api/velma-2-music-detection-batch': 'file',
-  '/api/velma-2-ai-music-detection-batch': 'file',
 };
 
 // ── Page-view tracking (client beacon for SPA tab switches) ─────────────────
@@ -334,6 +335,7 @@ server.on('upgrade', (req, socket, head) => {
     '/api/velma-2-stt-streaming-english-v2',
     '/api/velma-2-synthetic-voice-detection-streaming',
     '/api/velma-2-music-detection-streaming',
+    '/api/velma-2-ai-music-detection-streaming',
     '/api/velma-2-streaming',
   ]);
 

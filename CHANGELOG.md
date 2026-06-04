@@ -2,6 +2,30 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.7.0] - 2026-06-04
+
+### Changed
+- **AI Music Detection batch — full schema overhaul.** Rebuilt the AI Music tab
+  around the updated preview API response: clip-level vocal / instrumental /
+  silence content percentages plus separate vocal and instrumental AI scores and
+  confidence, with the verdict taken straight from the server's `primary_verdict`
+  (no more client-side thresholding). The hero shows both detection paths
+  (AI % + confidence) and a content breakdown.
+- **Per-window timeline + table.** Added a per-4s-window timeline bar that reads
+  at a glance as AI-generated / Not AI / Silence, plus a Deepfake-style table
+  (Window · Type · Verdict · AI confidence) with verdict pills, confidence bars,
+  hover tooltips, click-to-seek, and playback highlighting.
+
+### Fixed
+- **AI Music batch upload field.** The proxy now forwards the upload as
+  `upload_file` (the updated spec's field name) instead of `file`.
+
+### Notes
+- AI Music **streaming** is fully built behind the scenes (WebSocket proxy +
+  preview remap, live timeline, 3 streaming buttons) but the buttons stay hidden
+  until the upstream preview streaming endpoint emits results — flip three
+  visibility conditions to re-enable.
+
 ## [4.6.3] - 2026-06-03
 
 ### Fixed
