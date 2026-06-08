@@ -479,6 +479,31 @@ body {
   cursor: default;
 }
 
+/* Streaming buttons shown as "coming soon": greyed, non-clickable, with a
+   "Soon" pill. Used for AI Music streaming until its backend goes live. */
+.results-action.streaming-soon {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: default;
+  position: relative;
+}
+.results-action.streaming-soon::after {
+  content: 'Soon';
+  position: absolute;
+  top: -0.45rem;
+  right: -0.4rem;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.35;
+  color: #fff;
+  background: linear-gradient(135deg, #430f92, #fb3958);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
 /* ── Results Layout ─────────────────────────────────────────────────── */
 .results-section {
   margin-bottom: var(--space-xl);
@@ -2045,30 +2070,6 @@ body:has(#stt-debug-panel:not([hidden])) .page {
   margin-top: var(--space-m);
 }
 
-/* ── Mode toggle "Preview" divider ──────────────────────────────────── */
-.mode-toggle-divider {
-  display: inline-flex;
-  align-items: center;
-  height: 1.4rem;
-  margin: 0 0.15rem;
-  padding-left: 0.6rem;
-  border-left: 1.5px solid var(--ui-border);
-  user-select: none;
-}
-.mode-pill {
-  display: inline-block;
-  padding: 0.1rem 0.45rem;
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #fff;
-  background: linear-gradient(135deg, #430f92, #fb3958);
-  border-radius: 3px;
-  user-select: none;
-  line-height: 1.2;
-}
-
 /* ── Velma options row ──────────────────────────────────────────────── */
 .velma-options { display: none; flex-wrap: wrap; gap: var(--space-xs) var(--space-m); align-items: center; }
 .velma-options.visible { display: flex; }
@@ -2816,11 +2817,10 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     <label for="mode-redaction">PII/PHI Redaction</label>
     <input type="radio" name="mode" id="mode-music" value="music">
     <label for="mode-music">Music Detection</label>
-    <input type="radio" name="mode" id="mode-language" value="language">
-    <label for="mode-language">Language</label>
-    <span class="mode-toggle-divider" aria-hidden="true"><span class="mode-pill">Preview</span></span>
     <input type="radio" name="mode" id="mode-aimusic" value="aimusic">
     <label for="mode-aimusic">AI Music Detection</label>
+    <input type="radio" name="mode" id="mode-language" value="language">
+    <label for="mode-language">Language</label>
   </div>
 
   <!-- Options row (reserved space in both modes for alignment) -->
@@ -3015,7 +3015,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
             </div>
             <div class="aimusic-hero-meta" id="aimusic-hero-meta"></div>
             <div class="aimusic-hero-caveat">
-              Preview model. Best at AI vocal music and Suno-style instrumentals. Can miss AI techno/metal and hip-hop beats; can false-positive on minimalist piano and heavily compressed rap vocals.
+              Best at AI vocal music and Suno-style instrumentals. Can miss AI techno/metal and hip-hop beats; can false-positive on minimalist piano and heavily compressed rap vocals.
             </div>
           </div>
 
@@ -3218,7 +3218,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
 
   <!-- Footer -->
   <footer class="footer">
-    v4.7.0 (June 4, 2026)
+    v4.8.0 (June 8, 2026)
   </footer>
 
 </div>
@@ -3381,7 +3381,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     </div>
   </div>
   <div class="overlay-footer">
-    v4.7.0 (June 4, 2026)
+    v4.8.0 (June 8, 2026)
   </div>
 </div>
 

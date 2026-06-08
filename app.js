@@ -430,15 +430,23 @@
     if (velmaDemoAction) velmaDemoAction.style.display = isVelma ? '' : 'none';
     if (playerEntryOriginal) playerEntryOriginal.style.display = isRedaction ? '' : 'none';
     if (redactedLabel) redactedLabel.style.display = isRedaction ? '' : 'none';
-    if (streamDemoAction) streamDemoAction.style.display = (isTranscription || isMusic || isVelma) ? '' : 'none';
-    if (streamFileAction) streamFileAction.style.display = (isTranscription || isMusic || isVelma) ? '' : 'none';
+    // AI Music streaming is built + wired, but its backend isn't live yet — its
+    // three streaming buttons show as "Soon" (visible, greyed, non-clickable).
+    // Drop the `streaming-soon` toggles to fully enable once the backend works.
+    if (streamDemoAction) {
+      streamDemoAction.style.display = (isTranscription || isMusic || isVelma || isAimusic) ? '' : 'none';
+      streamDemoAction.classList.toggle('streaming-soon', isAimusic);
+    }
+    if (streamFileAction) {
+      streamFileAction.style.display = (isTranscription || isMusic || isVelma || isAimusic) ? '' : 'none';
+      streamFileAction.classList.toggle('streaming-soon', isAimusic);
+    }
     if (recordAction) {
-      // Redaction + language + AI Music are batch-only in the UI — hide live
-      // record. (AI Music streaming is built but hidden pending the upstream
-      // streaming endpoint; flip these back on to re-enable.) Velma + Music
-      // support mic streaming, so they keep the record button.
-      recordAction.style.display = (isRedaction || isLanguage || isAimusic) ? 'none' : '';
+      // Redaction + language are batch-only in the UI — hide live record.
+      // Transcription, Music, Velma support mic streaming.
+      recordAction.style.display = (isRedaction || isLanguage) ? 'none' : '';
       recordAction.classList.toggle('disabled-soon', isRedaction);
+      recordAction.classList.toggle('streaming-soon', isAimusic);
     }
     renderDebugPanel(true);
 
@@ -746,6 +754,7 @@
   if (recordAction) {
     recordAction.addEventListener('click', () => {
       if (recordAction.classList.contains('disabled-soon')) return;
+      if (recordAction.classList.contains('streaming-soon')) return;
       if (isRecording) {
         stopRecording();
       } else {
@@ -760,6 +769,7 @@
 
   if (streamDemoAction) {
     streamDemoAction.addEventListener('click', () => {
+      if (streamDemoAction.classList.contains('streaming-soon')) return;
       if (isRecording) { stopRecording(); return; }
       if (currentMode === 'velma') startVelmaDemoStream();
       else if (currentMode === 'music') startMusicDemoStream();
@@ -770,6 +780,7 @@
 
   if (streamFileAction && streamFileInput) {
     streamFileAction.addEventListener('click', (e) => {
+      if (streamFileAction.classList.contains('streaming-soon')) return;
       if (e.target !== streamFileInput) {
         if (isRecording) { stopRecording(); return; }
         streamFileInput.click();
@@ -2021,8 +2032,15 @@
       stopRecording();   // routes to the aimusic finalize branch below
     } else if (msg?.type === 'error') {
       showError('Streaming error: ' + (msg.error || 'Unknown'));
-      if (liveAimusicWindows.length > 0) stopRecording();
-      else { cleanupRecording(); demoCleanup(); }
+      if (liveAimusicWindows.length > 0) {
+        stopRecording();
+      } else {
+        cleanupRecording();
+        demoCleanup();
+        // No windows arrived before the error — restore the last (batch/cached)
+        // verdict so the page doesn't stay stuck on "Listening…".
+        renderAimusicResult(lastAimusicData || DEMO_AIMUSIC_DATA);
+      }
     }
   }
 
@@ -2148,7 +2166,7 @@
         // Connected but closed before any window/done arrived — don't leave the
         // hero stuck on "Listening…". Surface a notice and restore the last
         // (batch) result so the page stays meaningful.
-        showError('AI Music streaming returned no results before the connection closed. Streaming is in preview — try the batch upload, which is fully live.');
+        showError('AI Music streaming returned no results before the connection closed. Try the batch upload instead.');
         renderAimusicResult(lastAimusicData || DEMO_AIMUSIC_DATA);
       }
     };
@@ -4285,7 +4303,7 @@
 
       groups = [
         { group: 'Detection', rows: [
-          ['Model', isStream ? 'velma-2-ai-music-detection-streaming (preview)' : 'velma-2-ai-music-detection-batch (preview)'],
+          ['Model', isStream ? 'velma-2-ai-music-detection-streaming' : 'velma-2-ai-music-detection-batch'],
           ['Primary verdict', verdictLabel],
           ['Vocal AI coverage', pct(currentData.vocal_ai_percentage)],
           ['Vocal AI confidence', conf(currentData.vocal_ai_confidence)],
@@ -6401,11 +6419,12 @@
     if (musicSidebar) musicSidebar.style.display = 'none';
     if (aimusicContent) aimusicContent.classList.add('visible');
     if (aimusicSidebar) aimusicSidebar.style.display = '';
-    // AI Music streaming is built but hidden pending the upstream endpoint —
-    // batch-only buttons for now.
-    if (recordAction) recordAction.style.display = 'none';
-    if (streamDemoAction) streamDemoAction.style.display = 'none';
-    if (streamFileAction) streamFileAction.style.display = 'none';
+    // AI Music streaming is built + wired, but the backend isn't live yet — show
+    // the three streaming buttons as "Soon" (greyed, non-clickable) alongside the
+    // working batch upload. Remove `streaming-soon` to fully enable.
+    if (recordAction) { recordAction.style.display = ''; recordAction.classList.remove('disabled-soon'); recordAction.classList.add('streaming-soon'); }
+    if (streamDemoAction) { streamDemoAction.style.display = ''; streamDemoAction.classList.add('streaming-soon'); }
+    if (streamFileAction) { streamFileAction.style.display = ''; streamFileAction.classList.add('streaming-soon'); }
     currentData = DEMO_AIMUSIC_DATA;
     currentMeta = {
       fileSize: 2124230, fileType: 'audio/mpeg',

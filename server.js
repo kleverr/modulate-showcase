@@ -83,22 +83,19 @@ const ENDPOINT_BASE_URL = {};
 
 // Per-endpoint upstream path overrides — preview models live behind /api/preview/.
 const ENDPOINT_UPSTREAM_PATH = {
-  '/api/velma-2-ai-music-detection-batch': '/api/preview/velma-2-ai-music-detection-batch',
-  '/api/velma-2-ai-music-detection-streaming': '/api/preview/velma-2-ai-music-detection-streaming',
-  // Language detection is released — it serves on the plain prod path, NOT under
-  // /api/preview/..., so no remap here.
-
-  // ── VELMA-2 LAUNCHED (GA) ────────────────────────────────────────────────
-  // velma-2 batch + streaming + list-presets are now released and serve on the
-  // plain prod GA paths (POST /api/velma-2-batch, WS /api/velma-2-streaming),
-  // so the /api/preview/ remaps were removed at launch — same move already done
-  // for music-detection. See CHANGELOG.
+  // ── AI Music Detection LAUNCHED (GA) ─────────────────────────────────────
+  // AI music detection batch + streaming are now released and serve on the
+  // plain prod GA paths (POST /api/velma-2-ai-music-detection-batch,
+  // WS /api/velma-2-ai-music-detection-streaming). The /api/preview/ remaps
+  // were removed at launch — the preview paths now 404 ("Model not found").
+  // Same move already done for music-detection, language-detection, and velma-2.
+  // See CHANGELOG.
   // ─────────────────────────────────────────────────────────────────────────
 };
 
 // Per-endpoint upstream form-field name overrides (defaults to "upload_file").
-// Music Detection's spec uses "file"; the updated AI Music Detection batch spec
-// uses the default "upload_file" (verified against the live preview endpoint).
+// Music Detection's spec uses "file"; the AI Music Detection batch spec uses
+// the default "upload_file" (per the published GA batch spec).
 const ENDPOINT_UPLOAD_FIELD = {
   '/api/velma-2-music-detection-batch': 'file',
 };

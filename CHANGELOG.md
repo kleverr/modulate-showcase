@@ -2,6 +2,36 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.8.0] - 2026-06-08
+
+### Changed
+- **AI Music Detection is GA — pointed at production.** Removed the
+  `/api/preview/` upstream remaps so batch and streaming route to the released
+  prod paths (`/api/velma-2-ai-music-detection-batch` and `…-streaming`); the
+  preview paths now 404. Dropped the `(preview)` suffix from the Debug-panel
+  model label.
+- **AI Music promoted out of Preview.** Moved the AI Music Detection tab to sit
+  right after Music Detection and removed the "Preview" pill divider and the
+  "Preview model." caveat prefix.
+
+### Added
+- **AI Music streaming surfaced as "Soon".** The three streaming buttons (mic
+  record + stream demo + stream file) now show on the AI Music tab, greyed and
+  non-clickable with a "Soon" pill, since the streaming backend isn't live yet.
+  Client + WebSocket proxy are fully wired to the GA streaming path — dropping
+  the `streaming-soon` flag enables them with no other change.
+
+### Fixed
+- **Graceful streaming fallback.** If the streaming endpoint errors before any
+  window arrives, the page restores the last (cached/batch) verdict instead of
+  staying stuck on "Listening…" (guards the path for when streaming is enabled).
+
+### Notes
+- The AI Music **streaming** backend currently returns `Internal server error`
+  with no frames (upstream issue); the **batch** path is fully functional. That's
+  why streaming is shown as "Soon" rather than active. Flip off `streaming-soon`
+  once the backend emits frames.
+
 ## [4.7.0] - 2026-06-04
 
 ### Changed
