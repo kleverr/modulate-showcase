@@ -430,23 +430,20 @@
     if (velmaDemoAction) velmaDemoAction.style.display = isVelma ? '' : 'none';
     if (playerEntryOriginal) playerEntryOriginal.style.display = isRedaction ? '' : 'none';
     if (redactedLabel) redactedLabel.style.display = isRedaction ? '' : 'none';
-    // AI Music streaming is built + wired, but its backend isn't live yet — its
-    // three streaming buttons show as "Soon" (visible, greyed, non-clickable).
-    // Drop the `streaming-soon` toggles to fully enable once the backend works.
     if (streamDemoAction) {
       streamDemoAction.style.display = (isTranscription || isMusic || isVelma || isAimusic) ? '' : 'none';
-      streamDemoAction.classList.toggle('streaming-soon', isAimusic);
+      streamDemoAction.classList.remove('streaming-soon');
     }
     if (streamFileAction) {
       streamFileAction.style.display = (isTranscription || isMusic || isVelma || isAimusic) ? '' : 'none';
-      streamFileAction.classList.toggle('streaming-soon', isAimusic);
+      streamFileAction.classList.remove('streaming-soon');
     }
     if (recordAction) {
       // Redaction + language are batch-only in the UI — hide live record.
-      // Transcription, Music, Velma support mic streaming.
+      // Transcription, Music, Velma, and AI Music support mic streaming.
       recordAction.style.display = (isRedaction || isLanguage) ? 'none' : '';
       recordAction.classList.toggle('disabled-soon', isRedaction);
-      recordAction.classList.toggle('streaming-soon', isAimusic);
+      recordAction.classList.remove('streaming-soon');
     }
     renderDebugPanel(true);
 
@@ -6419,12 +6416,11 @@
     if (musicSidebar) musicSidebar.style.display = 'none';
     if (aimusicContent) aimusicContent.classList.add('visible');
     if (aimusicSidebar) aimusicSidebar.style.display = '';
-    // AI Music streaming is built + wired, but the backend isn't live yet — show
-    // the three streaming buttons as "Soon" (greyed, non-clickable) alongside the
-    // working batch upload. Remove `streaming-soon` to fully enable.
-    if (recordAction) { recordAction.style.display = ''; recordAction.classList.remove('disabled-soon'); recordAction.classList.add('streaming-soon'); }
-    if (streamDemoAction) { streamDemoAction.style.display = ''; streamDemoAction.classList.add('streaming-soon'); }
-    if (streamFileAction) { streamFileAction.style.display = ''; streamFileAction.classList.add('streaming-soon'); }
+    // AI Music supports mic + file streaming AND batch — show the full streaming
+    // trio (mic record + stream demo + stream file), same as transcription/music.
+    if (recordAction) { recordAction.style.display = ''; recordAction.classList.remove('disabled-soon'); recordAction.classList.remove('streaming-soon'); }
+    if (streamDemoAction) { streamDemoAction.style.display = ''; streamDemoAction.classList.remove('streaming-soon'); }
+    if (streamFileAction) { streamFileAction.style.display = ''; streamFileAction.classList.remove('streaming-soon'); }
     currentData = DEMO_AIMUSIC_DATA;
     currentMeta = {
       fileSize: 2124230, fileType: 'audio/mpeg',

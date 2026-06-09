@@ -2,6 +2,15 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.9.0] - 2026-06-08
+
+### Added
+- **AI Music streaming is live.** The streaming backend now emits per-window and
+  `done` frames, so the three AI Music streaming buttons (mic record + stream
+  demo + stream file) are fully enabled — removed the "Soon" treatment. Verified
+  end-to-end: live windows render on the timeline with a clip-level verdict on
+  completion.
+
 ## [4.8.0] - 2026-06-08
 
 ### Changed
