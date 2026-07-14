@@ -1054,6 +1054,97 @@ body {
   color: var(--text-caption);
 }
 
+/* ── Emotion / Accent Detection ─────────────────────────────────────── */
+#emotion-content, #accent-content { display: none; }
+#emotion-content.visible, #accent-content.visible { display: block; }
+
+/* Result heroes are shorter than the language one — the timeline sits below. */
+.ea-hero.has-result { min-height: 18rem; }
+
+.ea-timeline-wrap {
+  margin-top: var(--space-m);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-l);
+  padding: var(--space-m);
+  background: var(--bg);
+}
+
+.ea-timeline-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-s);
+}
+
+.ea-timeline-title {
+  font-size: var(--font-s);
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.ea-timeline-hint {
+  font-size: var(--font-xs);
+  color: var(--text-caption);
+}
+
+.ea-timeline {
+  display: flex;
+  width: 100%;
+  height: 3.2rem;
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  border: 1px solid var(--ui-border);
+}
+
+.ea-seg {
+  flex: 1 1 0;
+  min-width: 0;
+  cursor: pointer;
+  position: relative;
+  transition: filter 0.15s;
+}
+
+.ea-seg:hover { filter: brightness(0.92); }
+
+.ea-seg.active {
+  outline: 2px solid var(--text-color);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.ea-seg + .ea-seg { border-left: 1px solid rgba(255, 255, 255, 0.55); }
+
+.ea-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.3rem;
+  font-size: var(--font-xs);
+  color: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.ea-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-top: var(--space-s);
+  font-size: var(--font-xs);
+  color: var(--text-caption);
+}
+
+.ea-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ea-legend-sw {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 3px;
+  display: inline-block;
+}
+
 /* ── AI Music Detection Hero ────────────────────────────────────────── */
 #aimusic-content { display: none; }
 #aimusic-content.visible { display: block; }
@@ -2821,6 +2912,10 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     <label for="mode-aimusic">AI Music Detection</label>
     <input type="radio" name="mode" id="mode-language" value="language">
     <label for="mode-language">Language</label>
+    <input type="radio" name="mode" id="mode-emotion" value="emotion">
+    <label for="mode-emotion">Emotion</label>
+    <input type="radio" name="mode" id="mode-accent" value="accent">
+    <label for="mode-accent">Accent</label>
   </div>
 
   <!-- Options row (reserved space in both modes for alignment) -->
@@ -3058,6 +3153,46 @@ body:has(#stt-debug-panel:not([hidden])) .page {
           </div>
         </div>
 
+        <!-- Emotion Detection content -->
+        <div id="emotion-content">
+          <div class="lang-hero ea-hero" id="emotion-hero">
+            <div class="lang-hero-flag" id="emotion-hero-icon">🎭</div>
+            <div class="lang-hero-name" id="emotion-hero-label">—</div>
+            <div class="lang-hero-code" id="emotion-hero-sub">Upload an audio clip to detect its emotional tone</div>
+            <div class="lang-hero-meta" id="emotion-hero-meta"></div>
+            <div class="lang-hero-note">Analyzed in consecutive 15-second windows. Whole-file label shown above.</div>
+          </div>
+          <div class="ea-timeline-wrap" id="emotion-timeline-wrap" style="display:none">
+            <div class="ea-timeline-head">
+              <span class="ea-timeline-title">Per-window timeline</span>
+              <span class="ea-timeline-hint">Click a window to listen</span>
+            </div>
+            <div class="ea-timeline" id="emotion-timeline"></div>
+            <div class="ea-axis" id="emotion-axis"></div>
+            <div class="ea-legend" id="emotion-legend"></div>
+          </div>
+        </div>
+
+        <!-- Accent Detection content -->
+        <div id="accent-content">
+          <div class="lang-hero ea-hero" id="accent-hero">
+            <div class="lang-hero-flag" id="accent-hero-icon">🗣️</div>
+            <div class="lang-hero-name" id="accent-hero-label">—</div>
+            <div class="lang-hero-code" id="accent-hero-sub">Upload an audio clip to detect the speaker's accent</div>
+            <div class="lang-hero-meta" id="accent-hero-meta"></div>
+            <div class="lang-hero-note">Analyzed in consecutive 15-second windows. Whole-file label shown above.</div>
+          </div>
+          <div class="ea-timeline-wrap" id="accent-timeline-wrap" style="display:none">
+            <div class="ea-timeline-head">
+              <span class="ea-timeline-title">Per-window timeline</span>
+              <span class="ea-timeline-hint">Click a window to listen</span>
+            </div>
+            <div class="ea-timeline" id="accent-timeline"></div>
+            <div class="ea-axis" id="accent-axis"></div>
+            <div class="ea-legend" id="accent-legend"></div>
+          </div>
+        </div>
+
         <!-- PII/PHI Redaction content -->
         <div id="redaction-content">
           <div class="redaction-timeline-section">
@@ -3132,6 +3267,34 @@ body:has(#stt-debug-panel:not([hidden])) .page {
             Full Statistics
           </button>
           <button class="verdict-link" id="btn-show-json-language">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            JSON Response
+          </button>
+        </div>
+      </aside>
+
+      <!-- Emotion Detection sidebar -->
+      <aside class="results-verdict" id="results-emotion-verdict" style="display:none">
+        <div class="verdict-links">
+          <button class="verdict-link" id="btn-show-stats-emotion">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Full Statistics
+          </button>
+          <button class="verdict-link" id="btn-show-json-emotion">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            JSON Response
+          </button>
+        </div>
+      </aside>
+
+      <!-- Accent Detection sidebar -->
+      <aside class="results-verdict" id="results-accent-verdict" style="display:none">
+        <div class="verdict-links">
+          <button class="verdict-link" id="btn-show-stats-accent">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Full Statistics
+          </button>
+          <button class="verdict-link" id="btn-show-json-accent">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             JSON Response
           </button>
@@ -3218,7 +3381,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
 
   <!-- Footer -->
   <footer class="footer">
-    v4.9.0 (June 8, 2026)
+    v4.10.0 (July 14, 2026)
   </footer>
 
 </div>
@@ -3381,7 +3544,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
     </div>
   </div>
   <div class="overlay-footer">
-    v4.9.0 (June 8, 2026)
+    v4.10.0 (July 14, 2026)
   </div>
 </div>
 
@@ -3409,7 +3572,7 @@ body:has(#stt-debug-panel:not([hidden])) .page {
   </div>
 </div>
 
-<script src="/app.js?v=3"></script>
+<script src="/app.js?v=4"></script>
 <script>
   // Skip the HubSpot embed on localhost — the preview sandbox blocks
   // non-localhost URLs and the resulting toast is just noise during dev.

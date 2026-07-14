@@ -2,6 +2,30 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.10.0] - 2026-07-14
+
+### Added
+- **Emotion Detection tab** (`/emotion`) — batch emotion detection via
+  `/api/velma-2-emotion-batch`. Hero card with the whole-file emotion label
+  plus a clickable per-window (15 s) timeline colored by emotion, legend,
+  playhead highlight, Full Statistics and JSON Response.
+- **Accent Detection tab** (`/accent`) — same treatment for
+  `/api/velma-2-accent-batch` (whole-file accent + per-window timeline).
+- Both tabs open pre-loaded with a cached demo (irate-caller for emotion,
+  call-center for accent) so they light up without an API call.
+- The two new endpoints proxy to `https://platform.modulate.ai` — the server
+  named in the published OpenAPI specs (the default gateway also serves them,
+  but the demo exercises the documented host; it's also faster).
+
+### Notes
+- Live-endpoint verification against the published Emotion/Accent batch specs
+  passed on every documented behavior: window math (15 s fixed windows,
+  trailing remainder omitted), short-file handling (whole-file label +
+  empty `time_series`), all error paths (400 empty/unsupported/corrupt,
+  403 bad key, 422 missing key or file, exact `detail` strings), and the
+  `use_ensemble` / `training_permitted` flags. Labels are non-deterministic
+  across identical requests (docs make no determinism claim).
+
 ## [4.9.0] - 2026-06-08
 
 ### Added

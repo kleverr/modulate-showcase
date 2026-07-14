@@ -130,6 +130,57 @@
     duration_ms: 97698,
   };
 
+  // Pre-recorded Emotion / Accent Detection responses (actual API output from
+  // /api/velma-2-emotion-batch and /api/velma-2-accent-batch on the repo demo
+  // files) so the tabs light up without an API call on first load.
+  const DEMO_EMOTION_AUDIO_URL = '/deepfake/irate-caller-demo.mp3';
+  const DEMO_EMOTION_FILENAME = 'irate-caller-demo.mp3';
+  const DEMO_EMOTION_FILESIZE = 5385320;
+  const DEMO_EMOTION_DATA = {
+    emotion: 'Angry',
+    time_series: [
+      { start_ms: 0,      duration_ms: 15000, emotion: 'Frustrated' },
+      { start_ms: 15000,  duration_ms: 15000, emotion: 'Frustrated' },
+      { start_ms: 30000,  duration_ms: 15000, emotion: 'Frustrated' },
+      { start_ms: 45000,  duration_ms: 15000, emotion: 'Frustrated' },
+      { start_ms: 60000,  duration_ms: 15000, emotion: 'Frustrated' },
+      { start_ms: 75000,  duration_ms: 15000, emotion: 'Frustrated' },
+      { start_ms: 90000,  duration_ms: 15000, emotion: 'Frustrated' },
+      { start_ms: 105000, duration_ms: 15000, emotion: 'Frustrated' },
+      { start_ms: 120000, duration_ms: 15000, emotion: 'Frustrated' },
+      { start_ms: 135000, duration_ms: 15000, emotion: 'Frustrated' },
+      { start_ms: 150000, duration_ms: 15000, emotion: 'Angry' },
+      { start_ms: 165000, duration_ms: 15000, emotion: 'Angry' },
+      { start_ms: 180000, duration_ms: 15000, emotion: 'Frustrated' },
+      { start_ms: 195000, duration_ms: 15000, emotion: 'Angry' },
+      { start_ms: 210000, duration_ms: 15000, emotion: 'Angry' },
+      { start_ms: 225000, duration_ms: 15000, emotion: 'Frustrated' },
+      { start_ms: 240000, duration_ms: 15000, emotion: 'Angry' },
+    ],
+  };
+
+  const DEMO_ACCENT_AUDIO_URL = '/deepfake/call-center-demo.mp3';
+  const DEMO_ACCENT_FILENAME = 'call-center-demo.mp3';
+  const DEMO_ACCENT_FILESIZE = 3255552;
+  const DEMO_ACCENT_DATA = {
+    accent: 'American',
+    time_series: [
+      { start_ms: 0,      duration_ms: 15000, accent: 'American' },
+      { start_ms: 15000,  duration_ms: 15000, accent: 'American' },
+      { start_ms: 30000,  duration_ms: 15000, accent: 'American' },
+      { start_ms: 45000,  duration_ms: 15000, accent: 'American' },
+      { start_ms: 60000,  duration_ms: 15000, accent: 'American' },
+      { start_ms: 75000,  duration_ms: 15000, accent: 'American' },
+      { start_ms: 90000,  duration_ms: 15000, accent: 'American' },
+      { start_ms: 105000, duration_ms: 15000, accent: 'American' },
+      { start_ms: 120000, duration_ms: 15000, accent: 'American' },
+      { start_ms: 135000, duration_ms: 15000, accent: 'American' },
+      { start_ms: 150000, duration_ms: 15000, accent: 'American' },
+      { start_ms: 165000, duration_ms: 15000, accent: 'American' },
+      { start_ms: 180000, duration_ms: 15000, accent: 'American' },
+    ],
+  };
+
   // ── Verdict helpers ─────────────────────────────────────────────────────────
   function isSyntheticFrame(f) { return f.verdict === 'synthetic'; }
 
@@ -277,6 +328,10 @@
   // Language Detection elements
   const languageContent      = document.getElementById('language-content');
   const languageSidebar      = document.getElementById('results-language-verdict');
+  const emotionContent       = document.getElementById('emotion-content');
+  const emotionSidebar       = document.getElementById('results-emotion-verdict');
+  const accentContent        = document.getElementById('accent-content');
+  const accentSidebar        = document.getElementById('results-accent-verdict');
   const langHero             = document.getElementById('lang-hero');
   const langHeroFlag         = document.getElementById('lang-hero-flag');
   const langHeroName         = document.getElementById('lang-hero-name');
@@ -371,6 +426,12 @@
     } else if (currentMode === 'language' && languageSidebar && languageContent) {
       if (isMobile) resultsMain.insertBefore(languageSidebar, languageContent);
       else resultsLayout.appendChild(languageSidebar);
+    } else if (currentMode === 'emotion' && emotionSidebar && emotionContent) {
+      if (isMobile) resultsMain.insertBefore(emotionSidebar, emotionContent);
+      else resultsLayout.appendChild(emotionSidebar);
+    } else if (currentMode === 'accent' && accentSidebar && accentContent) {
+      if (isMobile) resultsMain.insertBefore(accentSidebar, accentContent);
+      else resultsLayout.appendChild(accentSidebar);
     } else if (currentMode === 'aimusic' && aimusicSidebar && aimusicContent) {
       if (isMobile) resultsMain.insertBefore(aimusicSidebar, aimusicContent);
       else resultsLayout.appendChild(aimusicSidebar);
@@ -389,6 +450,8 @@
     const isMusic       = mode === 'music';
     const isAimusic     = mode === 'aimusic';
     const isLanguage    = mode === 'language';
+    const isEmotion     = mode === 'emotion';
+    const isAccent      = mode === 'accent';
     const isTranscription = mode === 'transcription';
     const isVelma       = mode === 'velma';
 
@@ -398,6 +461,8 @@
       : isMusic ? '/music'
       : isAimusic ? '/ai-music'
       : isLanguage ? '/language'
+      : isEmotion ? '/emotion'
+      : isAccent ? '/accent'
       : isVelma ? '/velma'
       : '/transcription';
     if (pushUrl !== false && location.pathname !== targetPath) {
@@ -424,6 +489,10 @@
     if (aimusicSidebar) aimusicSidebar.style.display = isAimusic ? '' : 'none';
     if (languageContent) languageContent.classList.toggle('visible', isLanguage);
     if (languageSidebar) languageSidebar.style.display = isLanguage ? '' : 'none';
+    if (emotionContent) emotionContent.classList.toggle('visible', isEmotion);
+    if (emotionSidebar) emotionSidebar.style.display = isEmotion ? '' : 'none';
+    if (accentContent) accentContent.classList.toggle('visible', isAccent);
+    if (accentSidebar) accentSidebar.style.display = isAccent ? '' : 'none';
     if (velmaContent) velmaContent.classList.toggle('visible', isVelma);
     if (velmaSidebar) velmaSidebar.classList.toggle('visible', isVelma);
     if (velmaOptions) velmaOptions.classList.toggle('visible', isVelma);
@@ -439,9 +508,10 @@
       streamFileAction.classList.remove('streaming-soon');
     }
     if (recordAction) {
-      // Redaction + language are batch-only in the UI — hide live record.
-      // Transcription, Music, Velma, and AI Music support mic streaming.
-      recordAction.style.display = (isRedaction || isLanguage) ? 'none' : '';
+      // Redaction, language, emotion, and accent are batch-only in the UI —
+      // hide live record. Transcription, Music, Velma, and AI Music support
+      // mic streaming.
+      recordAction.style.display = (isRedaction || isLanguage || isEmotion || isAccent) ? 'none' : '';
       recordAction.classList.toggle('disabled-soon', isRedaction);
       recordAction.classList.remove('streaming-soon');
     }
@@ -560,6 +630,9 @@
       resultsFilename.textContent = lastLanguageFilename || DEMO_LANGUAGE_FILENAME;
       resultsAudio.src = lastLanguageAudioUrl || DEMO_LANGUAGE_AUDIO_URL;
       renderLanguageResult(lData);
+      applyMobileLayout(mobileQuery.matches);
+    } else if (isEmotion || isAccent) {
+      showEaMode(mode);
       applyMobileLayout(mobileQuery.matches);
     } else if (isVelma) {
       if (lastVelmaData) {
@@ -704,6 +777,8 @@
           startAimusicAnalysis(fileInput.files[0]);
         } else if (currentMode === 'language') {
           startLanguageDetection(fileInput.files[0]);
+        } else if (currentMode === 'emotion' || currentMode === 'accent') {
+          startEaDetection(currentMode, fileInput.files[0]);
         } else if (currentMode === 'velma') {
           startVelmaBatch(fileInput.files[0]);
         } else {
@@ -727,6 +802,7 @@
         else if (currentMode === 'music') startMusicAnalysis(e.dataTransfer.files[0]);
         else if (currentMode === 'aimusic') startAimusicAnalysis(e.dataTransfer.files[0]);
         else if (currentMode === 'language') startLanguageDetection(e.dataTransfer.files[0]);
+        else if (currentMode === 'emotion' || currentMode === 'accent') startEaDetection(currentMode, e.dataTransfer.files[0]);
         else if (currentMode === 'velma') startVelmaBatch(e.dataTransfer.files[0]);
         else startTranscriptionBatch(e.dataTransfer.files[0]);
       }
@@ -1677,6 +1753,266 @@
     langHeroMeta.textContent = parts.join(' · ');
 
     langHeroWarning.style.display = conf < 0.5 ? '' : 'none';
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── EMOTION / ACCENT DETECTION MODES ─────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  // Both models share the same response shape ({<label>, time_series: [{start_ms,
+  // duration_ms, <label>}]}), so one implementation drives both tabs,
+  // parameterized by EA_KINDS.
+
+  const EA_FALLBACK_PALETTE = ['#5b7fc7', '#c76b5b', '#5bc7a8', '#c7a85b', '#8f5bc7', '#c75b96', '#5bb2c7', '#96c75b'];
+
+  const EA_KINDS = {
+    emotion: {
+      field: 'emotion',
+      endpoint: '/api/velma-2-emotion-batch',
+      model: 'velma-2-emotion-batch',
+      title: 'Emotion Detection',
+      overlayMsg: 'Detecting emotional tone',
+      emptySub: 'Upload an audio clip to detect its emotional tone',
+      fallbackIcon: '\u{1F3AD}',
+      icons: {
+        angry: '\u{1F620}', frustrated: '\u{1F624}', anxious: '\u{1F630}',
+        fearful: '\u{1F628}', neutral: '\u{1F610}', calm: '\u{1F60C}',
+        happy: '\u{1F60A}', excited: '\u{1F929}', sad: '\u{1F622}',
+        surprised: '\u{1F632}', disgusted: '\u{1F922}', bored: '\u{1F971}',
+        confused: '\u{1F615}', content: '\u{1F642}',
+      },
+      colors: {
+        angry: '#d64545', frustrated: '#e07b39', anxious: '#d9a520',
+        fearful: '#b0609e', neutral: '#9aa5b1', calm: '#4a9e8f',
+        happy: '#58a55c', excited: '#7d5bc6', sad: '#4a7fc1',
+        surprised: '#c65bb0', disgusted: '#7a9944', bored: '#8b8b9e',
+      },
+      demoData: DEMO_EMOTION_DATA,
+      demoAudioUrl: DEMO_EMOTION_AUDIO_URL,
+      demoFilename: DEMO_EMOTION_FILENAME,
+      demoFileSize: DEMO_EMOTION_FILESIZE,
+      demoProcessingMs: 4340,
+    },
+    accent: {
+      field: 'accent',
+      endpoint: '/api/velma-2-accent-batch',
+      model: 'velma-2-accent-batch',
+      title: 'Accent Detection',
+      overlayMsg: 'Detecting speaker accent',
+      emptySub: "Upload an audio clip to detect the speaker's accent",
+      fallbackIcon: '\u{1F5E3}\u{FE0F}',
+      icons: {
+        american: '\u{1F1FA}\u{1F1F8}', british: '\u{1F1EC}\u{1F1E7}', australian: '\u{1F1E6}\u{1F1FA}',
+        indian: '\u{1F1EE}\u{1F1F3}', irish: '\u{1F1EE}\u{1F1EA}', canadian: '\u{1F1E8}\u{1F1E6}',
+        'south african': '\u{1F1FF}\u{1F1E6}', french: '\u{1F1EB}\u{1F1F7}', german: '\u{1F1E9}\u{1F1EA}',
+        spanish: '\u{1F1EA}\u{1F1F8}', italian: '\u{1F1EE}\u{1F1F9}', russian: '\u{1F1F7}\u{1F1FA}',
+        chinese: '\u{1F1E8}\u{1F1F3}', japanese: '\u{1F1EF}\u{1F1F5}', korean: '\u{1F1F0}\u{1F1F7}',
+        mexican: '\u{1F1F2}\u{1F1FD}', brazilian: '\u{1F1E7}\u{1F1F7}', filipino: '\u{1F1F5}\u{1F1ED}',
+        vietnamese: '\u{1F1FB}\u{1F1F3}', nigerian: '\u{1F1F3}\u{1F1EC}', arabic: '\u{1F1F8}\u{1F1E6}',
+      },
+      colors: {
+        american: '#4a7fc1', british: '#d64545', australian: '#58a55c',
+        indian: '#e07b39', irish: '#4a9e8f', canadian: '#c65bb0',
+      },
+      demoData: DEMO_ACCENT_DATA,
+      demoAudioUrl: DEMO_ACCENT_AUDIO_URL,
+      demoFilename: DEMO_ACCENT_FILENAME,
+      demoFileSize: DEMO_ACCENT_FILESIZE,
+      demoProcessingMs: 4110,
+    },
+  };
+
+  // Per-kind DOM refs + last-run state.
+  for (const kind of Object.keys(EA_KINDS)) {
+    const cfg = EA_KINDS[kind];
+    cfg.hero         = document.getElementById(kind + '-hero');
+    cfg.heroIcon     = document.getElementById(kind + '-hero-icon');
+    cfg.heroLabel    = document.getElementById(kind + '-hero-label');
+    cfg.heroSub      = document.getElementById(kind + '-hero-sub');
+    cfg.heroMeta     = document.getElementById(kind + '-hero-meta');
+    cfg.timelineWrap = document.getElementById(kind + '-timeline-wrap');
+    cfg.timeline     = document.getElementById(kind + '-timeline');
+    cfg.axis         = document.getElementById(kind + '-axis');
+    cfg.legend       = document.getElementById(kind + '-legend');
+    cfg.last = { data: null, audioUrl: null, meta: null, filename: null };
+  }
+
+  function eaIcon(cfg, label) {
+    return cfg.icons[String(label || '').toLowerCase()] || cfg.fallbackIcon;
+  }
+
+  function eaColor(cfg, label) {
+    const key = String(label || '').toLowerCase();
+    if (cfg.colors[key]) return cfg.colors[key];
+    // Deterministic fallback so an unmapped label keeps its color across runs.
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+    return EA_FALLBACK_PALETTE[hash % EA_FALLBACK_PALETTE.length];
+  }
+
+  // Hero cards double as click + drop targets, same as the language tab.
+  for (const kind of Object.keys(EA_KINDS)) {
+    const cfg = EA_KINDS[kind];
+    if (!cfg.hero || !fileInput) continue;
+    cfg.hero.addEventListener('click', (e) => {
+      if (e.target.closest('button, a, audio, input')) return;
+      fileInput.click();
+    });
+    let dragCtr = 0;
+    cfg.hero.addEventListener('dragenter', (e) => { e.preventDefault(); dragCtr++; cfg.hero.classList.add('drag-over'); });
+    cfg.hero.addEventListener('dragleave', (e) => { e.preventDefault(); dragCtr--; if (dragCtr <= 0) { dragCtr = 0; cfg.hero.classList.remove('drag-over'); } });
+    cfg.hero.addEventListener('dragover', (e) => e.preventDefault());
+    cfg.hero.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragCtr = 0;
+      cfg.hero.classList.remove('drag-over');
+      if (e.dataTransfer.files.length > 0) startEaDetection(kind, e.dataTransfer.files[0]);
+    });
+  }
+
+  async function startEaDetection(kind, file) {
+    if (isAnalyzing) return;
+    const cfg = EA_KINDS[kind];
+    isAnalyzing = true;
+    showOverlay(file.name, cfg.overlayMsg);
+    // Roughly linear in audio length (~4 s for a 4-minute file); pace by size.
+    startProgress(Math.max(3000, Math.min(10000, file.size / 600)));
+
+    try {
+      const startedAt = Date.now();
+      const { data, meta } = await uploadAndAnalyze(file, cfg.endpoint);
+      const processingMs = Date.now() - startedAt;
+      await finishProgress();
+      hideOverlay();
+      isAnalyzing = false;
+
+      if (cfg.last.audioUrl && cfg.last.audioUrl !== cfg.demoAudioUrl) {
+        URL.revokeObjectURL(cfg.last.audioUrl);
+      }
+      audioObjectUrl = URL.createObjectURL(file);
+
+      currentMeta = {
+        fileSize: file.size,
+        fileType: file.type || file.name.split('.').pop().toUpperCase(),
+        httpStatus: meta.httpStatus,
+        httpStatusText: meta.httpStatusText,
+        responseSize: meta.responseSize,
+        processingMs,
+      };
+
+      // The API doesn't echo the filename, so we keep it ourselves.
+      cfg.last = { data, audioUrl: audioObjectUrl, meta: { ...currentMeta }, filename: file.name };
+
+      currentData = data;
+      resultsFilename.textContent = file.name;
+      resultsAudio.src = audioObjectUrl;
+      renderEaResult(kind, data);
+      window.scrollTo(0, 0);
+      updateRateLimit();
+    } catch (err) {
+      showOverlayError(err.message || cfg.title + ' failed. Please try again.', err.rawText);
+      isAnalyzing = false;
+    }
+  }
+
+  function renderEaResult(kind, data) {
+    const cfg = EA_KINDS[kind];
+    if (!cfg.hero) return;
+    const label = data[cfg.field] || 'Unknown';
+    const windows = data.time_series || [];
+
+    cfg.hero.classList.add('has-result');
+    cfg.heroIcon.textContent = eaIcon(cfg, label);
+    cfg.heroLabel.textContent = label;
+    cfg.heroSub.textContent = 'Whole-file ' + cfg.field;
+
+    const parts = [];
+    if (windows.length) {
+      parts.push(windows.length + ' windows × 15 s');
+    } else {
+      parts.push('Clip shorter than one 15 s window — whole-file label only');
+    }
+    const procMs = currentMeta && currentMeta.processingMs;
+    if (procMs) parts.push('Processed in ' + (procMs / 1000).toFixed(2) + ' s');
+    cfg.heroMeta.textContent = parts.join(' · ');
+
+    // ── Per-window timeline ──
+    if (!windows.length) {
+      cfg.timelineWrap.style.display = 'none';
+      return;
+    }
+    cfg.timelineWrap.style.display = '';
+    cfg.timeline.innerHTML = '';
+    const seen = [];
+    windows.forEach((w) => {
+      const wLabel = w[cfg.field] || 'Unknown';
+      if (!seen.includes(wLabel)) seen.push(wLabel);
+      const seg = document.createElement('div');
+      seg.className = 'ea-seg';
+      seg.style.background = eaColor(cfg, wLabel);
+      const t0 = formatTimelineTime(w.start_ms);
+      const t1 = formatTimelineTime(w.start_ms + w.duration_ms);
+      seg.title = t0 + '–' + t1 + ' · ' + wLabel;
+      seg.dataset.startMs = w.start_ms;
+      seg.dataset.endMs = w.start_ms + w.duration_ms;
+      seg.addEventListener('click', () => {
+        resultsAudio.currentTime = w.start_ms / 1000;
+        resultsAudio.play().catch(() => {});
+      });
+      cfg.timeline.appendChild(seg);
+    });
+
+    // Axis: start, midpoint, end of the analyzed span.
+    const spanMs = windows[windows.length - 1].start_ms + windows[windows.length - 1].duration_ms;
+    cfg.axis.innerHTML = '';
+    [0, spanMs / 2, spanMs].forEach((ms) => {
+      const tick = document.createElement('span');
+      tick.textContent = formatTimelineTime(ms);
+      cfg.axis.appendChild(tick);
+    });
+
+    cfg.legend.innerHTML = '';
+    seen.forEach((l) => {
+      const item = document.createElement('span');
+      item.className = 'ea-legend-item';
+      const sw = document.createElement('i');
+      sw.className = 'ea-legend-sw';
+      sw.style.background = eaColor(cfg, l);
+      item.appendChild(sw);
+      item.appendChild(document.createTextNode(l));
+      cfg.legend.appendChild(item);
+    });
+  }
+
+  function formatTimelineTime(ms) {
+    const s = Math.round(ms / 1000);
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  // Highlight the window under the playhead while the audio plays.
+  resultsAudio.addEventListener('timeupdate', () => {
+    if (currentMode !== 'emotion' && currentMode !== 'accent') return;
+    const cfg = EA_KINDS[currentMode];
+    if (!cfg.timeline) return;
+    const ms = resultsAudio.currentTime * 1000;
+    for (const seg of cfg.timeline.children) {
+      seg.classList.toggle('active', ms >= +seg.dataset.startMs && ms < +seg.dataset.endMs);
+    }
+  });
+
+  // Restore the tab's last run (or the pre-cached demo) on mode switch / init.
+  function showEaMode(kind) {
+    const cfg = EA_KINDS[kind];
+    const data = cfg.last.data || cfg.demoData;
+    currentData = data;
+    currentMeta = cfg.last.meta || {
+      fileSize: cfg.demoFileSize, fileType: 'audio/mpeg',
+      httpStatus: 200, httpStatusText: 'OK',
+      responseSize: JSON.stringify(cfg.demoData).length,
+      processingMs: cfg.demoProcessingMs,
+    };
+    resultsFilename.textContent = cfg.last.filename || cfg.demoFilename;
+    resultsAudio.src = cfg.last.audioUrl || cfg.demoAudioUrl;
+    renderEaResult(kind, data);
   }
 
   // ── AI Music Detection ─────────────────────────────────────────────────────
@@ -4170,6 +4506,10 @@
   document.getElementById('btn-show-json-aimusic').addEventListener('click', () => showJsonModal());
   document.getElementById('btn-show-stats-language').addEventListener('click', () => showStatsModal());
   document.getElementById('btn-show-json-language').addEventListener('click', () => showJsonModal());
+  document.getElementById('btn-show-stats-emotion').addEventListener('click', () => showStatsModal());
+  document.getElementById('btn-show-json-emotion').addEventListener('click', () => showJsonModal());
+  document.getElementById('btn-show-stats-accent').addEventListener('click', () => showStatsModal());
+  document.getElementById('btn-show-json-accent').addEventListener('click', () => showJsonModal());
 
   // Close a modal on a genuine backdrop click — but NOT when the click is the tail
   // end of a text-selection drag that started inside the modal. Dragging to select
@@ -4362,6 +4702,43 @@
         { group: 'Request', rows: [
           ['HTTP', httpStr],
           ['Endpoint', '/api/velma-2-language-detection-batch'],
+          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
+        ]},
+      ];
+    } else if (currentMode === 'emotion' || currentMode === 'accent') {
+      const cfg = EA_KINDS[currentMode];
+      statsModalTitle.textContent = cfg.title + ' Statistics';
+      const windows = currentData.time_series || [];
+      const analyzedMs = windows.reduce((s, w) => s + (w.duration_ms || 0), 0);
+      const distinct = [...new Set(windows.map(w => w[cfg.field]).filter(Boolean))];
+      const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
+      const procFactor = m.processingMs && analyzedMs ? (analyzedMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
+      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
+      const eaFilename = cfg.last.filename || cfg.demoFilename;
+      const fileType = m.fileType || (eaFilename ? eaFilename.split('.').pop().toUpperCase() : 'N/A');
+      const labelName = cfg.field.replace(/^./, c => c.toUpperCase());
+
+      groups = [
+        { group: 'Detection', rows: [
+          ['Model', cfg.model],
+          ['Whole-file ' + cfg.field, currentData[cfg.field] || 'N/A'],
+          ['Windows analyzed', String(windows.length)],
+          ['Window length', '15 s'],
+          ['Distinct ' + cfg.field + ' labels', distinct.length ? distinct.join(', ') : 'N/A'],
+        ]},
+        { group: 'Audio', rows: [
+          ['File Name', eaFilename || 'N/A'],
+          ['File Size', m.fileSize ? formatBytes(m.fileSize) : 'N/A'],
+          ['File Type', fileType],
+          ['Audio analyzed', formatDuration(analyzedMs) + ' (trailing remainder under 15 s is omitted)'],
+        ]},
+        { group: 'Performance', rows: [
+          ['Processing Time', procTimeStr],
+          ['Processing Factor', procFactor],
+        ]},
+        { group: 'Request', rows: [
+          ['HTTP', httpStr],
+          ['Endpoint', cfg.endpoint],
           ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
         ]},
       ];
@@ -6344,6 +6721,8 @@
     if (path === '/music') return 'music';
     if (path === '/ai-music') return 'aimusic';
     if (path === '/language') return 'language';
+    if (path === '/emotion') return 'emotion';
+    if (path === '/accent') return 'accent';
     if (path === '/transcription') return 'transcription';
     // Velma is the released headline model and the default landing mode for '/'.
     return 'velma';
@@ -6458,6 +6837,25 @@
     resultsAudio.src = DEMO_LANGUAGE_AUDIO_URL;
     lastLanguageFilename = DEMO_LANGUAGE_FILENAME;
     renderLanguageResult(DEMO_LANGUAGE_DATA);
+  } else if (initMode === 'emotion' || initMode === 'accent') {
+    // Emotion / Accent init — render pre-cached demo so the page lights up
+    // without an API call on first load.
+    deepfakeContent.style.display = 'none';
+    resultsVerdict.style.display = 'none';
+    transcriptContainer.classList.remove('visible');
+    resultsSidebar.classList.remove('visible');
+    sttOptions.classList.remove('visible');
+    redactionContent.style.display = 'none';
+    if (musicContent) musicContent.style.display = 'none';
+    if (musicSidebar) musicSidebar.style.display = 'none';
+    const eaInitContent = initMode === 'emotion' ? emotionContent : accentContent;
+    const eaInitSidebar = initMode === 'emotion' ? emotionSidebar : accentSidebar;
+    if (eaInitContent) eaInitContent.classList.add('visible');
+    if (eaInitSidebar) eaInitSidebar.style.display = '';
+    if (recordAction) recordAction.style.display = 'none';
+    if (streamDemoAction) streamDemoAction.style.display = 'none';
+    if (streamFileAction) streamFileAction.style.display = 'none';
+    showEaMode(initMode);
   } else if (initMode === 'velma') {
     // Velma init — open pre-loaded with the cached demo, like the other model tabs.
     deepfakeContent.style.display = 'none';
