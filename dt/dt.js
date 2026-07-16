@@ -80,6 +80,159 @@ const CONFIGURED_BEHAVIOR_NAMES = [
   'Customer Gratitude',
 ];
 
+// ── Custom behavior set (uploaded JSON) ──────────────────────────────────────
+// null → default config. Otherwise { mode, entries, fullConfig, names }:
+//   mode 'add'      → default behaviors + entries
+//   mode 'replace'  → entries only; when fullConfig is set, the whole uploaded
+//                     BatchConfig (types, roles, stt, produce_*) is used verbatim.
+// Persists until Reset or page reload.
+let behaviorSet = null;
+
+function behaviorEntryKey(entry) {
+  if (typeof entry === 'string') return 'p:' + entry.slice('preset:'.length).toLowerCase();
+  return 'n:' + String(entry.name || '').toLowerCase();
+}
+
+function getActiveConfig() {
+  if (!behaviorSet) return VELMA_CONFIG;
+  if (behaviorSet.mode === 'replace' && behaviorSet.fullConfig) return behaviorSet.fullConfig;
+  if (behaviorSet.mode === 'replace') return { ...VELMA_CONFIG, behaviors: behaviorSet.entries };
+  // add: default behaviors + uploaded ones (deduped, uploads win nothing — defaults first)
+  const seen = new Set(VELMA_CONFIG.behaviors.map(behaviorEntryKey));
+  const merged = [...VELMA_CONFIG.behaviors];
+  for (const e of behaviorSet.entries) {
+    const k = behaviorEntryKey(e);
+    if (!seen.has(k)) { seen.add(k); merged.push(e); }
+  }
+  return { ...VELMA_CONFIG, behaviors: merged };
+}
+
+function prettifyPresetId(id) {
+  return id.replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function activeBehaviorNames() {
+  if (!behaviorSet) return CONFIGURED_BEHAVIOR_NAMES;
+  const cfg = getActiveConfig();
+  return (cfg.behaviors || []).map(e => {
+    if (typeof e === 'string') {
+      const id = e.slice('preset:'.length);
+      return (presetCatalog && presetCatalog.get(id)) || prettifyPresetId(id);
+    }
+    return e.name;
+  }).filter(Boolean);
+}
+
+// Live preset catalog (identifier → display name) for validating preset refs.
+let presetCatalog = null;
+let presetCatalogPromise = null;
+function loadPresetCatalog() {
+  if (!presetCatalogPromise) {
+    presetCatalogPromise = fetch('/api/velma-2-batch/list-presets')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d && Array.isArray(d.presets)) {
+          presetCatalog = new Map(d.presets.map(p => [p.identifier, p.name]));
+        }
+        return presetCatalog;
+      })
+      .catch(() => null);
+  }
+  return presetCatalogPromise;
+}
+
+function newUuid() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () =>
+    Math.floor(Math.random() * 16).toString(16));
+}
+
+// Parse an uploaded behaviors JSON. Accepts (auto-detected):
+//   • a bare array of "preset:<id>" strings and/or BehaviorDef objects
+//   • { behaviors: [...] }
+//   • a full BatchConfig (any of conversation_types / participant_roles / stt / produce_*)
+// Returns { kind, entries, fullConfig, names, problems: [{level, text}] }.
+function parseBehaviorsJson(data) {
+  const problems = [];
+  const CONFIG_KEYS = ['conversation_types', 'participant_roles', 'stt', 'produce_topics', 'produce_topic_sentiments', 'produce_summary'];
+  let kind = null;
+  let rawList = null;
+  let fullConfig = null;
+
+  if (Array.isArray(data)) {
+    kind = 'list';
+    rawList = data;
+  } else if (data && typeof data === 'object') {
+    const hasConfigKeys = CONFIG_KEYS.some(k => k in data);
+    if (hasConfigKeys) {
+      kind = 'full';
+      rawList = Array.isArray(data.behaviors) ? data.behaviors : [];
+    } else if (Array.isArray(data.behaviors)) {
+      kind = 'list';
+      rawList = data.behaviors;
+    }
+  }
+  if (!kind) {
+    problems.push({ level: 'error', text: 'Unrecognized JSON shape — expected an array of behaviors, an object with a "behaviors" array, or a full BatchConfig.' });
+    return { kind: null, entries: [], fullConfig: null, names: [], problems };
+  }
+
+  const entries = [];
+  const names = [];
+  rawList.forEach((raw, i) => {
+    if (typeof raw === 'string') {
+      const s = raw.trim();
+      const m = s.match(/^preset:([A-Za-z0-9_-]+)$/);
+      if (!m) {
+        problems.push({ level: 'error', text: `Entry ${i + 1}: string entries must look like "preset:<identifier>" (got ${JSON.stringify(s.slice(0, 40))}).` });
+        return;
+      }
+      if (presetCatalog && !presetCatalog.has(m[1])) {
+        problems.push({ level: 'error', text: `Entry ${i + 1}: unknown preset "${m[1]}" — the API would reject the config (422).` });
+        return;
+      }
+      entries.push(s);
+      names.push((presetCatalog && presetCatalog.get(m[1])) || prettifyPresetId(m[1]));
+      return;
+    }
+    if (!raw || typeof raw !== 'object') {
+      problems.push({ level: 'error', text: `Entry ${i + 1}: not a behavior definition or preset reference.` });
+      return;
+    }
+    const def = { ...raw };
+    if (!def.name || !String(def.name).trim()) {
+      problems.push({ level: 'error', text: `Entry ${i + 1}: behavior definition is missing "name".` });
+      return;
+    }
+    if (!def.behavior_uuid) {
+      def.behavior_uuid = newUuid();
+    }
+    const shortD = String(def.short_description || '').trim();
+    const longD = String(def.detailed_description || '').trim();
+    if (!shortD && !longD) {
+      problems.push({ level: 'error', text: `"${def.name}": needs short_description and detailed_description (both required by the API).` });
+      return;
+    }
+    if (!shortD) { def.short_description = longD; problems.push({ level: 'warn', text: `"${def.name}": short_description was missing — copied from detailed_description.` }); }
+    if (!longD) { def.detailed_description = shortD; problems.push({ level: 'warn', text: `"${def.name}": detailed_description was missing — copied from short_description.` }); }
+    entries.push(def);
+    names.push(String(def.name));
+  });
+
+  if (kind === 'full') {
+    fullConfig = { ...data, behaviors: entries };
+    const hasTypes = Array.isArray(fullConfig.conversation_types) && fullConfig.conversation_types.length > 0;
+    const hasRoles = Array.isArray(fullConfig.participant_roles) && fullConfig.participant_roles.length > 0;
+    if (entries.length && (!hasTypes || !hasRoles)) {
+      problems.push({ level: 'warn', text: 'This config has behaviors but no conversation types and/or participant roles — the API silently skips behaviors in that case. In Replace mode they will not run.' });
+    }
+  }
+  if (!entries.length && !problems.some(p => p.level === 'error')) {
+    problems.push({ level: 'error', text: 'No behaviors found in the file.' });
+  }
+  return { kind, entries, fullConfig, names, problems };
+}
+
 // ── Emotion groups (Deeptalk palette) ────────────────────────────────────────
 const EMOTION_GROUP = {
   angry: 'attack', contemptuous: 'attack', disgusted: 'attack',
@@ -136,6 +289,20 @@ const processingCancel = $('processing-cancel');
 const errorBanner = $('error-banner');
 const errorText = $('error-text');
 const errorClose = $('error-close');
+const btnBehaviors = $('btn-behaviors');
+const behaviorsModal = $('behaviors-modal');
+const behaviorsCurrent = $('behaviors-current');
+const behaviorsDrop = $('behaviors-drop');
+const behaviorsExampleLink = $('behaviors-example-link');
+const behaviorsPreview = $('behaviors-preview');
+const behaviorsPreviewTitle = $('behaviors-preview-title');
+const behaviorsChips = $('behaviors-chips');
+const behaviorsProblems = $('behaviors-problems');
+const behaviorsApply = $('behaviors-apply');
+const behaviorsReset = $('behaviors-reset');
+const behaviorsCloseBtn = $('behaviors-close');
+const modeReplaceNote = $('mode-replace-note');
+const fileInputBehaviors = $('file-input-behaviors');
 
 // ── State ────────────────────────────────────────────────────────────────────
 let report = null;
@@ -516,7 +683,7 @@ function renderBehaviors(data, isFinal) {
   const alsoChecked = undetectedNames.filter(n => !detectedNames.has(n));
   if (isFinal) {
     const names = alsoChecked.length ? alsoChecked
-      : CONFIGURED_BEHAVIOR_NAMES.filter(n => !detectedNames.has(n));
+      : activeBehaviorNames().filter(n => !detectedNames.has(n));
     behaviorsChecked.textContent = names.length ? 'Also checked, not detected: ' + names.join(' · ') : '';
     behaviorsChecked.hidden = !names.length;
   } else {
@@ -746,7 +913,7 @@ function startBatch(file) {
 
   const formData = new FormData();
   formData.append('upload_file', file);
-  formData.append('config', JSON.stringify(VELMA_CONFIG));
+  formData.append('config', JSON.stringify(getActiveConfig()));
 
   batchXhr = new XMLHttpRequest();
   batchXhr.upload.addEventListener('progress', (e) => {
@@ -925,7 +1092,7 @@ async function startStream(file) {
     setStatus('live', 'Analysis in progress — this report updates live', true);
 
     // Protocol step 1: config frame.
-    try { ws.send(JSON.stringify(VELMA_CONFIG)); } catch {}
+    try { ws.send(JSON.stringify(getActiveConfig())); } catch {}
 
     // Play the audio alongside the stream.
     try { audio.currentTime = 0; } catch {}
@@ -988,6 +1155,151 @@ async function startStream(file) {
     }
   };
 }
+
+// ── Behavior set modal ───────────────────────────────────────────────────────
+let pendingParse = null; // last parsed upload, not yet applied
+
+function describeActiveSet() {
+  if (!behaviorSet) return 'Default · ' + VELMA_CONFIG.behaviors.length + ' presets';
+  const n = (getActiveConfig().behaviors || []).length;
+  if (behaviorSet.mode === 'replace' && behaviorSet.fullConfig) return 'Custom BatchConfig · ' + n + ' behaviors';
+  if (behaviorSet.mode === 'replace') return 'Custom · ' + n + ' behaviors (replaced default)';
+  return 'Custom · ' + n + ' behaviors (default + ' + behaviorSet.entries.length + ' added)';
+}
+
+function updateBehaviorSetUi() {
+  behaviorsCurrent.textContent = describeActiveSet();
+  if (behaviorSet) {
+    const n = (getActiveConfig().behaviors || []).length;
+    btnBehaviors.textContent = 'Behaviors · ' + n;
+    btnBehaviors.classList.add('solid');
+  } else {
+    btnBehaviors.textContent = 'Behaviors';
+    btnBehaviors.classList.remove('solid');
+  }
+  behaviorsReset.disabled = !behaviorSet;
+}
+
+function selectedMode() {
+  const checked = behaviorsModal.querySelector('input[name="behaviors-mode"]:checked');
+  return checked ? checked.value : 'add';
+}
+
+function renderBehaviorsPreview() {
+  if (!pendingParse) { behaviorsPreview.hidden = true; behaviorsApply.disabled = true; return; }
+  const { kind, entries, names, problems } = pendingParse;
+  behaviorsPreview.hidden = false;
+
+  const mode = selectedMode();
+  const errors = problems.filter(p => p.level === 'error');
+  behaviorsPreviewTitle.textContent =
+    (kind === 'full' ? 'Full BatchConfig' : 'Behavior list') + ' — ' + entries.length + ' behavior' + (entries.length === 1 ? '' : 's') +
+    (kind === 'full' && mode === 'add' ? ' (Add mode uses only the file\'s behaviors — its types/roles/settings are ignored)' : '');
+
+  behaviorsChips.textContent = '';
+  entries.forEach((e, i) => {
+    const isPreset = typeof e === 'string';
+    const chip = el('span', 'behavior-chip' + (isPreset ? ' preset' : ''));
+    const star = el('span', 'behavior-chip-star');
+    star.appendChild(svgUse('#icon-star'));
+    chip.appendChild(star);
+    chip.appendChild(document.createTextNode(names[i] || '?'));
+    if (isPreset) chip.title = e;
+    behaviorsChips.appendChild(chip);
+  });
+
+  behaviorsProblems.textContent = '';
+  problems.forEach(p => {
+    const li = el('li', p.level === 'warn' ? 'warn' : null, p.text);
+    behaviorsProblems.appendChild(li);
+  });
+
+  behaviorsApply.disabled = errors.length > 0 || entries.length === 0;
+}
+
+function openBehaviorsModal() {
+  loadPresetCatalog().then(() => {
+    // Re-validate a pending file against the catalog once it arrives.
+    if (pendingParse && pendingParse.raw != null) {
+      pendingParse = { ...parseBehaviorsJson(pendingParse.raw), raw: pendingParse.raw };
+      renderBehaviorsPreview();
+    }
+  });
+  updateBehaviorSetUi();
+  renderBehaviorsPreview();
+  behaviorsModal.hidden = false;
+}
+function closeBehaviorsModal() {
+  behaviorsModal.hidden = true;
+}
+
+async function handleBehaviorsFile(file) {
+  let data;
+  try {
+    data = JSON.parse(await file.text());
+  } catch (e) {
+    pendingParse = { kind: null, entries: [], fullConfig: null, names: [], raw: null,
+      problems: [{ level: 'error', text: 'Not valid JSON: ' + (e && e.message ? e.message : e) }] };
+    renderBehaviorsPreview();
+    return;
+  }
+  await loadPresetCatalog().catch(() => {});
+  pendingParse = { ...parseBehaviorsJson(data), raw: data };
+  renderBehaviorsPreview();
+}
+
+btnBehaviors.addEventListener('click', openBehaviorsModal);
+behaviorsCloseBtn.addEventListener('click', closeBehaviorsModal);
+behaviorsModal.addEventListener('click', (e) => { if (e.target === behaviorsModal) closeBehaviorsModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !behaviorsModal.hidden) closeBehaviorsModal(); });
+
+behaviorsDrop.addEventListener('click', (e) => {
+  if (e.target === behaviorsExampleLink) return; // let the example download through
+  fileInputBehaviors.click();
+});
+behaviorsDrop.addEventListener('dragover', (e) => { e.preventDefault(); behaviorsDrop.classList.add('dragover'); });
+behaviorsDrop.addEventListener('dragleave', () => behaviorsDrop.classList.remove('dragover'));
+behaviorsDrop.addEventListener('drop', (e) => {
+  e.preventDefault();
+  behaviorsDrop.classList.remove('dragover');
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) handleBehaviorsFile(f);
+});
+fileInputBehaviors.addEventListener('change', () => {
+  const f = fileInputBehaviors.files && fileInputBehaviors.files[0];
+  fileInputBehaviors.value = '';
+  if (f) handleBehaviorsFile(f);
+});
+behaviorsModal.querySelectorAll('input[name="behaviors-mode"]').forEach(r => {
+  r.addEventListener('change', () => {
+    modeReplaceNote.textContent = (pendingParse && pendingParse.kind === 'full' && selectedMode() === 'replace')
+      ? ' — the file\'s conversation types, roles, and STT settings replace the page\'s too'
+      : '';
+    renderBehaviorsPreview();
+  });
+});
+
+behaviorsApply.addEventListener('click', () => {
+  if (!pendingParse || behaviorsApply.disabled) return;
+  const mode = selectedMode();
+  behaviorSet = {
+    mode,
+    entries: pendingParse.entries,
+    fullConfig: (mode === 'replace' && pendingParse.kind === 'full') ? pendingParse.fullConfig : null,
+    names: pendingParse.names,
+  };
+  updateBehaviorSetUi();
+  closeBehaviorsModal();
+  setStatus('ready', describeActiveSet() + ' — applies to the next upload or stream.');
+});
+
+behaviorsReset.addEventListener('click', () => {
+  behaviorSet = null;
+  pendingParse = null;
+  updateBehaviorSetUi();
+  renderBehaviorsPreview();
+  setStatus('ready', 'Behavior set reset to default (' + VELMA_CONFIG.behaviors.length + ' presets).');
+});
 
 // ── File pickers ─────────────────────────────────────────────────────────────
 btnUpload.addEventListener('click', () => {

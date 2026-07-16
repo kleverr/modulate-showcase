@@ -2,6 +2,25 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.12.0] - 2026-07-16
+
+### Added
+- **/dt: custom behavior sets.** New "Behaviors" button opens a modal to upload
+  a behaviors JSON (per the documented schema): a bare array of
+  `"preset:<id>"` refs and/or BehaviorDef objects, an object with a
+  `behaviors` key, or a full BatchConfig — auto-detected. Two modes: **Add**
+  (merge into the default 10 presets, deduped) or **Replace** (a full
+  BatchConfig replaces conversation types, roles, and STT settings too).
+  Validation before Apply: preset identifiers checked against the live
+  `list-presets` catalog (unknown → blocked, the API would 422),
+  `behavior_uuid` auto-generated when missing, a missing one-of-two
+  descriptions copied with a warning, both missing → blocked. The set
+  persists for the session until "Reset to default" (indicator on the
+  Behaviors pill), and applies to both batch uploads and streaming.
+- `dt/behaviors-example.json` — downloadable example mixing 2 preset refs and
+  2 custom behavior definitions tuned to fire on the demo call ("Profanity
+  Directed at Agent", "Sarcasm or Mockery").
+
 ## [4.11.0] - 2026-07-16
 
 ### Added

@@ -784,6 +784,102 @@ td.num { text-align: right; padding-right: 0; font-variant-numeric: tabular-nums
 .processing-status { margin: 0; color: var(--m__text-caption); font-variant-numeric: tabular-nums; }
 .processing-note { margin: 0; color: var(--m__text-caption); font-size: var(--m__font-size-s); line-height: var(--m__line-height-copy); }
 
+/* ── Behavior set modal ── */
+.behaviors-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8vh var(--m__space-m) var(--m__space-m);
+  background: color-mix(in srgb, var(--m__color-gray-900) 32%, transparent);
+  overflow-y: auto;
+}
+.behaviors-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m__space-s);
+  width: min(100%, 30rem);
+  border-radius: var(--m__radius-xxxl);
+  background: var(--m__bg);
+  padding: var(--m__space-m);
+  box-shadow: 0 1rem 2.8rem -.8rem color-mix(in srgb, var(--m__color-black) 28%, transparent);
+}
+.behaviors-box-head { display: flex; align-items: baseline; gap: var(--m__space-s); flex-wrap: wrap; }
+.behaviors-box-head h2 {
+  margin: 0;
+  font-family: var(--m__font-family-ids-display);
+  font-size: var(--m__font-size-xxl);
+  font-weight: 700;
+  color: var(--m__text-accent);
+}
+.behaviors-current { margin: 0; color: var(--m__text-caption); font-size: var(--m__font-size-s); }
+
+.behaviors-drop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m__space-xxs);
+  border: 2px dashed var(--m__border-strong);
+  border-radius: var(--m__radius-xl);
+  background: none;
+  padding: var(--m__space-s);
+  text-align: start;
+  cursor: pointer;
+  color: var(--m__text);
+  font: inherit;
+  transition: border-color var(--m__duration-hover-out) var(--m__easing-hover);
+}
+.behaviors-drop:hover, .behaviors-drop.dragover {
+  border-color: var(--m__text-accent);
+  transition-duration: var(--m__duration-hover-in);
+}
+.behaviors-drop-title { font-weight: 500; color: var(--m__text-accent); }
+.behaviors-drop-sub { color: var(--m__text-caption); font-size: var(--m__font-size-s); line-height: var(--m__line-height-copy); }
+.behaviors-drop-sub code { font-family: inherit; background: var(--m__bg-surface); padding: 0 .25em; border-radius: var(--m__radius-s); }
+.behaviors-drop-sub a { color: var(--m__text); }
+.behaviors-drop-sub a:hover { color: var(--m__text-link-hover); }
+
+.behaviors-mode { display: flex; flex-direction: column; gap: var(--m__space-xxs); }
+.mode-option {
+  display: flex;
+  align-items: baseline;
+  gap: var(--m__space-xxs);
+  cursor: pointer;
+  font-size: var(--m__font-size-m);
+}
+.mode-option input { accent-color: var(--m__text-accent); }
+.mode-note { display: block; color: var(--m__text-caption); font-size: var(--m__font-size-s); }
+
+.behaviors-preview { display: flex; flex-direction: column; gap: var(--m__space-xs); }
+.behaviors-preview-title { margin: 0; font-weight: 500; color: var(--m__text-accent); font-size: var(--m__font-size-s); }
+.behaviors-chips { display: flex; flex-wrap: wrap; gap: var(--m__space-xxs); }
+.behavior-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .3em;
+  border-radius: var(--m__radius-s);
+  background: var(--m__bg-surface);
+  padding: .15rem .4rem;
+  font-size: var(--m__font-size-s);
+  color: var(--m__text);
+}
+.behavior-chip .behavior-chip-star { display: inline-flex; width: .7em; height: .7em; }
+.behavior-chip .behavior-chip-star svg { width: 100%; height: 100%; fill: currentColor; }
+.behavior-chip.preset { color: var(--m__text-caption); }
+.behavior-chip.problem { color: var(--m__color-red-500); background: color-mix(in srgb, var(--m__color-red-500) 8%, transparent); }
+.behaviors-problems {
+  margin: 0;
+  padding-left: 1.1em;
+  color: var(--m__color-red-500);
+  font-size: var(--m__font-size-s);
+  line-height: var(--m__line-height-copy);
+}
+.behaviors-problems li.warn { color: var(--m__text-caption); }
+.behaviors-problems:empty { display: none; }
+
+.behaviors-box-actions { display: flex; gap: var(--m__space-xs); flex-wrap: wrap; }
+
 /* ── Error banner ── */
 .error-banner {
   position: fixed;

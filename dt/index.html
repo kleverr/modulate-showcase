@@ -40,6 +40,7 @@
       <div class="hero-actions">
         <button type="button" id="btn-upload" class="pill-btn solid">Upload file</button>
         <button type="button" id="btn-stream" class="pill-btn">Stream file</button>
+        <button type="button" id="btn-behaviors" class="pill-btn">Behaviors</button>
       </div>
     </div>
     <p class="report-status" id="report-status">
@@ -133,7 +134,7 @@
     <ul class="transcript-chat" id="transcript-list"></ul>
   </section>
 
-  <footer class="site-footer" id="site-footer">Velma internal demo · v4.11.0 · July 16, 2026</footer>
+  <footer class="site-footer" id="site-footer">Velma internal demo · v4.12.0 · July 16, 2026</footer>
 
 </main>
 
@@ -148,6 +149,43 @@
   </div>
 </div>
 
+<div class="behaviors-overlay" id="behaviors-modal" hidden>
+  <div class="behaviors-box">
+    <header class="behaviors-box-head">
+      <h2>Behavior set</h2>
+      <p class="behaviors-current" id="behaviors-current">Default · 10 presets</p>
+    </header>
+
+    <button type="button" class="behaviors-drop" id="behaviors-drop">
+      <span class="behaviors-drop-title">Upload behaviors JSON</span>
+      <span class="behaviors-drop-sub">Click to choose a file or drop it here — a <code>behaviors</code> array (preset refs and/or behavior definitions) or a full BatchConfig. <a href="/dt/behaviors-example.json" download id="behaviors-example-link">Example file</a></span>
+    </button>
+
+    <div class="behaviors-mode" id="behaviors-mode">
+      <label class="mode-option">
+        <input type="radio" name="behaviors-mode" value="add" checked>
+        <span><strong>Add</strong> to the default set</span>
+      </label>
+      <label class="mode-option">
+        <input type="radio" name="behaviors-mode" value="replace">
+        <span><strong>Replace</strong> the default set<span class="mode-note" id="mode-replace-note"></span></span>
+      </label>
+    </div>
+
+    <div class="behaviors-preview" id="behaviors-preview" hidden>
+      <p class="behaviors-preview-title" id="behaviors-preview-title"></p>
+      <div class="behaviors-chips" id="behaviors-chips"></div>
+      <ul class="behaviors-problems" id="behaviors-problems"></ul>
+    </div>
+
+    <footer class="behaviors-box-actions">
+      <button type="button" class="pill-btn solid" id="behaviors-apply" disabled>Apply</button>
+      <button type="button" class="pill-btn" id="behaviors-reset">Reset to default</button>
+      <button type="button" class="pill-btn" id="behaviors-close">Close</button>
+    </footer>
+  </div>
+</div>
+
 <div class="error-banner" id="error-banner" hidden>
   <span id="error-text"></span>
   <button type="button" id="error-close" aria-label="Dismiss">×</button>
@@ -155,6 +193,7 @@
 
 <input type="file" id="file-input-batch" accept="audio/*,video/*" hidden>
 <input type="file" id="file-input-stream" accept="audio/*,video/*" hidden>
+<input type="file" id="file-input-behaviors" accept=".json,application/json" hidden>
 <audio id="audio" preload="auto"></audio>
 
 <script src="/dt/dt.js"></script>
