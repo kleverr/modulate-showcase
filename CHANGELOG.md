@@ -2,6 +2,19 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.12.1] - 2026-07-16
+
+### Fixed
+- **/dt behaviors upload: tolerate real-world files.** A JSON fragment missing
+  its opening brace (`"behaviors": [...]` copied without the surrounding
+  `{ }`) is auto-repaired with a visible warning instead of failing with a
+  raw parse error (this is exactly what a developer-exported test file
+  looked like). Parse errors now hint at the missing-brace case.
+- Non-schema fields are stripped before sending: BehaviorDef extras
+  (`saved_ts`, `updated_ts`, …) and unknown top-level BatchConfig keys are
+  dropped with an "Ignored non-schema fields" warning, so internal-tool
+  exports can't trip a 422 upstream.
+
 ## [4.12.0] - 2026-07-16
 
 ### Added

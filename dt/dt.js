@@ -179,6 +179,7 @@ function parseBehaviorsJson(data) {
 
   const entries = [];
   const names = [];
+  const droppedFields = new Set();
   rawList.forEach((raw, i) => {
     if (typeof raw === 'string') {
       const s = raw.trim();
@@ -199,7 +200,13 @@ function parseBehaviorsJson(data) {
       problems.push({ level: 'error', text: `Entry ${i + 1}: not a behavior definition or preset reference.` });
       return;
     }
-    const def = { ...raw };
+    // Keep only the documented BehaviorDef fields — internal-tool exports carry
+    // extras (saved_ts, updated_ts, …) the API may reject.
+    const DEF_FIELDS = ['behavior_uuid', 'name', 'short_description', 'detailed_description',
+      'applies_to_conversation_type_uuids', 'applies_to_participant_role_uuids'];
+    const def = {};
+    for (const k of DEF_FIELDS) { if (raw[k] !== undefined) def[k] = raw[k]; }
+    Object.keys(raw).forEach(k => { if (!DEF_FIELDS.includes(k)) droppedFields.add(k); });
     if (!def.name || !String(def.name).trim()) {
       problems.push({ level: 'error', text: `Entry ${i + 1}: behavior definition is missing "name".` });
       return;
@@ -219,8 +226,17 @@ function parseBehaviorsJson(data) {
     names.push(String(def.name));
   });
 
+  if (droppedFields.size) {
+    problems.push({ level: 'warn', text: 'Ignored non-schema fields: ' + [...droppedFields].join(', ') + '.' });
+  }
   if (kind === 'full') {
-    fullConfig = { ...data, behaviors: entries };
+    // Same whitelisting at the BatchConfig level.
+    fullConfig = { behaviors: entries };
+    for (const k of CONFIG_KEYS) { if (data[k] !== undefined) fullConfig[k] = data[k]; }
+    const droppedTop = Object.keys(data).filter(k => k !== 'behaviors' && !CONFIG_KEYS.includes(k));
+    if (droppedTop.length) {
+      problems.push({ level: 'warn', text: 'Ignored non-schema config fields: ' + droppedTop.join(', ') + '.' });
+    }
     const hasTypes = Array.isArray(fullConfig.conversation_types) && fullConfig.conversation_types.length > 0;
     const hasRoles = Array.isArray(fullConfig.participant_roles) && fullConfig.participant_roles.length > 0;
     if (entries.length && (!hasTypes || !hasRoles)) {
@@ -1234,17 +1250,31 @@ function closeBehaviorsModal() {
 }
 
 async function handleBehaviorsFile(file) {
+  const text = await file.text();
   let data;
+  let repaired = false;
   try {
-    data = JSON.parse(await file.text());
+    data = JSON.parse(text);
   } catch (e) {
-    pendingParse = { kind: null, entries: [], fullConfig: null, names: [], raw: null,
-      problems: [{ level: 'error', text: 'Not valid JSON: ' + (e && e.message ? e.message : e) }] };
-    renderBehaviorsPreview();
-    return;
+    // Common copy-paste fragment: `"behaviors": [...]` without the surrounding
+    // braces. Try re-wrapping before giving up.
+    const trimmed = text.trim();
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+      try { data = JSON.parse('{' + trimmed + '}'); repaired = true; } catch {}
+      if (!repaired) { try { data = JSON.parse('{' + trimmed); repaired = true; } catch {} }
+    }
+    if (!repaired) {
+      pendingParse = { kind: null, entries: [], fullConfig: null, names: [], raw: null,
+        problems: [{ level: 'error', text: 'Not valid JSON: ' + (e && e.message ? e.message : e) + ' — the file must start with { or [ (a copied fragment like "behaviors": [...] is missing its opening brace).' }] };
+      renderBehaviorsPreview();
+      return;
+    }
   }
   await loadPresetCatalog().catch(() => {});
   pendingParse = { ...parseBehaviorsJson(data), raw: data };
+  if (repaired) {
+    pendingParse.problems.unshift({ level: 'warn', text: 'File was a JSON fragment missing its opening { — auto-repaired and parsed.' });
+  }
   renderBehaviorsPreview();
 }
 
