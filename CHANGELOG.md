@@ -2,6 +2,33 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.11.0] - 2026-07-16
+
+### Added
+- **`/dt` — Deeptalk-style Velma call report** (standalone internal demo page
+  for the investor presentation). Faithful reproduction of the Deeptalk report
+  design (Stratos / Proto Grotesk webfonts, `--m__*` design tokens, dark
+  sticky "modulate player" timeline with emotion-colored per-speaker clip
+  lanes and star behavior markers, speakers table with emotion speech-pattern
+  bars and sentiment topic chips, signal-module behaviors card with reasoning +
+  clickable evidence quotes + confidence, chat-style transcript with emotion
+  pills). Self-contained under `dt/` (own HTML/CSS/JS), served at `GET /dt`.
+- Page opens with a preprocessed Irate-Caller report (`dt/velma-report.json`,
+  generated through the real `/api/velma-2-batch` with the page's exact
+  config — emotion signal on, 10 behavior presets, example conv types/roles).
+  **Upload file** → processing screen → batch report. **Stream file** → live
+  progressive report over `/api/velma-2-streaming` (green pulsing status,
+  audio plays along, Stop keeps the partial report).
+- No config UI, no rate-limit chrome — deliberately minimal for the demo.
+
+### Notes
+- Batch `summary` came back `null` on one of two fixture-generation runs
+  (transient upstream flakiness); the page shows a "Waiting for summary…"
+  placeholder if that happens live.
+- The batch response includes `accent` and `deepfake_score` per clip even when
+  those STT signals are disabled in the config (upstream behavior, unused by
+  this page).
+
 ## [4.10.0] - 2026-07-14
 
 ### Added

@@ -296,6 +296,12 @@ app.get('/accent', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Deeptalk-style Velma report (standalone internal demo page)
+app.get('/dt', (req, res) => {
+  logView(req);
+  res.sendFile(path.join(__dirname, 'dt', 'index.html'));
+});
+
 // GET proxy for read-only Velma endpoints (e.g. list-presets)
 app.get('/api/:path(*)', async (req, res, next) => {
   const endpoint = req.path;
