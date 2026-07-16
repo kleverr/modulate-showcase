@@ -2,6 +2,19 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [4.13.0] - 2026-07-16
+
+### Changed
+- **/dt default behavior set is now 17** — the 10 presets plus the team's 7
+  authored prosody/tone behavior definitions (Smile in the Voice, Unvoiced
+  Disagreement, Request or order, Tone Mismatch, Reluctance, Accusatory
+  Question, Sarcasm), from the developer's test file ("Tone Missmatch" typo
+  fixed to "Tone Mismatch"). Applies to batch, streaming, and the Add-mode
+  merge base.
+- Preloaded fixture regenerated with the 17-behavior default: 9 detections on
+  the demo call, now including Smile in the Voice (CSR, 85%) and Accusatory
+  Question (customer, 87%).
+
 ## [4.12.1] - 2026-07-16
 
 ### Fixed

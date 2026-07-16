@@ -12,6 +12,53 @@ const DEMO_REPORT_FALLBACK_URL = '/velma-demo-data.json';
 // ── Analysis config ──────────────────────────────────────────────────────────
 // Always-explicit BatchConfig (no config UI on this page). Same object is sent
 // as the batch `config` field and as the first streaming frame.
+// Custom behavior definitions that are part of the DEFAULT set (authored by
+// the team; from test_behaviors.json). Mixed with the preset refs below.
+const DEFAULT_CUSTOM_BEHAVIORS = [
+  {
+    "behavior_uuid": "1a44acb7-e339-4ab8-a86a-4f05e75340bb",
+    "name": "Smile in the Voice",
+    "short_description": "An audible smile in the speaker's tone makes otherwise neutral or harsh-reading words sound warm and positive.",
+    "detailed_description": "This behavior is present if:\n- The speaker's vocal tone carries acoustic markers of smiling, including raised pitch, brightened resonance, and lightened articulation.\n- The spoken words, read as plain text, would read as neutral, blunt, pushy, or hostile.\n- The vocal warmth reverses the plain-text reading so the utterance sounds friendly, playful, or good-natured.\n- The speaker's pacing and intonation rise or lift toward the end of phrases rather than flattening or hardening.\n\nThis behavior is not present if:\n- The vocal tone is flat, tense, clipped, or lowered in pitch while delivering neutral or harsh words.\n- The words themselves already read as clearly warm, complimentary, or affectionate in plain text, so no tone-text mismatch exists.\n- The speaker's tone carries acoustic markers of sarcasm, including exaggerated drawl, falling terminal pitch, or mocking sing-song, which invert warm words into hostility rather than the reverse.\n- The brightness in the voice is caused by anger, panic, or excitement rather than smiling, indicated by strained volume, trembling, or harsh onset of words.\n- The audio is muffled, distorted, or too brief to judge tonal warmth."
+  },
+  {
+    "behavior_uuid": "11185bbc-c917-4377-8d04-239a6d2c4220",
+    "name": "Unvoiced Disagreement",
+    "short_description": "A speaker states clean verbal agreement while their vocal delivery signals strain, reluctance, or deflation rather than genuine buy-in.",
+    "detailed_description": "This behavior is present if:\n- The speaker uses an unhedged agreement word or phrase, meaning an affirmation with no qualifying or softening language attached (examples of agreement words: yes, sure, okay, fine, sounds good, will do, understood, agreed).\n- The spoken words contain no textual hedge, meaning no conditional qualifier, no counter-proposal, and no stated reservation.\n- The vocal delivery of that agreement is strained, effortful, flat, or deflating, marked by falling pitch at the close, reduced volume, audible exhalation or sigh, slowed tempo, or a delayed onset before the affirmation.\n- The mismatch is between the affirmative wording and the low-energy or reluctant vocal delivery of that same affirmation.\n\nThis behavior is not present if:\n- The spoken words themselves carry a hedge, qualifier, conditional, or reservation, since that is textual disagreement rather than unvoiced disagreement.\n- The agreement is delivered with matching upbeat, energetic, or neutral-engaged vocal delivery consistent with genuine buy-in.\n- The low energy or flat delivery is attributable to a stated non-emotional cause such as illness, fatigue mentioned aloud, or poor connection audio artifacts.\n- The affirmation is a routine acknowledgment token used only to signal continued listening rather than a response to a request or proposal.\n- The strained delivery accompanies words other than an affirmation, such as a question or a factual statement."
+  },
+  {
+    "behavior_uuid": "fd99e490-fc5c-4611-8b26-a13876b269b7",
+    "name": "Request or order",
+    "short_description": "An utterance phrased grammatically as a question or soft suggestion but delivered with the flat-falling intonation of a command rather than genuine inquiry.",
+    "detailed_description": "This behavior is present if:\n- The utterance is grammatically structured as a question or a soft suggestion, using interrogative word order, a modal opener (\"could you\", \"would you\", \"can you\", \"why don't you\"), or a tag ending.\n- The pitch contour falls or stays flat at the end of the utterance rather than rising, indicating a directive delivery.\n- The utterance names an action the listener is expected to perform, expressed in the second person.\n- The delivery carries no genuine uncertainty: there is no hesitation, no rising search intonation, and no pause inviting the listener to decline.\n- The speaker's tone treats compliance as assumed rather than optional.\n\nThis behavior is not present if:\n- The utterance ends with a rising pitch contour that signals a sincere request for information or permission.\n- The speaker pairs the phrasing with markers of genuine uncertainty such as \"if you don't mind\", \"only if you have time\", or an audible pause that leaves room for refusal.\n- The utterance is asking for information the speaker does not already have (\"what time is it\", \"where did you put it\"), rather than commanding an action.\n- The utterance is an offer or invitation that benefits the listener rather than an instruction directed at them.\n- The flat contour is an artifact of a statement that contains no action directed at the listener."
+  },
+  {
+    "behavior_uuid": "33d5a07e-f88e-446f-bd1d-e2b9cae7dd20",
+    "name": "Tone Mismatch",
+    "short_description": "One speaker seeks emotional connection while the other returns words that are lexically warm but delivered with flat, disengaged vocal prosody.",
+    "detailed_description": "This behavior is present if:\n- One speaker produces an utterance seeking emotional connection, such as sharing a personal difficulty, expressing affection, or asking for reassurance.\n- The other speaker replies using lexically warm content, meaning words and phrases that read as caring, supportive, or affectionate when transcribed (for example agreement terms, endearments, affirmations, or sympathetic statements).\n- The vocal delivery of that reply carries a flat, monotone, or clipped prosodic contour with little pitch variation, reduced volume dynamics, or rushed pacing that does not match the emotional register of the warm words.\n- The register of the reply's delivery breaks from the register of its own lexical content, so the sound conveys detachment while the words convey warmth.\n\nThis behavior is not present if:\n- The reply's vocal delivery matches its warm lexical content, with pitch variation, softened pacing, or emphasis consistent with genuine warmth.\n- The reply uses lexically cold, dismissive, or hostile content, since the mismatch requires warm words delivered hollow rather than cold words.\n- The flatness is explained by a stated situational constraint, such as the speaker whispering, being ill, tired, or in a noisy environment they name aloud.\n- The initiating speaker's utterance is transactional or informational rather than an attempt at emotional connection.\n- The reply is a scripted or formulaic closing read without any preceding bid for connection."
+  },
+  {
+    "behavior_uuid": "9ed94d19-8e43-4a7c-9689-69d187bd7cf3",
+    "name": "Reluctance",
+    "short_description": "A speaker verbally agrees or commits with clean, confident wording while the audio delivery carries audible doubt through silence, sighing, or subdued delivery.",
+    "detailed_description": "This behavior is present if:\n- The spoken words form an affirmative commitment, agreement, or acceptance phrased without hedging words such as \"maybe\", \"I guess\", \"I think\", \"probably\", or \"we'll see\".\n- The transcribed text contains no filler or pause markers such as \"um\", \"uh\", \"well\", or trailing ellipses.\n- The audio contains a silent gap of roughly two to three seconds before or during the commitment.\n- The audio delivery of the commitment includes an audible sigh, a lowered volume, or a slowed drawn-out pace relative to the speaker's surrounding speech.\n- The vocal delivery markers of doubt (silence, sigh, quiet or drawn-out delivery) occur despite the words themselves reading as confident.\n\nThis behavior is not present if:\n- The spoken words already contain verbal hedges or qualifiers that signal uncertainty in the text itself.\n- The pause or silence is caused by an external interruption, background noise, or another speaker talking over the commitment.\n- The commitment is delivered at the speaker's normal pace and volume with no silent gap, sigh, or subdued delivery.\n- The silence occurs while the speaker is completing an unrelated task or reading aloud rather than responding to a request.\n- The speaker declines or refuses rather than committing or agreeing."
+  },
+  {
+    "behavior_uuid": "181a2a79-d44a-450a-b716-0d49aefcbb48",
+    "name": "Accusatory Question",
+    "short_description": "A question whose wording is neutral but whose vocal delivery frames it as an accusation rather than a genuine inquiry.",
+    "detailed_description": "This behavior is present if:\n- The utterance is grammatically structured as a question, ending with rising or interrogative phrasing or an interrogative word such as who, what, why, where, when, or how.\n- The literal wording of the question contains no blaming terms, insults, or explicit allegations.\n- The vocal delivery carries sharp emphatic stress on one or more words, such as heightened volume, hardened tone, or clipped abrupt articulation.\n- The pacing is compressed with little or no pause left for the other party to respond before the speaker continues.\n- The prosody communicates hostility, suspicion, or blame that is absent from the words themselves.\n\nThis behavior is not present if:\n- The question is delivered in a calm, even tone with steady pacing that invites an answer.\n- The wording itself contains explicit blame, insults, or allegations, since the accusation then comes from the words rather than the voice.\n- The sharp or raised delivery reflects excitement, urgency, or environmental noise rather than hostility or suspicion.\n- The rising stress is a genuine request for clarification or repetition of something not heard.\n- The utterance is not structured as a question."
+  },
+  {
+    "behavior_uuid": "d565571e-ca38-4186-ab0d-68834d537aef",
+    "name": "Sarcasm",
+    "short_description": "Speech where prosodic delivery contradicts the literal semantic meaning of the words to convey the opposite sentiment.",
+    "detailed_description": "This behavior is present if:\n- The literal semantic content of the words expresses a positive or approving sentiment (positive/approving words = adjectives or phrases such as 'great', 'wonderful', 'perfect', 'love it', 'brilliant', 'fantastic', 'so helpful').\n- The vocal prosody contradicts that literal sentiment, exhibited by AT LEAST ONE of the following audio markers: flat or monotone pitch contour on the positive word, exaggerated drawn-out vowel elongation, an emphatic downward pitch drop on the key word, or a slow deadpan delivery lacking the rising pitch typical of genuine enthusiasm.\n- The utterance is delivered in the first or second person and references the immediate situation, another participant, or a preceding statement in the conversation.\n- The mismatch between literal words and delivery is the primary feature of the utterance, such that a genuine reading would be contextually inconsistent with the surrounding turns.\n\nThis behavior should NOT be flagged if:\n- The positive words are accompanied by prosody consistent with genuine enthusiasm (rising or animated pitch, upbeat energy) with no contradicting audio marker.\n- The flat or deadpan delivery is attributable to fatigue, reading a scripted disclosure, or reciting factual information rather than commenting on sentiment.\n- The speech is a direct quotation of a third party not present in the conversation, or is in the past tense recounting someone else's words.\n- Only text is available and no prosodic contradiction can be assessed, unless the words contain an explicit self-marked contrast (e.g., a negative clause immediately following the positive words)."
+  }
+];
+
 const VELMA_CONFIG = {
   conversation_types: [
     {
@@ -58,6 +105,7 @@ const VELMA_CONFIG = {
     'preset:escalation_to_supervisor_request',
     'preset:legal_threat_litigation',
     'preset:customer_gratitude',
+    ...DEFAULT_CUSTOM_BEHAVIORS,
   ],
   stt: {
     speaker_diarization: true,
@@ -78,6 +126,7 @@ const CONFIGURED_BEHAVIOR_NAMES = [
   'Issue Not Resolved', 'Issue Resolved', 'Refund or Credit Issued',
   'Refund Demand', 'Escalation to Supervisor Request', 'Legal Threat - Litigation',
   'Customer Gratitude',
+  ...DEFAULT_CUSTOM_BEHAVIORS.map(b => b.name),
 ];
 
 // ── Custom behavior set (uploaded JSON) ──────────────────────────────────────
@@ -1176,7 +1225,7 @@ async function startStream(file) {
 let pendingParse = null; // last parsed upload, not yet applied
 
 function describeActiveSet() {
-  if (!behaviorSet) return 'Default · ' + VELMA_CONFIG.behaviors.length + ' presets';
+  if (!behaviorSet) return 'Default · ' + VELMA_CONFIG.behaviors.length + ' behaviors';
   const n = (getActiveConfig().behaviors || []).length;
   if (behaviorSet.mode === 'replace' && behaviorSet.fullConfig) return 'Custom BatchConfig · ' + n + ' behaviors';
   if (behaviorSet.mode === 'replace') return 'Custom · ' + n + ' behaviors (replaced default)';
@@ -1328,7 +1377,7 @@ behaviorsReset.addEventListener('click', () => {
   pendingParse = null;
   updateBehaviorSetUi();
   renderBehaviorsPreview();
-  setStatus('ready', 'Behavior set reset to default (' + VELMA_CONFIG.behaviors.length + ' presets).');
+  setStatus('ready', 'Behavior set reset to default (' + VELMA_CONFIG.behaviors.length + ' behaviors).');
 });
 
 // ── File pickers ─────────────────────────────────────────────────────────────
