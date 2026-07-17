@@ -1016,6 +1016,18 @@
     syncPlayerPosition();
   }
 
+  const PLAY_GLYPH = '<svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg"><polygon fill="currentColor" points="40 30 40 190 190 110 40 30" /></svg>';
+  const PAUSE_GLYPH = '<svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg"><rect fill="currentColor" x="55" y="35" width="38" height="150" /><rect fill="currentColor" x="127" y="35" width="38" height="150" /></svg>';
+
+  function updatePlayIcon(playing) {
+    if (!playerIcon) return;
+    const state = playing ? 'true' : 'false';
+    if (playerIcon.dataset.playing !== state) {
+      playerIcon.dataset.playing = state;
+      playerIcon.innerHTML = playing ? PAUSE_GLYPH : PLAY_GLYPH;
+    }
+  }
+
   function syncPlayerPosition() {
     const a = activeAudio();
     if (!a || !mediaBox) return;
@@ -1023,8 +1035,15 @@
     const pct = (isFinite(dur) && dur > 0) ? (a.currentTime / dur) * 100 : 0;
     if (playerPosIndicator) playerPosIndicator.style.left = pct + '%';
     if (playerCurrentTimeEl) playerCurrentTimeEl.textContent = fmtPlayerTime(a.currentTime);
-    if (playerIcon) playerIcon.dataset.playing = a.paused ? 'false' : 'true';
-    if (mediaBox) mediaBox.dataset.playbackStarted = a.currentTime > 0 ? 'true' : 'false';
+    updatePlayIcon(!a.paused);
+    const started = a.currentTime > 0 ? 'true' : 'false';
+    if (mediaBox) mediaBox.dataset.playbackStarted = started;
+    // Red playhead across the whole media container (visualization + bar)
+    const container = mediaBox.closest('.media-container');
+    if (container) {
+      container.dataset.playbackStarted = started;
+      container.style.setProperty('--pg-pos-x', pct + '%');
+    }
   }
 
   function initPlayerController() {
@@ -1040,12 +1059,19 @@
     }
 
     // Keep the view in sync with whichever audio element is active.
+    let posRaf = null;
+    const posTick = () => {
+      syncPlayerPosition();
+      const a = activeAudio();
+      posRaf = (a && !a.paused) ? requestAnimationFrame(posTick) : null;
+    };
+    const startPosLoop = () => { if (!posRaf) posRaf = requestAnimationFrame(posTick); };
     [resultsAudio, originalAudio].forEach((a) => {
       if (!a) return;
       a.addEventListener('timeupdate', () => { if (a === activeAudio()) syncPlayerPosition(); });
-      a.addEventListener('play',  () => { if (a === activeAudio() && playerIcon) playerIcon.dataset.playing = 'true'; });
-      a.addEventListener('pause', () => { if (a === activeAudio() && playerIcon) playerIcon.dataset.playing = 'false'; });
-      a.addEventListener('ended', () => { if (a === activeAudio() && playerIcon) playerIcon.dataset.playing = 'false'; });
+      a.addEventListener('play',  () => { if (a === activeAudio()) { updatePlayIcon(true); startPosLoop(); } });
+      a.addEventListener('pause', () => { if (a === activeAudio()) updatePlayIcon(false); });
+      a.addEventListener('ended', () => { if (a === activeAudio()) updatePlayIcon(false); });
       a.addEventListener('loadedmetadata', () => { if (a === activeAudio()) syncPlayerMeta(); });
       a.addEventListener('durationchange', () => { if (a === activeAudio()) syncPlayerMeta(); });
     });
@@ -3785,9 +3811,10 @@
       transcriptList.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
-    // Render emotion chart
+    // Render the emotion clip strip — during live streams too, so the player
+    // visualization fills in progressively as clips arrive.
     const opts2 = getSttOptions();
-    if (sttUtterances.length > 0 && !isRecording && opts2.speaker_diarization) {
+    if (sttUtterances.length > 0 && opts2.speaker_diarization) {
       renderSttChart();
     } else {
       sttChart.innerHTML = '';
@@ -4038,7 +4065,7 @@
       df.className = 'pg-transcript-verdict';
       if (score > 0.7) {
         const conf = Math.round((score - 0.5) * 2 * 100);
-        df.classList.add('m__tag--error');
+        df.classList.add('deepfake');
         df.textContent = 'Deepfake';
         df.dataset.tooltip = 'Deepfake · ' + conf + '% confidence';
       } else if (score < 0.3) {
@@ -4738,13 +4765,19 @@
   function buildStages() {
     if (!plateStages) return;
     const names = (MODES[currentMode] && MODES[currentMode].stages) || ['Analyzing audio'];
-    // Stage check-off timing is pure CSS (per-chip --stage-delay via nth-child).
+    // Early stages check off on a CSS timer (per-chip --stage-delay via
+    // nth-child) — that's decorative pacing, not real progress. The strip
+    // therefore ends in a spinner that keeps running until the response
+    // actually lands, so a long wait never looks "done".
     plateStages.innerHTML = names.map(n =>
       '<span class="pg-processing-stage">' +
       '<svg class="pg-stage-check" width="20" height="20" viewBox="0 0 10 10" aria-hidden="true">' +
       '<path d="M 1.5 4.55 L 4 7.95 L 9 2.05" fill="none" stroke="currentColor" stroke-width="1" /></svg>' +
       escapeHtml(n) + '</span>'
-    ).join('');
+    ).join('') +
+      '<span class="pg-processing-stage pg-processing-stage--spinner">' +
+      '<img class="m__loader" src="/assets/service/loader-icon.svg" alt="" aria-hidden="true" />' +
+      'Waiting for results…</span>';
   }
 
   function startProgress(estimatedMs) {
@@ -4927,17 +4960,41 @@
   // Documented BatchConfig / STTOptions defaults (straight from the spec). This
   // is the editor's starting state: nothing selected (empty conversation_types /
   // participant_roles / behaviors), STT + produce_* at their documented defaults.
+  // The tab's default configuration: the team's starter BatchConfig
+  // (2 conversation types, 3 roles, 17 behaviors) with every STT signal ON.
+  // Loaded from /velma-default-config.json (shared with the demo fixture
+  // regeneration script); until it arrives we fall back to the literal
+  // "default" contract.
+  let velmaDefaultSeed = null;
+
+  fetch('/velma-default-config.json')
+    .then(r => (r.ok ? r.json() : null))
+    .then(seed => {
+      if (!seed) return;
+      velmaDefaultSeed = seed;
+      // If the user hasn't customized anything yet, adopt the seed as the
+      // active config so untouched runs carry all signals + behaviors.
+      if (velmaConfig === 'default') {
+        velmaConfig = structuredClone(velmaDefaultSeed);
+        updateVelmaConfigSummary();
+        renderVelmaEditorForm();
+        renderVelmaEditorJson();
+      }
+    })
+    .catch(() => {});
+
   function buildCustomConfigSeed() {
+    if (velmaDefaultSeed) return structuredClone(velmaDefaultSeed);
     return {
       conversation_types: [],
       participant_roles: [],
       behaviors: [],
       stt: {
         speaker_diarization: true,
-        emotion_signal: false,
-        accent_signal: false,
-        deepfake_signal: false,
-        pii_phi_tagging: false,
+        emotion_signal: true,
+        accent_signal: true,
+        deepfake_signal: true,
+        pii_phi_tagging: true,
       },
       produce_topics: true,
       produce_topic_sentiments: true,
@@ -4945,14 +5002,15 @@
     };
   }
 
-  // Fresh state is the literal string "default" — exactly the spec's contract:
-  // `config` is either "default" (server's built-in config) or a BatchConfig.
   function buildDefaultVelmaConfig() {
-    return 'default';
+    return velmaDefaultSeed ? structuredClone(velmaDefaultSeed) : 'default';
   }
 
+  // "Default" now means the starter seed (or the literal string before it loads).
   function isDefaultConfig() {
-    return velmaConfig === 'default';
+    if (velmaConfig === 'default') return true;
+    return velmaDefaultSeed != null &&
+      JSON.stringify(velmaConfig) === JSON.stringify(velmaDefaultSeed);
   }
 
   // First time the tester changes anything, replace "default" with an explicit
@@ -5018,7 +5076,7 @@
   // none came back" (the API drops behaviors when no conversation types/roles).
   let velmaLastRequest = null;
   function captureVelmaRequest() {
-    if (isDefaultConfig()) { velmaLastRequest = { behaviorsRequested: false }; return; }
+    if (typeof velmaConfig !== 'object') { velmaLastRequest = { behaviorsRequested: false }; return; }
     const c = velmaConfig || {};
     velmaLastRequest = {
       behaviorsRequested: (c.behaviors || []).length > 0,
@@ -5036,10 +5094,11 @@
 
   function updateVelmaConfigSummary() {
     if (!velmaConfigSummary) return;
-    if (isDefaultConfig()) {
+    if (velmaConfig === 'default') {
       velmaConfigSummary.textContent = 'Endpoint default configuration';
       return;
     }
+    const prefix = isDefaultConfig() ? 'Default' : 'Custom';
     const c = velmaConfig;
     const nT = (c.conversation_types || []).length;
     const nR = (c.participant_roles || []).length;
@@ -5049,13 +5108,21 @@
     const behaviorLabel = `${nB} behavior${nB === 1 ? '' : 's'}` +
       (nPreset ? ` (${nPreset} preset${nPreset === 1 ? '' : 's'})` : '');
     velmaConfigSummary.textContent =
-      `Custom · ${nT} conversation type${nT === 1 ? '' : 's'} · ${nR} role${nR === 1 ? '' : 's'} · ${behaviorLabel}`;
+      `${prefix} · ${nT} conversation type${nT === 1 ? '' : 's'} · ${nR} role${nR === 1 ? '' : 's'} · ${behaviorLabel}`;
   }
 
   function clearVelmaResults() {
     if (!velmaContent) return;
     velmaData = null;
     velmaClipBehaviorsByUuid = {};
+    // The transcript, emotion strip and bottom columns are shared surfaces —
+    // clear them too, or a new stream plays over the previous run's report.
+    sttUtterances = [];
+    sttPartial = null;
+    sttData = null;
+    renderTranscript();
+    syncSpeakerLanes([]);
+    if (bottomColumns) bottomColumns.classList.remove('visible');
     velmaSummaryText.textContent = '';
     velmaSpeakersTbody.innerHTML = '';
     velmaBehaviorsTbody.innerHTML = '';
@@ -5131,7 +5198,7 @@
       const startedAt = Date.now();
       // The `config` form field is either the literal string `default` or a JSON BatchConfig.
       captureVelmaRequest();
-      const configField = isDefaultConfig() ? 'default' : JSON.stringify(velmaConfig);
+      const configField = (typeof velmaConfig === 'object') ? JSON.stringify(velmaConfig) : 'default';
       const { data, meta } = await uploadAndAnalyze(file, '/api/velma-2-batch', { config: configField });
       const processingMs = Date.now() - startedAt;
       await finishProgress();
@@ -5200,6 +5267,7 @@
       topics: [],
       topic_sentiments: [],
       summary: null,
+      partial_clip: null,
       duration_ms: 0,
     };
   }
@@ -5219,7 +5287,19 @@
     if (!msg || !velmaStreamData) return;
     switch (msg.type) {
       case 'clip':
-        if (msg.clip) velmaStreamData.clips.push(msg.clip);
+        if (msg.clip) {
+          velmaStreamData.clips.push(msg.clip);
+          velmaStreamData.partial_clip = null;
+        }
+        break;
+      case 'partial_clip':
+        if (msg.partial_clip) velmaStreamData.partial_clip = msg.partial_clip;
+        break;
+      case 'clip_update':
+        if (msg.clip_update && msg.clip_update.clip_uuid) {
+          const idx = velmaStreamData.clips.findIndex(c => c.clip_uuid === msg.clip_update.clip_uuid);
+          if (idx >= 0) velmaStreamData.clips[idx] = { ...velmaStreamData.clips[idx], ...msg.clip_update };
+        }
         break;
       case 'conversation_type':
         if (msg.pick) velmaStreamData.conversation_type_pick = msg.pick;
@@ -5234,7 +5314,14 @@
         }
         break;
       case 'behavior_detection':
-        if (msg.detection) velmaStreamData.behaviors.push(msg.detection);
+        if (msg.detection) {
+          // Detections can re-fire for the same behavior+speaker — keep the latest.
+          const j = velmaStreamData.behaviors.findIndex(b =>
+            b.behavior_uuid === msg.detection.behavior_uuid &&
+            b.speaker_label === msg.detection.speaker_label);
+          if (j >= 0) velmaStreamData.behaviors[j] = msg.detection;
+          else velmaStreamData.behaviors.push(msg.detection);
+        }
         break;
       case 'topics':
         if (Array.isArray(msg.topics)) velmaStreamData.topics = msg.topics;
@@ -5304,7 +5391,7 @@
       handleVelmaStreamMessage,
       () => {
         // First frame must be the config (before any audio chunk).
-        try { recordingWs.send(isDefaultConfig() ? 'default' : JSON.stringify(velmaConfig)); } catch (e) {}
+        try { recordingWs.send(typeof velmaConfig === 'object' ? JSON.stringify(velmaConfig) : 'default'); } catch (e) {}
       }
     );
   }
@@ -5356,9 +5443,10 @@
     recordingWs.onopen = () => {
       isRecording = true;
       recordingStartTime = Date.now();
+      updateRecordButton();
 
       // Protocol step 1: first text frame is the config — literal `default` or JSON BatchConfig.
-      try { recordingWs.send(isDefaultConfig() ? 'default' : JSON.stringify(velmaConfig)); } catch (e) {}
+      try { recordingWs.send(typeof velmaConfig === 'object' ? JSON.stringify(velmaConfig) : 'default'); } catch (e) {}
 
       // Play the source audio alongside the stream so the user hears what the model hears.
       try { resultsAudio.currentTime = 0; } catch {}
@@ -5547,7 +5635,20 @@
       accent: c.accent,
       deepfake_score: c.deepfake_score,
     }));
-    sttPartial = null;
+    // Mid-stream: surface the in-progress utterance like the STT tab does.
+    if (!isFinal && data.partial_clip) {
+      const pc = data.partial_clip;
+      sttPartial = {
+        text: pc.text,
+        start_ms: pc.start_ms || 0,
+        duration_ms: pc.duration_ms || 0,
+        speaker: pc.speaker_label != null && speakerOrder[pc.speaker_label] != null
+          ? speakerOrder[pc.speaker_label] : 1,
+        language: pc.language, emotion: pc.emotion, accent: pc.accent,
+      };
+    } else {
+      sttPartial = null;
+    }
     sttData = { utterances: sttUtterances, duration_ms: data.duration_ms };
 
     // 3. Render via the shared pipeline (this draws the emotion clip strip in
@@ -5658,6 +5759,13 @@
     for (const k of Object.keys(counts)) { if (counts[k] > bestN) { best = k; bestN = counts[k]; } }
     return best;
   }
+  // SelectionSource enum → display text ("auto_selected_single_option" would be ugly raw)
+  function prettySelectionSource(source) {
+    if (!source) return 'Inferred';
+    if (source === 'auto_selected_single_option') return 'Auto-selected';
+    return source.charAt(0).toUpperCase() + source.slice(1).replace(/_/g, ' ');
+  }
+
   function buildSpeakerRow(s, rolePick) {
     const roleName = rolePick ? rolePick.name : null;
     const tr = document.createElement('tr');
@@ -5667,10 +5775,7 @@
     const desc = rolePick ? (rolePick.reasoning || rolePick.detail || '') : '';
     if (desc) cell += '<div class="pg-speaker-cell-desc">' + escapeHtml(desc) + '</div>';
     if (rolePick && rolePick.confidence != null) {
-      const source = rolePick.selection_source
-        ? rolePick.selection_source.charAt(0).toUpperCase() + rolePick.selection_source.slice(1)
-        : 'Inferred';
-      cell += '<span class="m__tag-flat">' + escapeHtml(source) + ', ' + Math.round(rolePick.confidence * 100) + '%</span>';
+      cell += '<span class="m__tag-flat">' + escapeHtml(prettySelectionSource(rolePick.selection_source)) + ', ' + Math.round(rolePick.confidence * 100) + '%</span>';
     }
     tdSpeaker.innerHTML = cell;
     tr.appendChild(tdSpeaker);
@@ -5726,10 +5831,7 @@
       let html = '<strong>' + escapeHtml(convPick.name || '') + '.</strong> ' +
         escapeHtml(convPick.reasoning || convPick.detail || '');
       if (convPick.confidence != null) {
-        const source = convPick.selection_source
-          ? convPick.selection_source.charAt(0).toUpperCase() + convPick.selection_source.slice(1)
-          : 'Inferred';
-        html += '<span class="m__tag-flat">' + escapeHtml(source) + ', ' + Math.round(convPick.confidence * 100) + '%</span>';
+        html += '<span class="m__tag-flat">' + escapeHtml(prettySelectionSource(convPick.selection_source)) + ', ' + Math.round(convPick.confidence * 100) + '%</span>';
       }
       type.innerHTML = html;
       velmaTopicsBySpeaker.appendChild(type);

@@ -705,3 +705,39 @@
   border-radius: 2px;
   display: inline-block;
 }
+
+/* ── red playhead across the media container (current playback position) ── */
+.pg-media-position-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--m__error);
+  left: var(--pg-pos-x, 0);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 3;
+  transition: opacity var(--m__duration-base) var(--m__easing-base);
+}
+.media-container[data-playback-started="true"] .pg-media-position-line {
+  opacity: 1;
+}
+
+/* ── processing stages: trailing spinner stage never fake-completes ── */
+.pg-processing-stage--spinner {
+  /* the nth-child check-off animations must not touch this one */
+  animation: pg-stage-pulse 1.1s ease-in-out infinite !important;
+  padding-left: 0 !important;
+}
+.pg-processing-stage--spinner .m__loader {
+  width: 1em;
+  height: 1em;
+  margin-right: 0.4em;
+  vertical-align: -0.15em;
+}
+
+/* ── deepfake verdict label in transcript rows reads as an alert ── */
+.pg-transcript-verdict.deepfake {
+  color: var(--m__error);
+  font-weight: var(--m__font-weight-medium);
+}

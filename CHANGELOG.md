@@ -2,6 +2,30 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [5.0.2] - 2026-07-17
+
+### Fixed
+- Player: play/pause glyph now switches, and a red playhead line tracks the
+  current position across the visualization + player bar (smooth rAF updates).
+- Velma config: customizing any field no longer resets the rest. The default
+  is now an explicit starter BatchConfig (2 conversation types, 3 roles, 17
+  behaviors — shared with /dt) with **every STT signal on**, served from
+  `velma-default-config.json`; Reset returns to it.
+- Streaming from file/demo cleared nothing before: old transcript/strip/summary
+  stayed on screen until `done`. Stream start now clears all shared surfaces,
+  the plate enters the streaming state, and the emotion strip fills in live.
+- Processing stages no longer pretend to finish: a trailing spinner stage
+  ("Waiting for results…") runs until the response actually lands.
+- The Deepfake label on transcript rows is red.
+
+### Changed
+- Velma demo re-cached with the all-signals config: colored emotion strip and
+  bars, accents, deepfake scores, PII blurs, 12 detected behaviors.
+- Streaming protocol coverage per the latest docs: `partial_clip` renders as a
+  live in-progress row, `clip_update` refines finalized clips in place, and
+  re-fired `behavior_detection`s replace instead of duplicate. Selection
+  sources display prettified ("Auto-selected" instead of the raw enum).
+
 ## [5.0.1] - 2026-07-17
 
 ### Changed

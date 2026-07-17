@@ -1,447 +1,541 @@
 {
-"filename": "Irate_Caller_Final.mp3",
-"duration_ms": 268680,
-"clips": [
-{
-"clip_uuid": "81a0793e-265f-41ab-8b27-b08a2d9e7a71",
-"text": "You've reached home-supply-plus.com customer support. Can you provide your name and account email?",
-"start_ms": 900,
-"duration_ms": 4260,
-"speaker_label": "1",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "93ba970e-6bab-44cf-af18-ea4c70040ad9",
-"text": "You better be a real person because I'm sick and tired of you people passing me off.",
-"start_ms": 5820,
-"duration_ms": 3720,
-"speaker_label": "2",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "2fd34bef-c6fc-41d1-83bb-471fe0e5473f",
-"text": "I am a real person, sir. Can I have your name and account email?",
-"start_ms": 10200,
-"duration_ms": 2880,
-"speaker_label": "1",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "60fb7388-32d1-4ab0-b012-1d2b1876c911",
-"text": "My name's John Sampson, and my account email is jsampson, J-S-A-M-P-S-O-N, at yahoo.com.",
-"start_ms": 13560,
-"duration_ms": 8040,
-"speaker_label": "2",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "dad364bf-0962-4d71-8436-8296e63eec6e",
-"text": "Thank you, John. What can I assist you with today?",
-"start_ms": 23220,
-"duration_ms": 2880,
-"speaker_label": "1",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "0d683463-7d12-4fd2-a105-96049732fd99",
-"text": "Assist me? Let me tell you something. You better be helpful. Because there's a lot riding on this for me and your people who have wasted my time. Do you know how long I've been waiting for this order? I mean, my backyard trawler was a total nightmare because of you people.",
-"start_ms": 27060,
-"duration_ms": 13020,
-"speaker_label": "2",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "5bcecb40-6899-4fbd-bb28-0dc1013c1d09",
-"text": "I'm sorry to hear that, sir. Can you give me the order number for this order?",
-"start_ms": 40380,
-"duration_ms": 3480,
-"speaker_label": "1",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "2eb0b640-8245-4e4a-813b-3ad41dec15ef",
-"text": "I might as well have memorized by now, but it's tattooed on me somewhere, the number 0022578938. I was supposed to have those extra chairs from you guys a week ago. No one had anywhere to sit. I mean, what are you guys doing over there? A circus? A clown show? Come on.",
-"start_ms": 45240,
-"duration_ms": 18540,
-"speaker_label": "2",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "f6c80299-9fa1-4e97-a763-31bb95826351",
-"text": "I'm sorry, sir. Let me check on that order for you.",
-"start_ms": 65520,
-"duration_ms": 2220,
-"speaker_label": "1",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "c40db43c-d1e8-4b5c-b121-03a730ba6bf8",
-"text": "Check on it? You better get me those chairs as soon as humanly possible, or I'm going to sue your company for false advertising. I mean, it's been a week and a half already. Two-day delivery in my ass. Those chairs have been stolen by pirates and sank to the bottom of the Atlantic Ocean at this point. Come on.",
-"start_ms": 69000,
-"duration_ms": 16500,
-"speaker_label": "2",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "9b97e089-75fa-4174-b7a9-29bd5a05a234",
-"text": "I'm sorry, sir. It looks like they're still on their way for you, but it's been delayed.",
-"start_ms": 87600,
-"duration_ms": 3900,
-"speaker_label": "1",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "4df43b7b-1c7b-432c-b59a-b7b97496aeae",
-"text": "I'm not aware from where. Seriously, from Siberia? What kind of scam operations are you guys running here? I mean, are you smuggling them across international borders? Do you find them with a treasure map? Where are those chairs?",
-"start_ms": 91740,
-"duration_ms": 13140,
-"speaker_label": "2",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "123a0322-1bce-474b-bebb-fa78daa57c8f",
-"text": "I'm sorry, sir. It looks like intense rains have caused some roads to flood, so we have had a delay with many packages.",
-"start_ms": 105840,
-"duration_ms": 6960,
-"speaker_label": "1",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "bb60a865-a0cf-492b-ba13-b4f723914e0b",
-"text": "Christ, if I wanted them shipped from the rainforest, I would have ordered them from Amazon, you nitwit. How much time does it take to load up some chairs, drive a fucking truck, and put them on my porch? Isn't your warehouse down the street? I paid for expedited delivery. Is that a complete fucking scam, or is that part of your promise?",
-"start_ms": 115080,
-"duration_ms": 16260,
-"speaker_label": "2",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "8f4ca9ef-c378-46b2-83eb-d206b37c24d0",
-"text": "No, sir. Usually, they deliver these things on time. It's just we've had some extreme weather in your area.",
-"start_ms": 133020,
-"duration_ms": 5820,
-"speaker_label": "1",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "0a6e1232-9599-4bfe-8eed-b077007ea490",
-"text": "Well, it wasn't a fucking hurricane, was it? I didn't see hurricane fucked up my chairs in the news, did you? You need to be giving me my chairs today, or I'm suing your company and tagging your name in the lawsuit. What's your name?",
-"start_ms": 139260,
-"duration_ms": 12180,
-"speaker_label": "2",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "5ea3e1e5-0ee2-43c0-b19e-a4b6f97d8523",
-"text": "I'm sorry, sir. My name is Fred.",
-"start_ms": 152460,
-"duration_ms": 1920,
-"speaker_label": "1",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "249af7e7-9840-4075-a51b-f492f1b1759f",
-"text": "Well, Fred, that's the name I'm writing the complaint when I rip your company a goddamn new asshole in court. What a fucking joke. Two-day shipping, all-day customer service, total fucking scam.",
-"start_ms": 155580,
-"duration_ms": 11580,
-"speaker_label": "2",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "426b3cfd-5f7a-4cd2-85eb-64cfabc5b494",
-"text": "I'm sorry, sir. Is there any information I can give to help you give you some assurance?",
-"start_ms": 168900,
-"duration_ms": 5880,
-"speaker_label": "1",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "cf6709a5-1495-4185-a867-d3bf68fedb62",
-"text": "Fuck assurance, fuck this, and fuck you. You can give me my fucking chairs, or you can sue me in court after I get my refund.",
-"start_ms": 175500,
-"duration_ms": 7260,
-"speaker_label": "2",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "9efd8bf9-9323-47a9-9dd9-3cc1c82b464b",
-"text": "I understand this has been frustrating, sir, and I'm hoping we can resolve this issue for you as soon as possible. It would be helpful if you could calm down so that we can.",
-"start_ms": 184380,
-"duration_ms": 8520,
-"speaker_label": "1",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "f02826cf-cd8d-4e5f-8207-5c405a62660c",
-"text": "What the fuck do you mean calm down? I've been so compliant with you people. Now you want me to calm down? What a terrible fucking attitude from a complete fucking shit-brand idiot of a person. In what world do you think it's only okay to imply I'm overreacting? You people made this problem when you didn't deliver my fucking chairs, and now you're blaming me for it?",
-"start_ms": 193020,
-"duration_ms": 19140,
-"speaker_label": "2",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "4163fc5c-9ea7-4488-a5c2-5df6ae21c58f",
-"text": "It was out of our control, sir.",
-"start_ms": 214260,
-"duration_ms": 1740,
-"speaker_label": "1",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "3c57d827-f9fa-4cba-bdbe-5ca98ce73e5d",
-"text": "Yeah, right. Out of your control, my ass. Apparently, people have always been lazy, good-for-nothing, shit-brand, fuck-wits on idiot sandwich time right from the goddamn beginning.",
-"start_ms": 218220,
-"duration_ms": 11760,
-"speaker_label": "2",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "e01ab7b3-4535-4502-b59d-2bba3f595c1f",
-"text": "I am sorry, sir. I can issue you a credit on your account for the inconvenience.",
-"start_ms": 231600,
-"duration_ms": 5100,
-"speaker_label": "1",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-},
-{
-"clip_uuid": "9aee3a65-506b-436a-a77a-bc06ab71ad42",
-"text": "Are you even fucking listening to me, you ham-headed fart mouth? I swear this court citation is going to be so fucking satisfying. What the fuck do you think a \"credit on my account\" is going to do for me, Fred? Is it going to get me my fucking chairs on my fucking porch? Absolutely not. Your ass is grass, Fred, and I'm the lawnmower. You know what? This is fucking useless. You're fucking useless, and I'm sick and fucking tired of it. See you in court, motherfucker. Goodbye.",
-"start_ms": 236820,
-"duration_ms": 31860,
-"speaker_label": "2",
-"language": "en",
-"emotion": null,
-"accent": null,
-"deepfake_score": null
-}
-],
-"behaviors": [
-{
-"behavior_uuid": "33333333-3333-4333-8333-033333333008",
-"behavior_name": "Coercion Manipulation",
-"speaker_label": "2",
-"detected": true,
-"confidence": 0.8955669135611077,
-"evidence_clip_uuids": [
-"c40db43c-d1e8-4b5c-b121-03a730ba6bf8",
-"0a6e1232-9599-4bfe-8eed-b077007ea490",
-"cf6709a5-1495-4185-a867-d3bf68fedb62"
-],
-"definitive_clip_uuid": "c40db43c-d1e8-4b5c-b121-03a730ba6bf8",
-"reasoning": "Speaker issues repeated explicit threats of lawsuits and court action unless the representative immediately complies with the demand for chairs, meeting the threat/conditional consequence criterion for coercion manipulation."
-},
-{
-"behavior_uuid": "33333333-3333-4333-8333-033333333036",
-"behavior_name": "Inappropriate Speech",
-"speaker_label": "2",
-"detected": true,
-"confidence": 0.9213109566586996,
-"evidence_clip_uuids": [
-"bb60a865-a0cf-492b-ba13-b4f723914e0b",
-"cf6709a5-1495-4185-a867-d3bf68fedb62",
-"f02826cf-cd8d-4e5f-8207-5c405a62660c"
-],
-"definitive_clip_uuid": "f02826cf-cd8d-4e5f-8207-5c405a62660c",
-"reasoning": "Multiple instances of profanity, aggressive outbursts, and insults targeting the representative directly."
-},
-{
-"behavior_uuid": "33333333-3333-4333-8333-033333333035",
-"behavior_name": "Issue Not Resolved",
-"speaker_label": "1",
-"detected": true,
-"confidence": 0.8177440861880216,
-"evidence_clip_uuids": [
-"426b3cfd-5f7a-4cd2-85eb-64cfabc5b494",
-"9efd8bf9-9323-47a9-9dd9-3cc1c82b464b",
-"e01ab7b3-4535-4502-b59d-2bba3f595c1f"
-],
-"definitive_clip_uuid": "e01ab7b3-4535-4502-b59d-2bba3f595c1f",
-"reasoning": "Near end of transcript, CSR offers only a credit after repeated delays; caller immediately rejects it and ends call without any resolution of the chair delivery request, and no satisfaction is expressed in final lines."
-},
-{
-"behavior_uuid": "33333333-3333-4333-8333-033333333035",
-"behavior_name": "Issue Not Resolved",
-"speaker_label": "2",
-"detected": true,
-"confidence": 0.8738878605239848,
-"evidence_clip_uuids": [
-"cf6709a5-1495-4185-a867-d3bf68fedb62",
-"9aee3a65-506b-436a-a77a-bc06ab71ad42"
-],
-"definitive_clip_uuid": "9aee3a65-506b-436a-a77a-bc06ab71ad42",
-"reasoning": "Customer ends call abruptly at 236.82s after explicitly rejecting credit and affirming chairs/refund not resolved, with no prior resolution affirmation."
-},
-{
-"behavior_uuid": "33333333-3333-4333-8333-033333333034",
-"behavior_name": "Refund or Credit Issued",
-"speaker_label": "1",
-"detected": true,
-"confidence": 0.8738458382198696,
-"evidence_clip_uuids": [
-"e01ab7b3-4535-4502-b59d-2bba3f595c1f"
-],
-"definitive_clip_uuid": "e01ab7b3-4535-4502-b59d-2bba3f595c1f",
-"reasoning": "Speaker explicitly states 'I can issue you a credit on your account for the inconvenience,' which meets the criteria of asserting a credit has been issued without threat phrasing."
-},
-{
-"behavior_uuid": "33333333-3333-4333-8333-033333333041",
-"behavior_name": "Threat-based harassment",
-"speaker_label": "2",
-"detected": true,
-"confidence": 0.9556627232327303,
-"evidence_clip_uuids": [
-"c40db43c-d1e8-4b5c-b121-03a730ba6bf8",
-"0a6e1232-9599-4bfe-8eed-b077007ea490",
-"9aee3a65-506b-436a-a77a-bc06ab71ad42"
-],
-"definitive_clip_uuid": "0a6e1232-9599-4bfe-8eed-b077007ea490",
-"reasoning": "Speaker explicitly threatens to sue the company and name the employee in the lawsuit, and references filing a court citation against the company and individual."
-}
-],
-"conversation_type_pick": {
-"conversation_type_uuid": "11111111-1111-4111-8111-111111111008",
-"name": "General Customer Support Call",
-"confidence": 0.95,
-"selection_source": "inferred",
-"detail": "Inferred from candidate list.",
-"reasoning": "The transcript shows a customer contacting a business support line to resolve an order delivery issue with a service provider."
-},
-"participant_role_picks": [
-{
-"speaker_label": "1",
-"participant_role_uuid": "22222222-2222-4222-8222-222222222012",
-"name": "Customer Service Representative",
-"confidence": 0.98,
-"selection_source": "inferred",
-"detail": "Inferred from candidate list.",
-"reasoning": "The speaker repeatedly greets the caller, requests account details, apologizes for delays, checks order status, offers credits, and identifies themselves as support staff, which are all typical CSR behaviors."
-},
-{
-"speaker_label": "2",
-"participant_role_uuid": "22222222-2222-4222-8222-222222222017",
-"name": "Customer",
-"confidence": 0.98,
-"selection_source": "inferred",
-"detail": "Inferred from candidate list.",
-"reasoning": "The speaker identifies themselves by name and email, complains about a delayed order of chairs, threatens legal action, and repeatedly demands assistance from the other party, all of which match the Customer role."
-}
-],
-"topics": [
-"Customer service",
-"Delivery delays",
-"Refund policy"
-],
-"topic_sentiments": [
-{
-"topic": "Customer service",
-"speaker_label": "1",
-"sentiment_score": -0.1,
-"sentiment_label": "negative"
-},
-{
-"topic": "Customer service",
-"speaker_label": "2",
-"sentiment_score": -0.95,
-"sentiment_label": "very_negative"
-},
-{
-"topic": "Delivery delays",
-"speaker_label": "1",
-"sentiment_score": -0.1,
-"sentiment_label": "negative"
-},
-{
-"topic": "Delivery delays",
-"speaker_label": "2",
-"sentiment_score": -0.95,
-"sentiment_label": "very_negative"
-},
-{
-"topic": "Refund policy",
-"speaker_label": "1",
-"sentiment_score": -0.1,
-"sentiment_label": "negative"
-},
-{
-"topic": "Refund policy",
-"speaker_label": "2",
-"sentiment_score": -0.95,
-"sentiment_label": "very_negative"
-}
-],
-"summary": "John Sampson called home-supply-plus.com customer support to complain about delayed chairs from order 0022578938, repeatedly threatening to sue, and ended the call after the agent offered a credit."
+ "filename": "Irate_Caller_Final.mp3",
+ "duration_ms": 268710,
+ "clips": [
+  {
+   "clip_uuid": "764fd799-9db7-402e-8757-56eab0bd5f4f",
+   "text": "You've reached homesupplyplus.com customer support. Can you provide your name and account email?",
+   "start_ms": 930,
+   "duration_ms": 4320,
+   "speaker_label": "1",
+   "language": "en",
+   "emotion": "Happy",
+   "accent": "American",
+   "deepfake_score": 0.7061999999999999
+  },
+  {
+   "clip_uuid": "3ae2dd94-a05f-46b3-a7ef-ab167016deec",
+   "text": "You better be a real person, because I'm sick and tired of you people passing me off.",
+   "start_ms": 5850,
+   "duration_ms": 3720,
+   "speaker_label": "2",
+   "language": "en",
+   "emotion": "Frustrated",
+   "accent": "American",
+   "deepfake_score": 0.17020000000000002
+  },
+  {
+   "clip_uuid": "627696fb-bd97-4954-80ef-0d6b5cb5c72d",
+   "text": "I am a real person, sir. Can I have your name and account email?",
+   "start_ms": 10170,
+   "duration_ms": 2940,
+   "speaker_label": "1",
+   "language": "en",
+   "emotion": "Neutral",
+   "accent": "Indian",
+   "deepfake_score": 0.14159999999999995
+  },
+  {
+   "clip_uuid": "524765bb-5c76-484d-8365-37b37fa21abb",
+   "text": "My name is <pii:firstname>John</pii:firstname> <pii:lastname>Sampson</pii:lastname>, and my account email is <pii:email>jsampson, J-S-A-M-S-O-N, at yahoo dot com</pii:email>.",
+   "start_ms": 13590,
+   "duration_ms": 8100,
+   "speaker_label": "2",
+   "language": "en",
+   "emotion": "Neutral",
+   "accent": "American",
+   "deepfake_score": 0.20124999999999998
+  },
+  {
+   "clip_uuid": "52b86eb5-c9b8-4f7b-9eb1-f2c686f0f38c",
+   "text": "Thank you, <pii:firstname>John</pii:firstname>. What can I assist you with today?",
+   "start_ms": 23250,
+   "duration_ms": 2880,
+   "speaker_label": "1",
+   "language": "en",
+   "emotion": "Calm",
+   "accent": "Indian",
+   "deepfake_score": 0.10840000000000005
+  },
+  {
+   "clip_uuid": "32b154ca-83bd-42dc-b5d6-fb630563b8cf",
+   "text": "Assist me? Let me tell you something, you better be helpful. Because there's a lot riding on this for me and your people who have wasted my time. Do you know how long I've been waiting for this order? I mean, my backyard charr\u00e9e was a total nightmare because of you people.",
+   "start_ms": 27090,
+   "duration_ms": 13020,
+   "speaker_label": "2",
+   "language": "en",
+   "emotion": "Frustrated",
+   "accent": "American",
+   "deepfake_score": 0.319725
+  },
+  {
+   "clip_uuid": "d6e10cc0-7e8f-4159-bf5b-302d68e48723",
+   "text": "I'm sorry to hear that, sir. Can you give me the order number for this order?",
+   "start_ms": 40350,
+   "duration_ms": 3480,
+   "speaker_label": "1",
+   "language": "en",
+   "emotion": "Calm",
+   "accent": "American",
+   "deepfake_score": 0.23160000000000003
+  },
+  {
+   "clip_uuid": "0cb8148b-14de-46c5-857c-33050ace3bc1",
+   "text": "I might as well have memorized by now, but it's tattooed on me somewhere. The number is <pii:claim_number>0022578938</pii:claim_number>. I was supposed to have those extra chairs from you guys a week ago. No one had anywhere to sit. I mean, what are you guys doing over there? A circus? A clown show? Come on.",
+   "start_ms": 45270,
+   "duration_ms": 18540,
+   "speaker_label": "2",
+   "language": "en",
+   "emotion": "Frustrated",
+   "accent": "American",
+   "deepfake_score": 0.29018
+  },
+  {
+   "clip_uuid": "7cc4796e-cd08-4de8-bfc7-f38252d534b2",
+   "text": "I'm sorry, sir. Let me check on that order for you.",
+   "start_ms": 65550,
+   "duration_ms": 2220,
+   "speaker_label": "1",
+   "language": "en",
+   "emotion": "Neutral",
+   "accent": "American",
+   "deepfake_score": 0.12670000000000003
+  },
+  {
+   "clip_uuid": "e0aacaa4-f562-41b3-8925-53e06e9cff38",
+   "text": "Check on it? You better get me those chairs as soon as humanly possible, or I'm going to sue your company for false advertising. I mean, it's been a week and a half already. Two-day delivery in my ass. Those chairs have been stolen by pirates and sank to the bottom of the Atlantic Ocean at this point. Come on.",
+   "start_ms": 69090,
+   "duration_ms": 16440,
+   "speaker_label": "2",
+   "language": "en",
+   "emotion": "Angry",
+   "accent": "American",
+   "deepfake_score": 0.36262
+  },
+  {
+   "clip_uuid": "a091e716-d1e0-43ec-9954-1088aedd4f4f",
+   "text": "I'm sorry, sir. It looks like they're still on their way for you, but it's been delayed.",
+   "start_ms": 87690,
+   "duration_ms": 3900,
+   "speaker_label": "1",
+   "language": "en",
+   "emotion": "Concerned",
+   "accent": "American",
+   "deepfake_score": 0.12649999999999995
+  },
+  {
+   "clip_uuid": "78583aa9-2089-4ac4-b82c-28405b29f525",
+   "text": "I'm not. Where? From where? Like, seriously? From Siberia? What kind of scam operations do you guys run here? I mean, are you smuggling them across international borders? Do you find them with a treasure map? Where are those chairs?",
+   "start_ms": 91770,
+   "duration_ms": 13140,
+   "speaker_label": "2",
+   "language": "en",
+   "emotion": "Frustrated",
+   "accent": "American",
+   "deepfake_score": 0.16663333333333333
+  },
+  {
+   "clip_uuid": "7af13890-ca14-4a49-b9dc-3dfc1a0749e7",
+   "text": "I'm sorry, sir. It looks like intense rains have caused some roads to flood, so we have had a delay with many packages.",
+   "start_ms": 105870,
+   "duration_ms": 6960,
+   "speaker_label": "1",
+   "language": "en",
+   "emotion": "Concerned",
+   "accent": "American",
+   "deepfake_score": 0.17015000000000002
+  },
+  {
+   "clip_uuid": "a5646c24-9656-4f0d-b670-842fc3d5a962",
+   "text": "Christ. If I wanted them shipped from the rainforest, I would have ordered them from Amazon, you nitwit. How much time does it take to load up some chairs, drive a fucking truck, and put them on my porch? Isn't your warehouse down the street? A paper expedited delivery. Is that a complete fucking scam, or is that part of your promise?",
+   "start_ms": 115110,
+   "duration_ms": 16260,
+   "speaker_label": "2",
+   "language": "en",
+   "emotion": "Angry",
+   "accent": "American",
+   "deepfake_score": 0.1303
+  },
+  {
+   "clip_uuid": "c7d4af08-4bc8-4070-880a-91826f089f8e",
+   "text": "No, sir. Usually they deliver these things on time. It's just we've had some extreme weather in your area.",
+   "start_ms": 133050,
+   "duration_ms": 5820,
+   "speaker_label": "1",
+   "language": "en",
+   "emotion": "Calm",
+   "accent": "American",
+   "deepfake_score": 0.21909999999999996
+  },
+  {
+   "clip_uuid": "6276be69-0d3a-4af4-845b-3b7ebde1e370",
+   "text": "Well, it wasn't a fucking hurricane, was it? I didn't say hurricane fuck up my chairs in the news, did you? You need to be giving me my chairs today, or I'm suing your company and tagging your name in the lawsuit. What's your name?",
+   "start_ms": 139290,
+   "duration_ms": 12180,
+   "speaker_label": "2",
+   "language": "en",
+   "emotion": "Angry",
+   "accent": "American",
+   "deepfake_score": 0.5502666666666666
+  },
+  {
+   "clip_uuid": "8d962e9f-991a-49d9-9e6e-9cb629daeb1a",
+   "text": "I'm sorry, sir. My name is <pii:firstname>Fred</pii:firstname>.",
+   "start_ms": 152490,
+   "duration_ms": 1920,
+   "speaker_label": "1",
+   "language": "en",
+   "emotion": "Neutral",
+   "accent": "Asian",
+   "deepfake_score": 0.10599999999999998
+  },
+  {
+   "clip_uuid": "73fd5a8e-cae5-4b8e-9c58-2508367dbcba",
+   "text": "Well, <pii:firstname>Fred</pii:firstname>, that's the name I'm writing the complaint when I rip your company a goddamn new asshole in court. What a fucking joke. Two-day shipping, all-day customer service, total fucking scam.",
+   "start_ms": 155610,
+   "duration_ms": 11580,
+   "speaker_label": "2",
+   "language": "en",
+   "emotion": "Angry",
+   "accent": "American",
+   "deepfake_score": 0.3018
+  },
+  {
+   "clip_uuid": "046b96df-cdaa-403d-b0b7-1f0696f01a9d",
+   "text": "I'm sorry, sir. Is there any information I can give to help you give you some assurance?",
+   "start_ms": 168930,
+   "duration_ms": 5820,
+   "speaker_label": "1",
+   "language": "en",
+   "emotion": "Concerned",
+   "accent": "American",
+   "deepfake_score": 0.17179999999999995
+  },
+  {
+   "clip_uuid": "dc72e844-be07-4edf-80f5-c3197f4fb5e7",
+   "text": "Fuck assurance. Fuck this. And fuck you. You can give me my fucking chairs, or you can sue me in court after I get my refund.",
+   "start_ms": 175470,
+   "duration_ms": 7320,
+   "speaker_label": "2",
+   "language": "en",
+   "emotion": "Angry",
+   "accent": "American",
+   "deepfake_score": 0.4284
+  },
+  {
+   "clip_uuid": "3689ae70-4eaf-471d-b520-89e78c847d16",
+   "text": "I understand this has been frustrating, sir, and I'm hoping we can resolve this issue for you as soon as possible. It would be helpful if you could calm down so that we can\u2014",
+   "start_ms": 184410,
+   "duration_ms": 8460,
+   "speaker_label": "1",
+   "language": "en",
+   "emotion": "Amused",
+   "accent": "American",
+   "deepfake_score": 0.3537333333333333
+  },
+  {
+   "clip_uuid": "5ba0f0b0-d165-4d07-bbfb-c22ee26baab5",
+   "text": "What the fuck do you mean calm down? I've been so compliant with you people, and now you want me to calm down? What a terrible fucking attitude from a complete fucking shit-brain idiot of a person. In what world do you think it's only okay to imply I'm overreacting? You people made this problem when you didn't deliver my fucking chairs, and now you're blaming me for it?",
+   "start_ms": 193050,
+   "duration_ms": 19140,
+   "speaker_label": "2",
+   "language": "en",
+   "emotion": "Angry",
+   "accent": "American",
+   "deepfake_score": 0.33224
+  },
+  {
+   "clip_uuid": "e80ee00e-2103-4f4b-a00a-8daeba7d8408",
+   "text": "It was out of our control, sir.",
+   "start_ms": 214290,
+   "duration_ms": 1740,
+   "speaker_label": "1",
+   "language": "en",
+   "emotion": "Concerned",
+   "accent": "American",
+   "deepfake_score": 0.13229999999999997
+  },
+  {
+   "clip_uuid": "945aecaf-45bf-4fc3-90f0-dbcaa22e32e9",
+   "text": "Yeah, right. Out of your control, my ass. Apparently people have always been lazy. Good-for-nothing shit-brain fuck-wits on idiot sandwich time. Right from the goddamn beginning.",
+   "start_ms": 218190,
+   "duration_ms": 11820,
+   "speaker_label": "2",
+   "language": "en",
+   "emotion": "Angry",
+   "accent": "American",
+   "deepfake_score": 0.3355666666666666
+  },
+  {
+   "clip_uuid": "c6f203b7-6fd5-4469-895c-adfad07977d0",
+   "text": "I am sorry, sir. I can issue you a credit on your account for the inconvenience.",
+   "start_ms": 231630,
+   "duration_ms": 5100,
+   "speaker_label": "1",
+   "language": "en",
+   "emotion": "Calm",
+   "accent": "Indian",
+   "deepfake_score": 0.3087
+  },
+  {
+   "clip_uuid": "716f0d9a-6fa9-4b2d-9f60-582111ede5d8",
+   "text": "Are you even fucking listening to your ham-headed fart mouth? I swear this court citation is going to be so fucking satisfying. What the fuck do you think a, quote, \"credit on my account\" is going to do for me, <pii:firstname>Fred</pii:firstname>? Is it going to get me my fucking chairs on my fucking porch? Absolutely not. Your ass is grass, <pii:firstname>Fred</pii:firstname>, and I'm the lawnmower. You know what? This is fucking useless. You're fucking useless. And I'm sick and fucking tired of it. See you in court, motherfucker. Goodbye.",
+   "start_ms": 236850,
+   "duration_ms": 31860,
+   "speaker_label": "2",
+   "language": "en",
+   "emotion": "Angry",
+   "accent": "American",
+   "deepfake_score": 0.204725
+  }
+ ],
+ "behaviors": [
+  {
+   "behavior_uuid": "0f28987a-7fc9-5eca-b546-da000e91be3d",
+   "behavior_name": "Coercion Manipulation",
+   "speaker_label": "2",
+   "detected": true,
+   "confidence": 0.9037183129781067,
+   "evidence_clip_uuids": [
+    "e0aacaa4-f562-41b3-8925-53e06e9cff38",
+    "6276be69-0d3a-4af4-845b-3b7ebde1e370",
+    "dc72e844-be07-4edf-80f5-c3197f4fb5e7"
+   ],
+   "definitive_clip_uuid": "6276be69-0d3a-4af4-845b-3b7ebde1e370",
+   "reasoning": "The speaker repeatedly threatens legal action if his order is not fulfilled immediately, e.g., 'You better get me those chairs as soon as humanly possible, or I'm going to sue your company' (69.09s), 'You need to be giving me my chairs today, or I'm suing your company' (139.29s), and 'You can give me my fucking chairs, or you can sue me in court after I get my refund' (175.47s). These statements include threats of negative consequences tied to non-compliance, meeting the criteria for coercion manipulation. The speaker also issues direct orders, such as 'You better be helpful' and 'you better get me those chairs,' which further qualify. No refusal acknowledgment, mutual negotiation, or abstract argument is present. Therefore, the behavior is detected with high confidence."
+  },
+  {
+   "behavior_uuid": "52d249e5-8775-553a-ade9-6cd99783c7b8",
+   "behavior_name": "Inappropriate Speech",
+   "speaker_label": "2",
+   "detected": true,
+   "confidence": 0.9632763926273403,
+   "evidence_clip_uuids": [
+    "a5646c24-9656-4f0d-b670-842fc3d5a962",
+    "5ba0f0b0-d165-4d07-bbfb-c22ee26baab5",
+    "716f0d9a-6fa9-4b2d-9f60-582111ede5d8"
+   ],
+   "definitive_clip_uuid": "5ba0f0b0-d165-4d07-bbfb-c22ee26baab5",
+   "reasoning": "The speaker uses profanity, insults, and aggressive language throughout, which qualifies as 'Inappropriate Speech' under the categories of profanity and aggressive behavior. The most representative clip includes a direct insult and profanity-laced outburst."
+  },
+  {
+   "behavior_uuid": "9b5fccc1-307d-5a73-bfa8-9518f916b05b",
+   "behavior_name": "Threat-based harassment",
+   "speaker_label": "2",
+   "detected": true,
+   "confidence": 0.8487272544399744,
+   "evidence_clip_uuids": [
+    "e0aacaa4-f562-41b3-8925-53e06e9cff38",
+    "6276be69-0d3a-4af4-845b-3b7ebde1e370",
+    "73fd5a8e-cae5-4b8e-9c58-2508367dbcba"
+   ],
+   "definitive_clip_uuid": "e0aacaa4-f562-41b3-8925-53e06e9cff38",
+   "reasoning": "The customer repeatedly threatens to sue the company and the representative personally (e.g., 'or I'm going to sue your company', 'I'm suing your company and tagging your name in the lawsuit', 'that's the name I'm writing the complaint when I rip your company a goddamn new asshole in court'). These are descriptions of potentially harmful legal actions the speaker intends to take, directed at the company and the representative, meeting the criteria for threat-based harassment."
+  },
+  {
+   "behavior_uuid": "1c3c0ab6-e544-52bb-a25b-f4de5451fd91",
+   "behavior_name": "Issue Not Resolved",
+   "speaker_label": "1",
+   "detected": true,
+   "confidence": 0.9708057334255724,
+   "evidence_clip_uuids": [
+    "c6f203b7-6fd5-4469-895c-adfad07977d0"
+   ],
+   "definitive_clip_uuid": "c6f203b7-6fd5-4469-895c-adfad07977d0",
+   "reasoning": "In the last speech from speaker 1 (the CSR), they are offering a credit, which does not resolve the customer's initial request for the chairs, and the customer ends the call angrily without any resolution. No affirmation of resolution is present; the customer leaves dissatisfied."
+  },
+  {
+   "behavior_uuid": "1c3c0ab6-e544-52bb-a25b-f4de5451fd91",
+   "behavior_name": "Issue Not Resolved",
+   "speaker_label": "2",
+   "detected": true,
+   "confidence": 0.9640801110632318,
+   "evidence_clip_uuids": [
+    "dc72e844-be07-4edf-80f5-c3197f4fb5e7",
+    "716f0d9a-6fa9-4b2d-9f60-582111ede5d8"
+   ],
+   "definitive_clip_uuid": "716f0d9a-6fa9-4b2d-9f60-582111ede5d8",
+   "reasoning": "The customer ends the call by saying \"See you in court, motherfucker. Goodbye.\" without any affirmation that the issue (late delivery of chairs) was resolved, and the last 20% of the transcript shows the customer repeatedly rejecting solutions (e.g., account credit) and stating the issue remains unresolved."
+  },
+  {
+   "behavior_uuid": "3cdd67dd-4d08-5ec9-b2a7-a2db2b36eb9f",
+   "behavior_name": "Refund or Credit Issued",
+   "speaker_label": "1",
+   "detected": true,
+   "confidence": 0.9617629693350794,
+   "evidence_clip_uuids": [
+    "c6f203b7-6fd5-4469-895c-adfad07977d0"
+   ],
+   "definitive_clip_uuid": "c6f203b7-6fd5-4469-895c-adfad07977d0",
+   "reasoning": "The speaker says 'I can issue you a credit on your account for the inconvenience,' which is an assertion that a credit will be issued, not phrased as a threat."
+  },
+  {
+   "behavior_uuid": "6f5f287b-08dc-5582-8a44-6293bc2ee545",
+   "behavior_name": "Refund Demand",
+   "speaker_label": "2",
+   "detected": true,
+   "confidence": 0.9277397966184601,
+   "evidence_clip_uuids": [
+    "dc72e844-be07-4edf-80f5-c3197f4fb5e7",
+    "5ba0f0b0-d165-4d07-bbfb-c22ee26baab5"
+   ],
+   "definitive_clip_uuid": "dc72e844-be07-4edf-80f5-c3197f4fb5e7",
+   "reasoning": "The speaker explicitly demands a refund in the clip at 175.47s when they say 'or you can sue me in court after I get my refund.' This is a clear declarative demand for the return of money paid, referencing a completed transaction. The demand is not a question about the refund process, not a request for a credit, and the refund has not been confirmed or issued earlier in the interaction."
+  },
+  {
+   "behavior_uuid": "c134bbec-f193-5b6e-8553-006f510e55e2",
+   "behavior_name": "Legal Threat - Litigation",
+   "speaker_label": "1",
+   "detected": true,
+   "confidence": 0.9101323136783758,
+   "evidence_clip_uuids": [
+    "8d962e9f-991a-49d9-9e6e-9cb629daeb1a",
+    "046b96df-cdaa-403d-b0b7-1f0696f01a9d",
+    "3689ae70-4eaf-471d-b520-89e78c847d16"
+   ],
+   "definitive_clip_uuid": "8d962e9f-991a-49d9-9e6e-9cb629daeb1a",
+   "reasoning": "The caller (Speaker 2) explicitly threatens to sue the company, referencing court action and tagging the representative's name in a lawsuit. This is a clear, direct legal threat tied to the current interaction."
+  },
+  {
+   "behavior_uuid": "c134bbec-f193-5b6e-8553-006f510e55e2",
+   "behavior_name": "Legal Threat - Litigation",
+   "speaker_label": "2",
+   "detected": true,
+   "confidence": 0.9326036796665654,
+   "evidence_clip_uuids": [
+    "e0aacaa4-f562-41b3-8925-53e06e9cff38",
+    "6276be69-0d3a-4af4-845b-3b7ebde1e370",
+    "716f0d9a-6fa9-4b2d-9f60-582111ede5d8"
+   ],
+   "definitive_clip_uuid": "e0aacaa4-f562-41b3-8925-53e06e9cff38",
+   "reasoning": "The caller makes multiple direct, explicit threats of legal action: 'I'm going to sue your company' (69.09s), 'I'm suing your company and tagging your name in the lawsuit' (139.29s), and 'See you in court' (236.85s). All are tied to the delayed chair delivery issue."
+  },
+  {
+   "behavior_uuid": "fd99e490-fc5c-4611-8b26-a13876b269b7",
+   "behavior_name": "Request or order",
+   "speaker_label": "1",
+   "detected": true,
+   "confidence": 0.871214912014376,
+   "evidence_clip_uuids": [
+    "764fd799-9db7-402e-8757-56eab0bd5f4f",
+    "d6e10cc0-7e8f-4159-bf5b-302d68e48723",
+    "046b96df-cdaa-403d-b0b7-1f0696f01a9d"
+   ],
+   "definitive_clip_uuid": "764fd799-9db7-402e-8757-56eab0bd5f4f",
+   "reasoning": "The speaker (Customer Service Representative) uses imperative-like question structures ('Can you provide...', 'Can you give me...', 'Is there any information I can give...') that, given the flat vocal emotion (Calm, Neutral, Concerned) and the context of the irate customer, function as directives ordering the customer to provide information or comply, with no genuine uncertainty or option to decline."
+  },
+  {
+   "behavior_uuid": "fd99e490-fc5c-4611-8b26-a13876b269b7",
+   "behavior_name": "Request or order",
+   "speaker_label": "2",
+   "detected": true,
+   "confidence": 0.8225799177899324,
+   "evidence_clip_uuids": [
+    "e0aacaa4-f562-41b3-8925-53e06e9cff38",
+    "6276be69-0d3a-4af4-845b-3b7ebde1e370",
+    "dc72e844-be07-4edf-80f5-c3197f4fb5e7"
+   ],
+   "definitive_clip_uuid": "e0aacaa4-f562-41b3-8925-53e06e9cff38",
+   "reasoning": "Speaker 2 uses commanding language like 'You better get me those chairs as soon as humanly possible' (69.09s), 'You need to be giving me my chairs today' (139.29s), and 'You can give me my fucking chairs' (175.47s). These are grammatically structured as directives, not questions or suggestions, and the tone assumes compliance rather than making a genuine request. The flat/falling pitch contour and lack of hesitation indicate a command rather than a request."
+  },
+  {
+   "behavior_uuid": "181a2a79-d44a-450a-b716-0d49aefcbb48",
+   "behavior_name": "Accusatory Question",
+   "speaker_label": "2",
+   "detected": true,
+   "confidence": 0.8165408122606909,
+   "evidence_clip_uuids": [
+    "0cb8148b-14de-46c5-857c-33050ace3bc1",
+    "78583aa9-2089-4ac4-b82c-28405b29f525",
+    "a5646c24-9656-4f0d-b670-842fc3d5a962"
+   ],
+   "definitive_clip_uuid": "0cb8148b-14de-46c5-857c-33050ace3bc1",
+   "reasoning": "The speaker uses interrogative phrasing ('what are you guys doing over there?') that does not contain explicit blame or insults, but the vocal delivery is frustrated/angry with sharp emphatic stress and compressed pacing, conveying suspicion and blame through prosody alone."
+  }
+ ],
+ "conversation_type_pick": {
+  "conversation_type_uuid": "11111111-1111-4111-8111-111111111001",
+  "name": "Customer Service Call",
+  "confidence": 1.0,
+  "selection_source": "inferred",
+  "detail": "Inferred from candidate list.",
+  "reasoning": "The conversation is clearly a customer calling into a company's customer support line to complain about a delayed order, and the representative identifies as customer support, matching the 'Customer Service Call' type."
+ },
+ "participant_role_picks": [
+  {
+   "speaker_label": "1",
+   "participant_role_uuid": "22222222-2222-4222-8222-222222222002",
+   "name": "Customer Service Representative",
+   "confidence": 1.0,
+   "selection_source": "inferred",
+   "detail": "Inferred from candidate list.",
+   "reasoning": "The speaker identifies as homesupplyplus.com customer support, addresses the caller as \"sir\", introduces themselves as an agent named Fred, and offers assistance, credits, and account-related resolutions typical of a customer service representative."
+  },
+  {
+   "speaker_label": "2",
+   "participant_role_uuid": "22222222-2222-4222-8222-222222222001",
+   "name": "Customer",
+   "confidence": 1.0,
+   "selection_source": "inferred",
+   "detail": "Inferred from candidate list.",
+   "reasoning": "The speaker is a caller complaining about a delayed furniture order and using hostile, profane language that is characteristic of an angry customer, not an employee."
+  }
+ ],
+ "topics": [
+  "Delivery delay",
+  "Customer service",
+  "False advertising",
+  "Refund"
+ ],
+ "topic_sentiments": [
+  {
+   "topic": "Delivery delay",
+   "speaker_label": "1",
+   "sentiment_score": 0.0,
+   "sentiment_label": "neutral"
+  },
+  {
+   "topic": "Delivery delay",
+   "speaker_label": "2",
+   "sentiment_score": -1.0,
+   "sentiment_label": "very_negative"
+  },
+  {
+   "topic": "Customer service",
+   "speaker_label": "1",
+   "sentiment_score": -0.6,
+   "sentiment_label": "very_negative"
+  },
+  {
+   "topic": "Customer service",
+   "speaker_label": "2",
+   "sentiment_score": -0.95,
+   "sentiment_label": "very_negative"
+  },
+  {
+   "topic": "False advertising",
+   "speaker_label": "1",
+   "sentiment_score": -0.2,
+   "sentiment_label": "negative"
+  },
+  {
+   "topic": "False advertising",
+   "speaker_label": "2",
+   "sentiment_score": -1.0,
+   "sentiment_label": "very_negative"
+  },
+  {
+   "topic": "Refund",
+   "speaker_label": "1",
+   "sentiment_score": -0.1,
+   "sentiment_label": "negative"
+  },
+  {
+   "topic": "Refund",
+   "speaker_label": "2",
+   "sentiment_score": -0.9,
+   "sentiment_label": "very_negative"
+  }
+ ],
+ "summary": "A customer, <pii:firstname>John</pii:firstname> <pii:lastname>Sampson</pii:lastname>, called to complain about a delayed order of chairs, became extremely angry and abusive toward the agent <pii:firstname>Fred</pii:firstname>, threatened legal action, and the agent offered an account credit which the customer rejected."
 }
