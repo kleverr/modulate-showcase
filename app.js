@@ -203,10 +203,8 @@
   let currentMode = 'transcription'; // 'deepfake' | 'transcription'
 
   // ── DOM refs ────────────────────────────────────────────────────────────────
-  const overlay       = document.getElementById('analysis-overlay');
-  const progressFill  = document.getElementById('progress-fill');
-  const analysisTitle = document.getElementById('analysis-title');
-  const analysisStatus = document.getElementById('analysis-status');
+  // Upload-progress text renders into the plate's uploading overlay label.
+  const analysisStatus = document.getElementById('plate-uploading-label');
   const errorToast    = document.getElementById('error-toast');
 
   const resultsFilename = document.getElementById('results-filename');
@@ -299,11 +297,11 @@
   const optRedactStartPad       = document.getElementById('redact-opt-start-pad');
   const optRedactEndPad         = document.getElementById('redact-opt-end-pad');
 
-  // Modals
-  const statsModal    = document.getElementById('stats-modal');
-  const statsModalTitle = document.getElementById('stats-modal-title');
+  // Bottom columns (Raw JSON + statistics) — replaced the old stats/JSON modals.
+  // statsModalTitle is a write-only sink: per-mode titles are covered by the
+  // stat-card group headers in the design layout.
+  const statsModalTitle = { textContent: '' };
   const statsGrid     = document.getElementById('stats-grid');
-  const jsonModal     = document.getElementById('json-modal');
   const jsonPre       = document.getElementById('json-pre');
   const jsonCopyBtn   = document.getElementById('json-copy-btn');
 
@@ -355,51 +353,101 @@
   let sttPartial = null;
   let sttData = null;
 
-  // ── Mobile layout ───────────────────────────────────────────────────────────
-  const resultsLayout   = document.querySelector('.results-layout');
-  const resultsMain     = document.querySelector('.results-main');
-  const histogramSection = document.querySelector('.histogram-section');
+  // ── Design-chrome DOM refs ──────────────────────────────────────────────────
+  const pageTitleEl     = document.getElementById('pg-page-title');
+  const uploadPlate     = document.getElementById('pg-upload-plate');
+  const plateHeader     = document.getElementById('plate-header');
+  const plateHeaderTitle = document.getElementById('plate-header-title');
+  const sttOptionsRow   = document.getElementById('stt-options-row');
+  const plateStages     = document.getElementById('plate-stages');
+  const plateUploadingLabel = document.getElementById('plate-uploading-label');
+  const plateStreamingLabel = document.getElementById('plate-streaming-label');
+  const plateQuotaDefault = document.getElementById('plate-quota-default');
+  const plateQuotaLow   = document.getElementById('plate-quota-low');
+  const streamSplit     = document.getElementById('stream-split');
+  const bottomColumns   = document.getElementById('pg-bottom-columns');
+  const navLinks        = document.querySelectorAll('.models-nav__link[data-mode]');
+  const redactionAb     = document.getElementById('redaction-ab');
+  const abOriginalBtn   = document.getElementById('redaction-ab-original');
+  const abRedactedBtn   = document.getElementById('redaction-ab-redacted');
+  const velmaDemoBtn    = document.getElementById('velma-demo-action');
 
-  function applyMobileLayout(isMobile) {
-    if (!resultsLayout || !resultsMain) return;
-    if (currentMode === 'deepfake' && resultsVerdict && histogramSection) {
-      if (isMobile) resultsMain.insertBefore(resultsVerdict, histogramSection);
-      else resultsLayout.appendChild(resultsVerdict);
-    } else if (currentMode === 'music' && musicSidebar && musicContent) {
-      if (isMobile) resultsMain.insertBefore(musicSidebar, musicContent);
-      else resultsLayout.appendChild(musicSidebar);
-    } else if (currentMode === 'language' && languageSidebar && languageContent) {
-      if (isMobile) resultsMain.insertBefore(languageSidebar, languageContent);
-      else resultsLayout.appendChild(languageSidebar);
-    } else if (currentMode === 'aimusic' && aimusicSidebar && aimusicContent) {
-      if (isMobile) resultsMain.insertBefore(aimusicSidebar, aimusicContent);
-      else resultsLayout.appendChild(aimusicSidebar);
-    }
+  // ── Declarative per-mode configuration ──────────────────────────────────────
+  // optionsRow: element shown (with .visible) in the plate's top row
+  // plateTitle: text for the generic plate header (detection modes)
+  // verdict:    the verdict-slot child to unhide
+  // panels:     content panels shown for the mode
+  // streaming:  whether the "Start streaming" split-button is available
+  const MODES = {
+    velma: {
+      path: '/velma', title: 'Velma Triage',
+      optionsRow: () => velmaOptions, verdict: null,
+      panels: () => [velmaContent, transcriptContainer],
+      streaming: true, demoButton: true,
+      stages: ['Transcript', 'Speakers', 'Emotions', 'Roles', 'Behaviors', 'Summary'],
+    },
+    transcription: {
+      path: '/transcription', title: 'Multilingual Transcription',
+      optionsRow: () => sttOptionsRow, verdict: null,
+      panels: () => [transcriptContainer],
+      streaming: true,
+      stages: ['Transcript', 'Speakers', 'Signals'],
+    },
+    deepfake: {
+      path: '/deepfake', title: 'Deepfake Detection', plateTitle: 'Detect synthetic speech',
+      optionsRow: () => plateHeader, verdict: () => resultsVerdict,
+      panels: () => [deepfakeContent],
+      streaming: true,
+      stages: ['Analyzing audio'],
+    },
+    redaction: {
+      path: '/redaction', title: 'PII/PHI Redaction',
+      optionsRow: () => redactionOptions, verdict: null,
+      panels: () => [redactionContent],
+      streaming: false, abToggle: true,
+      stages: ['Transcript', 'Redaction'],
+    },
+    music: {
+      path: '/music', title: 'Music & Speech Detection', plateTitle: 'Detect music and speech',
+      optionsRow: () => plateHeader, verdict: () => musicSidebar,
+      panels: () => [musicContent],
+      streaming: true,
+      stages: ['Analyzing audio'],
+    },
+    aimusic: {
+      path: '/ai-music', title: 'AI Music Detection', plateTitle: 'Detect AI-generated music',
+      optionsRow: () => plateHeader, verdict: () => aimusicSidebar,
+      panels: () => [aimusicContent],
+      streaming: true,
+      stages: ['Analyzing audio'],
+    },
+    language: {
+      path: '/language', title: 'Language Detection', plateTitle: 'Identify spoken language',
+      optionsRow: () => plateHeader, verdict: () => languageSidebar,
+      panels: () => [languageContent],
+      streaming: false,
+      stages: ['Analyzing audio'],
+    },
+  };
+
+  function setPageTitle(text) {
+    if (pageTitleEl) pageTitleEl.textContent = text || (MODES[currentMode] ? MODES[currentMode].title : '');
   }
-
-  const mobileQuery = window.matchMedia('(max-width: 768px)');
-  applyMobileLayout(mobileQuery.matches);
-  mobileQuery.addEventListener('change', e => applyMobileLayout(e.matches));
 
   // ── Mode Switching ──────────────────────────────────────────────────────────
   function switchMode(mode, pushUrl) {
+    if (!MODES[mode]) mode = 'velma';
     currentMode = mode;
+    const cfg = MODES[mode];
     const isDeepfake    = mode === 'deepfake';
     const isRedaction   = mode === 'redaction';
     const isMusic       = mode === 'music';
     const isAimusic     = mode === 'aimusic';
     const isLanguage    = mode === 'language';
-    const isTranscription = mode === 'transcription';
     const isVelma       = mode === 'velma';
 
     // Update URL
-    const targetPath = isDeepfake ? '/deepfake'
-      : isRedaction ? '/redaction'
-      : isMusic ? '/music'
-      : isAimusic ? '/ai-music'
-      : isLanguage ? '/language'
-      : isVelma ? '/velma'
-      : '/transcription';
+    const targetPath = cfg.path;
     if (pushUrl !== false && location.pathname !== targetPath) {
       history.pushState({ mode: mode }, '', targetPath + location.search);
       try {
@@ -409,42 +457,42 @@
       } catch (e) {}
     }
 
-    deepfakeContent.style.display = isDeepfake ? '' : 'none';
-    resultsVerdict.style.display = isDeepfake ? '' : 'none';
-    // Velma reuses the transcription stt-chart + transcript-list, so show it in both modes.
-    transcriptContainer.classList.toggle('visible', isTranscription || isVelma);
-    resultsSidebar.classList.toggle('visible', isTranscription);
-    sttOptions.classList.toggle('visible', isTranscription);
-    redactionContent.style.display = isRedaction ? 'block' : 'none';
-    redactionSidebar.classList.toggle('visible', isRedaction);
-    redactionOptions.classList.toggle('visible', isRedaction);
-    if (musicContent) musicContent.style.display = isMusic ? '' : 'none';
-    if (musicSidebar) musicSidebar.style.display = isMusic ? '' : 'none';
-    if (aimusicContent) aimusicContent.classList.toggle('visible', isAimusic);
-    if (aimusicSidebar) aimusicSidebar.style.display = isAimusic ? '' : 'none';
-    if (languageContent) languageContent.classList.toggle('visible', isLanguage);
-    if (languageSidebar) languageSidebar.style.display = isLanguage ? '' : 'none';
-    if (velmaContent) velmaContent.classList.toggle('visible', isVelma);
-    if (velmaSidebar) velmaSidebar.classList.toggle('visible', isVelma);
-    if (velmaOptions) velmaOptions.classList.toggle('visible', isVelma);
-    if (velmaDemoAction) velmaDemoAction.style.display = isVelma ? '' : 'none';
-    if (playerEntryOriginal) playerEntryOriginal.style.display = isRedaction ? '' : 'none';
-    if (redactedLabel) redactedLabel.style.display = isRedaction ? '' : 'none';
-    if (streamDemoAction) {
-      streamDemoAction.style.display = (isTranscription || isMusic || isVelma || isAimusic) ? '' : 'none';
-      streamDemoAction.classList.remove('streaming-soon');
-    }
-    if (streamFileAction) {
-      streamFileAction.style.display = (isTranscription || isMusic || isVelma || isAimusic) ? '' : 'none';
-      streamFileAction.classList.remove('streaming-soon');
-    }
-    if (recordAction) {
-      // Redaction + language are batch-only in the UI — hide live record.
-      // Transcription, Music, Velma, and AI Music support mic streaming.
-      recordAction.style.display = (isRedaction || isLanguage) ? 'none' : '';
-      recordAction.classList.toggle('disabled-soon', isRedaction);
-      recordAction.classList.remove('streaming-soon');
-    }
+    // CSS scope hook (per-mode player strip sizing, language dataviz hiding)
+    document.body.dataset.mode = mode;
+
+    // Sidebar active state
+    navLinks.forEach(a => a.classList.toggle('active', a.dataset.mode === mode));
+
+    // Plate: option rows (exactly one visible), generic header title
+    [velmaOptions, sttOptionsRow, redactionOptions, plateHeader].forEach(row => {
+      if (row) row.classList.remove('visible');
+    });
+    const activeRow = cfg.optionsRow && cfg.optionsRow();
+    if (activeRow) activeRow.classList.add('visible');
+    if (plateHeaderTitle) plateHeaderTitle.textContent = cfg.plateTitle || '';
+
+    // Plate: actions
+    if (streamSplit) streamSplit.style.display = cfg.streaming ? '' : 'none';
+    if (velmaDemoBtn) velmaDemoBtn.style.display = cfg.demoButton ? '' : 'none';
+
+    // Verdict slot: unhide only this mode's statement container
+    [resultsVerdict, musicSidebar, aimusicSidebar, languageSidebar].forEach(el => {
+      if (el) el.hidden = true;
+    });
+    const verdictEl = cfg.verdict && cfg.verdict();
+    if (verdictEl) verdictEl.hidden = false;
+
+    // Content panels
+    [velmaContent, transcriptContainer, deepfakeContent, redactionContent,
+     musicContent, aimusicContent, languageContent].forEach(el => {
+      if (el) el.classList.remove('visible');
+    });
+    (cfg.panels ? cfg.panels() : []).forEach(el => { if (el) el.classList.add('visible'); });
+
+    // Redaction A/B source toggle on the player
+    if (redactionAb) redactionAb.hidden = !cfg.abToggle;
+    setActiveAudio(isRedaction ? 'redacted' : 'main');
+
     renderDebugPanel(true);
 
     // Stop any running animation frame trackers
@@ -455,13 +503,8 @@
     if (musicPlaybackTracker) { cancelAnimationFrame(musicPlaybackTracker); musicPlaybackTracker = null; }
     if (aimusicPlaybackTracker) { cancelAnimationFrame(aimusicPlaybackTracker); aimusicPlaybackTracker = null; }
 
-    if (recordAction) {
-      recordAction.classList.toggle('disabled-soon', isRedaction);
-      const span = recordAction.querySelector('span');
-      if (span) span.textContent = 'Start streaming';
-    }
-
     if (isRecording) stopRecording();
+    setPlateState('initial');
 
     if (isDeepfake) {
       const dfData = lastDeepfakeData || DEMO_DATA;
@@ -475,7 +518,6 @@
         processingMs: 2660,
       };
       renderDeepfakeResults(dfData, dfAudio);
-      applyMobileLayout(mobileQuery.matches);
     } else if (isRedaction) {
       if (lastRedactionData) {
         redactionData = lastRedactionData;
@@ -531,7 +573,6 @@
         processingMs: DEMO_MUSIC_DATA.latency_ms || 0,
       };
       renderMusicResults(mData, mAudio);
-      applyMobileLayout(mobileQuery.matches);
     } else if (isAimusic) {
       const aData = lastAimusicData || DEMO_AIMUSIC_DATA;
       const aAudio = lastAimusicAudioUrl || DEMO_AIMUSIC_AUDIO_URL;
@@ -547,7 +588,6 @@
       resultsFilename.textContent = lastAimusicFilename || aData.filename || 'big-mac-papelao.mp3';
       resultsAudio.src = aAudio;
       renderAimusicResult(aData);
-      applyMobileLayout(mobileQuery.matches);
     } else if (isLanguage) {
       const lData = lastLanguageData || DEMO_LANGUAGE_DATA;
       currentData = lData;
@@ -560,7 +600,6 @@
       resultsFilename.textContent = lastLanguageFilename || DEMO_LANGUAGE_FILENAME;
       resultsAudio.src = lastLanguageAudioUrl || DEMO_LANGUAGE_AUDIO_URL;
       renderLanguageResult(lData);
-      applyMobileLayout(mobileQuery.matches);
     } else if (isVelma) {
       if (lastVelmaData) {
         velmaData = lastVelmaData;
@@ -593,11 +632,17 @@
       resultsAudio.src = sAudio;
       renderTranscript();
     }
+
+    setPageTitle(resultsFilename.textContent);
+    refreshBottomPanels();
+    syncPlayerMeta();
   }
 
-  modeRadios.forEach(radio => {
-    radio.addEventListener('change', () => {
-      if (radio.checked) switchMode(radio.value);
+  // Sidebar model nav drives the SPA mode switch
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (link.dataset.mode !== currentMode) switchMode(link.dataset.mode);
     });
   });
 
@@ -642,7 +687,7 @@
   // so Debug is unavailable in Fast mode — hide and force it off.
   function syncFastDebugExclusion() {
     if (!optDebug) return;
-    const debugLabel = optDebug.closest('.stt-option');
+    const debugLabel = optDebug.closest('.pg-stt-option');
     if (optFast.checked) {
       if (optDebug.checked) { optDebug.checked = false; sttDebug = false; }
       optDebug.disabled = true;
@@ -792,6 +837,266 @@
         streamFileInput.value = '';
       }
     });
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── UPLOAD PLATE STATE MACHINE ────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  // States: initial | file-dropping | uploading | processing | streaming |
+  //         uploaded | low-quota | exhausted   (driven via data-state, CSS does the rest)
+
+  const LOW_QUOTA_THRESHOLD = 5;
+
+  function setPlateState(state) {
+    if (!uploadPlate) return;
+    // Normalize idle: an exhausted/low quota overrides "initial".
+    if (state === 'initial' && quotaRemaining != null) {
+      if (quotaRemaining <= 0) state = 'exhausted';
+      else if (quotaRemaining <= LOW_QUOTA_THRESHOLD) state = 'low-quota';
+    }
+    uploadPlate.dataset.state = state;
+    const expandBtn = uploadPlate.querySelector('[data-upload-plate-expand]');
+    if (expandBtn) expandBtn.setAttribute('aria-expanded', state === 'uploaded' ? 'false' : 'true');
+  }
+
+  // Rate-limit rejections (HTTP 429 or WS upgrade refusal) land here from any mode.
+  function handleRateLimited() {
+    quotaRemaining = 0;
+    setPlateState('exhausted');
+    updateRateLimit();
+  }
+
+  function handleDroppedFile(file) {
+    if (currentMode === 'deepfake') startDeepfakeAnalysis(file);
+    else if (currentMode === 'redaction') startRedactionBatch(file);
+    else if (currentMode === 'music') startMusicAnalysis(file);
+    else if (currentMode === 'aimusic') startAimusicAnalysis(file);
+    else if (currentMode === 'language') startLanguageDetection(file);
+    else if (currentMode === 'velma') startVelmaBatch(file);
+    else startTranscriptionBatch(file);
+  }
+
+  function initPlateChrome() {
+    if (!uploadPlate) return;
+
+    // Collapsed plate ("New analysis") expands back to the idle state.
+    uploadPlate.addEventListener('click', (e) => {
+      if (uploadPlate.dataset.state !== 'uploaded') return;
+      setPlateState('initial');
+    });
+
+    // Whole-plate drag & drop (the design drops onto the plate, not a button).
+    let plateDragCtr = 0;
+    uploadPlate.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      plateDragCtr++;
+      const st = uploadPlate.dataset.state;
+      if (st === 'initial' || st === 'low-quota' || st === 'uploaded') setPlateState('file-dropping');
+    });
+    uploadPlate.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      plateDragCtr--;
+      if (plateDragCtr <= 0) {
+        plateDragCtr = 0;
+        if (uploadPlate.dataset.state === 'file-dropping') setPlateState('initial');
+      }
+    });
+    uploadPlate.addEventListener('dragover', (e) => e.preventDefault());
+    uploadPlate.addEventListener('drop', (e) => {
+      e.preventDefault();
+      plateDragCtr = 0;
+      if (uploadPlate.dataset.state === 'file-dropping') setPlateState('initial');
+      if (e.dataTransfer.files.length > 0) handleDroppedFile(e.dataTransfer.files[0]);
+    });
+
+    // Streaming split-button dropdown
+    if (streamSplit) {
+      const toggle = streamSplit.querySelector('.pg-upload-stream__toggle');
+      const menu = streamSplit.querySelector('.pg-upload-stream__menu');
+      const close = () => {
+        streamSplit.dataset.open = 'false';
+        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+        if (menu) menu.hidden = true;
+      };
+      if (toggle && menu) {
+        toggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isOpen = streamSplit.dataset.open === 'true';
+          streamSplit.dataset.open = isOpen ? 'false' : 'true';
+          toggle.setAttribute('aria-expanded', String(!isOpen));
+          menu.hidden = isOpen;
+        });
+        document.addEventListener('click', (e) => {
+          if (!streamSplit.contains(e.target)) close();
+        });
+        menu.addEventListener('click', (e) => {
+          if (e.target.closest('[role="menuitem"]')) close();
+        });
+      }
+    }
+
+    // Media-container hover line follows the cursor across player + dataviz
+    document.querySelectorAll('.media-container').forEach((container) => {
+      container.addEventListener('mousemove', (e) => {
+        const rect = container.getBoundingClientRect();
+        container.style.setProperty('--pg-hover-x', (e.clientX - rect.left) + 'px');
+        container.dataset.hover = 'true';
+      });
+      container.addEventListener('mouseleave', () => {
+        container.dataset.hover = 'false';
+      });
+    });
+
+    // Stop button in the streaming overlay
+    const stopBtn = document.getElementById('plate-stop-btn');
+    if (stopBtn) stopBtn.addEventListener('click', () => { if (isRecording) stopRecording(); });
+
+    // Exhausted-state CTA opens the HubSpot access modal
+    const exhaustedCta = document.getElementById('plate-exhausted-cta');
+    if (exhaustedCta) exhaustedCta.addEventListener('click', openHsModal);
+
+    // Velma "Try demo audio" re-runs the cached demo
+    if (velmaDemoBtn) {
+      velmaDemoBtn.addEventListener('click', () => {
+        if (currentMode !== 'velma') return;
+        showVelmaDemo();
+        setPageTitle(resultsFilename.textContent);
+        refreshBottomPanels();
+        syncPlayerMeta();
+      });
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── PLAYER CONTROLLER (design media-box around the hidden <audio>) ────────
+  // ══════════════════════════════════════════════════════════════════════════
+  const mediaBox = document.getElementById('audio-player');
+  const playerIcon = mediaBox ? mediaBox.querySelector('.player-icon') : null;
+  const playerPosIndicator = mediaBox ? mediaBox.querySelector('.player-position-indicator') : null;
+  const playerCurrentTimeEl = mediaBox ? mediaBox.querySelector('[data-current-time]') : null;
+  const playerTotalTimeEl = mediaBox ? mediaBox.querySelector('[data-total-time]') : null;
+  const playerHoverIndicator = mediaBox ? mediaBox.querySelector('.player-hover-position-indicator') : null;
+  const playerHoverTimeEl = mediaBox ? mediaBox.querySelector('[data-hover-time]') : null;
+
+  // Which <audio> the transport controls drive. Redaction can flip to the
+  // original (unredacted) track via the A/B chip; everything else uses results-audio.
+  let abSelection = 'redacted';
+  function activeAudio() {
+    return (currentMode === 'redaction' && abSelection === 'original' && originalAudio)
+      ? originalAudio : resultsAudio;
+  }
+
+  function setActiveAudio(which) {
+    const prev = activeAudio();
+    abSelection = which === 'original' ? 'original' : 'redacted';
+    const next = activeAudio();
+    if (abOriginalBtn) abOriginalBtn.classList.toggle('active', abSelection === 'original');
+    if (abRedactedBtn) abRedactedBtn.classList.toggle('active', abSelection !== 'original');
+    if (prev !== next) {
+      const wasPlaying = prev && !prev.paused;
+      const at = prev ? prev.currentTime : 0;
+      if (prev) prev.pause();
+      if (next) {
+        try { next.currentTime = at; } catch (e) {}
+        if (wasPlaying) next.play().catch(() => {});
+      }
+    }
+    syncPlayerMeta();
+  }
+
+  function fmtPlayerTime(sec) {
+    if (!isFinite(sec) || sec < 0) return '0:00';
+    const s = Math.floor(sec);
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  function syncPlayerMeta() {
+    const a = activeAudio();
+    if (!a || !mediaBox) return;
+    if (playerTotalTimeEl) playerTotalTimeEl.textContent = fmtPlayerTime(a.duration);
+    if (playerCurrentTimeEl) playerCurrentTimeEl.textContent = fmtPlayerTime(a.currentTime);
+    syncPlayerPosition();
+  }
+
+  function syncPlayerPosition() {
+    const a = activeAudio();
+    if (!a || !mediaBox) return;
+    const dur = a.duration;
+    const pct = (isFinite(dur) && dur > 0) ? (a.currentTime / dur) * 100 : 0;
+    if (playerPosIndicator) playerPosIndicator.style.left = pct + '%';
+    if (playerCurrentTimeEl) playerCurrentTimeEl.textContent = fmtPlayerTime(a.currentTime);
+    if (playerIcon) playerIcon.dataset.playing = a.paused ? 'false' : 'true';
+    if (mediaBox) mediaBox.dataset.playbackStarted = a.currentTime > 0 ? 'true' : 'false';
+  }
+
+  function initPlayerController() {
+    if (!mediaBox) return;
+
+    if (playerIcon) {
+      playerIcon.addEventListener('click', (e) => {
+        e.preventDefault();
+        const a = activeAudio();
+        if (!a || !a.src) return;
+        if (a.paused) a.play().catch(() => {}); else a.pause();
+      });
+    }
+
+    // Keep the view in sync with whichever audio element is active.
+    [resultsAudio, originalAudio].forEach((a) => {
+      if (!a) return;
+      a.addEventListener('timeupdate', () => { if (a === activeAudio()) syncPlayerPosition(); });
+      a.addEventListener('play',  () => { if (a === activeAudio() && playerIcon) playerIcon.dataset.playing = 'true'; });
+      a.addEventListener('pause', () => { if (a === activeAudio() && playerIcon) playerIcon.dataset.playing = 'false'; });
+      a.addEventListener('ended', () => { if (a === activeAudio() && playerIcon) playerIcon.dataset.playing = 'false'; });
+      a.addEventListener('loadedmetadata', () => { if (a === activeAudio()) syncPlayerMeta(); });
+      a.addEventListener('durationchange', () => { if (a === activeAudio()) syncPlayerMeta(); });
+    });
+
+    // Hover time + click-to-seek across the whole media container
+    const container = mediaBox.closest('.media-container');
+    const seekTarget = container || mediaBox;
+    seekTarget.addEventListener('mousemove', (e) => {
+      const a = activeAudio();
+      if (!a || !isFinite(a.duration) || a.duration <= 0) return;
+      const rect = mediaBox.getBoundingClientRect();
+      const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      if (playerHoverIndicator) playerHoverIndicator.style.left = (frac * 100) + '%';
+      if (playerHoverTimeEl) playerHoverTimeEl.textContent = fmtPlayerTime(frac * a.duration);
+    });
+    seekTarget.addEventListener('click', (e) => {
+      if (e.target.closest('.player-icon') || e.target.closest('.pg-ab-toggle')) return;
+      if (e.target.closest('.player-visualization') && e.target !== seekTarget) {
+        // Clip strips have their own click-to-seek handlers with utterance context.
+        if (e.target.closest('.transcript-clip, .stt-chart-bar, .histo-bar')) return;
+      }
+      const a = activeAudio();
+      if (!a || !isFinite(a.duration) || a.duration <= 0) return;
+      const rect = mediaBox.getBoundingClientRect();
+      const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      a.currentTime = frac * a.duration;
+      if (a.paused) a.play().catch(() => {});
+    });
+
+    if (abOriginalBtn) abOriginalBtn.addEventListener('click', () => setActiveAudio('original'));
+    if (abRedactedBtn) abRedactedBtn.addEventListener('click', () => setActiveAudio('redacted'));
+  }
+
+  // ── Theme toggle (design service component, folded in) ─────────────────────
+  function initThemeToggle() {
+    const KEY = document.body.dataset.themeStorageKey || 'prototype-theme';
+    const btns = document.querySelectorAll('.theme-toggle');
+    if (!btns.length) return;
+    const update = () => {
+      const isDark = document.body.classList.contains('dark-mode');
+      btns.forEach(btn => btn.setAttribute('aria-checked', isDark ? 'true' : 'false'));
+    };
+    update();
+    btns.forEach(btn => btn.addEventListener('click', () => {
+      const isDark = document.body.classList.contains('dark-mode');
+      document.body.classList.toggle('dark-mode', !isDark);
+      try { localStorage.setItem(KEY, isDark ? 'light' : 'dark'); } catch (e) {}
+      update();
+    }));
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -4149,27 +4454,41 @@
   }
 
   function updateRecordButton() {
-    if (!recordAction) return;
-    const span = recordAction.querySelector('span');
-    if (isRecording) { recordAction.classList.add('recording'); span.textContent = 'Stop streaming'; }
-    else { recordAction.classList.remove('recording'); span.textContent = 'Start streaming'; }
+    if (isRecording) {
+      if (plateStreamingLabel) {
+        plateStreamingLabel.textContent =
+          currentMode === 'transcription' || currentMode === 'velma' ? 'Listening…' : 'Streaming…';
+      }
+      setPlateState('streaming');
+    } else if (uploadPlate && uploadPlate.dataset.state === 'streaming') {
+      // Stream ended — collapse to "New analysis" with the results visible below.
+      setPlateState('uploaded');
+      refreshBottomPanels();
+      setPageTitle(resultsFilename.textContent);
+      syncPlayerMeta();
+    }
   }
 
   // ══════════════════════════════════════════════════════════════════════════
   // ── MODALS ────────────────────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════
 
-  document.getElementById('btn-show-stats').addEventListener('click', () => showStatsModal());
-  document.getElementById('btn-show-json').addEventListener('click', () => showJsonModal());
-  document.getElementById('btn-show-stats-stt').addEventListener('click', () => showStatsModal());
-  document.getElementById('btn-show-json-stt').addEventListener('click', () => showJsonModal());
-  document.getElementById('btn-show-json-redaction').addEventListener('click', () => showJsonModal());
-  document.getElementById('btn-show-stats-music').addEventListener('click', () => showStatsModal());
-  document.getElementById('btn-show-json-music').addEventListener('click', () => showJsonModal());
-  document.getElementById('btn-show-stats-aimusic').addEventListener('click', () => showStatsModal());
-  document.getElementById('btn-show-json-aimusic').addEventListener('click', () => showJsonModal());
-  document.getElementById('btn-show-stats-language').addEventListener('click', () => showStatsModal());
-  document.getElementById('btn-show-json-language').addEventListener('click', () => showJsonModal());
+  // The Raw JSON + statistics live in the always-visible bottom columns now —
+  // re-render both from currentData/currentMeta after every analysis.
+  function refreshBottomPanels() {
+    if (!currentData) {
+      if (bottomColumns) bottomColumns.classList.remove('visible');
+      return;
+    }
+    if (currentMode === 'velma') {
+      statsGrid.innerHTML = renderVelmaStats(currentData, currentMeta);
+      if (bottomColumns) bottomColumns.classList.add('visible');
+      showJsonModal();
+      return;
+    }
+    showStatsModal();
+    showJsonModal();
+  }
 
   // Close a modal on a genuine backdrop click — but NOT when the click is the tail
   // end of a text-selection drag that started inside the modal. Dragging to select
@@ -4182,18 +4501,11 @@
     modalEl.addEventListener('click', (e) => { if (e.target === modalEl && downOnBackdrop) closeFn(); });
   }
 
-  document.getElementById('stats-modal-close').addEventListener('click', () => statsModal.classList.remove('visible'));
-  document.getElementById('json-modal-close').addEventListener('click', () => jsonModal.classList.remove('visible'));
-  closeOnBackdrop(statsModal, () => statsModal.classList.remove('visible'));
-  closeOnBackdrop(jsonModal, () => jsonModal.classList.remove('visible'));
-
   jsonCopyBtn.addEventListener('click', () => {
     const text = JSON.stringify(currentData, null, 2);
     const onSuccess = () => {
-      jsonCopyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
-      setTimeout(() => {
-        jsonCopyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy';
-      }, 2000);
+      jsonCopyBtn.textContent = 'Copied!';
+      setTimeout(() => { jsonCopyBtn.textContent = 'Copy'; }, 2000);
     };
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(text).then(onSuccess).catch(() => fallbackCopy(text, onSuccess));
@@ -4206,10 +4518,11 @@
   const hsModal = document.getElementById('hs-modal');
   const hsClose = document.getElementById('hs-modal-close');
   const ctaBtn = document.getElementById('cta-access-btn');
+  function openHsModal() { if (hsModal) hsModal.hidden = false; }
   if (ctaBtn && hsModal) {
-    ctaBtn.addEventListener('click', () => hsModal.classList.add('visible'));
-    hsClose.addEventListener('click', () => hsModal.classList.remove('visible'));
-    closeOnBackdrop(hsModal, () => hsModal.classList.remove('visible'));
+    ctaBtn.addEventListener('click', openHsModal);
+    hsClose.addEventListener('click', () => { hsModal.hidden = true; });
+    closeOnBackdrop(hsModal, () => { hsModal.hidden = true; });
   }
 
   function fallbackCopy(text, onSuccess) {
@@ -4448,22 +4761,33 @@
       ];
     }
 
-    let html = '<table class="stats-table">';
+    statsGrid.innerHTML = statsCardsHtml(groups);
+    if (bottomColumns) bottomColumns.classList.add('visible');
+  }
+
+  // groups: [{group, rows: [[label, value], …]}, …] → design stat cards
+  function statsCardsHtml(groups) {
+    let html = '';
     groups.forEach(g => {
-      html += '<tr class="stats-group-row"><td colspan="2">' + g.group + '</td></tr>';
+      html += '<section class="pg-stats-card"><h6 class="pg-stats-card-title">' + escapeHtml(g.group) + '</h6><dl class="pg-stats-list">';
       g.rows.forEach(([label, value]) => {
-        html += '<tr><td class="stats-label">' + escapeHtml(String(label)) + '</td><td class="stats-value">' + escapeHtml(String(value)) + '</td></tr>';
+        html += '<dt>' + escapeHtml(String(label)) + '</dt><dd>' + escapeHtml(String(value)) + '</dd>';
       });
+      html += '</dl></section>';
     });
-    html += '</table>';
-    statsGrid.innerHTML = html;
-    statsModal.classList.add('visible');
+    return html;
   }
 
   function showJsonModal() {
     if (!currentData) return;
-    jsonPre.innerHTML = syntaxHighlightJson(JSON.stringify(currentData, null, 2));
-    jsonModal.classList.add('visible');
+    // Cap the pretty-printed payload — velma responses can run to megabytes.
+    let text = JSON.stringify(currentData, null, 2);
+    const MAX_JSON_CHARS = 400000;
+    if (text.length > MAX_JSON_CHARS) {
+      text = text.slice(0, MAX_JSON_CHARS) + '\n… (truncated for display — use Copy for the full payload)';
+    }
+    jsonPre.innerHTML = syntaxHighlightJson(text);
+    if (bottomColumns) bottomColumns.classList.add('visible');
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -4552,62 +4876,62 @@
     });
   }
 
-  function startProgress(estimatedMs) {
-    const start = Date.now();
-    progressFill.style.transition = 'none';
-    progressFill.style.width = '0%';
-    void progressFill.offsetWidth;
+  // \u2500\u2500 Analysis progress \u2192 upload-plate states \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // The old full-screen overlay is gone; the plate itself narrates the flow:
+  //   showOverlay()      \u2192 'uploading'   (spinner + label)
+  //   startProgress()    \u2192 'processing'  (stage chips ticking through)
+  //   finishProgress()   \u2192 all stages checked, brief beat
+  //   hideOverlay()      \u2192 'uploaded'    (collapsed "New analysis" plate)
+  //   showOverlayError() \u2192 'initial' + error toast
+  function buildStages() {
+    if (!plateStages) return;
+    const names = (MODES[currentMode] && MODES[currentMode].stages) || ['Analyzing audio'];
+    // Stage check-off timing is pure CSS (per-chip --stage-delay via nth-child).
+    plateStages.innerHTML = names.map(n =>
+      '<span class="pg-processing-stage">' +
+      '<svg class="pg-stage-check" width="20" height="20" viewBox="0 0 10 10" aria-hidden="true">' +
+      '<path d="M 1.5 4.55 L 4 7.95 L 9 2.05" fill="none" stroke="currentColor" stroke-width="1" /></svg>' +
+      escapeHtml(n) + '</span>'
+    ).join('');
+  }
 
-    const tick = () => {
-      const elapsed = Date.now() - start;
-      const pct = (1 - Math.exp(-elapsed / estimatedMs)) * 88;
-      progressFill.style.transition = 'width 0.3s linear';
-      progressFill.style.width = pct + '%';
-      progressTimer = requestAnimationFrame(tick);
-    };
-    progressTimer = requestAnimationFrame(tick);
+  function startProgress(estimatedMs) {
+    buildStages();
+    setPlateState('processing');
   }
 
   function finishProgress() {
-    return new Promise((resolve) => {
-      if (progressTimer) cancelAnimationFrame(progressTimer);
-      progressFill.style.transition = 'width 0.4s ease-out';
-      progressFill.style.width = '100%';
-      setTimeout(resolve, 500);
-    });
+    return new Promise((resolve) => setTimeout(resolve, 350));
   }
 
-  function stopProgress() { if (progressTimer) cancelAnimationFrame(progressTimer); }
+  function stopProgress() {}
 
   function showOverlay(filename, statusText) {
-    if (analysisTitle) analysisTitle.textContent = 'Analyzing \u201c' + truncate(filename, 30) + '\u201d';
-    if (analysisStatus) analysisStatus.textContent = statusText || 'Processing audio';
-    progressFill.style.width = '0%';
-    overlay.classList.remove('error');
-    overlay.classList.add('visible');
+    if (plateUploadingLabel) {
+      plateUploadingLabel.textContent = statusText || ('Uploading \u201c' + truncate(filename || 'audio', 30) + '\u201d\u2026');
+    }
+    setPlateState('uploading');
   }
 
   function hideOverlay() {
-    overlay.classList.remove('visible', 'error');
+    stopProgress();
+    setPlateState('uploaded');
+    setPageTitle(resultsFilename.textContent);
+    refreshBottomPanels();
+    syncPlayerMeta();
   }
 
   function showOverlayError(msg, rawText) {
     stopProgress();
-    overlay.classList.add('error');
-    document.getElementById('overlay-error-msg').textContent = msg;
-    const pre = document.getElementById('overlay-error-json');
+    setPlateState('initial');
+    showError(msg);
     if (rawText) {
-      try { pre.textContent = JSON.stringify(JSON.parse(rawText), null, 2); }
-      catch { pre.textContent = rawText; }
-    } else {
-      pre.textContent = '(no response body)';
+      // Surface the raw error payload in the JSON panel for inspection.
+      try { jsonPre.textContent = JSON.stringify(JSON.parse(rawText), null, 2); }
+      catch { jsonPre.textContent = rawText; }
+      if (bottomColumns) bottomColumns.classList.add('visible');
     }
   }
-
-  document.getElementById('overlay-dismiss-btn').addEventListener('click', () => {
-    hideOverlay();
-    isAnalyzing = false;
-  });
 
   function showError(msg) {
     errorToast.textContent = msg;
@@ -4617,12 +4941,12 @@
 
   function syntaxHighlightJson(json) {
     return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")\s*:/g, '<span class="json-key">$1</span>:')
-      .replace(/:\s*("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")/g, ': <span class="json-string">$1</span>')
-      .replace(/:\s*(-?\d+\.?\d*([eE][+-]?\d+)?)/g, ': <span class="json-number">$1</span>')
-      .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>')
-      .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>')
-      .replace(/([{}[\]])/g, '<span class="json-brace">$1</span>');
+      .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")\s*:/g, '<span class="pg-json-key">$1</span>:')
+      .replace(/:\s*("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")/g, ': <span class="pg-json-string">$1</span>')
+      .replace(/:\s*(-?\d+\.?\d*([eE][+-]?\d+)?)/g, ': <span class="pg-json-number">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="pg-json-bool">$1</span>')
+      .replace(/:\s*(null)/g, ': <span class="pg-json-null">$1</span>')
+      .replace(/([{}[\]])/g, '<span class="pg-json-brace">$1</span>');
   }
 
   // Render PII/PHI tagged text with blurred spans
@@ -5722,13 +6046,13 @@
     renderVelmaEditorForm();
     renderVelmaEditorJson();
     setRawJsonEditable(false);
-    velmaConfigModal.classList.add('visible');
+    velmaConfigModal.hidden = false;
     // Presets load lazily (read-only, no usage cost) and re-render when ready.
     renderVelmaPresetsList();
     loadVelmaPresets().then(renderVelmaPresetsList);
   }
   function closeVelmaConfigModal() {
-    velmaConfigModal.classList.remove('visible');
+    velmaConfigModal.hidden = true;
   }
 
   // ── Form rendering (left pane) ─────────────────────────────────────────────
@@ -6281,23 +6605,6 @@
     });
   }
 
-  // ── Velma sidebar buttons ──────────────────────────────────────────────────
-  if (btnShowJsonVelma) {
-    btnShowJsonVelma.addEventListener('click', () => {
-      if (!velmaData) return;
-      jsonPre.textContent = JSON.stringify(velmaData, null, 2);
-      jsonModal.classList.add('visible');
-    });
-  }
-  if (btnShowStatsVelma) {
-    btnShowStatsVelma.addEventListener('click', () => {
-      if (!velmaData) return;
-      statsModalTitle.textContent = 'Velma Statistics';
-      statsGrid.innerHTML = renderVelmaStats(velmaData, currentMeta);
-      statsModal.classList.add('visible');
-    });
-  }
-
   function renderVelmaStats(data, meta) {
     const clips = data.clips || [];
     const behaviors = data.behaviors || [];
@@ -6322,18 +6629,15 @@
       ['Response size', meta && meta.responseSize ? Math.round(meta.responseSize / 1024) + ' KB' : '—'],
       ['HTTP', meta && meta.httpStatus ? meta.httpStatus + ' ' + (meta.httpStatusText || '') : '—'],
     ];
-    let html = '<table class="stats-table">';
-    rows.forEach(([k, v]) => {
-      html += '<tr><td class="stats-label">' + escapeHtml(k) + '</td><td class="stats-value">' + escapeHtml(String(v)) + '</td></tr>';
-    });
-    html += '</table>';
-    return html;
+    return statsCardsHtml([
+      { group: 'General Statistics', rows: rows.slice(0, 10) },
+      { group: 'Request', rows: rows.slice(10) },
+    ]);
   }
 
   // ── URL Routing ──────────────────────────────────────────────────────────
   window.addEventListener('popstate', (e) => {
     const mode = (e.state && e.state.mode) || getModeFromPath();
-    document.getElementById('mode-' + mode).checked = true;
     switchMode(mode, false);
   });
 
@@ -6357,200 +6661,41 @@
     scrollTimer = setTimeout(() => document.documentElement.classList.remove('is-scrolling'), 1200);
   }, { passive: true });
 
-  // ── Rate limit display ───────────────────────────────────────────────
-  const rateLimitBar = document.getElementById('rate-limit-bar');
+  // ── Rate limit display (plate quota meter) ───────────────────────────
+  let quotaRemaining = null;
+  let quotaLimit = null;
+
+  function applyQuotaToPlate() {
+    if (quotaRemaining == null) return;
+    if (plateQuotaDefault) plateQuotaDefault.textContent = quotaRemaining + ' / ' + quotaLimit;
+    if (plateQuotaLow) {
+      plateQuotaLow.innerHTML = '<span class="pg-upload-meta-danger">' + quotaRemaining + '</span> / ' + quotaLimit;
+    }
+    // Only flip between the idle-ish states; never interrupt an active flow.
+    const st = uploadPlate ? uploadPlate.dataset.state : 'initial';
+    if (st === 'initial' || st === 'low-quota' || st === 'exhausted') {
+      setPlateState('initial'); // setPlateState normalizes to low-quota/exhausted
+    }
+  }
+
   function updateRateLimit() {
     fetch('/api/usage').then(r => r.json()).then(d => {
-      rateLimitBar.textContent = d.remaining + '/' + d.limit + ' requests available';
-      rateLimitBar.style.color = d.remaining <= 2 ? 'var(--deepfake)' : '';
+      quotaRemaining = d.remaining;
+      quotaLimit = d.limit;
+      applyQuotaToPlate();
     }).catch(() => {});
   }
   updateRateLimit();
 
   // ── Init ────────────────────────────────────────────────────────────────
+  // Wire the design chrome once, then let switchMode drive everything.
+  initPlateChrome();
+  initPlayerController();
+  initThemeToggle();
+
   const initMode = getModeFromPath();
-  currentMode = initMode;
-  document.getElementById('mode-' + initMode).checked = true;
-
-  if (initMode === 'deepfake') {
-    // Deepfake init
-    transcriptContainer.classList.remove('visible');
-    resultsSidebar.classList.remove('visible');
-    redactionContent.style.display = 'none';
-    if (musicContent) musicContent.style.display = 'none';
-    if (musicSidebar) musicSidebar.style.display = 'none';
-    currentMeta = {
-      fileSize: 1.87 * 1024 * 1024, fileType: 'audio/mpeg',
-      httpStatus: 200, httpStatusText: 'OK',
-      responseSize: 4.2 * 1024, processingMs: 2660,
-    };
-    renderDeepfakeResults(DEMO_DATA, DEMO_AUDIO_URL);
-  } else if (initMode === 'music') {
-    // Music Detection init
-    deepfakeContent.style.display = 'none';
-    resultsVerdict.style.display = 'none';
-    transcriptContainer.classList.remove('visible');
-    resultsSidebar.classList.remove('visible');
-    sttOptions.classList.remove('visible');
-    redactionContent.style.display = 'none';
-    if (recordAction) { recordAction.style.display = ''; recordAction.classList.remove('disabled-soon'); }
-    if (streamDemoAction) streamDemoAction.style.display = '';
-    if (streamFileAction) streamFileAction.style.display = '';
-    currentMeta = {
-      fileSize: 243900, fileType: 'audio/opus',
-      httpStatus: 200, httpStatusText: 'OK',
-      responseSize: JSON.stringify(DEMO_MUSIC_DATA).length,
-      processingMs: DEMO_MUSIC_DATA.latency_ms || 0,
-    };
-    renderMusicResults(DEMO_MUSIC_DATA, DEMO_MUSIC_AUDIO_URL);
-  } else if (initMode === 'aimusic') {
-    // AI Music Detection init — render pre-cached demo so the page lights up
-    // without an API call on first load.
-    deepfakeContent.style.display = 'none';
-    resultsVerdict.style.display = 'none';
-    transcriptContainer.classList.remove('visible');
-    resultsSidebar.classList.remove('visible');
-    sttOptions.classList.remove('visible');
-    redactionContent.style.display = 'none';
-    if (musicContent) musicContent.style.display = 'none';
-    if (musicSidebar) musicSidebar.style.display = 'none';
-    if (aimusicContent) aimusicContent.classList.add('visible');
-    if (aimusicSidebar) aimusicSidebar.style.display = '';
-    // AI Music supports mic + file streaming AND batch — show the full streaming
-    // trio (mic record + stream demo + stream file), same as transcription/music.
-    if (recordAction) { recordAction.style.display = ''; recordAction.classList.remove('disabled-soon'); recordAction.classList.remove('streaming-soon'); }
-    if (streamDemoAction) { streamDemoAction.style.display = ''; streamDemoAction.classList.remove('streaming-soon'); }
-    if (streamFileAction) { streamFileAction.style.display = ''; streamFileAction.classList.remove('streaming-soon'); }
-    currentData = DEMO_AIMUSIC_DATA;
-    currentMeta = {
-      fileSize: 2124230, fileType: 'audio/mpeg',
-      httpStatus: 200, httpStatusText: 'OK',
-      responseSize: JSON.stringify(DEMO_AIMUSIC_DATA).length,
-      processingMs: DEMO_AIMUSIC_DATA.latency_ms || 0,
-    };
-    resultsFilename.textContent = DEMO_AIMUSIC_DATA.filename || 'big-mac-papelao.mp3';
-    resultsAudio.src = DEMO_AIMUSIC_AUDIO_URL;
-    renderAimusicResult(DEMO_AIMUSIC_DATA);
-  } else if (initMode === 'language') {
-    // Language Detection init — render pre-cached demo so the page lights up
-    // without an API call on first load.
-    deepfakeContent.style.display = 'none';
-    resultsVerdict.style.display = 'none';
-    transcriptContainer.classList.remove('visible');
-    resultsSidebar.classList.remove('visible');
-    sttOptions.classList.remove('visible');
-    redactionContent.style.display = 'none';
-    if (musicContent) musicContent.style.display = 'none';
-    if (musicSidebar) musicSidebar.style.display = 'none';
-    if (languageContent) languageContent.classList.add('visible');
-    if (languageSidebar) languageSidebar.style.display = '';
-    if (recordAction) recordAction.style.display = 'none';
-    if (streamDemoAction) streamDemoAction.style.display = 'none';
-    if (streamFileAction) streamFileAction.style.display = 'none';
-    currentData = DEMO_LANGUAGE_DATA;
-    currentMeta = {
-      fileSize: 1.87 * 1024 * 1024, fileType: 'audio/mpeg',
-      httpStatus: 200, httpStatusText: 'OK',
-      responseSize: JSON.stringify(DEMO_LANGUAGE_DATA).length,
-      processingMs: 1100,
-    };
-    resultsFilename.textContent = DEMO_LANGUAGE_FILENAME;
-    resultsAudio.src = DEMO_LANGUAGE_AUDIO_URL;
-    lastLanguageFilename = DEMO_LANGUAGE_FILENAME;
-    renderLanguageResult(DEMO_LANGUAGE_DATA);
-  } else if (initMode === 'velma') {
-    // Velma init — open pre-loaded with the cached demo, like the other model tabs.
-    deepfakeContent.style.display = 'none';
-    resultsVerdict.style.display = 'none';
-    transcriptContainer.classList.add('visible'); // reuse stt-chart + transcript-list
-    resultsSidebar.classList.remove('visible');
-    sttOptions.classList.remove('visible');
-    redactionContent.style.display = 'none';
-    if (musicContent) musicContent.style.display = 'none';
-    if (musicSidebar) musicSidebar.style.display = 'none';
-    if (velmaContent) velmaContent.classList.add('visible');
-    if (velmaSidebar) velmaSidebar.classList.add('visible');
-    if (velmaOptions) velmaOptions.classList.add('visible');
-    if (velmaDemoAction) velmaDemoAction.style.display = '';
-    // Velma supports mic + file streaming AND batch — show the same streaming
-    // trio as transcription (mic record + stream demo + stream file).
-    if (recordAction) recordAction.style.display = '';
-    if (streamDemoAction) streamDemoAction.style.display = '';
-    if (streamFileAction) streamFileAction.style.display = '';
-    showVelmaDemo();
-    updateVelmaConfigSummary();
-  } else if (initMode === 'redaction') {
-    // Redaction init
-    deepfakeContent.style.display = 'none';
-    resultsVerdict.style.display = 'none';
-    transcriptContainer.classList.remove('visible');
-    resultsSidebar.classList.remove('visible');
-    sttOptions.classList.remove('visible');
-    redactionContent.style.display = 'block';
-    redactionSidebar.classList.add('visible');
-    redactionOptions.classList.add('visible');
-    if (musicContent) musicContent.style.display = 'none';
-    if (musicSidebar) musicSidebar.style.display = 'none';
-    if (recordAction) { recordAction.style.display = ''; recordAction.classList.add('disabled-soon'); }
-    if (streamDemoAction) streamDemoAction.style.display = 'none';
-    if (streamFileAction) streamFileAction.style.display = 'none';
-    if (playerEntryOriginal) playerEntryOriginal.style.display = '';
-    if (redactedLabel) redactedLabel.style.display = '';
-    redactionData = DEMO_REDACTION_DATA;
-    currentData = DEMO_REDACTION_DATA;
-    currentMeta = {
-      fileSize: 1958055, fileType: 'audio/mpeg',
-      httpStatus: 200, httpStatusText: 'OK',
-      responseSize: JSON.stringify(DEMO_REDACTION_DATA).length, processingMs: 2800,
-    };
-    resultsFilename.textContent = DEMO_REDACTION_DATA.filename || 'AIAgentFrustration.mp3';
-    resultsAudio.src = DEMO_REDACTION_AUDIO_URL;
-    if (originalAudio) originalAudio.src = DEMO_REDACTION_ORIGINAL_AUDIO_URL;
-    const initRanges = DEMO_REDACTION_DATA.redaction_ranges || [];
-    const initDurMs = DEMO_REDACTION_DATA.duration_ms || 0;
-    renderRedactionTimeline(initRanges, initDurMs);
-    renderRedactionTranscript(DEMO_REDACTION_DATA.utterances || []);
-    renderRedactionSidebar(initRanges, initDurMs);
-    if (initDurMs) {
-      setupRedactionPlaybackTracking(initDurMs);
-      setupRedactionTranscriptTracking(DEMO_REDACTION_DATA.utterances || []);
-    }
-  } else {
-    // Transcription init (default)
-    deepfakeContent.style.display = 'none';
-    resultsVerdict.style.display = 'none';
-    redactionContent.style.display = 'none';
-    transcriptContainer.classList.add('visible');
-    resultsSidebar.classList.add('visible');
-    sttOptions.classList.add('visible');
-    if (musicContent) musicContent.style.display = 'none';
-    if (musicSidebar) musicSidebar.style.display = 'none';
-    if (recordAction) {
-      recordAction.classList.remove('disabled-soon');
-      recordAction.querySelector('span').textContent = 'Start streaming';
-    }
-
-    sttData = DEMO_STT_DATA;
-    currentData = DEMO_STT_DATA;
-    sttUtterances = DEMO_STT_DATA.utterances || [];
-    sttPartial = null;
-    currentMeta = {
-      fileSize: 1958055, fileType: 'audio/mpeg',
-      httpStatus: 200, httpStatusText: 'OK',
-      responseSize: JSON.stringify(DEMO_STT_DATA).length, processingMs: 2660,
-    };
-    resultsFilename.textContent = DEMO_STT_DATA.filename || 'AIAgentFrustration.mp3';
-    resultsAudio.src = DEMO_STT_AUDIO_URL;
-    renderTranscript();
-  }
+  switchMode(initMode, false);
 
   // Replace initial state so back button works
-  const initPath = initMode === 'deepfake' ? '/deepfake'
-    : initMode === 'redaction' ? '/redaction'
-    : initMode === 'music' ? '/music'
-    : initMode === 'aimusic' ? '/ai-music'
-    : initMode === 'language' ? '/language'
-    : initMode === 'velma' ? '/velma'
-    : '/transcription';
-  history.replaceState({ mode: initMode }, '', initPath + location.search);
+  history.replaceState({ mode: initMode }, '', MODES[initMode].path + location.search);
 })();

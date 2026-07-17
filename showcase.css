@@ -333,17 +333,18 @@
 }
 
 /* ── STT streaming debug panel (showcase-only feature) ── */
-.pg-debug-panel {
+/* Visibility contract: app.js toggles the [hidden] attribute. */
+.pg-debug-panel[hidden] {
   display: none;
+}
+.pg-debug-panel {
+  display: block;
   margin-top: var(--m__spacer-m);
   border: var(--m__border-width-s) solid var(--m__border);
   border-radius: var(--m__radius-l);
   padding: var(--m__spacer-s);
   font-family: var(--m__font-family-mono);
   font-size: var(--m__font-size-xs);
-}
-.pg-debug-panel.visible {
-  display: block;
 }
 .pg-debug-head {
   display: flex;
@@ -454,4 +455,11 @@
 }
 .pg-bottom-columns.visible {
   display: grid;
+}
+
+/* JSON literals not covered by the design's highlight classes */
+.pg-json-bool,
+.pg-json-null {
+  color: var(--m__text-code, var(--m__text));
+  opacity: 0.85;
 }
