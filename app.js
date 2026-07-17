@@ -947,13 +947,20 @@
       });
     });
 
-    // Stop button in the streaming overlay
+    // Stop button in the streaming overlay. stopPropagation: the click would
+    // otherwise bubble to the plate's expand handler after the state flips.
     const stopBtn = document.getElementById('plate-stop-btn');
-    if (stopBtn) stopBtn.addEventListener('click', () => { if (isRecording) stopRecording(); });
+    if (stopBtn) stopBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isRecording) stopRecording();
+    });
 
     // Exhausted-state CTA opens the HubSpot access modal
     const exhaustedCta = document.getElementById('plate-exhausted-cta');
-    if (exhaustedCta) exhaustedCta.addEventListener('click', openHsModal);
+    if (exhaustedCta) exhaustedCta.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openHsModal();
+    });
 
     // Velma "Try demo audio" re-runs the cached demo
     if (velmaDemoBtn) {
@@ -3899,7 +3906,7 @@
       }
     } else if (isRecording) {
       const indicator = document.createElement('div');
-      indicator.className = 'transcript-empty';
+      indicator.className = 'pg-transcript-empty';
       indicator.textContent = 'Listening\u2026';
       indicator.style.opacity = '0.5';
       indicator.setAttribute('data-listening', 'true');
@@ -3913,7 +3920,7 @@
 
     if (sttUtterances.length === 0 && !sttPartial) {
       const empty = document.createElement('div');
-      empty.className = 'transcript-empty';
+      empty.className = 'pg-transcript-empty';
       empty.textContent = isRecording ? 'Listening\u2026' : 'Upload an audio file or start recording to see the transcript.';
       if (isRecording) empty.setAttribute('data-listening', 'true');
       transcriptList.appendChild(empty);
@@ -3955,7 +3962,7 @@
     // Show a live "listening" indicator only when recording and no partial is active
     if (isRecording && !sttPartial) {
       const indicator = document.createElement('div');
-      indicator.className = 'transcript-empty';
+      indicator.className = 'pg-transcript-empty';
       indicator.textContent = 'Listening\u2026';
       indicator.style.opacity = '0.5';
       indicator.setAttribute('data-listening', 'true');
@@ -3993,7 +4000,7 @@
       for (let i = sttUtterances.length - 1; i >= 0; i--) {
         if (currentMs >= sttUtterances[i].start_ms) { activeIdx = i; break; }
       }
-      transcriptList.querySelectorAll('.transcript-utterance').forEach((el, i) => {
+      transcriptList.querySelectorAll('.pg-transcript-utterance').forEach((el, i) => {
         const wasActive = el.classList.contains('active');
         const nowActive = i === activeIdx;
         el.classList.toggle('active', nowActive);
@@ -4002,6 +4009,37 @@
       sttPlaybackTracker = requestAnimationFrame(tick);
     }
     sttPlaybackTracker = requestAnimationFrame(tick);
+  }
+
+  // Speaker lanes on the player dataviz: distinct speakers → lanes 1..5.
+  // Sets --speaker-count (drives strip height + lane math) and the labels.
+  const playerDataviz = document.querySelector('.pg-player-dataviz');
+  const speakerLabelsEl = document.getElementById('speaker-labels');
+
+  function syncSpeakerLanes(labels) {
+    const count = Math.min(Math.max(labels.length, 1), 5);
+    if (playerDataviz) playerDataviz.style.setProperty('--speaker-count', count);
+    if (mediaBox) mediaBox.setAttribute('data-speaker-count', count);
+    if (speakerLabelsEl) {
+      speakerLabelsEl.innerHTML = labels.slice(0, 5).map((label, i) =>
+        '<div class="speaker-label" data-speaker-index="' + (i + 1) + '"><span>' +
+        escapeHtml(label) + '</span></div>'
+      ).join('');
+    }
+  }
+
+  function clipTooltipText(u) {
+    const endTimeMs = u.start_ms + (u.duration_ms || 2000);
+    let dfTooltip = '';
+    if (u.deepfake_score != null) {
+      const s = u.deepfake_score;
+      if (s > 0.7) dfTooltip = ' \u00b7 Deepfake (' + Math.round((s - 0.5) * 200) + '%)';
+      else if (s < 0.3) dfTooltip = ' \u00b7 Authentic (' + Math.round((0.5 - s) * 200) + '%)';
+      else dfTooltip = ' \u00b7 Uncertain authenticity';
+    }
+    return formatMs(u.start_ms) + ' \u2013 ' + formatMs(endTimeMs) +
+      ' \u00b7 ' + (u.speaker_label || ('Speaker ' + (u.speaker || 0))) +
+      (u.emotion ? ' \u00b7 ' + u.emotion : '') + dfTooltip;
   }
 
   function renderSttChart() {
@@ -4015,94 +4053,59 @@
       : (lastU.start_ms + (lastU.duration_ms || 4000));
     if (totalMs <= 0) return;
 
-    // Group utterances by speaker
-    const speakerMap = new Map();
+    // Distinct speakers \u2192 lanes
+    const speakers = Array.from(
+      new Set(sttUtterances.map(u => (u.speaker != null ? u.speaker : 0)))
+    ).sort((a, b) => a - b);
+    const laneOf = new Map(speakers.map((s, i) => [s, Math.min(i + 1, 5)]));
+    syncSpeakerLanes(speakers.map(s => 'Speaker ' + s));
+
     sttUtterances.forEach((u, i) => {
-      const spk = u.speaker != null ? u.speaker : 0;
-      if (!speakerMap.has(spk)) speakerMap.set(spk, []);
-      speakerMap.get(spk).push({ u, i });
-    });
-    const speakers = Array.from(speakerMap.keys()).sort((a, b) => a - b);
-
-    // Build rows
-    speakers.forEach(spk => {
-      const row = document.createElement('div');
-      row.className = 'stt-chart-row';
-
-      const label = document.createElement('div');
-      label.className = 'stt-chart-label';
-      label.textContent = 'Speaker ' + spk;
-      row.appendChild(label);
-
-      speakerMap.get(spk).forEach(({ u, i }) => {
-        const bar = document.createElement('div');
-        bar.className = 'stt-chart-bar';
-
-        // Extend bar to the start of the next utterance from ANY speaker
-        let nextStartMs = totalMs;
-        for (let j = 0; j < sttUtterances.length; j++) {
-          if (sttUtterances[j].start_ms > u.start_ms) {
-            nextStartMs = sttUtterances[j].start_ms;
-            break;
-          }
+      // Extend the clip to the start of the next utterance from ANY speaker
+      let nextStartMs = totalMs;
+      for (let j = 0; j < sttUtterances.length; j++) {
+        if (sttUtterances[j].start_ms > u.start_ms) {
+          nextStartMs = sttUtterances[j].start_ms;
+          break;
         }
-        const endMs = Math.max(nextStartMs, u.start_ms + (u.duration_ms || 2000));
-        const leftPct = (u.start_ms / totalMs * 100).toFixed(3);
-        const widthPct = ((endMs - u.start_ms) / totalMs * 100).toFixed(3);
-        bar.style.left = leftPct + '%';
-        bar.style.width = widthPct + '%';
+      }
+      const endMs = Math.max(nextStartMs, u.start_ms + (u.duration_ms || 2000));
 
-        const ec = u.emotion ? (EMOTION_COLORS[u.emotion.toLowerCase()] || '#78909c') : '#78909c';
-        bar.style.background = ec;
+      const clip = document.createElement('div');
+      clip.className = 'transcript-clip emotion-' + emotionSlug(u.emotion);
+      clip.setAttribute('data-speaker-index', laneOf.get(u.speaker != null ? u.speaker : 0));
+      clip.style.left = (u.start_ms / totalMs * 100).toFixed(3) + '%';
+      clip.style.width = ((endMs - u.start_ms) / totalMs * 100).toFixed(3) + '%';
+      clip.dataset.tooltip = clipTooltipText(u);
+      clip.dataset.uttIdx = i;
 
-        // Tooltip
-        const endTimeMs = u.start_ms + (u.duration_ms || 2000);
-        let dfTooltip = '';
-        if (u.deepfake_score != null) {
-          const s = u.deepfake_score;
-          if (s > 0.7) dfTooltip = ' · Deepfake (' + Math.round((s - 0.5) * 200) + '%)';
-          else if (s < 0.3) dfTooltip = ' · Authentic (' + Math.round((0.5 - s) * 200) + '%)';
-          else dfTooltip = ' · Uncertain authenticity';
+      const viz = document.createElement('div');
+      viz.className = 'clip-visualization';
+      clip.appendChild(viz);
+
+      // Click to seek and highlight transcript row
+      clip.addEventListener('click', () => {
+        if (resultsAudio) {
+          resultsAudio.currentTime = u.start_ms / 1000;
+          resultsAudio.play().catch(() => {});
         }
-        const tooltipText = formatMs(u.start_ms) + ' \u2013 ' + formatMs(endTimeMs) +
-          ' · Speaker ' + (u.speaker || 0) + (u.emotion ? ' · ' + u.emotion : '') + dfTooltip;
-        bar.addEventListener('mouseenter', () => {
-          const rect = bar.getBoundingClientRect();
-          histoTooltip.textContent = tooltipText;
-          histoTooltip.style.display = 'block';
-          histoTooltip.style.top = (rect.top - 6) + 'px';
-          histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
-          histoTooltip.style.transform = 'translate(-50%, -100%)';
-        });
-        bar.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
-
-        // Click to seek and highlight transcript bubble
-        bar.addEventListener('click', () => {
-          if (resultsAudio) {
-            resultsAudio.currentTime = u.start_ms / 1000;
-            resultsAudio.play().catch(() => {});
-          }
-          const bubbles = transcriptList.querySelectorAll('.transcript-utterance');
-          bubbles.forEach((el, j) => el.classList.toggle('active', j === i));
-          if (bubbles[i]) bubbles[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
-
-        bar.dataset.uttIdx = i;
-        row.appendChild(bar);
+        const bubbles = transcriptList.querySelectorAll('.pg-transcript-utterance');
+        bubbles.forEach((el, j) => el.classList.toggle('active', j === i));
+        if (bubbles[i]) bubbles[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
 
-      sttChart.appendChild(row);
+      sttChart.appendChild(clip);
     });
 
     sttChart.classList.add('visible');
 
-    // Sync chart bars with playback
+    // Sync clip highlight with playback
     setupSttChartPlaybackTracking();
   }
 
   function setupSttChartPlaybackTracking() {
     if (sttChartTracker) cancelAnimationFrame(sttChartTracker);
-    const bars = sttChart.querySelectorAll('.stt-chart-bar');
+    const clips = sttChart.querySelectorAll('.transcript-clip');
 
     function tick() {
       const currentMs = resultsAudio.currentTime * 1000;
@@ -4110,8 +4113,8 @@
       for (let i = sttUtterances.length - 1; i >= 0; i--) {
         if (currentMs >= sttUtterances[i].start_ms) { activeIdx = i; break; }
       }
-      bars.forEach(bar => {
-        bar.classList.toggle('active', parseInt(bar.dataset.uttIdx) === activeIdx);
+      clips.forEach(clip => {
+        clip.classList.toggle('hover', parseInt(clip.dataset.uttIdx) === activeIdx);
       });
       sttChartTracker = requestAnimationFrame(tick);
     }
@@ -4138,28 +4141,43 @@
     Latin_American: 'Latin Am.', Middle_Eastern: 'Middle Eastern', Unknown: 'Unknown',
   };
 
-  const EMOTION_COLORS = {
-    angry: '#e53935', contemptuous: '#c62828', disgusted: '#e91e63',
-    afraid: '#ef5350', anxious: '#ff7043',
-    stressed: '#8e24aa', surprised: '#7b1fa2', frustrated: '#6a1b9a',
-    excited: '#ff5722', hopeful: '#ff9800', amused: '#ff9800',
-    proud: '#ec407a', curious: '#ab47bc',
-    sad: '#5c6bc0', disappointed: '#42a5f5', bored: '#5c6bc0', tired: '#7986cb',
-    concerned: '#26a69a', confused: '#ff8a65',
-    calm: '#42a5f5', confident: '#5c6bc0', interested: '#7986cb',
-    neutral: '#78909c', unknown: '#546e7a', affectionate: '#ec407a',
-  };
+  // Emotion coloring comes from the design system's --emotion-* tokens.
+  // Unknown emotions fall back to the "unknown" gray token.
+  const KNOWN_EMOTIONS = new Set([
+    'affectionate', 'afraid', 'amused', 'angry', 'anxious', 'ashamed', 'bored',
+    'calm', 'concerned', 'confident', 'confused', 'contemptuous', 'curious',
+    'disappointed', 'disgusted', 'excited', 'frustrated', 'happy', 'hopeful',
+    'interested', 'neutral', 'proud', 'relieved', 'sad', 'stressed',
+    'surprised', 'tired',
+  ]);
+
+  function emotionSlug(name) {
+    const s = String(name || '').toLowerCase();
+    return KNOWN_EMOTIONS.has(s) ? s : 'unknown';
+  }
+
+  // CSS color value for inline styles (emo bars, chips)
+  function emotionVar(name) {
+    return 'var(--emotion-' + emotionSlug(name) + ', var(--emotion-unknown))';
+  }
+
+  // Human-readable language name from an ISO code ("en" → "English")
+  let langDisplayNames = null;
+  try { langDisplayNames = new Intl.DisplayNames(['en'], { type: 'language' }); } catch (e) {}
+  function languageName(code) {
+    if (!code) return '';
+    try {
+      const name = langDisplayNames && langDisplayNames.of(code.toLowerCase());
+      return name && name !== code.toLowerCase() ? name : code.toUpperCase();
+    } catch (e) { return code.toUpperCase(); }
+  }
 
   function buildUtteranceEl(u, opts, isPartial, index) {
     const el = document.createElement('div');
-    // Alternate bubble alignment by speaker (odd left, even right)
+    // Side follows the actual speaker (not row parity): odd speakers left, even right.
     const side = (u.speaker != null && u.speaker % 2 === 0) ? 'speaker-right' : 'speaker-left';
-    el.className = 'transcript-utterance ' + side;
-
-    // No emotion coloring on bubbles
-    const emotionColor = (u.emotion && opts.emotion_signal)
-      ? EMOTION_COLORS[u.emotion.toLowerCase()] || null : null;
-    el.style.setProperty('--ec', emotionColor || '#78909c');
+    el.className = 'pg-transcript-utterance ' + side + ' ec-' +
+      emotionSlug(u.emotion && opts.emotion_signal ? u.emotion : 'neutral');
 
     if (u.start_ms != null && !isPartial) {
       el.addEventListener('click', () => {
@@ -4171,12 +4189,12 @@
     }
 
     const header = document.createElement('div');
-    header.className = 'transcript-utterance-header';
+    header.className = 'pg-transcript-utterance-header';
 
     // Timestamp (start only)
     if (u.start_ms != null) {
       const time = document.createElement('span');
-      time.className = 'transcript-time';
+      time.className = 'pg-transcript-time';
       time.textContent = formatMs(u.start_ms);
       header.appendChild(time);
     }
@@ -4184,67 +4202,59 @@
     // Speaker name
     if (u.speaker != null && opts.speaker_diarization) {
       const sp = document.createElement('span');
-      sp.className = 'transcript-speaker';
-      sp.textContent = 'Speaker ' + u.speaker;
+      sp.className = 'pg-transcript-speaker';
+      sp.textContent = u.speaker_label || ('Speaker ' + u.speaker);
       header.appendChild(sp);
     }
 
-    // Emotion inline
+    // Emotion inline (colored via the utterance's ec-* class)
     if (u.emotion && opts.emotion_signal) {
       const em = document.createElement('span');
-      em.className = 'transcript-emotion';
-      if (emotionColor) em.style.color = emotionColor;
+      em.className = 'pg-transcript-emotion';
       em.textContent = u.emotion;
       header.appendChild(em);
     }
 
-    // Language flag
+    // Language name
     if (u.language) {
-      const flag = LANGUAGE_FLAGS[u.language.toUpperCase()];
-      if (flag) {
-        const lf = document.createElement('span');
-        lf.className = 'transcript-accent';
-        lf.textContent = flag;
-        lf.title = u.language.toUpperCase();
-        header.appendChild(lf);
-      }
+      const lf = document.createElement('span');
+      lf.className = 'pg-transcript-flag';
+      lf.textContent = languageName(u.language);
+      header.appendChild(lf);
     }
 
-    // Accent (shortened text, bolded)
+    // Accent
     if (u.accent && opts.accent_signal) {
       const la = document.createElement('span');
-      la.className = 'transcript-accent';
-      la.style.fontWeight = '700';
+      la.className = 'pg-transcript-accent';
       la.textContent = (ACCENT_SHORT[u.accent] || u.accent) + ' accent';
       header.appendChild(la);
     }
 
-    // Deepfake verdict pill
+    // Deepfake verdict
     if (opts.deepfake_signal && u.deepfake_score != null) {
       const score = u.deepfake_score;
       const df = document.createElement('span');
-      df.className = 'verdict-pill sm';
+      df.className = 'pg-transcript-verdict';
       if (score > 0.7) {
         const conf = Math.round((score - 0.5) * 2 * 100);
-        df.className += ' synthetic';
+        df.classList.add('m__tag--error');
         df.textContent = 'Deepfake';
-        df.title = 'Deepfake · ' + conf + '% confidence';
+        df.dataset.tooltip = 'Deepfake · ' + conf + '% confidence';
       } else if (score < 0.3) {
         const conf = Math.round((0.5 - score) * 2 * 100);
-        df.className += ' authentic';
         df.textContent = 'Authentic';
-        df.title = 'Authentic · ' + conf + '% confidence';
+        df.dataset.tooltip = 'Authentic · ' + conf + '% confidence';
       } else {
-        df.className += ' uncertain';
         df.textContent = 'Uncertain authenticity';
         if (score > 0.5) {
           const conf = Math.round((score - 0.5) * 2 * 100);
-          df.title = 'Uncertain · leans Deepfake at ' + conf + '% confidence';
+          df.dataset.tooltip = 'Uncertain · leans Deepfake at ' + conf + '% confidence';
         } else if (score < 0.5) {
           const conf = Math.round((0.5 - score) * 2 * 100);
-          df.title = 'Uncertain · leans Authentic at ' + conf + '% confidence';
+          df.dataset.tooltip = 'Uncertain · leans Authentic at ' + conf + '% confidence';
         } else {
-          df.title = 'Uncertain · 50/50';
+          df.dataset.tooltip = 'Uncertain · 50/50';
         }
       }
       header.appendChild(df);
@@ -4253,12 +4263,14 @@
     el.appendChild(header);
 
     const text = document.createElement('div');
-    text.className = 'transcript-text' + (isPartial ? ' partial' : '');
+    text.className = 'pg-transcript-text' + (isPartial ? ' partial' : '');
+    const p = document.createElement('p');
     if (opts.pii_phi_tagging && u.text && /<pii|<phi/i.test(u.text)) {
-      text.innerHTML = renderPiiText(u.text);
+      p.innerHTML = renderPiiText(u.text);
     } else {
-      text.textContent = u.text || '';
+      p.textContent = u.text || '';
     }
+    text.appendChild(p);
     el.appendChild(text);
 
     return el;
@@ -5731,7 +5743,7 @@
   }
 
   function patchVelmaTranscriptBubbles() {
-    const bubbles = transcriptList.querySelectorAll('.transcript-utterance');
+    const bubbles = transcriptList.querySelectorAll('.pg-transcript-utterance');
     bubbles.forEach((bEl, i) => {
       const u = sttUtterances[i];
       if (!u) return;
@@ -5745,7 +5757,7 @@
       // Add behavior chips after the timestamp
       const clipB = velmaClipBehaviorsByUuid[u.clip_uuid] || [];
       if (clipB.length) {
-        const header = bEl.querySelector('.transcript-utterance-header');
+        const header = bEl.querySelector('.pg-transcript-utterance-header');
         if (header) {
           const wrap = document.createElement('span');
           wrap.className = 'velma-bubble-behaviors';
@@ -5782,7 +5794,7 @@
   // Jump a behavior click to its evidence clip and briefly flash the bubble
   function jumpToClip(clipUuid) {
     if (!clipUuid) return;
-    const bubble = transcriptList.querySelector(`.transcript-utterance[data-clip-uuid="${clipUuid}"]`);
+    const bubble = transcriptList.querySelector(`.pg-transcript-utterance[data-clip-uuid="${clipUuid}"]`);
     if (!bubble) return;
     bubble.scrollIntoView({ behavior: 'smooth', block: 'center' });
     bubble.classList.remove('velma-bubble-flash');

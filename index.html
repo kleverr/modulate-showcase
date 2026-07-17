@@ -334,26 +334,26 @@
           <!-- Transcription options row -->
           <div class="pg-options-row" id="stt-options-row">
             <div class="pg-stt-options" id="stt-options">
-              <label class="m__toggle-secondary pg-stt-option" data-tip="Fast transcription, English only">
+              <label class="m__toggle-secondary pg-stt-option" data-tooltip="Fast transcription, English only">
                 <input type="checkbox" id="opt-fast" />
                 Fast (English only)
               </label>
-              <label class="m__checkbox-secondary pg-stt-option" data-tip="Identify different speakers in the audio">
+              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Identify different speakers in the audio">
                 <input type="checkbox" id="opt-diarization" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Diarization
               </label>
-              <label class="m__checkbox-secondary pg-stt-option" data-tip="Detect synthetic/AI-generated voice (deepfake) per utterance">
+              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Detect synthetic/AI-generated voice (deepfake) per utterance">
                 <input type="checkbox" id="opt-deepfake" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Deepfake
               </label>
-              <label class="m__checkbox-secondary pg-stt-option" data-tip="Detect emotional tone (e.g. Calm, Happy, Frustrated)">
+              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Detect emotional tone (e.g. Calm, Happy, Frustrated)">
                 <input type="checkbox" id="opt-emotion" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Emotions
               </label>
-              <label class="m__checkbox-secondary pg-stt-option" data-tip="Detect speaker accent (e.g. American, British)">
+              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Detect speaker accent (e.g. American, British)">
                 <input type="checkbox" id="opt-accent" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Accent
               </label>
-              <label class="m__checkbox-secondary pg-stt-option" data-tip="Tag personally identifiable and health information">
+              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Tag personally identifiable and health information">
                 <input type="checkbox" id="opt-pii" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> PII/PHI
               </label>
-              <label class="m__checkbox-secondary pg-stt-option" data-tip="Show raw streaming debug panel: partials, finals, status, cluster tags">
+              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Show raw streaming debug panel: partials, finals, status, cluster tags">
                 <input type="checkbox" id="opt-debug" /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Debug
               </label>
             </div>
@@ -361,17 +361,17 @@
 
           <!-- Redaction options row -->
           <div class="pg-options-row pg-redaction-options" id="redaction-options">
-            <label class="m__checkbox-secondary pg-stt-option" data-tip="Identify different speakers in the audio">
+            <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Identify different speakers in the audio">
               <input type="checkbox" id="redact-opt-diarization" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Diarization
             </label>
-            <span class="m__textfield pg-pad-field" data-tip="Extra silence (ms) prepended before each redacted range">
+            <span class="m__textfield pg-pad-field" data-tooltip="Extra silence (ms) prepended before each redacted range">
               <label for="redact-opt-start-pad">Start padding</label>
               <span class="pg-pad-control">
                 <input type="number" id="redact-opt-start-pad" value="80" min="0" step="10" />
                 <span class="pg-pad-unit">ms</span>
               </span>
             </span>
-            <span class="m__textfield pg-pad-field" data-tip="Extra silence (ms) appended after each redacted range">
+            <span class="m__textfield pg-pad-field" data-tooltip="Extra silence (ms) appended after each redacted range">
               <label for="redact-opt-end-pad">End padding</label>
               <span class="pg-pad-control">
                 <input type="number" id="redact-opt-end-pad" value="10" min="0" step="10" />
