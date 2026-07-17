@@ -160,45 +160,6 @@
     return 'Authentic';
   }
 
-  // ── Language Detection: code → country tables for flag emoji ────────────────
-  // Maps each ISO 639-1 language code returned by the API to a 2-letter ISO 3166
-  // country code; the flag emoji is composed from regional-indicator symbols.
-  // Codes without a clean country mapping (Latin, Tibetan, etc.) fall back to 🌐.
-  const LANG_COUNTRY = {
-    af: 'ZA', sq: 'AL', am: 'ET', ar: 'SA', hy: 'AM', as: 'IN', az: 'AZ',
-    ba: 'RU', eu: 'ES', be: 'BY', bn: 'BD', bs: 'BA', br: 'FR', bg: 'BG',
-    yue: 'HK', ca: 'ES', zh: 'CN', hr: 'HR', cs: 'CZ', da: 'DK', nl: 'NL',
-    en: 'US', et: 'EE', fo: 'FO', fi: 'FI', fr: 'FR', gl: 'ES', ka: 'GE',
-    de: 'DE', el: 'GR', gu: 'IN', ht: 'HT', ha: 'NG', haw: 'US', he: 'IL',
-    hi: 'IN', hu: 'HU', is: 'IS', id: 'ID', it: 'IT', ja: 'JP', jw: 'ID',
-    kn: 'IN', kk: 'KZ', km: 'KH', ko: 'KR', lo: 'LA',          lv: 'LV',
-    ln: 'CD', lt: 'LT', lb: 'LU', mk: 'MK', mg: 'MG', ms: 'MY', ml: 'IN',
-    mt: 'MT', mi: 'NZ', mr: 'IN', mn: 'MN', my: 'MM', ne: 'NP', no: 'NO',
-    nn: 'NO', oc: 'FR', ps: 'AF', fa: 'IR', pl: 'PL', pt: 'PT', pa: 'IN',
-    ro: 'RO', ru: 'RU', sa: 'IN', sr: 'RS', sn: 'ZW', sd: 'PK', si: 'LK',
-    sk: 'SK', sl: 'SI', so: 'SO', es: 'ES', su: 'ID', sw: 'KE', sv: 'SE',
-    tl: 'PH', tg: 'TJ', ta: 'IN', tt: 'RU', te: 'IN', th: 'TH',
-    tr: 'TR', tk: 'TM', uk: 'UA', ur: 'PK', uz: 'UZ', vi: 'VN',
-    yi: 'IL', yo: 'NG',
-    // Codes without a country flag — use globe fallback:
-    // la (Latin), bo (Tibetan), cy (Welsh — subdivision flag, not country)
-  };
-  // Welsh has a subdivision flag (not derivable from a 2-letter country code).
-  const LANG_FLAG_OVERRIDES = { cy: '\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}' };
-
-  function flagFromCountryCode(cc) {
-    if (!cc || cc.length !== 2) return null;
-    const A = 0x1F1E6;
-    const code = cc.toUpperCase();
-    return String.fromCodePoint(A + (code.charCodeAt(0) - 65), A + (code.charCodeAt(1) - 65));
-  }
-  function flagForLanguage(code) {
-    if (!code) return '\u{1F310}';
-    if (LANG_FLAG_OVERRIDES[code]) return LANG_FLAG_OVERRIDES[code];
-    const cc = LANG_COUNTRY[code];
-    return flagFromCountryCode(cc) || '\u{1F310}';
-  }
-
   // ── Mode State ──────────────────────────────────────────────────────────────
   let currentMode = 'transcription'; // 'deepfake' | 'transcription'
 
@@ -212,12 +173,7 @@
   const originalAudio = document.getElementById('original-audio');
   const playerEntryOriginal = document.getElementById('player-entry-original');
   const redactedLabel = document.getElementById('redacted-label');
-  const histogram     = document.getElementById('histogram');
   const resultsTbody  = document.getElementById('results-tbody');
-  const verdictRing   = document.getElementById('verdict-ring');
-  const verdictIcon   = document.getElementById('verdict-icon');
-  const verdictLabel  = document.getElementById('verdict-label');
-  const verdictCount  = document.getElementById('verdict-count');
 
   const uploadAction  = document.getElementById('results-upload-action');
   const fileInput     = document.getElementById('results-file-input');
@@ -229,70 +185,30 @@
   const sttChart      = document.getElementById('stt-chart');
 
   // Mode toggle
-  const modeRadios    = document.querySelectorAll('input[name="mode"]');
   const deepfakeContent = document.getElementById('deepfake-content');
   const transcriptContainer = document.getElementById('transcript-container');
   const transcriptList = document.getElementById('transcript-list');
   const resultsVerdict = document.getElementById('results-verdict');
-  const resultsSidebar = document.getElementById('results-sidebar');
   const sttOptions    = document.getElementById('stt-options');
 
   // Music Detection elements
   const musicContent      = document.getElementById('music-content');
-  const musicHistogram    = document.getElementById('music-histogram');
-  const musicHistogramFit = document.getElementById('music-histogram-fit');
   const musicTbody        = document.getElementById('music-tbody');
-  const musicVerdictRing  = document.getElementById('music-verdict-ring');
-  const musicVerdictIcon  = document.getElementById('music-verdict-icon');
-  const musicVerdictLabel = document.getElementById('music-verdict-label');
-  const musicVerdictSplit = document.getElementById('music-verdict-split');
   const musicSidebar      = document.getElementById('results-music-verdict');
-  const musicViewBtns     = document.querySelectorAll('.music-view-btn');
 
   // AI Music Detection elements
   const aimusicContent       = document.getElementById('aimusic-content');
   const aimusicSidebar       = document.getElementById('results-aimusic-verdict');
-  const aimusicHero          = document.getElementById('aimusic-hero');
-  const aimusicHeroBadge     = document.getElementById('aimusic-hero-badge');
-  const aimusicHeroBadgeText = document.getElementById('aimusic-hero-badge-text');
-  const aimusicHeroHeadline  = document.getElementById('aimusic-hero-headline');
-  const aimusicHeroSub       = document.getElementById('aimusic-hero-sub');
-  const aimusicPaths           = document.getElementById('aimusic-paths');
-  const aimusicPathVocal       = document.getElementById('aimusic-path-vocal');
-  const aimusicPathVocalIcon   = document.getElementById('aimusic-path-vocal-icon');
-  const aimusicPathVocalValue  = document.getElementById('aimusic-path-vocal-value');
-  const aimusicPathInstr       = document.getElementById('aimusic-path-instr');
-  const aimusicPathInstrIcon   = document.getElementById('aimusic-path-instr-icon');
-  const aimusicPathInstrValue  = document.getElementById('aimusic-path-instr-value');
-  const aimusicPathNote        = document.getElementById('aimusic-path-note');
-  const aimusicHeroMeta        = document.getElementById('aimusic-hero-meta');
-  const aimusicTimelineWrap    = document.getElementById('aimusic-timeline-wrap');
-  const aimusicTimeline        = document.getElementById('aimusic-timeline');
-  const aimusicAxis            = document.getElementById('aimusic-axis');
-  const aimusicTimelineStatus  = document.getElementById('aimusic-timeline-status');
   const aimusicTbody           = document.getElementById('aimusic-tbody');
 
   // Language Detection elements
   const languageContent      = document.getElementById('language-content');
   const languageSidebar      = document.getElementById('results-language-verdict');
-  const langHero             = document.getElementById('lang-hero');
-  const langHeroFlag         = document.getElementById('lang-hero-flag');
-  const langHeroName         = document.getElementById('lang-hero-name');
-  const langHeroCode         = document.getElementById('lang-hero-code');
-  const langHeroConfRow      = document.getElementById('lang-hero-conf-row');
-  const langHeroConfVal      = document.getElementById('lang-hero-conf-val');
-  const langHeroMeta         = document.getElementById('lang-hero-meta');
-  const langHeroWarning      = document.getElementById('lang-hero-warning');
 
   // Redaction elements
   const redactionContent        = document.getElementById('redaction-content');
-  const redactionTimeline       = document.getElementById('redaction-timeline');
-  const redactionPlayhead       = document.getElementById('redaction-playhead');
-  const redactionTimelineAxis   = document.getElementById('redaction-timeline-axis');
   const redactionTranscriptList = document.getElementById('redaction-transcript-list');
-  const redactionStats          = document.getElementById('redaction-stats');
   const redactionOptions        = document.getElementById('redaction-options');
-  const redactionSidebar        = document.getElementById('results-redaction-sidebar');
   const optRedactDiarization    = document.getElementById('redact-opt-diarization');
   const optRedactStartPad       = document.getElementById('redact-opt-start-pad');
   const optRedactEndPad         = document.getElementById('redact-opt-end-pad');
@@ -337,9 +253,6 @@
   let lastLanguageFilename = null;
   let musicPlaybackTracker = null;
   let aimusicPlaybackTracker = null;
-  let musicView = 'heatmap'; // 'heatmap' | 'detailed'
-  let musicCells = [];       // cells currently rendered (for playback tracking)
-  let musicResizeObserver = null;
   let isAnalyzing = false;
   let sttChartTracker = null;
 
@@ -534,7 +447,6 @@
         renderRedactionTranscript(lastRedactionData.utterances || []);
         renderRedactionSidebar(ranges, durMs);
         if (durMs) {
-          setupRedactionPlaybackTracking(durMs);
           setupRedactionTranscriptTracking(lastRedactionData.utterances || []);
         }
       } else {
@@ -559,7 +471,6 @@
         renderRedactionTranscript(rData.utterances || []);
         renderRedactionSidebar(ranges, durMs);
         if (durMs) {
-          setupRedactionPlaybackTracking(durMs);
           setupRedactionTranscriptTracking(rData.utterances || []);
         }
       }
@@ -964,14 +875,12 @@
       openHsModal();
     });
 
-    // Velma "Try demo audio" re-runs the cached demo
+    // Velma "Try demo audio" re-runs the cached demo (showVelmaDemo syncs
+    // the title/columns/player itself once the async data lands)
     if (velmaDemoBtn) {
       velmaDemoBtn.addEventListener('click', () => {
         if (currentMode !== 'velma') return;
         showVelmaDemo();
-        setPageTitle(resultsFilename.textContent);
-        refreshBottomPanels();
-        syncPlayerMeta();
       });
     }
   }
@@ -1526,7 +1435,9 @@
         if (xhr.status < 200 || xhr.status >= 300) {
           let detail = 'Server error (' + xhr.status + ')';
           try { const body = JSON.parse(new TextDecoder().decode(xhr.response)); detail = body.detail || body.message || detail; } catch {}
-          const err = new Error(detail); err.httpStatus = xhr.status; err.rawText = ''; reject(err); return;
+          const err = new Error(detail); err.httpStatus = xhr.status; err.rawText = '';
+          if (xhr.status === 429) handleRateLimited();
+          reject(err); return;
         }
         const contentType = xhr.getResponseHeader('content-type') || '';
         const bMatch = contentType.match(/boundary=([^;,\s"]+)/);
@@ -1608,7 +1519,6 @@
       renderRedactionTranscript(redactionUtterances);
       renderRedactionSidebar(ranges, durMs);
       if (durMs) {
-        setupRedactionPlaybackTracking(durMs);
         setupRedactionTranscriptTracking(redactionUtterances);
       }
       window.scrollTo(0, 0);
@@ -1743,18 +1653,6 @@
     });
   }
 
-  function setupRedactionPlaybackTracking(durationMs) {
-    if (redactionPlaybackTracker) cancelAnimationFrame(redactionPlaybackTracker);
-    if (!durationMs) return;
-    redactionPlayhead.classList.add('active');
-    function tick() {
-      const pct = Math.min(resultsAudio.currentTime * 1000 / durationMs, 1);
-      redactionPlayhead.style.left = (pct * 100).toFixed(3) + '%';
-      redactionPlaybackTracker = requestAnimationFrame(tick);
-    }
-    redactionPlaybackTracker = requestAnimationFrame(tick);
-  }
-
   function setupRedactionTranscriptTracking(utterances) {
     if (redactionTranscriptTracker) cancelAnimationFrame(redactionTranscriptTracker);
     if (!utterances.length) return;
@@ -1834,7 +1732,7 @@
 
     renderMusicVerdict(data);
     renderMusicHistogram(frames);
-    renderMusicTable(frames, musicView);
+    renderMusicTable(frames);
     if (frames.length) setupMusicPlaybackTracking(frames);
     window.scrollTo(0, 0);
   }
@@ -1842,44 +1740,6 @@
   // ══════════════════════════════════════════════════════════════════════════
   // ── LANGUAGE DETECTION MODE ──────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════
-
-  // The hero card itself acts as a click + drop target so the user doesn't
-  // have to use the small "Upload or drop a file" button at the top.
-  if (langHero && fileInput) {
-    langHero.addEventListener('click', (e) => {
-      // Don't intercept clicks on interactive children (e.g. the embedded audio).
-      if (e.target.closest('button, a, audio, input')) return;
-      fileInput.click();
-    });
-    let langDragCtr = 0;
-    langHero.addEventListener('dragenter', (e) => {
-      e.preventDefault();
-      langDragCtr++;
-      langHero.classList.add('drag-over');
-    });
-    langHero.addEventListener('dragleave', (e) => {
-      e.preventDefault();
-      langDragCtr--;
-      if (langDragCtr <= 0) { langDragCtr = 0; langHero.classList.remove('drag-over'); }
-    });
-    langHero.addEventListener('dragover', (e) => e.preventDefault());
-    langHero.addEventListener('drop', (e) => {
-      e.preventDefault();
-      langDragCtr = 0;
-      langHero.classList.remove('drag-over');
-      if (e.dataTransfer.files.length > 0) {
-        startLanguageDetection(e.dataTransfer.files[0]);
-      }
-    });
-  }
-
-  function resetLanguageHero() {
-    renderVerdictStatement('language-verdict-statement', {
-      variant: '',
-      title: 'Identify spoken language',
-      stats: [{ value: '', label: 'Upload an audio clip to detect its language' }],
-    });
-  }
 
   async function startLanguageDetection(file) {
     if (isAnalyzing) return;
@@ -2617,7 +2477,7 @@
         lastMusicMeta = { ...currentMeta };
         renderMusicVerdict(data);
         renderMusicHistogram(liveMusicFrames);
-        renderMusicTable(liveMusicFrames, musicView);
+        renderMusicTable(liveMusicFrames);
         setupMusicPlaybackTracking(liveMusicFrames);
       }
     };
@@ -2651,7 +2511,7 @@
     currentFrames = liveMusicFrames;
     renderMusicVerdict(data);
     renderMusicHistogram(liveMusicFrames);
-    renderMusicTable(liveMusicFrames, musicView);
+    renderMusicTable(liveMusicFrames);
   }
 
   function renderMusicVerdict(data) {
@@ -3751,19 +3611,6 @@
     sttChartTracker = requestAnimationFrame(tick);
   }
 
-  const LANGUAGE_FLAGS = {
-    EN: '🇬🇧', ES: '🇪🇸', FR: '🇫🇷', DE: '🇩🇪', IT: '🇮🇹',
-    PT: '🇵🇹', RU: '🇷🇺', ZH: '🇨🇳', JA: '🇯🇵', KO: '🇰🇷',
-    AR: '🇸🇦', HI: '🇮🇳', NL: '🇳🇱', PL: '🇵🇱', SV: '🇸🇪',
-    DA: '🇩🇰', NO: '🇳🇴', FI: '🇫🇮', TR: '🇹🇷', EL: '🇬🇷',
-    HE: '🇮🇱', TH: '🇹🇭', VI: '🇻🇳', ID: '🇮🇩', MS: '🇲🇾',
-    UK: '🇺🇦', CS: '🇨🇿', RO: '🇷🇴', HU: '🇭🇺', BG: '🇧🇬',
-    HR: '🇭🇷', SK: '🇸🇰', SL: '🇸🇮', LT: '🇱🇹', LV: '🇱🇻',
-    ET: '🇪🇪', CA: '🏳️', GL: '🏳️', EU: '🏳️', FA: '🇮🇷',
-    UR: '🇵🇰', BN: '🇧🇩', TA: '🇮🇳', TE: '🇮🇳', MR: '🇮🇳',
-    SW: '🇰🇪', AF: '🇿🇦', TL: '🇵🇭', CY: '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
-  };
-
   const ACCENT_SHORT = {
     American: 'American', British: 'British', Australian: 'Australian',
     Southern: 'Southern US', Indian: 'Indian', Irish: 'Irish', Scottish: 'Scottish',
@@ -4070,7 +3917,7 @@
       lastMusicMeta = { ...currentMeta };
       renderMusicVerdict(data);
       renderMusicHistogram(liveMusicFrames);
-      renderMusicTable(liveMusicFrames, musicView);
+      renderMusicTable(liveMusicFrames);
       setupMusicPlaybackTracking(liveMusicFrames);
     } else if (currentMode === 'aimusic' && (aimusicDoneData || liveAimusicWindows.length > 0)) {
       finalizeAimusicStream();
@@ -4090,6 +3937,9 @@
   function cleanupRecording() {
     isRecording = false;
     updateRecordButton();
+    // Re-sync the quota meter — a refused WS upgrade (rate limit) is only
+    // visible to the client as a connection error, so poll to find out.
+    updateRateLimit();
     if (scriptProcessor) { scriptProcessor.disconnect(); scriptProcessor = null; }
     if (audioContext) { audioContext.close().catch(() => {}); audioContext = null; }
     if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
@@ -4470,6 +4320,7 @@
           const err = new Error(msg);
           err.rawText = responseText;
           err.httpStatus = xhr.status;
+          if (xhr.status === 429) handleRateLimited();
           reject(err);
           return;
         }
@@ -4752,22 +4603,17 @@
 
   // Velma DOM refs
   const velmaContent       = document.getElementById('velma-content');
-  const velmaSidebar       = document.getElementById('results-velma-sidebar');
   const velmaOptions       = document.getElementById('velma-options');
   const velmaConfigBtn     = document.getElementById('velma-config-btn');
   const velmaConfigSummary = document.getElementById('velma-config-summary');
   const velmaSetupBtn      = document.getElementById('velma-setup-btn');
-  const velmaDemoAction    = document.getElementById('results-velma-demo-action');
   const velmaSummaryText   = document.getElementById('velma-summary-text');
-  const velmaConvTypePick  = document.getElementById('velma-conv-type-pick');
-  const velmaRolePicks     = document.getElementById('velma-role-picks');
   const velmaSpeakersTbody = document.getElementById('velma-speakers-tbody');
   const velmaBehaviorsTbody= document.getElementById('velma-behaviors-tbody');
   const velmaBehaviorsTable = document.querySelector('.velma-behaviors-table');
   const velmaResultsBehaviorsNote = document.getElementById('velma-results-behaviors-note');
   const velmaTopicsBySpeaker = document.getElementById('velma-topics-by-speaker');
   const velmaSummarySection      = document.getElementById('velma-summary-section');
-  const velmaPicksSection        = document.getElementById('velma-picks-section');
   const velmaSpeakersSection     = document.getElementById('velma-speakers-section');
   const velmaBehaviorsSection    = document.getElementById('velma-behaviors-section');
   const velmaTopicsSection       = document.getElementById('velma-topics-section');
@@ -4797,9 +4643,6 @@
   const velmaCfgProdTopics   = document.getElementById('velma-cfg-prod-topics');
   const velmaCfgProdSentiments = document.getElementById('velma-cfg-prod-sentiments');
   const velmaCfgProdSummary  = document.getElementById('velma-cfg-prod-summary');
-  const btnShowStatsVelma    = document.getElementById('btn-show-stats-velma');
-  const btnShowJsonVelma     = document.getElementById('btn-show-json-velma');
-  const btnEditConfigVelma   = document.getElementById('btn-edit-config-velma');
 
   // Velma state
   let velmaData = null;
@@ -4846,15 +4689,12 @@
     velmaData = null;
     velmaClipBehaviorsByUuid = {};
     velmaSummaryText.textContent = '';
-    velmaConvTypePick.innerHTML = '';
-    velmaRolePicks.innerHTML = '';
     velmaSpeakersTbody.innerHTML = '';
     velmaBehaviorsTbody.innerHTML = '';
     velmaTopicsBySpeaker.innerHTML = '';
     if (velmaResultsBehaviorsNote) velmaResultsBehaviorsNote.style.display = 'none';
     if (velmaBehaviorsTable) velmaBehaviorsTable.style.display = '';
     if (velmaSummarySection)   velmaSummarySection.style.display = 'none';
-    if (velmaPicksSection)     velmaPicksSection.style.display = 'none';
     if (velmaSpeakersSection)  velmaSpeakersSection.style.display = 'none';
     if (velmaBehaviorsSection) velmaBehaviorsSection.style.display = 'none';
     if (velmaTopicsSection)    velmaTopicsSection.style.display = 'none';
@@ -4896,6 +4736,13 @@
     const data = await loadDemoVelmaData();
     if (!data) { clearVelmaResults(); return; }
     renderVelmaDemo();
+    // The demo loads async — switchMode's refresh already ran with no data,
+    // so sync the title, bottom columns and player once it's actually rendered.
+    if (currentMode === 'velma') {
+      setPageTitle(resultsFilename.textContent);
+      refreshBottomPanels();
+      syncPlayerMeta();
+    }
   }
 
   async function startVelmaBatch(file) {
@@ -4958,13 +4805,6 @@
     } catch (err) {
       showError(err.message || 'Could not load demo audio');
     }
-  }
-
-  if (velmaDemoAction) {
-    velmaDemoAction.addEventListener('click', () => {
-      if (currentMode !== 'velma') return;
-      startVelmaDemo();
-    });
   }
 
   // ── Velma Streaming (WebSocket /api/velma-2-streaming) ──────────────────────
@@ -5415,25 +5255,6 @@
     if (u && resultsAudio && typeof u.start_ms === 'number') {
       try { resultsAudio.currentTime = u.start_ms / 1000; } catch {}
     }
-  }
-
-  function buildPickBadge(label, value, confidence, source, reasoning, detail) {
-    const el = document.createElement('div');
-    el.className = 'velma-pick';
-    el.innerHTML =
-      `<span class="velma-pick-label">${escapeHtml(label)}:</span>` +
-      `<span class="velma-pick-value">${escapeHtml(value || '')}</span>` +
-      (confidence != null ? `<span class="velma-pick-conf">${Math.round(confidence * 100)}%</span>` : '') +
-      (source ? `<span class="velma-pick-source">${escapeHtml(source)}</span>` : '');
-    // Show model's reasoning inline (or detail if reasoning is null) — raw API output for debugging
-    const text = reasoning || detail || '';
-    if (text) {
-      const r = document.createElement('span');
-      r.className = 'velma-pick-reasoning';
-      r.textContent = text;
-      el.appendChild(r);
-    }
-    return el;
   }
 
   // Per-speaker emotion pattern bar chart (one row per speaker)
@@ -6189,7 +6010,6 @@
 
   if (velmaConfigBtn) velmaConfigBtn.addEventListener('click', openVelmaConfigModal);
   if (velmaSetupBtn) velmaSetupBtn.addEventListener('click', openVelmaConfigModal);
-  if (btnEditConfigVelma) btnEditConfigVelma.addEventListener('click', openVelmaConfigModal);
   if (velmaConfigModalClose) velmaConfigModalClose.addEventListener('click', closeVelmaConfigModal);
   if (velmaConfigModal) {
     closeOnBackdrop(velmaConfigModal, closeVelmaConfigModal);

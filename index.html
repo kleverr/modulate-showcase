@@ -460,15 +460,11 @@
 
       <div class="pg-verdict-slot" id="pg-verdict-slot">
         <div id="results-verdict" hidden>
-          <div hidden>
-            <div id="verdict-ring"><div id="verdict-icon"></div><div id="verdict-label"></div><div id="verdict-count"></div></div>
-          </div>
+          
           <div class="pg-verdict-statement" id="deepfake-verdict-statement"></div>
         </div>
         <div id="results-music-verdict" hidden>
-          <div hidden>
-            <div id="music-verdict-ring"><div id="music-verdict-icon"></div><div id="music-verdict-label"></div><div id="music-verdict-split"></div></div>
-          </div>
+          
           <div class="pg-verdict-statement" id="music-verdict-statement"></div>
         </div>
         <div id="results-aimusic-verdict" hidden>
@@ -551,10 +547,7 @@
             <p id="velma-summary-text"></p>
           </section>
 
-          <section id="velma-picks-section" hidden>
-            <div id="velma-conv-type-pick"></div>
-            <div id="velma-role-picks"></div>
-          </section>
+          
 
           <section id="velma-speakers-section">
             <div class="m__space L"></div>
@@ -613,7 +606,6 @@
 
         <!-- Deepfake content -->
         <div id="deepfake-content" class="pg-tab-panel">
-          <div hidden><div id="histogram"></div></div>
           <div class="pg-results-table-section">
             <table class="pg-segments-table">
               <thead><tr><th>Timestamp</th><th>Verdict</th><th>Confidence</th></tr></thead>
@@ -624,7 +616,6 @@
 
         <!-- Music Detection content -->
         <div id="music-content" class="pg-tab-panel mx-panel">
-          <div hidden><div id="music-histogram-fit"><div id="music-histogram"></div></div></div>
           <div class="pg-results-table-section">
             <table class="pg-segments-table mx-detailed">
               <thead><tr><th>Timestamp</th><th>Music</th><th>Speech</th></tr></thead>
@@ -635,24 +626,7 @@
 
         <!-- AI Music Detection content -->
         <div id="aimusic-content" class="pg-tab-panel">
-          <div hidden>
-            <div id="aimusic-hero" class="pending">
-              <div id="aimusic-hero-badge"><span id="aimusic-hero-badge-text"></span></div>
-              <div id="aimusic-hero-headline"></div>
-              <div id="aimusic-hero-sub"></div>
-              <div id="aimusic-paths">
-                <div id="aimusic-path-vocal"><span id="aimusic-path-vocal-icon"></span><span class="aimusic-path-value" id="aimusic-path-vocal-value"></span></div>
-                <div id="aimusic-path-instr"><span id="aimusic-path-instr-icon"></span><span class="aimusic-path-value" id="aimusic-path-instr-value"></span></div>
-                <div id="aimusic-path-note"></div>
-              </div>
-              <div id="aimusic-hero-meta"></div>
-            </div>
-            <div id="aimusic-timeline-wrap">
-              <span id="aimusic-timeline-status"></span>
-              <div id="aimusic-timeline"></div>
-              <div id="aimusic-axis"></div>
-            </div>
-          </div>
+          
           <p class="caption" id="aimusic-caveat">
             Best at AI vocal music and Suno-style instrumentals. Can miss AI techno/metal and hip-hop beats;
             can false-positive on minimalist piano and heavily compressed rap vocals.
@@ -667,25 +641,12 @@
 
         <!-- Language Detection content -->
         <div id="language-content" class="pg-tab-panel">
-          <div hidden>
-            <div id="lang-hero">
-              <div id="lang-hero-flag"></div>
-              <div id="lang-hero-name"></div>
-              <div id="lang-hero-code"></div>
-              <div id="lang-hero-conf-row"><div id="lang-hero-conf-val"></div></div>
-              <div id="lang-hero-meta"></div>
-              <div id="lang-hero-warning"></div>
-            </div>
-          </div>
+          
         </div>
 
         <!-- PII/PHI Redaction content -->
         <div id="redaction-content" class="pg-tab-panel">
-          <div hidden>
-            <div id="redaction-timeline"><div id="redaction-playhead"></div></div>
-            <div id="redaction-timeline-axis"></div>
-            <div id="redaction-stats"></div>
-          </div>
+          
           <div class="pg-transcript-container visible">
             <div class="pg-transcript-list" id="redaction-transcript-list">
               <div class="pg-transcript-empty">Upload an audio file to see the redacted transcript.</div>
