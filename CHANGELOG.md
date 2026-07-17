@@ -2,6 +2,16 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [5.0.3] - 2026-07-17
+
+### Fixed
+- Starting a new analysis now clears the previous run everywhere (report,
+  verdict, player strip, audio, JSON/stats columns) instead of leaving the old
+  results on screen for the whole wait — all modes. The page title switches to
+  the new filename immediately. Tab-switch restore of prior results still works.
+- The "Waiting for results…" spinner sits inline with its label (the design's
+  loader is display:block by default).
+
 ## [5.0.2] - 2026-07-17
 
 ### Fixed

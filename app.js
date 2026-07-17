@@ -4791,7 +4791,78 @@
 
   function stopProgress() {}
 
+  // A new analysis is starting \u2014 the old results would sit under the plate for
+  // the whole wait otherwise. Clear the current mode's report, the shared player
+  // surfaces and the bottom columns (the last-run caches survive, so switching
+  // tabs still restores prior results; success overwrites them anyway).
+  function clearCurrentResults() {
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
+    sttChart.classList.remove('visible');
+    syncSpeakerLanes([]);
+    if (bottomColumns) bottomColumns.classList.remove('visible');
+
+    // Silence + unload the previous audio; the player captions reset via sync.
+    [resultsAudio, originalAudio].forEach(a => {
+      if (!a) return;
+      a.pause();
+      a.removeAttribute('src');
+      try { a.load(); } catch (e) {}
+    });
+    if (mediaBox) mediaBox.dataset.playbackStarted = 'false';
+    const container = mediaBox ? mediaBox.closest('.media-container') : null;
+    if (container) container.dataset.playbackStarted = 'false';
+    updatePlayIcon(false);
+    syncPlayerMeta();
+
+    const emptyVerdict = (id) => {
+      const el = document.getElementById(id);
+      if (el) { el.innerHTML = ''; el.className = 'pg-verdict-statement'; }
+    };
+
+    switch (currentMode) {
+      case 'velma':
+        clearVelmaResults();
+        break;
+      case 'transcription':
+        sttUtterances = [];
+        sttPartial = null;
+        sttData = null;
+        renderTranscript();
+        break;
+      case 'deepfake':
+        resultsTbody.innerHTML = '';
+        emptyVerdict('deepfake-verdict-statement');
+        break;
+      case 'music':
+        musicTbody.innerHTML = '';
+        emptyVerdict('music-verdict-statement');
+        break;
+      case 'aimusic':
+        if (aimusicTbody) aimusicTbody.innerHTML = '';
+        emptyVerdict('aimusic-verdict-statement');
+        break;
+      case 'language':
+        emptyVerdict('language-verdict-statement');
+        break;
+      case 'redaction':
+        renderRedactionTranscript([]);
+        emptyVerdict('redaction-verdict-statement');
+        break;
+      case 'emotion':
+      case 'accent': {
+        const cfg = EA_KINDS[currentMode];
+        if (cfg.tbody) cfg.tbody.innerHTML = '';
+        if (cfg.legend) cfg.legend.innerHTML = '';
+        emptyVerdict(currentMode + '-verdict-statement');
+        break;
+      }
+    }
+  }
+
   function showOverlay(filename, statusText) {
+    clearCurrentResults();
+    if (filename) setPageTitle(truncate(filename, 60));
     if (plateUploadingLabel) {
       plateUploadingLabel.textContent = statusText || ('Uploading \u201c' + truncate(filename || 'audio', 30) + '\u201d\u2026');
     }
