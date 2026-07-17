@@ -1074,7 +1074,7 @@
       if (e.target.closest('.player-icon') || e.target.closest('.pg-ab-toggle')) return;
       if (e.target.closest('.player-visualization') && e.target !== seekTarget) {
         // Clip strips have their own click-to-seek handlers with utterance context.
-        if (e.target.closest('.transcript-clip, .stt-chart-bar, .histo-bar')) return;
+        if (e.target.closest('.transcript-clip, .pg-histo-bar, .mx-player-heat-cell, .aim-player-heat-cell, .pg-redaction-seg')) return;
       }
       const a = activeAudio();
       if (!a || !isFinite(a.duration) || a.duration <= 0) return;
@@ -1167,28 +1167,22 @@
       if (audioObjectUrl) { URL.revokeObjectURL(audioObjectUrl); audioObjectUrl = null; }
       currentData = null;
 
-      verdictRing.className = 'verdict-ring pending';
-      verdictIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:100%;height:100%"><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>';
-      verdictLabel.textContent = 'Listening';
-      verdictCount.textContent = 'No segments';
+      renderVerdictStatement('deepfake-verdict-statement', {
+        variant: '',
+        title: 'Listening\u2026',
+        stats: [{ value: '', label: 'No segments yet' }],
+      });
 
-      histogram.innerHTML = '';
-      const placeholderBar = document.createElement('div');
-      placeholderBar.className = 'histo-bar';
-      placeholderBar.style.height = '40%';
-      placeholderBar.style.background = 'var(--ui-border)';
-      histogram.appendChild(placeholderBar);
+      clearPlayerStrips();
+      sttChart.innerHTML = '';
 
       resultsTbody.innerHTML = '';
       const placeholderRow = document.createElement('tr');
-      placeholderRow.style.color = 'var(--text-caption)';
       const tdTime = document.createElement('td');
       tdTime.textContent = '0:00 \u2013 \u2026';
       const tdVerdict = document.createElement('td');
       const pill = document.createElement('span');
-      pill.className = 'verdict-pill';
-      pill.style.background = 'var(--ui-border)';
-      pill.style.color = 'var(--text-caption)';
+      pill.className = 'm__tag-flat';
       pill.textContent = 'Pending';
       tdVerdict.appendChild(pill);
       const tdConf = document.createElement('td');
@@ -1225,10 +1219,11 @@
     currentFrames = frames;
 
     if (frames.length === 0) {
-      verdictRing.className = 'verdict-ring authentic';
-      verdictIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
-      verdictLabel.textContent = 'Insufficient data';
-      verdictCount.textContent = 'Audio too short to analyze';
+      renderVerdictStatement('deepfake-verdict-statement', {
+        variant: '',
+        title: 'Insufficient data',
+        stats: [{ value: '', label: 'Audio too short to analyze' }],
+      });
       renderHistogram(frames);
       renderTable(frames);
       return;
@@ -1243,76 +1238,78 @@
     window.scrollTo(0, 0);
   }
 
-  function renderVerdict(isSynthetic, syntheticCount, totalCount, reason) {
-    verdictRing.className = 'verdict-ring ' + (isSynthetic ? 'synthetic' : 'authentic');
-
-    verdictIcon.innerHTML = isSynthetic
-      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="14" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.5" fill="currentColor" stroke="none"/><line x1="12" y1="4" x2="12" y2="8"/><circle cx="12" cy="3" r="1"/><line x1="2" y1="13" x2="4" y2="13"/><line x1="20" y1="13" x2="22" y2="13"/></svg>'
-      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
-
-    verdictLabel.textContent = isSynthetic ? 'Deepfake' : 'Authentic';
-    verdictCount.textContent = syntheticCount + '/' + totalCount + ' deepfake segments';
-
-    let reasonEl = verdictCount.parentElement.querySelector('.verdict-reason');
-    if (isSynthetic && reason) {
-      if (!reasonEl) {
-        reasonEl = document.createElement('div');
-        reasonEl.className = 'verdict-reason';
-        reasonEl.style.cssText = 'font-size:0.7rem;opacity:0.55;margin-top:2px;';
-        verdictCount.parentElement.appendChild(reasonEl);
-      }
-      reasonEl.textContent = reason;
-      reasonEl.hidden = false;
-    } else if (reasonEl) {
-      reasonEl.hidden = true;
+  // Shared: design verdict statement into a .pg-verdict-slot container.
+  // spec: { variant: 'danger'|'success'|'', title, stats: [{value, label}] }
+  function renderVerdictStatement(containerId, spec) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.className = 'pg-verdict-statement' + (spec.variant ? ' ' + spec.variant : '');
+    let html = '<h2 class="pg-verdict-statement-title">' +
+      '<a class="pg-verdict-statement-link" href="#audio-player">' + escapeHtml(spec.title) + '</a></h2>';
+    if (spec.stats && spec.stats.length) {
+      html += '<div class="pg-verdict-statement-details">';
+      spec.stats.forEach(s => {
+        html += '<span class="pg-verdict-statement-stat">' +
+          (s.value !== '' && s.value != null
+            ? '<span class="pg-verdict-statement-stat-value">' + escapeHtml(String(s.value)) + '</span> '
+            : '') +
+          '<span class="pg-verdict-statement-stat-label">' + escapeHtml(s.label) + '</span></span>';
+      });
+      html += '</div>';
     }
+    el.innerHTML = html;
+    // Smooth-scroll the title link to the player
+    const link = el.querySelector('.pg-verdict-statement-link');
+    if (link) link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const player = document.getElementById('audio-player');
+      if (player) player.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
+  function renderVerdict(isSynthetic, syntheticCount, totalCount, reason) {
+    const stats = [{ value: syntheticCount + '/' + totalCount, label: 'deepfake segments' }];
+    if (isSynthetic && reason) {
+      // e.g. "3 segments with >98% conf." — split the leading count into the value slot
+      const m = reason.match(/^(\d+)\s+(.*)$/);
+      stats.push(m ? { value: m[1], label: m[2] } : { value: '', label: reason });
+    }
+    renderVerdictStatement('deepfake-verdict-statement', {
+      variant: isSynthetic ? 'danger' : 'success',
+      title: isSynthetic ? 'This is a deepfake' : 'This is authentic',
+      stats: stats,
+    });
+  }
+
+  // Remove any mode-specific strip overlays from the player visualization
+  // (each mode's renderer draws its own; #stt-chart is cleared separately).
+  function clearPlayerStrips() {
+    const viz = document.getElementById('player-visualization');
+    if (!viz) return;
+    viz.querySelectorAll('.df-player-clips, .mx-player-heat, .aim-player-heat, .pg-redaction-player-track')
+      .forEach(el => el.remove());
   }
 
   function renderHistogram(frames) {
-    histogram.innerHTML = '';
-    if (!frames.length) return;
+    const viz = document.getElementById('player-visualization');
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
+    syncSpeakerLanes([]);
+    if (!frames.length || !viz) return;
 
-    const squaresRow = document.createElement('div');
-    squaresRow.className = 'histo-squares';
+    const strip = document.createElement('div');
+    strip.className = 'pg-histo-squares df-player-clips';
 
     frames.forEach((frame, i) => {
       const bar = document.createElement('div');
-      bar.className = 'histo-bar ' + verdictClass(frame);
-      const alpha = confidenceToOpacity(frame.confidence);
-      const vc = verdictClass(frame);
-      const rgb = vc === 'synthetic' ? '255,53,84' : vc === 'no-content' ? '220,220,230' : '21,207,135';
-      bar.style.background = 'rgba(' + rgb + ',' + alpha + ')';
-
-      const verdictWord = verdictText(frame);
-      const verdictColor = vc === 'synthetic' ? 'rgb(255,53,84)' : vc === 'no-content' ? 'rgb(120,120,140)' : 'rgb(21,207,135)';
-      const tooltipHtml =
-        formatMs(frame.start_time_ms) + ' \u2013 ' + formatMs(frame.end_time_ms) +
-        ' <span style="color:' + verdictColor + '">\u00B7 <span style="font-weight:700">' + verdictWord + '</span>' +
-        ' \u00B7 ' + (frame.confidence * 100).toFixed(0) + '%</span>';
-
-      bar.addEventListener('mouseenter', () => {
-        const rect = bar.getBoundingClientRect();
-        histoTooltip.innerHTML = tooltipHtml;
-        histoTooltip.style.display = 'block';
-        histoTooltip.style.top = (rect.top - 6) + 'px';
-        histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
-        histoTooltip.style.transform = 'translate(-50%, -100%)';
-      });
-      bar.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
+      bar.className = 'pg-histo-bar ' + verdictClass(frame);
+      bar.style.opacity = confidenceToOpacity(frame.confidence);
+      bar.dataset.tooltip = formatMs(frame.start_time_ms) + ' \u2013 ' + formatMs(frame.end_time_ms) +
+        ' \u00B7 ' + verdictText(frame) + ' \u00B7 ' + (frame.confidence * 100).toFixed(0) + '%';
       bar.addEventListener('click', () => seekTo(frame.start_time_ms, i));
-      squaresRow.appendChild(bar);
+      strip.appendChild(bar);
     });
-    histogram.appendChild(squaresRow);
-
-    const axisRow = document.createElement('div');
-    axisRow.className = 'histo-axis';
-    frames.forEach((frame, i) => {
-      const tick = document.createElement('div');
-      tick.className = 'histo-tick';
-      if (i % 5 === 0) tick.textContent = formatSecCompact(frame.start_time_ms);
-      axisRow.appendChild(tick);
-    });
-    histogram.appendChild(axisRow);
+    viz.appendChild(strip);
   }
 
   function renderTable(frames) {
@@ -1320,23 +1317,25 @@
     frames.forEach((frame, i) => {
       const tr = document.createElement('tr');
       tr.dataset.index = i;
+      const vc = verdictClass(frame);
+      const chipClass = vc === 'synthetic' ? 'verdict-synthetic' : vc === 'authentic' ? 'verdict-authentic' : '';
 
       const tdTime = document.createElement('td');
       tdTime.textContent = formatMs(frame.start_time_ms) + ' \u2013 ' + formatMs(frame.end_time_ms);
 
       const tdVerdict = document.createElement('td');
       const pill = document.createElement('span');
-      pill.className = 'verdict-pill ' + verdictClass(frame);
+      pill.className = 'm__tag-flat' + (chipClass ? ' ' + chipClass : '');
       pill.textContent = verdictText(frame);
       tdVerdict.appendChild(pill);
 
       const tdConf = document.createElement('td');
       const confWrap = document.createElement('div');
-      confWrap.className = 'confidence-cell';
+      confWrap.className = 'pg-confidence-cell';
       const confTrack = document.createElement('div');
-      confTrack.className = 'confidence-bar-track';
+      confTrack.className = 'pg-confidence-bar-track';
       const confFill = document.createElement('div');
-      confFill.className = 'confidence-bar-fill ' + verdictClass(frame);
+      confFill.className = 'pg-confidence-bar-fill ' + vc;
       confFill.style.width = (frame.confidence * 100) + '%';
       confTrack.appendChild(confFill);
       const confText = document.createElement('span');
@@ -1353,18 +1352,25 @@
     });
   }
 
+  function deepfakeStrip() {
+    const viz = document.getElementById('player-visualization');
+    return viz ? viz.querySelector('.df-player-clips') : null;
+  }
+
   function seekTo(startMs, index) {
     if (resultsAudio) {
       resultsAudio.currentTime = startMs / 1000;
       resultsAudio.play().catch(() => {});
     }
-    histogram.querySelectorAll('.histo-bar').forEach((bar, i) => bar.classList.toggle('active', i === index));
+    const strip = deepfakeStrip();
+    if (strip) strip.querySelectorAll('.pg-histo-bar').forEach((bar, i) => bar.classList.toggle('active', i === index));
     resultsTbody.querySelectorAll('tr').forEach((row, i) => row.classList.toggle('active', i === index));
   }
 
   function setupPlaybackTracking(frames) {
     if (playbackTracker) cancelAnimationFrame(playbackTracker);
-    const bars = histogram.querySelectorAll('.histo-bar');
+    const strip = deepfakeStrip();
+    const bars = strip ? strip.querySelectorAll('.pg-histo-bar') : [];
     const rows = resultsTbody.querySelectorAll('tr');
 
     function tick() {
@@ -1892,15 +1898,11 @@
   }
 
   function resetLanguageHero() {
-    if (!langHeroFlag) return;
-    langHeroFlag.textContent = '\u{1F310}';
-    langHeroName.textContent = '—';
-    langHeroCode.textContent = 'Upload an audio clip to detect its language';
-    langHeroConfRow.style.display = 'none';
-    langHeroConfVal.classList.remove('low');
-    langHeroConfVal.textContent = '—';
-    langHeroMeta.textContent = '';
-    langHeroWarning.style.display = 'none';
+    renderVerdictStatement('language-verdict-statement', {
+      variant: '',
+      title: 'Identify spoken language',
+      stats: [{ value: '', label: 'Upload an audio clip to detect its language' }],
+    });
   }
 
   async function startLanguageDetection(file) {
@@ -1955,40 +1957,24 @@
     const conf = typeof data.confidence === 'number' ? data.confidence : 0;
     const durMs = typeof data.duration_ms === 'number' ? data.duration_ms : null;
 
-    langHeroFlag.textContent = flagForLanguage(code);
-    langHeroName.textContent = name;
-    langHeroCode.textContent = code ? code.toUpperCase() : '—';
-
-    langHeroConfRow.style.display = '';
     const pct = Math.max(0, Math.min(1, conf));
-    langHeroConfVal.textContent = (pct * 100).toFixed(1) + '%';
-    langHeroConfVal.classList.toggle('low', conf < 0.5);
-
-    const parts = [];
-    if (durMs != null) {
-      const secs = (durMs / 1000).toFixed(1);
-      parts.push(`Audio: ${secs} s`);
-      if (durMs > 30000) parts.push('first 30 s analyzed');
+    const lowConf = conf < 0.5;
+    const stats = [
+      { value: (pct * 100).toFixed(1) + '%', label: 'confidence' },
+      { value: '', label: (durMs != null && durMs > 30000) ? 'First 30s analyzed' : 'Full clip analyzed' },
+    ];
+    if (lowConf) {
+      stats.push({ value: '', label: 'Low confidence — consider a longer or cleaner clip' });
     }
-    // Processing time is captured per-request in currentMeta and persisted in
-    // lastLanguageMeta, so it survives mode-switches too.
-    const procMs = currentMeta && currentMeta.processingMs;
-    if (procMs) {
-      parts.push(`Processed in ${(procMs / 1000).toFixed(2)} s`);
-      // Compare against the actually-analyzed audio (capped at 30 s) for an
-      // honest real-time multiplier — otherwise a 5-minute clip would show
-      // a misleading 200x factor when the model only looked at 30 s.
-      if (durMs != null) {
-        const analyzedMs = Math.min(durMs, 30000);
-        const factor = analyzedMs / procMs;
-        if (factor > 0 && isFinite(factor)) {
-          parts.push(`${factor.toFixed(1)}× real-time`);
-        }
-      }
-    }
-    langHeroMeta.textContent = parts.join(' · ');
+    renderVerdictStatement('language-verdict-statement', {
+      variant: lowConf ? '' : 'success',
+      title: 'This is ' + name + (code ? ' (' + code.toUpperCase() + ')' : ''),
+      stats: stats,
+    });
 
-    langHeroWarning.style.display = conf < 0.5 ? '' : 'none';
+    // Language mode hides the dataviz (body[data-mode] CSS); clear any leftover strip.
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
   }
 
   // ── AI Music Detection ─────────────────────────────────────────────────────
@@ -2040,91 +2026,51 @@
   }
 
   function renderAimusicResult(data) {
-    if (!aimusicHero) return;
     const verdict = data.primary_verdict || 'unknown';
-    aimusicHero.className = 'aimusic-hero ' + verdict;
-
-    const headlines = {
-      'ai-vocal-music':   'AI Vocal Music',
-      'ai-instrumental':  'AI Instrumental',
-      'not-ai-music':     'Not AI Music',
-    };
-    const subs = {
-      'ai-vocal-music':   'Synthetic voice detected in a musical context — likely an AI song or AI-generated topline.',
-      'ai-instrumental':  'No synthetic voice, but the instrumental fingerprint matches AI-generated music.',
-      'not-ai-music':     'Neither the vocal nor the instrumental path crossed the AI-generation threshold.',
-    };
-    const robotIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><circle cx="8.5" cy="16" r="1" fill="currentColor"/><circle cx="15.5" cy="16" r="1" fill="currentColor"/></svg>';
-    const badges = {
-      'ai-vocal-music':   { text: 'AI Detected', icon: robotIcon },
-      'ai-instrumental':  { text: 'AI Detected', icon: robotIcon },
-      'not-ai-music':     { text: 'Clean', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' },
-    };
-    const badge = badges[verdict] || { text: 'Unknown', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>' };
-    aimusicHeroBadge.innerHTML = badge.icon + '<span>' + badge.text + '</span>';
-    aimusicHeroHeadline.textContent = headlines[verdict] || verdict;
-    aimusicHeroSub.textContent = subs[verdict] || '';
-
-    // Two-path summary. The server now derives `primary_verdict`; we surface
-    // each path's AI score + confidence and highlight whichever drove the
-    // verdict. Both paths are always reported in the new schema.
     const n = (x) => (typeof x === 'number' && isFinite(x)) ? x : 0;
     const vAiPct = n(data.vocal_ai_percentage);
-    const vConf  = n(data.vocal_ai_confidence);
     const iAiPct = n(data.instrumental_ai_percentage);
     const iConf  = n(data.instrumental_ai_confidence);
-    const vocalFired = verdict === 'ai-vocal-music';
-    const instrFired = verdict === 'ai-instrumental';
 
-    aimusicPathVocal.className = 'aimusic-path' + (vocalFired ? ' fired-ai' : '');
-    aimusicPathVocalIcon.textContent = vocalFired ? '✓' : '○';
-    aimusicPathVocalValue.textContent = vAiPct.toFixed(1) + '% AI' + (vConf > 0 ? ' · conf ' + vConf.toFixed(2) : '');
-
-    aimusicPathInstr.className = 'aimusic-path' + (instrFired ? ' fired-ai' : '');
-    aimusicPathInstrIcon.textContent = instrFired ? '✓' : '○';
-    aimusicPathInstrValue.textContent = iAiPct.toFixed(1) + '% AI' + (iConf > 0 ? ' · conf ' + iConf.toFixed(2) : '');
-
-    // Content breakdown — vocals can overlap instrumental, so these need not sum to 100.
-    aimusicPathNote.textContent =
-      'Content — vocals ' + n(data.vocal_percentage).toFixed(0) + '%' +
-      ' · instrumental ' + n(data.instrumental_percentage).toFixed(0) + '%' +
-      ' · silence ' + n(data.silence_percentage).toFixed(0) + '%';
-
-    aimusicPaths.style.display = '';
-
-    const durationS = (typeof data.duration_s === 'number') ? data.duration_s
-      : (typeof data.duration_ms === 'number') ? data.duration_ms / 1000 : 0;
-    const parts = [];
-    if (durationS) parts.push('Audio: ' + durationS.toFixed(1) + ' s');
-    const procMs = currentMeta && currentMeta.processingMs;
-    if (procMs) {
-      parts.push('Processed in ' + (procMs / 1000).toFixed(2) + ' s');
-      if (durationS > 0) {
-        const factor = (durationS * 1000) / procMs;
-        if (factor > 0 && isFinite(factor)) parts.push(factor.toFixed(1) + '× real-time');
-      }
+    const titles = {
+      'ai-vocal-music':  'This is AI vocal music',
+      'ai-instrumental': 'This is AI instrumental',
+      'not-ai-music':    'Not AI music',
+    };
+    const isAi = verdict === 'ai-vocal-music' || verdict === 'ai-instrumental';
+    const stats = [];
+    stats.push({ value: vAiPct.toFixed(1) + '%', label: 'AI on vocals' });
+    if (iConf > 0 || iAiPct > 0) {
+      stats.push({ value: iAiPct.toFixed(1) + '%', label: 'AI on instrumental' });
+    } else {
+      stats.push({ value: '', label: 'Instrumental not evaluated' });
     }
-    aimusicHeroMeta.textContent = parts.join(' · ');
+    stats.push({
+      value: '',
+      label: 'Content: vocals ' + n(data.vocal_percentage).toFixed(0) + '% \u00b7 instrumental ' +
+        n(data.instrumental_percentage).toFixed(0) + '% \u00b7 silence ' + n(data.silence_percentage).toFixed(0) + '%',
+    });
+    renderVerdictStatement('aimusic-verdict-statement', {
+      variant: isAi ? 'danger' : (verdict === 'not-ai-music' ? 'success' : ''),
+      title: titles[verdict] || 'Unknown content',
+      stats: stats,
+    });
 
-    // Per-window timeline. Batch ships windows[]; streaming's final render
+    // Per-window strip + table. Batch ships windows[]; streaming's final render
     // passes the accumulated windows through data.windows.
     const windows = (Array.isArray(data.windows) && data.windows.length) ? data.windows : liveAimusicWindows;
     renderAimusicTimeline(windows);
-    if (aimusicTimelineStatus) {
-      const wc = (typeof data.window_count === 'number') ? data.window_count : (windows ? windows.length : 0);
-      aimusicTimelineStatus.textContent = wc ? (wc + ' window' + (wc !== 1 ? 's' : '')) : '';
-    }
     setupAimusicPlaybackTracking(windows);
   }
 
-  // ── AI Music per-window timeline + table (shared by batch + streaming) ────
-  let aimusicWindows = [];   // windows backing the current timeline/table (for seek + playback)
+  // ── AI Music per-window strip + table (shared by batch + streaming) ────
+  let aimusicWindows = [];   // windows backing the current strip/table (for seek + playback)
 
   function aimusicWinDurMs(w) {
     return Math.max(0, (w.end_time_ms || 0) - (w.start_time_ms || 0));
   }
 
-  // The headline question is "AI or not?", so the timeline + pills collapse to
+  // The headline question is "AI or not?", so the strip + chips collapse to
   // three states: `ai` (synthetic vocals OR AI instrumental), `human` (real
   // content, not flagged), `silence`. The vocal/instrumental nuance lives in
   // the table's Type column instead.
@@ -2161,67 +2107,53 @@
 
   const AIMUSIC_VERDICT_TEXT = { ai: 'AI', human: 'Not AI', silence: 'Silence' };
   const AIMUSIC_TYPE_TEXT    = { vocal: 'Vocal', instrumental: 'Instrumental', silence: 'Silence' };
-  // Map our 3 states onto the existing deepfake pill/bar colour classes.
-  const AIMUSIC_PILL_CLASS   = { ai: 'synthetic', human: 'authentic', silence: 'no-content' };
+  const AIMUSIC_CELL_VERDICT = { ai: 'ai', human: 'not-ai', silence: 'silence' };
+  const AIMUSIC_CHIP_CLASS   = { ai: 'aim-verdict-ai', human: 'aim-verdict-not-ai', silence: '' };
 
-  // HTML for the shared floating hover tooltip (#histo-tooltip), styled like the
-  // Deepfake histogram: "time · Type · **Verdict** · conf%", verdict coloured.
-  function aimusicTooltipHtml(w) {
+  function aimusicTooltipText(w) {
     const v = aimusicVerdict(w), t = aimusicType(w);
-    const color = v === 'ai' ? 'rgb(255,53,84)' : v === 'human' ? 'rgb(21,207,135)' : 'rgb(170,170,180)';
-    const time = aimusicClock(w.start_time_ms) + ' – ' + aimusicClock(w.end_time_ms);
-    if (t === 'silence') {
-      return time + ' <span style="color:' + color + '">· <span style="font-weight:700">Silence</span></span>';
-    }
+    const time = aimusicClock(w.start_time_ms) + ' \u2013 ' + aimusicClock(w.end_time_ms);
+    if (t === 'silence') return time + ' \u00b7 Silence';
     const c = aimusicWindowConfidence(w);
-    const confStr = (v === 'ai' && c > 0) ? ' · ' + (c * 100).toFixed(0) + '%' : '';
-    return time +
-      ' <span style="opacity:0.7">· ' + AIMUSIC_TYPE_TEXT[t] + '</span>' +
-      ' <span style="color:' + color + '">· <span style="font-weight:700">' + AIMUSIC_VERDICT_TEXT[v] + '</span>' + confStr + '</span>';
+    const confStr = (v === 'ai' && c > 0) ? ' \u00b7 ' + (c * 100).toFixed(0) + '%' : '';
+    return time + ' \u00b7 ' + AIMUSIC_TYPE_TEXT[t] + ' \u00b7 ' + AIMUSIC_VERDICT_TEXT[v] + confStr;
   }
 
-  function aimusicShowTooltip(el, html) {
-    const rect = el.getBoundingClientRect();
-    histoTooltip.innerHTML = html;
-    histoTooltip.style.display = 'block';
-    histoTooltip.style.top = (rect.top - 6) + 'px';
-    histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
-    histoTooltip.style.transform = 'translate(-50%, -100%)';
-  }
-
+  // Strip inside the player visualization, one cell per window, width \u221d duration.
   function renderAimusicTimeline(windows) {
-    if (!aimusicTimeline) return;
     windows = windows || [];
     aimusicWindows = windows;
-    aimusicTimeline.innerHTML = '';
+    const viz = document.getElementById('player-visualization');
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
+    syncSpeakerLanes([]);
     if (aimusicTbody) aimusicTbody.innerHTML = '';
-    if (!windows.length) {
-      if (aimusicTimelineWrap) aimusicTimelineWrap.style.display = 'none';
-      return;
-    }
-    if (aimusicTimelineWrap) aimusicTimelineWrap.style.display = '';
+    if (!windows.length || !viz) return;
 
+    const heat = document.createElement('div');
+    heat.className = 'aim-player-heat';
     windows.forEach((w, i) => {
+      const v = aimusicVerdict(w);
       const cell = document.createElement('div');
-      cell.className = 'aimusic-cell ' + aimusicVerdict(w);
+      cell.className = 'aim-player-heat-cell';
+      cell.dataset.verdict = AIMUSIC_CELL_VERDICT[v];
+      cell.dataset.index = i;
       cell.style.flexGrow = String(Math.max(1, aimusicWinDurMs(w)));
       cell.style.flexBasis = '0';
-      cell.dataset.index = i;
-      const tip = aimusicTooltipHtml(w);
-      cell.addEventListener('mouseenter', () => aimusicShowTooltip(cell, tip));
-      cell.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
+      if (v === 'ai') {
+        cell.style.opacity = confidenceToOpacity(aimusicWindowConfidence(w));
+      } else if (v === 'human') {
+        cell.style.opacity = '0.85';
+      }
+      cell.dataset.tooltip = aimusicTooltipText(w);
       cell.addEventListener('click', () => seekAimusic(w.start_time_ms, i));
-      aimusicTimeline.appendChild(cell);
+      heat.appendChild(cell);
     });
-    if (aimusicAxis) {
-      aimusicAxis.innerHTML =
-        '<span>' + aimusicClock(windows[0].start_time_ms || 0) + '</span>' +
-        '<span>' + aimusicClock(windows[windows.length - 1].end_time_ms || 0) + '</span>';
-    }
+    viz.appendChild(heat);
+
     renderAimusicTable(windows);
   }
 
-  // Per-window table, styled like the Deepfake detection table.
   function renderAimusicTable(windows) {
     if (!aimusicTbody) return;
     aimusicTbody.innerHTML = '';
@@ -2231,15 +2163,14 @@
       tr.dataset.index = i;
 
       const tdTime = document.createElement('td');
-      tdTime.textContent = aimusicClock(w.start_time_ms) + ' – ' + aimusicClock(w.end_time_ms);
+      tdTime.textContent = aimusicClock(w.start_time_ms) + ' \u2013 ' + aimusicClock(w.end_time_ms);
 
       const tdType = document.createElement('td');
       tdType.textContent = AIMUSIC_TYPE_TEXT[t];
-      tdType.style.color = 'var(--text-caption)';
 
       const tdVerdict = document.createElement('td');
       const pill = document.createElement('span');
-      pill.className = 'verdict-pill ' + AIMUSIC_PILL_CLASS[v];
+      pill.className = 'm__tag-flat' + (AIMUSIC_CHIP_CLASS[v] ? ' ' + AIMUSIC_CHIP_CLASS[v] : '');
       pill.textContent = AIMUSIC_VERDICT_TEXT[v];
       tdVerdict.appendChild(pill);
 
@@ -2247,21 +2178,22 @@
       const c = aimusicWindowConfidence(w);
       if (v === 'ai' && c > 0) {
         const wrap = document.createElement('div');
-        wrap.className = 'confidence-cell';
+        wrap.className = 'aim-cell';
         const track = document.createElement('div');
-        track.className = 'confidence-bar-track';
+        track.className = 'aim-bar';
         const fill = document.createElement('div');
-        fill.className = 'confidence-bar-fill synthetic';
+        fill.className = 'aim-bar-fill';
         fill.style.width = (c * 100) + '%';
         track.appendChild(fill);
         const txt = document.createElement('span');
+        txt.className = 'aim-pct';
         txt.textContent = (c * 100).toFixed(1) + '%';
         wrap.appendChild(track);
         wrap.appendChild(txt);
         tdConf.appendChild(wrap);
       } else {
-        tdConf.textContent = '—';
-        tdConf.style.color = 'var(--text-caption)';
+        tdConf.textContent = '\u2014';
+        tdConf.className = 'aim-empty';
       }
 
       tr.appendChild(tdTime);
@@ -2274,7 +2206,9 @@
   }
 
   function aimusicSetActive(index) {
-    if (aimusicTimeline) aimusicTimeline.querySelectorAll('.aimusic-cell').forEach((c, i) => c.classList.toggle('active', i === index));
+    const viz = document.getElementById('player-visualization');
+    const heat = viz ? viz.querySelector('.aim-player-heat') : null;
+    if (heat) heat.querySelectorAll('.aim-player-heat-cell').forEach((c, i) => c.classList.toggle('active', i === index));
     if (aimusicTbody) aimusicTbody.querySelectorAll('tr').forEach((r, i) => r.classList.toggle('active', i === index));
   }
 
@@ -2304,32 +2238,20 @@
   }
 
   // ── AI Music Detection: streaming (mirrors the Music Detection demo) ──────
-  // Reset the hero to a "listening" state and clear the timeline at stream start.
+  // Reset to a "listening" state and clear the strip at stream start.
   function resetAimusicLiveUI() {
     liveAimusicWindows = [];
     aimusicDoneData = null;
-    if (!aimusicHero) return;
-    aimusicHero.className = 'aimusic-hero pending';
-    if (aimusicHeroBadge) aimusicHeroBadge.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Analyzing…</span>';
-    if (aimusicHeroHeadline) aimusicHeroHeadline.textContent = 'Listening';
-    if (aimusicHeroSub) aimusicHeroSub.textContent = 'Streaming audio — per-window verdicts appear below as they arrive.';
-    if (aimusicPaths) aimusicPaths.style.display = 'none';
-    if (aimusicHeroMeta) aimusicHeroMeta.textContent = '';
+    renderVerdictStatement('aimusic-verdict-statement', {
+      variant: '',
+      title: 'Listening\u2026',
+      stats: [{ value: '', label: 'Per-window verdicts appear below as they arrive.' }],
+    });
     renderAimusicTimeline([]);
-    if (aimusicTimelineWrap) aimusicTimelineWrap.style.display = '';
-    if (aimusicTimelineStatus) aimusicTimelineStatus.textContent = 'Listening…';
   }
 
   function renderAimusicLive() {
     renderAimusicTimeline(liveAimusicWindows);
-    if (aimusicTimelineWrap) aimusicTimelineWrap.style.display = '';
-    if (aimusicTimelineStatus) {
-      const aiN = liveAimusicWindows.filter(w => aimusicVerdict(w) === 'ai').length;
-      aimusicTimelineStatus.textContent =
-        liveAimusicWindows.length + ' window' + (liveAimusicWindows.length !== 1 ? 's' : '') +
-        ' · ' + aiN + ' AI';
-    }
   }
 
   function handleAimusicStreamMessage(msg) {
@@ -2757,331 +2679,106 @@
   }
 
   function renderMusicVerdict(data) {
-    const label = (data.primary_label || 'unknown').toLowerCase();
-    musicVerdictRing.className = 'verdict-ring ' + label;
-
-    const ICONS = {
-      music:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
-      speech:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
-      neither: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
-      unknown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-    };
-    musicVerdictIcon.innerHTML = ICONS[label] || ICONS.unknown;
-
-    const TEXT = { music: 'Music', speech: 'Speech', neither: 'Neither', unknown: 'Unknown' };
-    musicVerdictLabel.textContent = TEXT[label] || 'Unknown';
-
     const musicPct = (data.music_pct != null) ? data.music_pct : 0;
     const speechPct = (data.speech_pct != null) ? data.speech_pct : 0;
-    musicVerdictSplit.innerHTML =
-      '<div class="verdict-ring-split-item music"><span class="v">' + musicPct.toFixed(0) + '%</span><span class="l">Music</span></div>' +
-      '<div class="verdict-ring-split-item speech"><span class="v">' + speechPct.toFixed(0) + '%</span><span class="l">Speech</span></div>';
+    const label = (data.primary_label || 'unknown').toLowerCase();
+    let title;
+    if (label === 'music') title = 'This is ' + musicPct.toFixed(0) + '% music';
+    else if (label === 'speech') title = 'This is ' + speechPct.toFixed(0) + '% speech';
+    else if (label === 'neither') title = 'Neither music nor speech';
+    else title = 'Unknown content';
+    const other = (label === 'speech')
+      ? { value: musicPct.toFixed(0) + '%', label: 'music' }
+      : { value: speechPct.toFixed(0) + '%', label: 'speech' };
+    renderVerdictStatement('music-verdict-statement', { variant: 'success', title: title, stats: [other] });
   }
 
-  // Build the cells we'll render based on current view + available width.
-  // Returns { cells, fit } where fit=true means cells fill the container width
-  // (heatmap mode); fit=false means fixed-width cells with possible scroll.
-  function buildMusicCells(frames, view) {
-    if (!frames.length) return { cells: [], fit: false };
-
-    const DETAILED_PX = 11;       // legacy fixed width
-    const HEATMAP_TARGET_PX = 6;  // ideal cell width when there's room
-    const HEATMAP_MIN_PX = 2;     // smallest readable cell
-
-    if (view === 'detailed') {
-      const cells = frames.map((f, i) => ({
-        cellWidth: DETAILED_PX,
-        music: f.music_prob,
-        speech: f.speech_prob,
-        startMs: f.start_time_s * 1000,
-        endMs: f.end_time_s * 1000,
-        firstFrameIdx: i,
-        lastFrameIdx: i,
-        groupSize: 1,
-      }));
-      return { cells, fit: false };
-    }
-
-    // Heatmap: fit to container
-    const containerWidth = musicHistogramFit
-      ? musicHistogramFit.clientWidth - rowLabelOffsetPx() - 2  // -2 for safe rounding
-      : 800;
-    const W = Math.max(200, containerWidth);
-
-    if (frames.length * HEATMAP_TARGET_PX <= W) {
-      // Plenty of room: one cell per frame at target width
-      const cells = frames.map((f, i) => ({
-        cellWidth: HEATMAP_TARGET_PX,
-        music: f.music_prob,
-        speech: f.speech_prob,
-        startMs: f.start_time_s * 1000,
-        endMs: f.end_time_s * 1000,
-        firstFrameIdx: i,
-        lastFrameIdx: i,
-        groupSize: 1,
-      }));
-      return { cells, fit: true };
-    }
-
-    // Aggregate: max-pool adjacent frames so cells get at least MIN_CELL_PX wide
-    const maxCells = Math.max(1, Math.floor(W / HEATMAP_MIN_PX));
-    const groupSize = Math.ceil(frames.length / maxCells);
-    const numCells = Math.ceil(frames.length / groupSize);
-    const cellWidth = Math.max(HEATMAP_MIN_PX, Math.floor(W / numCells));
-    const cells = [];
-    for (let g = 0; g < numCells; g++) {
-      const start = g * groupSize;
-      const end = Math.min(start + groupSize, frames.length);
-      let mMax = 0, sMax = 0;
-      for (let k = start; k < end; k++) {
-        if (frames[k].music_prob  > mMax) mMax = frames[k].music_prob;
-        if (frames[k].speech_prob > sMax) sMax = frames[k].speech_prob;
-      }
-      cells.push({
-        cellWidth,
-        music: mMax,
-        speech: sMax,
-        startMs: frames[start].start_time_s * 1000,
-        endMs:   frames[end - 1].end_time_s * 1000,
-        firstFrameIdx: start,
-        lastFrameIdx: end - 1,
-        groupSize: end - start,
-      });
-    }
-    return { cells, fit: true };
-  }
-
-  // Width of the row label slot (e.g. "MUSIC") so the bars fill the rest.
-  // Falls back to 4.1rem ≈ 65.6px (3.5rem label + 0.6rem gap).
-  function rowLabelOffsetPx() {
-    const root = document.documentElement;
-    const fs = parseFloat(getComputedStyle(root).fontSize) || 16;
-    return Math.round(4.1 * fs);
-  }
-
+  // Two-row music/speech probability heatmap inside the player visualization.
   function renderMusicHistogram(frames) {
-    musicHistogram.innerHTML = '';
-    if (!frames.length) { musicCells = []; return; }
+    const viz = document.getElementById('player-visualization');
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
+    syncSpeakerLanes(['Music', 'Speech']);
+    if (!frames.length || !viz) return;
 
-    const { cells, fit } = buildMusicCells(frames, musicView);
-    musicCells = cells;
+    const heat = document.createElement('div');
+    heat.className = 'mx-player-heat';
 
-    if (musicHistogramFit) musicHistogramFit.classList.toggle('scrollable', !fit);
-
-    musicHistogram.appendChild(buildMusicRow('music',  'Music',  cells, fit));
-    musicHistogram.appendChild(buildMusicRow('speech', 'Speech', cells, fit));
-    musicHistogram.appendChild(buildMusicAxis(frames, fit));
-  }
-
-  function buildMusicRow(kind, label, cells, fit) {
-    const row = document.createElement('div');
-    row.className = 'music-histo-row';
-    const lbl = document.createElement('div');
-    lbl.className = 'music-histo-row-label ' + kind;
-    lbl.textContent = label;
-    const bars = document.createElement('div');
-    bars.className = 'music-histo-row-bars' + (fit ? ' fit' : '');
-    cells.forEach((cell, ci) => bars.appendChild(makeMusicCellBar(kind, cell, ci, fit)));
-    row.appendChild(lbl);
-    row.appendChild(bars);
-    return row;
-  }
-
-  function makeMusicCellBar(kind, cell, cellIndex, fit) {
-    const prob = kind === 'music' ? cell.music : cell.speech;
-    const bar = document.createElement('div');
-    bar.className = 'histo-bar ' + kind;
-    bar.dataset.cellIndex = cellIndex;
-    if (fit) {
-      // Heatmap: stretch equally so cells fill the row width
-      bar.style.flex = '1 1 0';
-      bar.style.width = 'auto';
-      bar.style.minWidth = '0';
-    } else {
-      bar.style.flex = '0 0 ' + cell.cellWidth + 'px';
-      bar.style.width = cell.cellWidth + 'px';
-    }
-    bar.style.aspectRatio = 'auto';
-    bar.style.height = '22px';
-    const alpha = Math.max(0.12, Math.pow(prob, 1.4));
-    const rgb = kind === 'music' ? '124,58,237' : '20,184,166';
-    bar.style.background = 'rgba(' + rgb + ',' + alpha.toFixed(3) + ')';
-
-    const labelWord = kind === 'music' ? 'Music' : 'Speech';
-    const labelColor = kind === 'music' ? 'rgb(196,167,255)' : 'rgb(110,232,212)';
-    const groupNote = cell.groupSize > 1
-      ? ' <span style="opacity:0.6">(max of ' + cell.groupSize + ' frames)</span>'
-      : '';
-    const tooltipHtml =
-      formatMs(cell.startMs) + ' – ' + formatMs(cell.endMs) +
-      ' <span style="color:' + labelColor + '">· <span style="font-weight:700">' + labelWord + '</span> ' +
-      (prob * 100).toFixed(1) + '%</span>' + groupNote;
-
-    bar.addEventListener('mouseenter', () => {
-      const rect = bar.getBoundingClientRect();
-      histoTooltip.innerHTML = tooltipHtml;
-      histoTooltip.style.display = 'block';
-      histoTooltip.style.top = (rect.top - 6) + 'px';
-      histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
-      histoTooltip.style.transform = 'translate(-50%, -100%)';
-    });
-    bar.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
-    bar.addEventListener('click', () => seekToMusic(cell.startMs, cell.firstFrameIdx));
-    return bar;
-  }
-
-  // Adaptive time axis: pick a tick interval producing 5–10 ticks total.
-  function buildMusicAxis(frames, fit) {
-    const axisRow = document.createElement('div');
-    axisRow.className = 'histo-axis music-histo-axis' + (fit ? '' : ' gapped');
-    if (!frames.length) return axisRow;
-
-    const lastFrame = frames[frames.length - 1];
-    const totalMs = lastFrame.end_time_s * 1000;
-
-    if (fit) {
-      // Heatmap: position absolute, percentage-based
-      const intervalMs = pickAxisIntervalMs(totalMs);
-      let lastTickMs = 0;
-      for (let t = 0; t <= totalMs; t += intervalMs) {
-        const tick = document.createElement('span');
-        tick.className = 'music-histo-axis-tick-abs';
-        if (t === 0) tick.classList.add('first');
-        tick.style.left = ((t / totalMs) * 100).toFixed(3) + '%';
-        tick.textContent = formatSecCompact(t);
-        axisRow.appendChild(tick);
-        lastTickMs = t;
-      }
-      // Final tick at duration end (only if far enough from previous)
-      if (totalMs - lastTickMs > intervalMs * 0.7) {
-        const endTick = document.createElement('span');
-        endTick.className = 'music-histo-axis-tick-abs last';
-        endTick.style.left = '100%';
-        endTick.textContent = formatSecCompact(totalMs);
-        axisRow.appendChild(endTick);
-      }
-    } else {
-      // Detailed: legacy per-frame ticks every 5 frames
-      frames.forEach((frame, i) => {
-        const tick = document.createElement('div');
-        tick.className = 'histo-tick';
-        if (i % 5 === 0) tick.textContent = formatSecCompact(frame.start_time_s * 1000);
-        axisRow.appendChild(tick);
+    ['music', 'speech'].forEach(kind => {
+      const row = document.createElement('div');
+      row.className = 'mx-player-heat-row';
+      row.dataset.row = kind;
+      frames.forEach((f, i) => {
+        const prob = kind === 'music' ? (f.music_prob || 0) : (f.speech_prob || 0);
+        const cell = document.createElement('div');
+        cell.className = 'mx-player-heat-cell';
+        cell.style.opacity = prob.toFixed(3);
+        cell.dataset.idx = i;
+        cell.dataset.tooltip = formatSecPrecise(f.start_time_s) + ' \u2013 ' + formatSecPrecise(f.end_time_s) +
+          ' \u00b7 ' + (kind === 'music' ? 'Music' : 'Speech') + ' ' + (prob * 100).toFixed(1) + '%';
+        cell.addEventListener('click', () => seekToMusic(f.start_time_s * 1000, i));
+        row.appendChild(cell);
       });
-    }
-    return axisRow;
+      heat.appendChild(row);
+    });
+    viz.appendChild(heat);
   }
 
-  function pickAxisIntervalMs(totalMs) {
-    const totalS = totalMs / 1000;
-    const candidates = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 1200];
-    for (const sec of candidates) {
-      if (totalS / sec <= 8) return sec * 1000;
-    }
-    return 1800 * 1000;
-  }
-
-  // Build table rows. In 'detailed' view: one row per ~192ms frame. In 'heatmap' view:
-  // bucket frames into 1-second groups, max-pooling music/speech probabilities. Each row
-  // tracks its underlying frame-index range so click/seek and playback tracking work in
-  // both modes.
-  function renderMusicTable(frames, view) {
+  function renderMusicTable(frames) {
     musicTbody.innerHTML = '';
-    if (!frames.length) return;
-
-    let groups;
-    if (view === 'detailed') {
-      groups = frames.map((f, i) => ({
-        startMs: f.start_time_s * 1000,
-        endMs:   f.end_time_s   * 1000,
-        music:   f.music_prob,
-        speech:  f.speech_prob,
-        firstFrameIdx: i,
-        lastFrameIdx:  i,
-      }));
-    } else {
-      const BUCKET_MS = 1000;
-      groups = [];
-      let i = 0;
-      while (i < frames.length) {
-        const startMs = frames[i].start_time_s * 1000;
-        const bucketEndMs = Math.floor(startMs / BUCKET_MS + 1) * BUCKET_MS;
-        let j = i;
-        let mMax = 0, sMax = 0;
-        while (j < frames.length && frames[j].start_time_s * 1000 < bucketEndMs) {
-          if (frames[j].music_prob  > mMax) mMax = frames[j].music_prob;
-          if (frames[j].speech_prob > sMax) sMax = frames[j].speech_prob;
-          j++;
-        }
-        groups.push({
-          startMs,
-          endMs: frames[j - 1].end_time_s * 1000,
-          music: mMax,
-          speech: sMax,
-          firstFrameIdx: i,
-          lastFrameIdx:  j - 1,
-        });
-        i = j;
-      }
-    }
-
-    groups.forEach((g) => {
+    frames.forEach((f, i) => {
       const tr = document.createElement('tr');
-      tr.dataset.firstFrame = g.firstFrameIdx;
-      tr.dataset.lastFrame  = g.lastFrameIdx;
+      tr.dataset.index = i;
 
       const tdTime = document.createElement('td');
-      tdTime.textContent = formatSecPrecise(g.startMs / 1000) + ' – ' + formatSecPrecise(g.endMs / 1000);
-
+      tdTime.textContent = formatSecPrecise(f.start_time_s) + ' \u2013 ' + formatSecPrecise(f.end_time_s);
       tr.appendChild(tdTime);
-      tr.appendChild(buildProbCell(g.music, 'music'));
-      tr.appendChild(buildProbCell(g.speech, 'speech'));
-      tr.addEventListener('click', () => seekToMusic(g.startMs, g.firstFrameIdx));
+
+      [['music', f.music_prob || 0], ['speech', f.speech_prob || 0]].forEach(([kind, prob]) => {
+        const td = document.createElement('td');
+        const cell = document.createElement('div');
+        cell.className = 'mx-cell';
+        const bar = document.createElement('div');
+        bar.className = 'mx-bar';
+        const fill = document.createElement('div');
+        fill.className = 'mx-bar-fill ' + kind;
+        fill.style.width = (prob * 100).toFixed(1) + '%';
+        bar.appendChild(fill);
+        const pct = document.createElement('span');
+        pct.className = 'mx-pct';
+        pct.textContent = (prob * 100).toFixed(1) + '%';
+        cell.appendChild(bar);
+        cell.appendChild(pct);
+        td.appendChild(cell);
+        tr.appendChild(td);
+      });
+
+      tr.addEventListener('click', () => seekToMusic(f.start_time_s * 1000, i));
       musicTbody.appendChild(tr);
     });
   }
 
-  function buildProbCell(prob, kind) {
-    const td = document.createElement('td');
-    const wrap = document.createElement('div');
-    wrap.className = 'confidence-cell';
-    const track = document.createElement('div');
-    track.className = 'confidence-bar-track';
-    const fill = document.createElement('div');
-    fill.className = 'confidence-bar-fill ' + kind;
-    fill.style.width = (prob * 100) + '%';
-    track.appendChild(fill);
-    const text = document.createElement('span');
-    text.textContent = (prob * 100).toFixed(1) + '%';
-    wrap.appendChild(track);
-    wrap.appendChild(text);
-    td.appendChild(wrap);
-    return td;
+  function musicHeatEl() {
+    const viz = document.getElementById('player-visualization');
+    return viz ? viz.querySelector('.mx-player-heat') : null;
   }
 
-  // Highlight whatever histogram cell + table row contain `frameIdx` (a representative
-  // underlying frame index). Used by both click-to-seek and playback tracking so the two
-  // views stay in sync regardless of grouping.
+  function highlightMusicFrame(frameIdx) {
+    const heat = musicHeatEl();
+    if (heat) heat.querySelectorAll('.mx-player-heat-cell').forEach(cell => {
+      cell.classList.toggle('active', Number(cell.dataset.idx) === frameIdx);
+    });
+    musicTbody.querySelectorAll('tr').forEach(row => {
+      row.classList.toggle('active', Number(row.dataset.index) === frameIdx);
+    });
+  }
+
   function seekToMusic(startMs, frameIdx) {
     if (resultsAudio) {
       resultsAudio.currentTime = startMs / 1000;
       resultsAudio.play().catch(() => {});
     }
-    let activeCellIdx = -1;
-    for (let c = 0; c < musicCells.length; c++) {
-      if (frameIdx >= musicCells[c].firstFrameIdx && frameIdx <= musicCells[c].lastFrameIdx) {
-        activeCellIdx = c;
-        break;
-      }
-    }
-    musicHistogram.querySelectorAll('.histo-bar').forEach((bar) => {
-      bar.classList.toggle('active', Number(bar.dataset.cellIndex) === activeCellIdx);
-    });
-    musicTbody.querySelectorAll('tr').forEach((row) => {
-      const first = Number(row.dataset.firstFrame);
-      const last  = Number(row.dataset.lastFrame);
-      row.classList.toggle('active', frameIdx >= first && frameIdx <= last);
-    });
+    highlightMusicFrame(frameIdx);
   }
 
   function setupMusicPlaybackTracking(frames) {
@@ -3095,54 +2792,10 @@
         const endMs   = frames[i].end_time_s * 1000;
         if (currentMs >= startMs && currentMs < endMs) { activeFrameIdx = i; break; }
       }
-      // Map active frame to its containing cell (in current view)
-      let activeCellIdx = -1;
-      if (activeFrameIdx >= 0 && musicCells.length) {
-        for (let c = 0; c < musicCells.length; c++) {
-          if (activeFrameIdx >= musicCells[c].firstFrameIdx && activeFrameIdx <= musicCells[c].lastFrameIdx) {
-            activeCellIdx = c;
-            break;
-          }
-        }
-      }
-      musicHistogram.querySelectorAll('.histo-bar').forEach((bar) => {
-        bar.classList.toggle('active', Number(bar.dataset.cellIndex) === activeCellIdx);
-      });
-      musicTbody.querySelectorAll('tr').forEach((row) => {
-        const first = Number(row.dataset.firstFrame);
-        const last  = Number(row.dataset.lastFrame);
-        row.classList.toggle('active', activeFrameIdx >= first && activeFrameIdx <= last);
-      });
+      highlightMusicFrame(activeFrameIdx);
       musicPlaybackTracker = requestAnimationFrame(tick);
     }
     musicPlaybackTracker = requestAnimationFrame(tick);
-  }
-
-  // Toggle handler
-  musicViewBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const view = btn.dataset.view;
-      if (view === musicView) return;
-      musicView = view;
-      musicViewBtns.forEach(b => b.classList.toggle('active', b.dataset.view === view));
-      if (currentMode === 'music' && currentData && currentData.frames) {
-        renderMusicHistogram(currentData.frames);
-        renderMusicTable(currentData.frames, musicView);
-      }
-    });
-  });
-
-  // Re-layout heatmap when the container width changes (window resize, sidebar reflow)
-  if (window.ResizeObserver && musicHistogramFit) {
-    let resizeRaf = null;
-    musicResizeObserver = new ResizeObserver(() => {
-      if (currentMode !== 'music') return;
-      if (musicView !== 'heatmap') return;
-      if (!currentData || !currentData.frames) return;
-      if (resizeRaf) cancelAnimationFrame(resizeRaf);
-      resizeRaf = requestAnimationFrame(() => renderMusicHistogram(currentData.frames));
-    });
-    musicResizeObserver.observe(musicHistogramFit);
   }
 
   function formatSecPrecise(s) {
@@ -4043,6 +3696,7 @@
   }
 
   function renderSttChart() {
+    clearPlayerStrips();
     sttChart.innerHTML = '';
     if (!sttUtterances.length) { sttChart.classList.remove('visible'); return; }
 

@@ -463,3 +463,9 @@
   color: var(--m__text-code, var(--m__text));
   opacity: 0.85;
 }
+
+/* mx table fill colors follow the strip semantics */
+.mx-bar-fill.music { background: var(--music-color, var(--m__success)); }
+.mx-bar-fill.speech { background: var(--speech-color, var(--m__error)); }
+.mx-player-heat-cell.active { filter: brightness(1.35); }
+.aim-player-heat-cell.active { filter: brightness(1.35); }
