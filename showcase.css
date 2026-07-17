@@ -419,3 +419,39 @@
 .pg-page-title {
   overflow-wrap: anywhere;
 }
+
+/* ── option-row visibility: one row per mode, driven by .visible from JS ── */
+.pg-upload-plate .pg-options-row {
+  display: none;
+}
+.pg-upload-plate[data-state="initial"] .pg-options-row.visible,
+.pg-upload-plate[data-state="low-quota"] .pg-options-row.visible {
+  display: flex;
+}
+
+/* mode content panels: hidden unless activated by JS */
+.pg-output-panel > .pg-tab-panel {
+  display: none;
+}
+.pg-output-panel > .pg-tab-panel.visible {
+  display: block;
+}
+.pg-transcript-container {
+  display: none;
+}
+.pg-transcript-container.visible {
+  display: block;
+}
+
+/* verdict slot children are toggled via [hidden] by JS */
+.pg-verdict-slot > [hidden] {
+  display: none !important;
+}
+
+/* bottom columns stay hidden until there is a result to show */
+.pg-bottom-columns {
+  display: none;
+}
+.pg-bottom-columns.visible {
+  display: grid;
+}
