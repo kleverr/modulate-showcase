@@ -310,6 +310,14 @@
               <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#language"></use></svg>
               <span>Language</span>
             </a>
+            <a href="/emotion" data-mode="emotion" class="models-nav__link m__rounded">
+              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#emotions"></use></svg>
+              <span>Emotions</span>
+            </a>
+            <a href="/accent" data-mode="accent" class="models-nav__link m__rounded">
+              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#accent"></use></svg>
+              <span>Accent</span>
+            </a>
           </div>
         </div>
       </nav>
@@ -475,6 +483,12 @@
         </div>
         <div id="results-redaction-verdict" hidden>
           <div class="pg-verdict-statement" id="redaction-verdict-statement"></div>
+        </div>
+        <div id="results-emotion-verdict" hidden>
+          <div class="pg-verdict-statement" id="emotion-verdict-statement"></div>
+        </div>
+        <div id="results-accent-verdict" hidden>
+          <div class="pg-verdict-statement" id="accent-verdict-statement"></div>
         </div>
       </div>
 
@@ -642,6 +656,28 @@
         <!-- Language Detection content -->
         <div id="language-content" class="pg-tab-panel">
           
+        </div>
+
+        <!-- Emotion Detection content -->
+        <div id="emotion-content" class="pg-tab-panel">
+          <div class="ea-legend" id="emotion-legend"></div>
+          <div class="pg-results-table-section">
+            <table class="pg-segments-table">
+              <thead><tr><th>Window</th><th>Emotion</th></tr></thead>
+              <tbody id="emotion-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Accent Detection content -->
+        <div id="accent-content" class="pg-tab-panel">
+          <div class="ea-legend" id="accent-legend"></div>
+          <div class="pg-results-table-section">
+            <table class="pg-segments-table">
+              <thead><tr><th>Window</th><th>Accent</th></tr></thead>
+              <tbody id="accent-tbody"></tbody>
+            </table>
+          </div>
         </div>
 
         <!-- PII/PHI Redaction content -->

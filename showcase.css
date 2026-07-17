@@ -670,3 +670,38 @@
 .m__modal.m__modal--wide {
   max-width: 68rem;
 }
+
+/* ── Emotion / Accent 15s window strips + legends ── */
+.ea-player-strip .ea-seg {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: filter var(--m__duration-base) var(--m__easing-base),
+              opacity var(--m__duration-base) var(--m__easing-base);
+}
+.ea-player-strip .ea-seg:hover,
+.ea-player-strip .ea-seg.active {
+  opacity: 1;
+  filter: brightness(1.15);
+}
+.ea-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--m__gap-m);
+  margin-bottom: var(--m__spacer-s);
+  font-size: var(--m__font-size-s);
+  color: var(--m__text-caption);
+}
+.ea-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+.ea-legend-sw {
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 2px;
+  display: inline-block;
+}
