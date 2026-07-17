@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const compression = require('compression');
 const http = require('http');
 const multer = require('multer');
 const { WebSocket, WebSocketServer } = require('ws');
@@ -25,6 +26,7 @@ const app = express();
 const server = http.createServer(app);
 
 app.set('trust proxy', true);
+app.use(compression());
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -311,6 +313,11 @@ app.get('/deepfake/index.html', (req, res) => {
 app.use(express.static(path.join(__dirname), {
   index: 'index.html',
   setHeaders(res, filePath) {
+    if (filePath.includes(`${path.sep}fonts${path.sep}`)) {
+      // Font files never change without a filename change
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      return;
+    }
     // No aggressive caching — files don't have cache-busting hashes
     res.setHeader('Cache-Control', 'no-cache');
   },

@@ -1,0 +1,421 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   showcase.css — app-specific styles on top of styles.css (design bundle)
+   Part 1: per-page <style> blocks harvested from the built design pages
+           (these are NOT in bundle.css)
+   Part 2: showcase-only additions (streaming state, debug panel, etc.)
+   All values use design tokens (var(--m__*)).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── from design page: redaction ─────────────────────────────── */
+  /* Padding inputs ────────────────────────────────────────────────────── */
+  .pg-redaction-options {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--m__gap-l);
+    font-size: var(--m__font-size-s);
+  }
+  /* DS textfield + inline unit suffix; width/suffix are the only custom bits */
+  .pg-redaction-options .pg-pad-field {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--m__gap-xxxs);
+    margin-bottom: 0;
+  }
+  .pg-redaction-options .m__checkbox-secondary {
+    gap: var(--m__gap-xxxs);
+  }
+  .pg-redaction-options .pg-pad-field > label {
+    margin: 0;
+    white-space: nowrap;
+  }
+  .pg-pad-control {
+    position: relative;
+    display: block;
+    width: 5rem;
+  }
+  .pg-pad-field input {
+    padding: 0 var(--m__spacer-xxs);
+    padding-right: 1.6rem;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: 1.6;
+    font-variant-numeric: tabular-nums;
+    background-color: transparent;
+    border: var(--m__border-width-m) solid var(--m__bg-accent);
+    transition: border-color var(--m__duration-base) var(--m__easing-base);
+  }
+  .pg-pad-field input:hover {
+    border-color: var(--m__text-link-hover);
+    transition-duration: var(--m__duration-instant);
+  }
+  .pg-pad-unit {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 0.45rem;
+    pointer-events: none;
+    color: var(--m__bg-accent);
+    font-weight: var(--m__font-weight-medium);
+  }
+
+  /* Redaction timeline inside the player visualization ────────────────── */
+  /* scoped: was a per-page global in the design prototype */
+  body[data-mode="redaction"] .media-container {
+    --player-visualization-height: var(--player-strip-height);
+  }
+  .pg-redaction-player-track {
+    position: absolute;
+    inset: 0;
+  }
+  .pg-redaction-seg {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: color-mix(in srgb, var(--m__success) 38%, transparent);
+    cursor: help;
+    transition: background var(--m__duration-base) var(--m__easing-base);
+  }
+  .pg-redaction-seg:hover {
+    background: color-mix(in srgb, var(--m__success) 55%, transparent);
+    transition: background var(--m__duration-instant) var(--m__easing-base);
+  }
+
+  /* Inline redaction tag ──────────────────────────────────────────────── */
+  .pii-tag {
+    font-family: var(--m__font-family-semi-mono);
+    font-size: 0.82em;
+    letter-spacing: 0.02em;
+    color: var(--m__text-code);
+    white-space: nowrap;
+    cursor: help;
+    transition: color var(--m__duration-base) var(--m__easing-base);
+  }
+  .pg-transcript-text {
+    transition: color var(--m__duration-base) var(--m__easing-base);
+  }
+  .pg-transcript-utterance:hover .pg-transcript-text,
+  .pg-transcript-utterance:hover .pii-tag {
+    color: var(--m__text-link-hover);
+    transition-duration: var(--m__duration-instant);
+  }
+  .pg-transcript-flag {
+    color: var(--m__text-caption);
+  }
+
+/* ── from design page: transcription ─────────────────────────────── */
+  .pg-transcription-transcript .pg-transcript-verdict {
+    color: var(--m__text-caption);
+  }
+
+/* ── from design page: deepfake ─────────────────────────────── */
+  /* Deepfake histogram inside the player visualization ────────────────── */
+  body[data-mode="deepfake"] .media-container {
+    --player-visualization-height: var(--player-strip-height);
+  }
+  .df-player-clips {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .df-player-clips .pg-histo-bar {
+    height: 100%;
+  }
+
+/* ── from design page: music ─────────────────────────────── */
+  .mx-panel,
+  body[data-mode="music"] .media-container {
+    --music-color: var(--m__success);
+    --speech-color: var(--m__error);
+  }
+
+  /* Player visualization heatmap ──────────────────────────────────────── */
+  .mx-player-heat {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .mx-player-heat-row {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+  .mx-player-heat-cell {
+    flex: 1;
+    transition: filter var(--m__duration-base) var(--m__easing-base);
+  }
+  .mx-player-heat-cell:hover {
+    filter: brightness(1.15);
+  }
+  .mx-player-heat-row[data-row="music"] .mx-player-heat-cell {
+    background: var(--music-color);
+  }
+  .mx-player-heat-row[data-row="speech"] .mx-player-heat-cell {
+    background: var(--speech-color);
+  }
+
+  /* Detailed view ─────────────────────────────────────────────────────── */
+  .mx-detailed td:first-child {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .mx-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--m__gap-s);
+  }
+  .mx-bar {
+    flex: 0 0 130px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--m__border);
+    overflow: hidden;
+  }
+  .mx-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--m__text);
+  }
+  .mx-pct {
+    font-variant-numeric: tabular-nums;
+    min-width: 3.6em;
+  }
+
+/* ── from design page: ai-music ─────────────────────────────── */
+  /* Single-strip player visualization ────────────────────────────────── */
+  body[data-mode="ai-music"] .media-container {
+    --player-visualization-height: var(--player-strip-height);
+  }
+  .aim-player-heat {
+    position: absolute;
+    inset: 0;
+    display: flex;
+  }
+  .aim-player-heat-cell {
+    flex: 1;
+    transition: filter var(--m__duration-base) var(--m__easing-base);
+  }
+  .aim-player-heat-cell:hover {
+    filter: brightness(1.15);
+  }
+  .aim-player-heat-cell[data-verdict="ai"] {
+    background: var(--m__error);
+  }
+  .aim-player-heat-cell[data-verdict="not-ai"] {
+    background: var(--m__success);
+  }
+  .aim-player-heat-cell[data-verdict="silence"] {
+    background: var(--m__border);
+    opacity: 1 !important;
+  }
+
+  /* Detailed table ────────────────────────────────────────────────────── */
+  .aim-detailed td:first-child {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .aim-verdict-ai {
+    color: var(--m__error);
+  }
+  .aim-verdict-not-ai {
+    color: var(--m__success);
+  }
+  .aim-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--m__gap-s);
+  }
+  .aim-bar {
+    flex: 0 0 130px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--m__border);
+    overflow: hidden;
+  }
+  .aim-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--m__error);
+  }
+  .aim-pct {
+    font-variant-numeric: tabular-nums;
+    min-width: 3.6em;
+  }
+  .aim-empty {
+    color: var(--m__text-caption);
+  }
+
+/* ── from design page: language ─────────────────────────────── */
+  body[data-mode="language"] .pg-player-dataviz {
+    display: none;
+  }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Part 2: showcase-only additions (not present in the design prototype)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── plate "streaming" state: live mic/WS session with a stop control ── */
+.pg-upload-plate[data-state="streaming"] {
+  min-height: 0;
+  border-color: var(--m__error);
+}
+.pg-upload-plate[data-state="streaming"] > .pg-options-row,
+.pg-upload-plate[data-state="streaming"] .pg-upload-plate-footer,
+.pg-upload-plate[data-state="streaming"] .pg-upload-actions {
+  display: none;
+}
+.pg-upload-plate[data-state="streaming"] .pg-upload-plate-body {
+  padding: 0;
+}
+.pg-upload-plate[data-state="streaming"] .pg-upload-overlay--streaming {
+  display: flex;
+  position: static;
+  inset: auto;
+  background: none;
+  pointer-events: auto;
+  align-items: center;
+  justify-content: center;
+  gap: var(--m__gap-m);
+  padding: var(--m__spacer-s) var(--m__widget-padding);
+}
+.pg-upload-overlay--streaming {
+  display: none;
+}
+.pg-streaming-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--m__error);
+  animation: pg-streaming-pulse 1.2s ease-in-out infinite;
+}
+@keyframes pg-streaming-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.8); }
+}
+.pg-streaming-label {
+  font-weight: var(--m__font-weight-medium);
+}
+.pg-stop-streaming {
+  color: var(--m__error);
+  border-color: var(--m__error);
+}
+.pg-stop-streaming:hover {
+  color: var(--m__error);
+  border-color: var(--m__error);
+  background: color-mix(in srgb, var(--m__error) 8%, transparent);
+}
+
+/* ── redaction A/B source toggle on the player ── */
+.pg-ab-toggle {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: var(--m__gap-s);
+}
+.pg-ab-toggle button {
+  font-size: var(--m__font-size-xs);
+  font-family: var(--m__font-family-semi-mono);
+  padding: 0.1rem 0.5rem;
+  border: var(--m__border-width-s) solid var(--m__border);
+  background: transparent;
+  color: var(--m__text-caption);
+  cursor: pointer;
+  border-radius: var(--m__radius-s);
+  transition: all var(--m__duration-fast) var(--m__easing-base);
+}
+.pg-ab-toggle button.active {
+  color: var(--m__text);
+  border-color: var(--m__text);
+}
+.pg-ab-toggle button:hover:not(.active) {
+  color: var(--m__text);
+}
+
+/* ── STT streaming debug panel (showcase-only feature) ── */
+.pg-debug-panel {
+  display: none;
+  margin-top: var(--m__spacer-m);
+  border: var(--m__border-width-s) solid var(--m__border);
+  border-radius: var(--m__radius-l);
+  padding: var(--m__spacer-s);
+  font-family: var(--m__font-family-mono);
+  font-size: var(--m__font-size-xs);
+}
+.pg-debug-panel.visible {
+  display: block;
+}
+.pg-debug-head {
+  display: flex;
+  align-items: center;
+  gap: var(--m__gap-m);
+  flex-wrap: wrap;
+  margin-bottom: var(--m__spacer-xs);
+  color: var(--m__text-caption);
+}
+.pg-debug-head .m__button-secondary-outline {
+  margin-left: auto;
+}
+.pg-debug-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--m__gap-m);
+  align-items: start;
+}
+@media (width < 768px) {
+  .pg-debug-columns { grid-template-columns: 1fr; }
+}
+.pg-debug-col-title {
+  font-weight: var(--m__font-weight-bold);
+  color: var(--m__text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--m__spacer-xxs);
+}
+.pg-debug-list {
+  max-height: 24rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.pg-debug-chip {
+  border-radius: var(--m__radius-s);
+  padding: 0.15rem 0.4rem;
+  background: color-mix(in srgb, var(--m__text) 6%, transparent);
+  word-break: break-word;
+}
+.pg-debug-chip.kept {
+  background: color-mix(in srgb, var(--m__success) 14%, transparent);
+}
+.pg-debug-chip.yellow {
+  background: color-mix(in srgb, var(--m__warning, #d97706) 16%, transparent);
+}
+.pg-debug-chip.dim {
+  opacity: 0.55;
+}
+
+/* ── error toast on design tokens ── */
+.pg-error-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%) translateY(200%);
+  background: var(--m__error);
+  color: #fff;
+  padding: var(--m__spacer-xs) var(--m__spacer-m);
+  border-radius: var(--m__radius-l);
+  font-size: var(--m__font-size-s);
+  max-width: min(40rem, calc(100vw - 2rem));
+  z-index: 1200;
+  transition: transform var(--m__duration-base) var(--m__easing-base);
+  box-shadow: 0 8px 32px color-mix(in srgb, #000 25%, transparent);
+}
+.pg-error-toast.visible {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── page title swap (filename after analysis) ── */
+.pg-page-title {
+  overflow-wrap: anywhere;
+}
