@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Call report · Velma</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><polygon fill="black" points="2.417 12.346 11.122 11.282 7.036 2.79 17.883 9.911 27.52 2.564 22.981 16.1 29.596 19.188 21.637 21.53 21.064 29.436 16.033 20.718 2.404 27.639 9.525 16.1 2.417 12.346"/></svg>'>
+  <link rel="stylesheet" href="/dt/dt.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="icon-star" viewBox="0 0 32 32">
+      <polygon fill="currentColor" points="2.417 12.346 11.122 11.282 7.036 2.79 17.883 9.911 27.52 2.564 22.981 16.1 29.596 19.188 21.637 21.53 21.064 29.436 16.033 20.718 2.404 27.639 9.525 16.1 2.417 12.346"/>
+    </symbol>
+    <symbol id="icon-play" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M7 4.5v15l13-7.5z"/>
+    </symbol>
+    <symbol id="icon-pause" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="site-header">
+  <a class="wordmark" href="/dt">
+    <svg class="wordmark-mark" aria-hidden="true"><use href="#icon-star"/></svg>
+    <span>Velma</span>
+  </a>
+  <span class="header-note">Voice intelligence by Modulate</span>
+</header>
+
+<main class="site-wrapper report-flow">
+
+  <section class="report-hero">
+    <div class="hero-row">
+      <h1>Call report</h1>
+      <div class="hero-actions">
+        <button type="button" id="btn-upload" class="pill-btn solid">Upload file</button>
+        <button type="button" id="btn-stream" class="pill-btn">Stream file</button>
+        <button type="button" id="btn-behaviors" class="pill-btn">Behaviors</button>
+      </div>
+    </div>
+    <p class="report-status" id="report-status">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">Loading report…</span>
+      <button type="button" class="status-stop" id="btn-stop" hidden>Stop</button>
+    </p>
+  </section>
+
+  <section class="modulate-player-port" id="player-port">
+    <div class="media-container" id="media-container">
+      <div class="media-box" id="media-box">
+        <div class="player-visualization" id="player-viz"></div>
+        <div class="speaker-labels" id="speaker-labels"></div>
+        <div class="behaviour-indicators" id="behaviour-indicators"></div>
+        <div class="player-position-line" id="player-line" hidden></div>
+        <div class="player-hover-line" id="player-hover-line" hidden></div>
+        <div class="player-hover-caption" id="player-hover-caption" hidden>0:00</div>
+        <div class="player-controls">
+          <span class="player-time player-time-current" id="time-current">0:00</span>
+          <button type="button" class="player-control-center" id="btn-play" aria-label="Play" disabled>
+            <span class="player-icon">
+              <svg id="play-icon-svg"><use id="play-icon-use" href="#icon-play"/></svg>
+            </span>
+          </button>
+          <span class="player-time player-time-total" id="time-total">0:00</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="report-nav" id="report-nav">
+    <a href="#summary">Summary</a>
+    <a href="#speakers">Speakers</a>
+    <a href="#behaviors">Behaviors</a>
+    <a href="#transcript">Transcript</a>
+  </nav>
+
+  <section class="report-section" id="summary">
+    <div class="section-heading"><h2>Summary</h2></div>
+    <p class="summary-text" id="summary-text"></p>
+    <div class="conversation-meta" id="conversation-meta"></div>
+  </section>
+
+  <section class="report-card" id="speakers">
+    <div class="section-heading"><h2>Speakers</h2></div>
+    <div class="table-scroll">
+      <table class="speakers-table">
+        <colgroup>
+          <col class="col-speaker"><col class="col-pattern"><col class="col-topics"><col class="col-time">
+        </colgroup>
+        <thead>
+          <tr><th>Speaker</th><th>Speech pattern</th><th>Topics and sentiments</th><th class="num">Speaking time</th></tr>
+        </thead>
+        <tbody id="speakers-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="report-card" id="behaviors">
+    <div class="section-heading"><h2>Behaviors</h2></div>
+    <div class="signal-module-stack">
+      <article class="signal-module-card">
+        <header class="signal-module-head">
+          <span class="signal-module-icon">
+            <svg width="26" height="26" aria-hidden="true"><use href="#icon-star"/></svg>
+          </span>
+          <div class="signal-module-copy">
+            <h3>Behavior detections</h3>
+            <p>Behaviors Velma was configured to listen for on this call, with reasoning and evidence</p>
+          </div>
+        </header>
+        <div class="table-scroll">
+          <table class="module-signals-table">
+            <colgroup>
+              <col class="speaker-column"><col class="signal-column"><col class="reasoning-column"><col class="confidence-column">
+            </colgroup>
+            <thead>
+              <tr><th>Speaker</th><th>Behavior</th><th>Reasoning and evidence</th><th class="num">Confidence</th></tr>
+            </thead>
+            <tbody id="behaviors-tbody"></tbody>
+          </table>
+        </div>
+        <p class="behaviors-checked" id="behaviors-checked" hidden></p>
+      </article>
+    </div>
+  </section>
+
+  <section class="report-section" id="transcript">
+    <div class="section-heading"><h2>Transcript</h2></div>
+    <ul class="transcript-chat" id="transcript-list"></ul>
+  </section>
+
+  <footer class="site-footer" id="site-footer">Velma internal demo · v4.13.0 · July 16, 2026</footer>
+
+</main>
+
+<div class="processing-overlay" id="processing" hidden>
+  <div class="processing-box">
+    <svg class="processing-star" aria-hidden="true"><use href="#icon-star"/></svg>
+    <h2 id="processing-title">Analyzing call</h2>
+    <p class="processing-file" id="processing-file"></p>
+    <p class="processing-status" id="processing-status">Uploading…</p>
+    <p class="processing-note">Transcribing, separating speakers, reading emotion, and detecting behaviors. A few-minute call usually takes under a minute.</p>
+    <button type="button" id="processing-cancel" class="pill-btn">Cancel</button>
+  </div>
+</div>
+
+<div class="behaviors-overlay" id="behaviors-modal" hidden>
+  <div class="behaviors-box">
+    <header class="behaviors-box-head">
+      <h2>Behavior set</h2>
+      <p class="behaviors-current" id="behaviors-current">Default · 17 behaviors</p>
+    </header>
+
+    <button type="button" class="behaviors-drop" id="behaviors-drop">
+      <span class="behaviors-drop-title">Upload behaviors JSON</span>
+      <span class="behaviors-drop-sub">Click to choose a file or drop it here — a <code>behaviors</code> array (preset refs and/or behavior definitions) or a full BatchConfig. <a href="/dt/behaviors-example.json" download id="behaviors-example-link">Example file</a></span>
+    </button>
+
+    <div class="behaviors-mode" id="behaviors-mode">
+      <label class="mode-option">
+        <input type="radio" name="behaviors-mode" value="add" checked>
+        <span><strong>Add</strong> to the default set</span>
+      </label>
+      <label class="mode-option">
+        <input type="radio" name="behaviors-mode" value="replace">
+        <span><strong>Replace</strong> the default set<span class="mode-note" id="mode-replace-note"></span></span>
+      </label>
+    </div>
+
+    <div class="behaviors-preview" id="behaviors-preview" hidden>
+      <p class="behaviors-preview-title" id="behaviors-preview-title"></p>
+      <div class="behaviors-chips" id="behaviors-chips"></div>
+      <ul class="behaviors-problems" id="behaviors-problems"></ul>
+    </div>
+
+    <footer class="behaviors-box-actions">
+      <button type="button" class="pill-btn solid" id="behaviors-apply" disabled>Apply</button>
+      <button type="button" class="pill-btn" id="behaviors-reset">Reset to default</button>
+      <button type="button" class="pill-btn" id="behaviors-close">Close</button>
+    </footer>
+  </div>
+</div>
+
+<div class="error-banner" id="error-banner" hidden>
+  <span id="error-text"></span>
+  <button type="button" id="error-close" aria-label="Dismiss">×</button>
+</div>
+
+<input type="file" id="file-input-batch" accept="audio/*,video/*" hidden>
+<input type="file" id="file-input-stream" accept="audio/*,video/*" hidden>
+<input type="file" id="file-input-behaviors" accept=".json,application/json" hidden>
+<audio id="audio" preload="auto"></audio>
+
+<script src="/dt/dt.js"></script>
+</body>
+</html>

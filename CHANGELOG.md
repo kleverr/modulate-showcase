@@ -29,6 +29,10 @@ All notable changes to the Modulate Models Playground.
   exhausted states (429s from batch or a refused WS upgrade flip it live).
 
 ### Added
+- The 4.10.0 Emotion + Accent Detection tabs are integrated into the new
+  design: sidebar entries under Detection, verdict statements, 15s window
+  strips in the player (emotion windows use the design's emotion tokens),
+  window tables and legends.
 - `compression` middleware (design CSS bundle ships ~50KB gzipped) and immutable
   caching for `/fonts/*`.
 
@@ -36,6 +40,101 @@ All notable changes to the Modulate Models Playground.
 - The entire legacy inline stylesheet (~2,800 lines), the analysis overlay, the
   stats/JSON modals, verdict rings, the music heatmap/detailed view toggle, and
   the JS emotion hex palette (emotion colors now come from the design tokens).
+## [4.13.0] - 2026-07-16
+
+### Changed
+- **/dt default behavior set is now 17** — the 10 presets plus the team's 7
+  authored prosody/tone behavior definitions (Smile in the Voice, Unvoiced
+  Disagreement, Request or order, Tone Mismatch, Reluctance, Accusatory
+  Question, Sarcasm), from the developer's test file ("Tone Missmatch" typo
+  fixed to "Tone Mismatch"). Applies to batch, streaming, and the Add-mode
+  merge base.
+- Preloaded fixture regenerated with the 17-behavior default: 9 detections on
+  the demo call, now including Smile in the Voice (CSR, 85%) and Accusatory
+  Question (customer, 87%).
+
+## [4.12.1] - 2026-07-16
+
+### Fixed
+- **/dt behaviors upload: tolerate real-world files.** A JSON fragment missing
+  its opening brace (`"behaviors": [...]` copied without the surrounding
+  `{ }`) is auto-repaired with a visible warning instead of failing with a
+  raw parse error (this is exactly what a developer-exported test file
+  looked like). Parse errors now hint at the missing-brace case.
+- Non-schema fields are stripped before sending: BehaviorDef extras
+  (`saved_ts`, `updated_ts`, …) and unknown top-level BatchConfig keys are
+  dropped with an "Ignored non-schema fields" warning, so internal-tool
+  exports can't trip a 422 upstream.
+
+## [4.12.0] - 2026-07-16
+
+### Added
+- **/dt: custom behavior sets.** New "Behaviors" button opens a modal to upload
+  a behaviors JSON (per the documented schema): a bare array of
+  `"preset:<id>"` refs and/or BehaviorDef objects, an object with a
+  `behaviors` key, or a full BatchConfig — auto-detected. Two modes: **Add**
+  (merge into the default 10 presets, deduped) or **Replace** (a full
+  BatchConfig replaces conversation types, roles, and STT settings too).
+  Validation before Apply: preset identifiers checked against the live
+  `list-presets` catalog (unknown → blocked, the API would 422),
+  `behavior_uuid` auto-generated when missing, a missing one-of-two
+  descriptions copied with a warning, both missing → blocked. The set
+  persists for the session until "Reset to default" (indicator on the
+  Behaviors pill), and applies to both batch uploads and streaming.
+- `dt/behaviors-example.json` — downloadable example mixing 2 preset refs and
+  2 custom behavior definitions tuned to fire on the demo call ("Profanity
+  Directed at Agent", "Sarcasm or Mockery").
+
+## [4.11.0] - 2026-07-16
+
+### Added
+- **`/dt` — Deeptalk-style Velma call report** (standalone internal demo page
+  for the investor presentation). Faithful reproduction of the Deeptalk report
+  design (Stratos / Proto Grotesk webfonts, `--m__*` design tokens, dark
+  sticky "modulate player" timeline with emotion-colored per-speaker clip
+  lanes and star behavior markers, speakers table with emotion speech-pattern
+  bars and sentiment topic chips, signal-module behaviors card with reasoning +
+  clickable evidence quotes + confidence, chat-style transcript with emotion
+  pills). Self-contained under `dt/` (own HTML/CSS/JS), served at `GET /dt`.
+- Page opens with a preprocessed Irate-Caller report (`dt/velma-report.json`,
+  generated through the real `/api/velma-2-batch` with the page's exact
+  config — emotion signal on, 10 behavior presets, example conv types/roles).
+  **Upload file** → processing screen → batch report. **Stream file** → live
+  progressive report over `/api/velma-2-streaming` (green pulsing status,
+  audio plays along, Stop keeps the partial report).
+- No config UI, no rate-limit chrome — deliberately minimal for the demo.
+
+### Notes
+- Batch `summary` came back `null` on one of two fixture-generation runs
+  (transient upstream flakiness); the page shows a "Waiting for summary…"
+  placeholder if that happens live.
+- The batch response includes `accent` and `deepfake_score` per clip even when
+  those STT signals are disabled in the config (upstream behavior, unused by
+  this page).
+
+## [4.10.0] - 2026-07-14
+
+### Added
+- **Emotion Detection tab** (`/emotion`) — batch emotion detection via
+  `/api/velma-2-emotion-batch`. Hero card with the whole-file emotion label
+  plus a clickable per-window (15 s) timeline colored by emotion, legend,
+  playhead highlight, Full Statistics and JSON Response.
+- **Accent Detection tab** (`/accent`) — same treatment for
+  `/api/velma-2-accent-batch` (whole-file accent + per-window timeline).
+- Both tabs open pre-loaded with a cached demo (irate-caller for emotion,
+  call-center for accent) so they light up without an API call.
+- The two new endpoints proxy to `https://platform.modulate.ai` — the server
+  named in the published OpenAPI specs (the default gateway also serves them,
+  but the demo exercises the documented host; it's also faster).
+
+### Notes
+- Live-endpoint verification against the published Emotion/Accent batch specs
+  passed on every documented behavior: window math (15 s fixed windows,
+  trailing remainder omitted), short-file handling (whole-file label +
+  empty `time_series`), all error paths (400 empty/unsupported/corrupt,
+  403 bad key, 422 missing key or file, exact `detail` strings), and the
+  `use_ensemble` / `training_permitted` flags. Labels are non-deterministic
+  across identical requests (docs make no determinism claim).
 
 ## [4.9.0] - 2026-06-08
 

@@ -66,6 +66,8 @@ const ALLOWED_ENDPOINTS = new Set([
   '/api/velma-2-music-detection-batch',
   '/api/velma-2-ai-music-detection-batch',
   '/api/velma-2-language-detection-batch',
+  '/api/velma-2-emotion-batch',
+  '/api/velma-2-accent-batch',
   '/api/velma-2-batch',
 ]);
 
@@ -81,7 +83,13 @@ const ALLOWED_GET_PROXIES = new Set([
 // Released models route through the prod gateway (API_BASE_URL) with no override:
 //   - velma-2-stt-streaming-english-v2 (EC2 "Preview Forwarding URL" retired)
 //   - velma-2-language-detection-batch (temporary GPU box 54.211.253.95 retired)
-const ENDPOINT_BASE_URL = {};
+const ENDPOINT_BASE_URL = {
+  // The published Emotion/Accent batch specs give platform.modulate.ai as the
+  // server. Both hosts serve these models today, but the demo exercises the
+  // documented one (it's also measurably faster).
+  '/api/velma-2-emotion-batch': 'https://platform.modulate.ai',
+  '/api/velma-2-accent-batch': 'https://platform.modulate.ai',
+};
 
 // Per-endpoint upstream path overrides — preview models live behind /api/preview/.
 const ENDPOINT_UPSTREAM_PATH = {
@@ -104,7 +112,7 @@ const ENDPOINT_UPLOAD_FIELD = {
 
 // ── Page-view tracking (client beacon for SPA tab switches) ─────────────────
 const TRACKABLE_PATHS = new Set([
-  '/', '/transcription', '/deepfake', '/redaction', '/music', '/ai-music', '/language', '/velma',
+  '/', '/transcription', '/deepfake', '/redaction', '/music', '/ai-music', '/language', '/emotion', '/accent', '/velma',
 ]);
 
 app.post('/api/track-view', (req, res) => {
@@ -278,6 +286,22 @@ app.get('/ai-music', (req, res) => {
 app.get('/language', (req, res) => {
   logView(req);
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/emotion', (req, res) => {
+  logView(req);
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/accent', (req, res) => {
+  logView(req);
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Deeptalk-style Velma report (standalone internal demo page)
+app.get('/dt', (req, res) => {
+  logView(req);
+  res.sendFile(path.join(__dirname, 'dt', 'index.html'));
 });
 
 // GET proxy for read-only Velma endpoints (e.g. list-presets)
