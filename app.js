@@ -402,7 +402,8 @@
     },
     redaction: {
       path: '/redaction', title: 'PII/PHI Redaction',
-      optionsRow: () => redactionOptions, verdict: null,
+      optionsRow: () => redactionOptions,
+      verdict: () => document.getElementById('results-redaction-verdict'),
       panels: () => [redactionContent],
       streaming: false, abToggle: true,
       stages: ['Transcript', 'Redaction'],
@@ -476,7 +477,8 @@
     if (velmaDemoBtn) velmaDemoBtn.style.display = cfg.demoButton ? '' : 'none';
 
     // Verdict slot: unhide only this mode's statement container
-    [resultsVerdict, musicSidebar, aimusicSidebar, languageSidebar].forEach(el => {
+    [resultsVerdict, musicSidebar, aimusicSidebar, languageSidebar,
+     document.getElementById('results-redaction-verdict')].forEach(el => {
       if (el) el.hidden = true;
     });
     const verdictEl = cfg.verdict && cfg.verdict();
@@ -1617,56 +1619,37 @@
     }
   }
 
+  // Redaction ranges as a strip overlay in the player visualization.
   function renderRedactionTimeline(ranges, durationMs) {
-    redactionTimeline.querySelectorAll('.redaction-range').forEach(el => el.remove());
-    redactionTimelineAxis.innerHTML = '';
+    const viz = document.getElementById('player-visualization');
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
+    syncSpeakerLanes([]);
+    if (!viz || !durationMs || durationMs <= 0) return;
 
-    if (!durationMs || durationMs <= 0) {
-      redactionPlayhead.classList.remove('active');
-      return;
-    }
-
+    const track = document.createElement('div');
+    track.className = 'pg-redaction-player-track';
     ranges.forEach(([startMs, endMs]) => {
-      const range = document.createElement('div');
-      range.className = 'redaction-range';
-      range.style.left = (startMs / durationMs * 100).toFixed(3) + '%';
-      range.style.width = Math.max(0.3, (endMs - startMs) / durationMs * 100).toFixed(3) + '%';
-      range.addEventListener('mouseenter', () => {
-        const rect = range.getBoundingClientRect();
-        histoTooltip.textContent = formatMs(startMs) + ' \u2013 ' + formatMs(endMs) + ' \u00B7 ' + ((endMs - startMs) / 1000).toFixed(1) + 's';
-        histoTooltip.style.display = 'block';
-        histoTooltip.style.top = (rect.top - 6) + 'px';
-        histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
-        histoTooltip.style.transform = 'translate(-50%, -100%)';
-      });
-      range.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
-      range.addEventListener('click', (e) => {
+      const seg = document.createElement('div');
+      seg.className = 'pg-redaction-seg';
+      seg.style.left = (startMs / durationMs * 100).toFixed(3) + '%';
+      seg.style.width = Math.max(0.3, (endMs - startMs) / durationMs * 100).toFixed(3) + '%';
+      seg.dataset.tooltip = formatMs(startMs) + ' \u2013 ' + formatMs(endMs) + ' \u00b7 ' + ((endMs - startMs) / 1000).toFixed(1) + 's silenced';
+      seg.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (resultsAudio) { resultsAudio.currentTime = startMs / 1000; resultsAudio.play().catch(() => {}); }
+        const a = activeAudio();
+        if (a) { a.currentTime = startMs / 1000; a.play().catch(() => {}); }
       });
-      redactionTimeline.insertBefore(range, redactionPlayhead);
+      track.appendChild(seg);
     });
-
-    // Axis ticks
-    const ticks = 5;
-    for (let i = 0; i <= ticks; i++) {
-      const tick = document.createElement('span');
-      tick.textContent = formatMs(durationMs * i / ticks);
-      redactionTimelineAxis.appendChild(tick);
-    }
-
-    redactionTimeline.onclick = (e) => {
-      const rect = redactionTimeline.getBoundingClientRect();
-      const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      if (resultsAudio) { resultsAudio.currentTime = pct * durationMs / 1000; resultsAudio.play().catch(() => {}); }
-    };
+    viz.appendChild(track);
   }
 
   function renderRedactionTranscript(utterances) {
     redactionTranscriptList.innerHTML = '';
     if (!utterances.length) {
       const empty = document.createElement('div');
-      empty.className = 'transcript-empty';
+      empty.className = 'pg-transcript-empty';
       empty.textContent = 'Upload an audio file to see the redacted transcript.';
       redactionTranscriptList.appendChild(empty);
       return;
@@ -1680,45 +1663,43 @@
   function buildRedactionUtteranceEl(u, showDiarization) {
     const el = document.createElement('div');
     const side = (u.speaker != null && u.speaker % 2 === 0) ? 'speaker-right' : 'speaker-left';
-    el.className = 'transcript-utterance ' + side;
-    el.style.setProperty('--ec', '#78909c');
+    el.className = 'pg-transcript-utterance ' + side;
     if (u.start_ms != null) {
       el.addEventListener('click', () => {
-        if (resultsAudio) { resultsAudio.currentTime = u.start_ms / 1000; resultsAudio.play().catch(() => {}); }
+        const a = activeAudio();
+        if (a) { a.currentTime = u.start_ms / 1000; a.play().catch(() => {}); }
       });
     }
     const header = document.createElement('div');
-    header.className = 'transcript-utterance-header';
+    header.className = 'pg-transcript-utterance-header';
     if (u.start_ms != null) {
       const time = document.createElement('span');
-      time.className = 'transcript-time';
+      time.className = 'pg-transcript-time';
       time.textContent = formatMs(u.start_ms);
       header.appendChild(time);
     }
     if (u.speaker != null && showDiarization) {
       const sp = document.createElement('span');
-      sp.className = 'transcript-speaker';
+      sp.className = 'pg-transcript-speaker';
       sp.textContent = 'Speaker ' + u.speaker;
       header.appendChild(sp);
     }
     if (u.language) {
-      const flag = LANGUAGE_FLAGS[u.language.toUpperCase()];
-      if (flag) {
-        const lf = document.createElement('span');
-        lf.className = 'transcript-accent';
-        lf.textContent = flag;
-        lf.title = u.language.toUpperCase();
-        header.appendChild(lf);
-      }
+      const lf = document.createElement('span');
+      lf.className = 'pg-transcript-flag';
+      lf.textContent = languageName(u.language);
+      header.appendChild(lf);
     }
     el.appendChild(header);
     const text = document.createElement('div');
-    text.className = 'transcript-text';
+    text.className = 'pg-transcript-text';
+    const par = document.createElement('p');
     if (u.text && (/\[REDACTED\]/i.test(u.text) || /<(pii|phi)/i.test(u.text))) {
-      text.innerHTML = renderRedactionText(u.text);
+      par.innerHTML = renderRedactionText(u.text);
     } else {
-      text.textContent = u.text || '';
+      par.textContent = u.text || '';
     }
+    text.appendChild(par);
     el.appendChild(text);
     return el;
   }
@@ -1735,7 +1716,7 @@
         result += escapeHtml(rawText.slice(lastIdx, match.index));
         const tagKind = match[1].toUpperCase(); // PII or PHI
         const label = match[2] ? match[2].replace(/_/g, ' ').toUpperCase() : tagKind;
-        result += '<span class="redacted-marker">[' + label + ']</span>';
+        result += '<span class="pii-tag" data-tooltip="' + escapeHtml(tagKind) + ': ' + escapeHtml(label.toLowerCase()) + '">[' + label + ']</span>';
         lastIdx = match.index + match[0].length;
       }
       result += escapeHtml(rawText.slice(lastIdx));
@@ -1744,26 +1725,21 @@
     // Handle [REDACTED] markers
     const parts = rawText.split(/(\[REDACTED\])/gi);
     return parts.map(p => /^\[REDACTED\]$/i.test(p)
-      ? '<span class="redacted-marker">[REDACTED]</span>'
+      ? '<span class="pii-tag">[REDACTED]</span>'
       : escapeHtml(p)
     ).join('');
   }
 
   function renderRedactionSidebar(ranges, durationMs) {
-    redactionStats.innerHTML = '';
     const totalSilencedMs = ranges.reduce((s, [a, b]) => s + (b - a), 0);
     const pct = durationMs > 0 ? totalSilencedMs / durationMs * 100 : 0;
-    [
-      { val: String(ranges.length), lbl: 'Redactions' },
-      { val: (totalSilencedMs / 1000).toFixed(1) + 's', lbl: 'Silenced' },
-      { val: pct.toFixed(1) + '%', lbl: 'Of audio' },
-    ].forEach(({ val, lbl }) => {
-      const card = document.createElement('div');
-      card.className = 'redaction-stat-card';
-      const v = document.createElement('div'); v.className = 'redaction-stat-val'; v.textContent = val;
-      const l = document.createElement('div'); l.className = 'redaction-stat-lbl'; l.textContent = lbl;
-      card.appendChild(v); card.appendChild(l);
-      redactionStats.appendChild(card);
+    renderVerdictStatement('redaction-verdict-statement', {
+      variant: 'success',
+      title: ranges.length + ' redaction' + (ranges.length === 1 ? '' : 's') + ' made',
+      stats: [
+        { value: (totalSilencedMs / 1000).toFixed(1) + 's', label: 'silenced' },
+        { value: pct.toFixed(1) + '%', label: 'of audio' },
+      ],
     });
   }
 
@@ -1789,7 +1765,7 @@
       for (let i = sorted.length - 1; i >= 0; i--) {
         if (currentMs >= sorted[i].start_ms) { activeIdx = i; break; }
       }
-      redactionTranscriptList.querySelectorAll('.transcript-utterance').forEach((el, i) => {
+      redactionTranscriptList.querySelectorAll('.pg-transcript-utterance').forEach((el, i) => {
         el.classList.toggle('active', i === activeIdx);
       });
       redactionTranscriptTracker = requestAnimationFrame(tick);
