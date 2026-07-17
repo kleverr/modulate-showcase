@@ -4409,9 +4409,13 @@
   function hideOverlay() {
     stopProgress();
     setPlateState('uploaded');
-    setPageTitle(resultsFilename.textContent);
-    refreshBottomPanels();
-    syncPlayerMeta();
+    // Success handlers assign filename/currentData right AFTER calling
+    // hideOverlay — defer the chrome sync one tick so it reads fresh values.
+    setTimeout(() => {
+      setPageTitle(resultsFilename.textContent);
+      refreshBottomPanels();
+      syncPlayerMeta();
+    }, 0);
   }
 
   function showOverlayError(msg, rawText) {
