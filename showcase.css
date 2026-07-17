@@ -313,6 +313,9 @@
   gap: 2px;
   margin-left: var(--m__gap-s);
 }
+.pg-ab-toggle[hidden] {
+  display: none;
+}
 .pg-ab-toggle button {
   font-size: var(--m__font-size-xs);
   font-family: var(--m__font-family-semi-mono);
@@ -469,3 +472,201 @@
 .mx-bar-fill.speech { background: var(--speech-color, var(--m__error)); }
 .mx-player-heat-cell.active { filter: brightness(1.35); }
 .aim-player-heat-cell.active { filter: brightness(1.35); }
+
+/* ═══ Velma config modal internals (design-system components + tokens) ═══ */
+.velma-config-hint {
+  max-width: 46rem;
+}
+.velma-config-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m__gap-m);
+}
+.velma-config-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: var(--m__gap-l);
+  align-items: start;
+}
+@media (width < 900px) {
+  .velma-config-split { grid-template-columns: 1fr; }
+}
+.velma-config-form {
+  min-width: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: var(--m__spacer-xs);
+}
+.velma-cfg-section {
+  margin-bottom: var(--m__spacer-m);
+}
+.velma-cfg-h {
+  margin: 0 0 var(--m__spacer-xxs);
+  font-size: var(--m__font-size-s);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--m__text-caption);
+}
+.velma-cfg-defn {
+  margin-top: 0;
+}
+.velma-cfg-stt-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--m__gap-m);
+  margin-bottom: var(--m__spacer-xs);
+}
+.velma-cfg-field {
+  display: block;
+  margin-bottom: var(--m__spacer-xs);
+}
+.velma-cfg-field-label {
+  display: block;
+  font-size: var(--m__font-size-s);
+  color: var(--m__text-caption);
+  margin-bottom: 0.2rem;
+}
+.velma-cfg-add-row {
+  display: flex;
+  gap: var(--m__gap-s);
+  flex-wrap: wrap;
+}
+.velma-cfg-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m__gap-xs);
+  margin-bottom: var(--m__spacer-xs);
+}
+.velma-cfg-row {
+  border: var(--m__border-width-s) solid var(--m__border);
+  border-radius: var(--m__radius-l);
+  padding: var(--m__spacer-xs);
+}
+.velma-cfg-row-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--m__gap-s);
+  cursor: pointer;
+}
+.velma-cfg-row-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--m__gap-s);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.velma-cfg-row-name {
+  font-weight: var(--m__font-weight-medium);
+}
+.velma-cfg-row-badge {
+  font-size: var(--m__font-size-xs);
+  font-family: var(--m__font-family-semi-mono);
+  color: var(--m__text-caption);
+  border: var(--m__border-width-s) solid var(--m__border);
+  border-radius: var(--m__radius-pill);
+  padding: 0 0.5em;
+  white-space: nowrap;
+}
+.velma-cfg-row-short {
+  color: var(--m__text-caption);
+  font-size: var(--m__font-size-s);
+}
+.velma-cfg-row-body {
+  margin-top: var(--m__spacer-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--m__gap-s);
+}
+.velma-cfg-row-body input[type="text"],
+.velma-cfg-row-body textarea,
+.velma-cfg-input,
+#velma-cfg-language {
+  width: 100%;
+  background: transparent;
+  color: var(--m__text);
+  border: var(--m__border-width-s) solid var(--m__border);
+  border-radius: var(--m__radius-m);
+  padding: 0.35rem 0.55rem;
+  font: inherit;
+  font-size: var(--m__font-size-s);
+}
+.velma-cfg-row-body textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+.velma-cfg-warning {
+  border: var(--m__border-width-s) solid color-mix(in srgb, var(--m__error) 45%, transparent);
+  background: color-mix(in srgb, var(--m__error) 8%, transparent);
+  border-radius: var(--m__radius-l);
+  padding: var(--m__spacer-xs);
+  font-size: var(--m__font-size-s);
+  margin-bottom: var(--m__spacer-xs);
+}
+.velma-config-json-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m__gap-xs);
+  min-width: 0;
+}
+.velma-config-json-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--m__gap-m);
+  font-size: var(--m__font-size-s);
+  color: var(--m__text-caption);
+}
+.velma-config-textarea {
+  width: 100%;
+  min-height: 46vh;
+  background: var(--m__bg-surface);
+  color: var(--m__text-code, var(--m__text));
+  font-family: var(--m__font-family-mono);
+  font-size: var(--m__font-size-xs);
+  line-height: 1.5;
+  border: var(--m__border-width-s) solid var(--m__border);
+  border-radius: var(--m__radius-l);
+  padding: var(--m__spacer-xs);
+  resize: vertical;
+}
+.velma-config-error {
+  color: var(--m__error);
+  font-size: var(--m__font-size-s);
+  min-height: 1.2em;
+}
+.velma-config-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--m__gap-s);
+}
+
+/* velma transcript extras */
+.pg-behavior-link.definitive {
+  font-weight: var(--m__font-weight-bold);
+}
+.velma-clip-models {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--m__gap-xs);
+  margin-top: 0.3rem;
+  font-size: var(--m__font-size-xs);
+  font-family: var(--m__font-family-semi-mono);
+  color: var(--m__text-caption);
+}
+.velma-clip-model-name {
+  opacity: 0.7;
+  margin-right: 0.35em;
+}
+.velma-bubble-flash {
+  animation: velma-flash 1.6s ease-out 1;
+}
+@keyframes velma-flash {
+  0% { background: color-mix(in srgb, var(--m__text-link-hover) 18%, transparent); }
+  100% { background: transparent; }
+}
+
+/* bundle order quirk: base .m__modal (28rem) is declared after .m__modal--wide,
+   so the wide variant never wins there — restore it with higher specificity */
+.m__modal.m__modal--wide {
+  max-width: 68rem;
+}

@@ -792,15 +792,15 @@
 
 <!-- Velma Config Modal -->
 <div class="m__modal-backdrop" id="velma-config-modal" hidden>
-  <div class="m__modal velma-config-modal-inner">
-    <div class="m__modal-header">
+  <div class="m__modal m__modal--wide velma-config-modal-inner">
+    <div class="m__modal__header">
       <div>
-        <h3>Velma Config</h3>
+        <h3 class="m__modal__title">Velma Config</h3>
         <p class="caption velma-config-hint">Use the endpoint's built-in default, or build a custom configuration (conversation types, roles, behaviors, model signals). The right pane shows exactly what's sent as <code>config</code> to <code>/api/velma-2-batch</code> (batch) or as the first frame on <code>/api/velma-2-streaming</code> (streaming).</p>
       </div>
-      <button class="m__modal-close" id="velma-config-modal-close" aria-label="Close">✕</button>
+      <button class="m__modal__close" id="velma-config-modal-close" aria-label="Close">✕</button>
     </div>
-    <div class="m__modal-body velma-config-body">
+    <div class="m__modal__body velma-config-body">
       <div class="velma-config-split">
         <div class="velma-config-form" id="velma-config-form">
           <section class="velma-cfg-section">
@@ -885,14 +885,14 @@
 <!-- HubSpot Access Modal -->
 <div class="m__modal-backdrop" id="hs-modal" hidden>
   <div class="m__modal hs-modal-inner">
-    <div class="m__modal-header">
+    <div class="m__modal__header">
       <div>
-        <h3>Get API Access</h3>
+        <h3 class="m__modal__title">Get API Access</h3>
         <p class="caption">Start building with Modulate's voice intelligence APIs.</p>
       </div>
-      <button class="m__modal-close" id="hs-modal-close" aria-label="Close">✕</button>
+      <button class="m__modal__close" id="hs-modal-close" aria-label="Close">✕</button>
     </div>
-    <div class="m__modal-body">
+    <div class="m__modal__body">
       <div class="hs-form-frame" data-region="na1" data-form-id="58b05257-fab0-4145-90c1-ea658b4d5cda" data-portal-id="22677265"></div>
     </div>
   </div>

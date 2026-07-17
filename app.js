@@ -5230,32 +5230,26 @@
       velmaSummarySection.style.display = 'none';
     }
 
-    // ── Conversation type pick + role picks
-    velmaConvTypePick.innerHTML = '';
-    velmaRolePicks.innerHTML = '';
-    const havePicks = !!data.conversation_type_pick || (data.participant_role_picks && data.participant_role_picks.length);
-    velmaPicksSection.style.display = havePicks ? '' : 'none';
-
-    if (data.conversation_type_pick) {
-      const p = data.conversation_type_pick;
-      velmaConvTypePick.appendChild(buildPickBadge('Type', p.name, p.confidence, p.selection_source, p.reasoning, p.detail));
-    }
+    // ── Role picks feed the Speakers table (design: role name + reasoning +
+    //    "Inferred, N%" tag live inside the speaker cell). The conversation-type
+    //    pick renders as the lead-in paragraph of Topics & Sentiment.
     const rolePicks = data.participant_role_picks || [];
-    rolePicks.forEach(rp => {
-      velmaRolePicks.appendChild(buildPickBadge(rp.speaker_label, rp.name, rp.confidence, rp.selection_source, rp.reasoning, rp.detail));
-    });
 
-    // ── Speaker→role map (used by behavior table + transcript chips + topics)
+    // ── Speaker→role maps (used by behavior table + transcript chips + topics)
     const clips = data.clips || [];
     const speakerToRole = {};
-    rolePicks.forEach(rp => { speakerToRole[rp.speaker_label] = rp.name; });
+    const speakerToPick = {};
+    rolePicks.forEach(rp => {
+      speakerToRole[rp.speaker_label] = rp.name;
+      speakerToPick[rp.speaker_label] = rp;
+    });
 
-    // ── Per-speaker emotion stacked bar chart
+    // ── Per-speaker emotion pattern rows
     const speakerStats = computeSpeakerStats(clips, data.duration_ms || 0);
     velmaSpeakersTbody.innerHTML = '';
     if (speakerStats.length) {
       velmaSpeakersSection.style.display = '';
-      speakerStats.forEach(s => velmaSpeakersTbody.appendChild(buildSpeakerRow(s, speakerToRole[s.label])));
+      speakerStats.forEach(s => velmaSpeakersTbody.appendChild(buildSpeakerRow(s, speakerToPick[s.label])));
     } else {
       velmaSpeakersSection.style.display = 'none';
     }
@@ -5285,24 +5279,7 @@
       } else {
         if (velmaBehaviorsTable) velmaBehaviorsTable.style.display = '';
         if (velmaResultsBehaviorsNote) velmaResultsBehaviorsNote.style.display = 'none';
-        // Sort: detected first (by speaker_label asc, then confidence desc), then undetected, then skipped/errored
-        const sorted = [...behaviors].sort((a, b) => {
-          const rank = (x) => x.error_reason ? 3 : x.skipped ? 2 : x.detected ? 0 : 1;
-          const ra = rank(a), rb = rank(b);
-          if (ra !== rb) return ra - rb;
-          const sa = a.speaker_label || '';
-          const sb = b.speaker_label || '';
-          if (sa !== sb) return sa.localeCompare(sb);
-          return (b.confidence || 0) - (a.confidence || 0);
-        });
-        // Group consecutive rows by speaker to render speaker cell once per group
-        let lastSpeaker = null;
-        sorted.forEach(b => {
-          const speakerKey = b.speaker_label || '—';
-          const isNewGroup = speakerKey !== lastSpeaker;
-          velmaBehaviorsTbody.appendChild(buildBehaviorRow(b, speakerToRole[b.speaker_label], isNewGroup));
-          lastSpeaker = speakerKey;
-        });
+        renderVelmaBehaviorsTable(behaviors, speakerToRole);
       }
     } else {
       velmaBehaviorsSection.style.display = 'none';
@@ -5312,9 +5289,9 @@
     velmaTopicsBySpeaker.innerHTML = '';
     const topics = data.topics || [];
     const ts = data.topic_sentiments || [];
-    if (topics.length || ts.length) {
+    if (topics.length || ts.length || data.conversation_type_pick) {
       velmaTopicsSection.style.display = '';
-      renderVelmaTopicsBySpeaker(topics, ts, speakerToRole);
+      renderVelmaTopicsBySpeaker(topics, ts, speakerToRole, data.conversation_type_pick);
     } else {
       velmaTopicsSection.style.display = 'none';
     }
@@ -5360,15 +5337,18 @@
     sttPartial = null;
     sttData = { utterances: sttUtterances, duration_ms: data.duration_ms };
 
-    // 3. Render via the shared pipeline (this draws #stt-chart + #transcript-list bubbles)
+    // 3. Render via the shared pipeline (this draws the emotion clip strip in
+    //    the player + the transcript rows below).
     renderTranscript();
 
-    // 4. Velma has its own per-speaker emotion chart; hide the transcription
-    //    timeline that renderTranscript draws.
-    const chart = document.getElementById('stt-chart');
-    if (chart) { chart.innerHTML = ''; chart.classList.remove('visible'); }
+    // 4. Relabel the player's speaker lanes with the inferred role names
+    //    (design shows e.g. "Customer" / "Support specialist" on the strip).
+    const laneLabels = Object.keys(speakerOrder)
+      .sort((a, b) => speakerOrder[a] - speakerOrder[b])
+      .map(label => speakerToRole[label] || label);
+    if (laneLabels.length) syncSpeakerLanes(laneLabels);
 
-    // 5. Patch the rendered bubbles: replace "Speaker N" with role name; add behavior chips.
+    // 5. Patch the rendered rows: replace "Speaker N" with role name; add behavior links.
     patchVelmaTranscriptBubbles();
   }
 
@@ -5381,25 +5361,24 @@
       if (u.clip_uuid) bEl.setAttribute('data-clip-uuid', u.clip_uuid);
       // Replace "Speaker N" with the inferred role name from participant_role_picks
       if (u.__velma_role_name) {
-        const sp = bEl.querySelector('.transcript-speaker');
+        const sp = bEl.querySelector('.pg-transcript-speaker');
         if (sp) sp.textContent = u.__velma_role_name;
       }
-      // Add behavior chips after the timestamp
+      // Add behavior links after the speaker (design: linked behavior names in the header)
       const clipB = velmaClipBehaviorsByUuid[u.clip_uuid] || [];
       if (clipB.length) {
         const header = bEl.querySelector('.pg-transcript-utterance-header');
         if (header) {
-          const wrap = document.createElement('span');
-          wrap.className = 'velma-bubble-behaviors';
+          const anchor = header.querySelector('.pg-transcript-speaker') || header.querySelector('.pg-transcript-time');
           clipB.forEach(cb => {
-            const chip = document.createElement('span');
-            chip.className = 'velma-bubble-behavior' + (cb.definitive ? ' definitive' : '');
+            const chip = document.createElement('a');
+            chip.href = '#';
+            chip.className = 'pg-behavior-link' + (cb.definitive ? ' definitive' : '');
             chip.textContent = cb.name;
-            wrap.appendChild(chip);
+            chip.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+            if (anchor && anchor.nextSibling) header.insertBefore(chip, anchor.nextSibling);
+            else header.appendChild(chip);
           });
-          const time = header.querySelector('.transcript-time');
-          if (time && time.nextSibling) header.insertBefore(wrap, time.nextSibling);
-          else header.appendChild(wrap);
         }
       }
       // Surface detection_model_results when present (raw debug signal — per-clip
@@ -5485,45 +5464,59 @@
     for (const k of Object.keys(counts)) { if (counts[k] > bestN) { best = k; bestN = counts[k]; } }
     return best;
   }
-  function buildSpeakerRow(s, roleName) {
+  function buildSpeakerRow(s, rolePick) {
+    const roleName = rolePick ? rolePick.name : null;
     const tr = document.createElement('tr');
+
     const tdSpeaker = document.createElement('td');
-    tdSpeaker.innerHTML =
-      `<div class="velma-speaker-name">${escapeHtml(roleName || s.label)}</div>` +
-      (roleName ? `<span class="velma-speaker-role">${escapeHtml(s.label)}</span>` : '');
+    let cell = '<span class="pg-speaker-cell-name">' + escapeHtml(roleName || s.label) + '</span>';
+    const desc = rolePick ? (rolePick.reasoning || rolePick.detail || '') : '';
+    if (desc) cell += '<div class="pg-speaker-cell-desc">' + escapeHtml(desc) + '</div>';
+    if (rolePick && rolePick.confidence != null) {
+      const source = rolePick.selection_source
+        ? rolePick.selection_source.charAt(0).toUpperCase() + rolePick.selection_source.slice(1)
+        : 'Inferred';
+      cell += '<span class="m__tag-flat">' + escapeHtml(source) + ', ' + Math.round(rolePick.confidence * 100) + '%</span>';
+    }
+    tdSpeaker.innerHTML = cell;
     tr.appendChild(tdSpeaker);
+
+    // Emotion pattern: bar width = share of speaking time, segments = clip emotions
     const tdBar = document.createElement('td');
     const bar = document.createElement('div');
-    bar.className = 'velma-emotion-bar';
+    bar.className = 'pg-emo-bar';
+    bar.style.width = Math.max(2, Math.round(s.speakingPct * 100)) + '%';
     const totalSegMs = s.segments.reduce((a, x) => a + x.durationMs, 0) || 1;
     s.segments.forEach(seg => {
       const seg2 = document.createElement('div');
-      seg2.className = 'velma-emotion-bar-seg';
-      const color = EMOTION_COLORS[seg.emotion] || '#78909c';
-      seg2.style.background = color;
-      seg2.style.flexBasis = ((seg.durationMs / totalSegMs) * 100).toFixed(2) + '%';
-      seg2.title = `${seg.emotion} · ${(seg.durationMs / 1000).toFixed(1)}s`;
+      seg2.className = 'pg-emo-seg';
+      seg2.style.width = ((seg.durationMs / totalSegMs) * 100).toFixed(2) + '%';
+      seg2.style.background = emotionVar(seg.emotion);
+      seg2.dataset.tooltip = seg.emotion + ' \u00b7 ' + (seg.durationMs / 1000).toFixed(1) + 's';
       bar.appendChild(seg2);
     });
     tdBar.appendChild(bar);
-    const legend = document.createElement('div');
-    legend.className = 'velma-emotion-legend';
+    const labels = document.createElement('div');
+    labels.className = 'pg-emo-labels';
     s.distinctEmotions.forEach((em, i) => {
       const chip = document.createElement('span');
-      chip.className = 'velma-emotion-legend-chip';
-      chip.style.color = EMOTION_COLORS[em.toLowerCase()] || '#78909c';
-      chip.textContent = (i === 0 ? '' : ', ') + em;
-      legend.appendChild(chip);
+      chip.className = 'ec-' + emotionSlug(em);
+      chip.textContent = em;
+      if (i > 0) labels.appendChild(document.createTextNode(', '));
+      labels.appendChild(chip);
     });
-    tdBar.appendChild(legend);
+    tdBar.appendChild(labels);
     tr.appendChild(tdBar);
+
     const tdTime = document.createElement('td');
+    tdTime.className = 'pg-num';
     tdTime.textContent = Math.round(s.speakingPct * 100) + '%';
     tr.appendChild(tdTime);
+
     const tdLang = document.createElement('td');
-    const langName = s.language ? (s.language.toUpperCase() === 'EN' ? 'English' : s.language) : '';
+    const langName2 = s.language ? languageName(s.language) : '';
     const accentName = s.accent ? (ACCENT_SHORT[s.accent] || s.accent) + ' accent' : '';
-    tdLang.textContent = [langName, accentName].filter(Boolean).join(', ');
+    tdLang.textContent = [langName2, accentName].filter(Boolean).join(', ');
     tr.appendChild(tdLang);
     return tr;
   }
@@ -5531,53 +5524,77 @@
   // Topics grouped by speaker — each speaker row shows their topics as
   // sentiment-colored chips. Fall back to a single "All speakers" row if
   // topic_sentiments is empty.
-  function renderVelmaTopicsBySpeaker(topics, topicSentiments, speakerToRole) {
+  function renderVelmaTopicsBySpeaker(topics, topicSentiments, speakerToRole, convPick) {
+    // Lead-in: the conversation-type pick as a paragraph with an "Inferred, N%" tag
+    if (convPick) {
+      const type = document.createElement('div');
+      type.className = 'pg-topics-type';
+      let html = '<strong>' + escapeHtml(convPick.name || '') + '.</strong> ' +
+        escapeHtml(convPick.reasoning || convPick.detail || '');
+      if (convPick.confidence != null) {
+        const source = convPick.selection_source
+          ? convPick.selection_source.charAt(0).toUpperCase() + convPick.selection_source.slice(1)
+          : 'Inferred';
+        html += '<span class="m__tag-flat">' + escapeHtml(source) + ', ' + Math.round(convPick.confidence * 100) + '%</span>';
+      }
+      type.innerHTML = html;
+      velmaTopicsBySpeaker.appendChild(type);
+    }
+
     const bySpeaker = new Map();
     topicSentiments.forEach(s => {
       const k = s.speaker_label;
       if (!bySpeaker.has(k)) bySpeaker.set(k, []);
       bySpeaker.get(k).push(s);
     });
+    if (bySpeaker.size === 0 && !topics.length) return;
+
+    const section = document.createElement('div');
+    section.className = 'pg-results-table-section';
+    const table = document.createElement('table');
+    table.className = 'pg-topics-table';
+    table.innerHTML = '<thead><tr><th>Speaker</th><th>Topics</th></tr></thead>';
+    const tbody = document.createElement('tbody');
+
+    const appendRow = (label, chips) => {
+      const tr = document.createElement('tr');
+      const tdSpeaker = document.createElement('td');
+      tdSpeaker.innerHTML = '<span class="pg-speaker-cell-name">' + escapeHtml(label) + '</span>';
+      tr.appendChild(tdSpeaker);
+      const tdTopics = document.createElement('td');
+      const group = document.createElement('div');
+      group.className = 'm__tag-group';
+      chips.forEach(c => group.appendChild(c));
+      tdTopics.appendChild(group);
+      tr.appendChild(tdTopics);
+      tbody.appendChild(tr);
+    };
+
     if (bySpeaker.size === 0) {
-      // No per-speaker breakdown — render the flat topics list
-      const row = document.createElement('div');
-      row.className = 'velma-topics-speaker-row';
-      const label = document.createElement('span');
-      label.className = 'velma-topics-speaker-label';
-      label.textContent = 'All speakers';
-      row.appendChild(label);
-      topics.forEach(t => row.appendChild(buildTopicChip(t, null)));
-      velmaTopicsBySpeaker.appendChild(row);
-      return;
+      appendRow('All speakers', topics.map(t => buildTopicChip(t, null)));
+    } else {
+      bySpeaker.forEach((sents, speakerLabel) => {
+        const roleName = speakerToRole[speakerLabel];
+        appendRow(roleName || speakerLabel, sents.map(s => buildTopicChip(s.topic, s)));
+      });
     }
-    bySpeaker.forEach((sents, speakerLabel) => {
-      const row = document.createElement('div');
-      row.className = 'velma-topics-speaker-row';
-      const label = document.createElement('span');
-      label.className = 'velma-topics-speaker-label';
-      const roleName = speakerToRole[speakerLabel];
-      label.innerHTML = escapeHtml(roleName || speakerLabel) +
-        (roleName ? `<span class="velma-topics-speaker-label-sub">(${escapeHtml(speakerLabel)})</span>` : '');
-      row.appendChild(label);
-      sents.forEach(s => row.appendChild(buildTopicChip(s.topic, s)));
-      velmaTopicsBySpeaker.appendChild(row);
-    });
+    table.appendChild(tbody);
+    section.appendChild(table);
+    velmaTopicsBySpeaker.appendChild(section);
   }
 
   function buildTopicChip(topic, sentiment) {
     const chip = document.createElement('span');
-    let kind = 'neu';
-    if (sentiment && sentiment.sentiment_score > 0.1) kind = 'pos';
-    else if (sentiment && sentiment.sentiment_score < -0.1) kind = 'neg';
-    chip.className = 'velma-topic-chip ' + kind;
-    chip.appendChild(document.createTextNode(topic));
+    chip.className = 'm__tag';
+    if (sentiment && sentiment.sentiment_score < -0.1) chip.classList.add('m__tag--error');
+    chip.appendChild(document.createTextNode(topic + ' '));
     if (sentiment) {
       const score = document.createElement('span');
-      score.className = 'velma-topic-chip-score';
+      score.className = 'pg-num muted';
       const s = Number(sentiment.sentiment_score || 0).toFixed(2);
       score.textContent = (sentiment.sentiment_score > 0 ? '+' : '') + s;
       chip.appendChild(score);
-      chip.title = `${sentiment.sentiment_label} (${s})`;
+      if (sentiment.sentiment_label) chip.dataset.tooltip = sentiment.sentiment_label + ' (' + s + ')';
     }
     return chip;
   }
@@ -5588,86 +5605,135 @@
     }[c]));
   }
 
-  function buildBehaviorRow(b, roleName, isNewGroup) {
-    const tr = document.createElement('tr');
-    tr.className = 'velma-behavior-row' +
-      (b.detected ? '' : ' undetected') +
-      (b.skipped ? ' skipped' : '') +
-      (b.error_reason ? ' error' : '');
+  // Design behaviors table: one speaker cell (rowspan) per group, detected rows
+  // with linked names + evidence quotes, then a "Not detected" subhead for the rest.
+  function renderVelmaBehaviorsTable(behaviors, speakerToRole) {
+    const rank = (x) => x.error_reason ? 3 : x.skipped ? 2 : x.detected ? 0 : 1;
+    const bySpeaker = new Map();
+    behaviors.forEach(b => {
+      const k = b.speaker_label || '\u2014';
+      if (!bySpeaker.has(k)) bySpeaker.set(k, []);
+      bySpeaker.get(k).push(b);
+    });
 
-    // Speaker cell — only render if start of new speaker group
-    const tdSpeaker = document.createElement('td');
-    if (isNewGroup) {
-      tdSpeaker.innerHTML =
-        `<div class="velma-behavior-speaker-cell">${escapeHtml(roleName || b.speaker_label || '—')}</div>` +
-        (roleName && b.speaker_label ? `<span class="velma-behavior-speaker-role">${escapeHtml(b.speaker_label)}</span>` : '');
-    }
-    tr.appendChild(tdSpeaker);
+    // Quote lookup: clip_uuid → clip text (for evidence links)
+    const clipText = {};
+    sttUtterances.forEach(u => { if (u.clip_uuid) clipText[u.clip_uuid] = u.text || ''; });
 
-    // ── Behavior name + status pill (raw API: detected / skipped / error)
-    const tdName = document.createElement('td');
-    const name = document.createElement('span');
-    name.className = 'velma-behavior-name';
-    name.textContent = b.behavior_name;
-    // Tooltip with the configured definition (what we asked the model to detect)
-    const cfg = (velmaConfig.behaviors || []).find(x => x.behavior_uuid === b.behavior_uuid);
-    if (cfg) {
-      const parts = [];
-      if (cfg.short_description) parts.push(cfg.short_description);
-      if (cfg.detailed_description) parts.push(cfg.detailed_description);
-      if (parts.length) name.title = parts.join('\n\n');
-    }
-    // Click target → jump to first evidence clip in the transcript
-    const targetClipUuid = b.definitive_clip_uuid || (Array.isArray(b.evidence_clip_uuids) && b.evidence_clip_uuids[0]) || null;
-    if (targetClipUuid) {
-      name.addEventListener('click', () => jumpToClip(targetClipUuid));
-    } else {
-      name.classList.add('no-evidence');
-    }
-    tdName.appendChild(name);
+    bySpeaker.forEach((list, speakerLabel) => {
+      const sorted = list.slice().sort((a, b) => {
+        const ra = rank(a), rb = rank(b);
+        if (ra !== rb) return ra - rb;
+        return (b.confidence || 0) - (a.confidence || 0);
+      });
+      const detected = sorted.filter(b => rank(b) === 0);
+      const rest = sorted.filter(b => rank(b) !== 0);
+      // subhead counts as a row for the rowspan
+      const groupRows = sorted.length + (detected.length && rest.length ? 1 : 0);
 
-    let statusText, statusKind;
-    if (b.error_reason)      { statusText = 'error';        statusKind = 'error'; }
-    else if (b.skipped)      { statusText = 'skipped';      statusKind = 'skipped'; }
-    else if (b.detected)     { statusText = 'detected';     statusKind = 'detected'; }
-    else                     { statusText = 'not detected'; statusKind = 'undetected'; }
-    const pill = document.createElement('span');
-    pill.className = 'velma-behavior-pill velma-behavior-pill--' + statusKind;
-    pill.textContent = statusText;
-    tdName.appendChild(pill);
+      let emittedSpeakerCell = false;
+      const speakerCellHtml = () => {
+        const roleName = speakerToRole[speakerLabel];
+        return escapeHtml(roleName || speakerLabel);
+      };
 
-    // Evidence clip count (raw API)
-    if (Array.isArray(b.evidence_clip_uuids) && b.evidence_clip_uuids.length > 0) {
-      const ev = document.createElement('span');
-      ev.className = 'velma-behavior-evidence';
-      ev.textContent = `Evidence: ${b.evidence_clip_uuids.length} clip${b.evidence_clip_uuids.length === 1 ? '' : 's'}`;
-      if (b.definitive_clip_uuid) ev.textContent += ' (1 definitive)';
-      tdName.appendChild(ev);
-    }
-    tr.appendChild(tdName);
+      const emitRow = (b, opts) => {
+        const tr = document.createElement('tr');
+        tr.className = 'pg-behavior-row' +
+          (opts.detected ? ' pg-behavior-row--detected' : ' pg-behavior-row--inactive') +
+          (opts.detectedLast ? ' pg-behavior-row--detected-last' : '') +
+          (opts.groupEnd ? ' pg-behavior-row--group-end' : '');
 
-    // ── Model reasoning (raw API output only — reasoning / skip_reason / error_reason)
-    const tdReasoning = document.createElement('td');
-    tdReasoning.className = 'velma-behavior-reasoning';
-    const reasoning = b.reasoning || b.skip_reason || b.error_reason || '';
-    if (reasoning) {
-      tdReasoning.textContent = reasoning;
-    } else {
-      tdReasoning.innerHTML = '<span class="velma-behavior-reasoning-empty">No reasoning returned</span>';
-    }
-    tr.appendChild(tdReasoning);
+        if (!emittedSpeakerCell) {
+          const tdSpeaker = document.createElement('td');
+          tdSpeaker.rowSpan = groupRows;
+          tdSpeaker.className = 'pg-behavior-speaker-cell';
+          tdSpeaker.innerHTML = speakerCellHtml();
+          tr.appendChild(tdSpeaker);
+          emittedSpeakerCell = true;
+        }
 
-    // ── Confidence (raw API value, no reinterpretation)
-    const tdConf = document.createElement('td');
-    tdConf.className = 'velma-behavior-confidence';
-    if (b.confidence == null) {
-      tdConf.textContent = '—';
-    } else {
-      tdConf.textContent = Math.round(b.confidence * 100) + '%';
-    }
-    tr.appendChild(tdConf);
+        // Behavior name (linked when there is evidence to jump to)
+        const tdName = document.createElement('td');
+        const targetClipUuid = b.definitive_clip_uuid ||
+          (Array.isArray(b.evidence_clip_uuids) && b.evidence_clip_uuids[0]) || null;
+        if (opts.detected && targetClipUuid) {
+          const link = document.createElement('a');
+          link.href = '#';
+          link.className = 'pg-behavior-link';
+          link.innerHTML = '<svg width="18" height="18" aria-hidden="true"><use href="#behaviors" /></svg>' +
+            escapeHtml(b.behavior_name);
+          link.addEventListener('click', (e) => { e.preventDefault(); jumpToClip(targetClipUuid); });
+          tdName.appendChild(link);
+        } else {
+          const name = document.createElement('span');
+          name.className = 'pg-behavior-name' + (opts.detected ? '' : ' pg-behavior-name--inactive');
+          name.textContent = b.behavior_name;
+          tdName.appendChild(name);
+        }
+        // Config tooltip: what we asked the model to detect
+        const cfg = (velmaConfig.behaviors || []).find(x => x.behavior_uuid === b.behavior_uuid);
+        if (cfg && (cfg.short_description || cfg.detailed_description)) {
+          tdName.dataset.tooltip = [cfg.short_description, cfg.detailed_description].filter(Boolean).join(' \u2014 ');
+        }
+        if (b.skipped || b.error_reason) {
+          const flag = document.createElement('div');
+          flag.className = 'caption';
+          flag.textContent = b.error_reason ? 'error' : 'skipped';
+          tdName.appendChild(flag);
+        }
+        tr.appendChild(tdName);
 
-    return tr;
+        // Model reasoning + evidence quotes
+        const tdReasoning = document.createElement('td');
+        const reasoning = document.createElement('div');
+        reasoning.className = 'pg-model-reasoning';
+        reasoning.textContent = b.reasoning || b.skip_reason || b.error_reason || '';
+        tdReasoning.appendChild(reasoning);
+        if (opts.detected && Array.isArray(b.evidence_clip_uuids) && b.evidence_clip_uuids.length) {
+          const evList = document.createElement('div');
+          evList.className = 'pg-evidence-list';
+          b.evidence_clip_uuids.slice(0, 3).forEach(uuid => {
+            const text = (clipText[uuid] || '').replace(/<[^>]+>/g, '');
+            if (!text) return;
+            const ev = document.createElement('a');
+            ev.href = '#';
+            ev.className = 'pg-evidence-link pg-evidence-link--fade';
+            ev.textContent = text.length > 60 ? text.slice(0, 60) : text;
+            ev.addEventListener('click', (e) => { e.preventDefault(); jumpToClip(uuid); });
+            evList.appendChild(ev);
+          });
+          if (evList.children.length) tdReasoning.appendChild(evList);
+        }
+        tr.appendChild(tdReasoning);
+
+        // Confidence
+        const tdConf = document.createElement('td');
+        tdConf.className = 'pg-num';
+        tdConf.textContent = b.confidence == null ? '\u2014' : Math.round(b.confidence * 100) + '%';
+        tr.appendChild(tdConf);
+
+        velmaBehaviorsTbody.appendChild(tr);
+      };
+
+      detected.forEach((b, i) => emitRow(b, {
+        detected: true,
+        detectedLast: i === detected.length - 1 && rest.length > 0,
+        groupEnd: i === detected.length - 1 && rest.length === 0,
+      }));
+
+      if (detected.length && rest.length) {
+        const subhead = document.createElement('tr');
+        subhead.className = 'pg-behavior-subhead-row';
+        subhead.innerHTML = '<td colspan="3"><span class="pg-behavior-subhead">Not detected</span></td>';
+        velmaBehaviorsTbody.appendChild(subhead);
+      }
+
+      rest.forEach((b, i) => emitRow(b, {
+        detected: false,
+        groupEnd: i === rest.length - 1,
+      }));
+    });
   }
 
   // ── Velma config editor ────────────────────────────────────────────────────
