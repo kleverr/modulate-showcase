@@ -2,6 +2,44 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [5.0.0] - 2026-07-17
+
+### Changed
+- **Full redesign on the Modulate design system.** The showcase now wears the
+  Playground design from `modulate-design-system` (m-design-system.intuition.team)
+  wholesale: design tokens (`styles.css` bundle), Inter + CoFo typography, the
+  grouped models sidebar (Triage / Redaction / Transcription / Detection), the
+  state-driven upload plate (drop / uploading / processing stages / streaming /
+  collapsed "New analysis" / low-quota / exhausted), the custom audio player with
+  per-mode visualization strips (emotion clips, deepfake segments, music/speech
+  heatmap, AI-music windows, redaction ranges), verdict statements, design report
+  tables, and always-visible Raw JSON + statistics bottom columns (the old
+  stats/JSON modals are gone).
+- **Dark theme by default** with a light/dark toggle in the header (persisted).
+- Velma: role picks now live inside the Speakers table (with reasoning +
+  "Inferred, N%" tags), the conversation-type pick leads the Topics & Sentiment
+  section, behaviors render with evidence-quote links and a "Not detected"
+  subhead, and the player's speaker lanes carry the inferred role names. The
+  config editor moved onto the design-system modal.
+- Redaction: original/redacted playback is now an A/B toggle on the player;
+  redaction ranges render as a strip in the player visualization.
+- Header: single "Get API Access" CTA (design-styled); footer per the design
+  (wordmark, contact, terms) plus the version stamp.
+- Rate limit surfaces as the plate's quota meter ("N / 50") with low-quota and
+  exhausted states (429s from batch or a refused WS upgrade flip it live).
+
+### Added
+- The 4.10.0 Emotion + Accent Detection tabs are integrated into the new
+  design: sidebar entries under Detection, verdict statements, 15s window
+  strips in the player (emotion windows use the design's emotion tokens),
+  window tables and legends.
+- `compression` middleware (design CSS bundle ships ~50KB gzipped) and immutable
+  caching for `/fonts/*`.
+
+### Removed
+- The entire legacy inline stylesheet (~2,800 lines), the analysis overlay, the
+  stats/JSON modals, verdict rings, the music heatmap/detailed view toggle, and
+  the JS emotion hex palette (emotion colors now come from the design tokens).
 ## [4.13.0] - 2026-07-16
 
 ### Changed

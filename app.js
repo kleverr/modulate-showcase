@@ -211,53 +211,12 @@
     return 'Authentic';
   }
 
-  // ── Language Detection: code → country tables for flag emoji ────────────────
-  // Maps each ISO 639-1 language code returned by the API to a 2-letter ISO 3166
-  // country code; the flag emoji is composed from regional-indicator symbols.
-  // Codes without a clean country mapping (Latin, Tibetan, etc.) fall back to 🌐.
-  const LANG_COUNTRY = {
-    af: 'ZA', sq: 'AL', am: 'ET', ar: 'SA', hy: 'AM', as: 'IN', az: 'AZ',
-    ba: 'RU', eu: 'ES', be: 'BY', bn: 'BD', bs: 'BA', br: 'FR', bg: 'BG',
-    yue: 'HK', ca: 'ES', zh: 'CN', hr: 'HR', cs: 'CZ', da: 'DK', nl: 'NL',
-    en: 'US', et: 'EE', fo: 'FO', fi: 'FI', fr: 'FR', gl: 'ES', ka: 'GE',
-    de: 'DE', el: 'GR', gu: 'IN', ht: 'HT', ha: 'NG', haw: 'US', he: 'IL',
-    hi: 'IN', hu: 'HU', is: 'IS', id: 'ID', it: 'IT', ja: 'JP', jw: 'ID',
-    kn: 'IN', kk: 'KZ', km: 'KH', ko: 'KR', lo: 'LA',          lv: 'LV',
-    ln: 'CD', lt: 'LT', lb: 'LU', mk: 'MK', mg: 'MG', ms: 'MY', ml: 'IN',
-    mt: 'MT', mi: 'NZ', mr: 'IN', mn: 'MN', my: 'MM', ne: 'NP', no: 'NO',
-    nn: 'NO', oc: 'FR', ps: 'AF', fa: 'IR', pl: 'PL', pt: 'PT', pa: 'IN',
-    ro: 'RO', ru: 'RU', sa: 'IN', sr: 'RS', sn: 'ZW', sd: 'PK', si: 'LK',
-    sk: 'SK', sl: 'SI', so: 'SO', es: 'ES', su: 'ID', sw: 'KE', sv: 'SE',
-    tl: 'PH', tg: 'TJ', ta: 'IN', tt: 'RU', te: 'IN', th: 'TH',
-    tr: 'TR', tk: 'TM', uk: 'UA', ur: 'PK', uz: 'UZ', vi: 'VN',
-    yi: 'IL', yo: 'NG',
-    // Codes without a country flag — use globe fallback:
-    // la (Latin), bo (Tibetan), cy (Welsh — subdivision flag, not country)
-  };
-  // Welsh has a subdivision flag (not derivable from a 2-letter country code).
-  const LANG_FLAG_OVERRIDES = { cy: '\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}' };
-
-  function flagFromCountryCode(cc) {
-    if (!cc || cc.length !== 2) return null;
-    const A = 0x1F1E6;
-    const code = cc.toUpperCase();
-    return String.fromCodePoint(A + (code.charCodeAt(0) - 65), A + (code.charCodeAt(1) - 65));
-  }
-  function flagForLanguage(code) {
-    if (!code) return '\u{1F310}';
-    if (LANG_FLAG_OVERRIDES[code]) return LANG_FLAG_OVERRIDES[code];
-    const cc = LANG_COUNTRY[code];
-    return flagFromCountryCode(cc) || '\u{1F310}';
-  }
-
   // ── Mode State ──────────────────────────────────────────────────────────────
   let currentMode = 'transcription'; // 'deepfake' | 'transcription'
 
   // ── DOM refs ────────────────────────────────────────────────────────────────
-  const overlay       = document.getElementById('analysis-overlay');
-  const progressFill  = document.getElementById('progress-fill');
-  const analysisTitle = document.getElementById('analysis-title');
-  const analysisStatus = document.getElementById('analysis-status');
+  // Upload-progress text renders into the plate's uploading overlay label.
+  const analysisStatus = document.getElementById('plate-uploading-label');
   const errorToast    = document.getElementById('error-toast');
 
   const resultsFilename = document.getElementById('results-filename');
@@ -265,12 +224,7 @@
   const originalAudio = document.getElementById('original-audio');
   const playerEntryOriginal = document.getElementById('player-entry-original');
   const redactedLabel = document.getElementById('redacted-label');
-  const histogram     = document.getElementById('histogram');
   const resultsTbody  = document.getElementById('results-tbody');
-  const verdictRing   = document.getElementById('verdict-ring');
-  const verdictIcon   = document.getElementById('verdict-icon');
-  const verdictLabel  = document.getElementById('verdict-label');
-  const verdictCount  = document.getElementById('verdict-count');
 
   const uploadAction  = document.getElementById('results-upload-action');
   const fileInput     = document.getElementById('results-file-input');
@@ -282,83 +236,39 @@
   const sttChart      = document.getElementById('stt-chart');
 
   // Mode toggle
-  const modeRadios    = document.querySelectorAll('input[name="mode"]');
   const deepfakeContent = document.getElementById('deepfake-content');
   const transcriptContainer = document.getElementById('transcript-container');
   const transcriptList = document.getElementById('transcript-list');
   const resultsVerdict = document.getElementById('results-verdict');
-  const resultsSidebar = document.getElementById('results-sidebar');
   const sttOptions    = document.getElementById('stt-options');
 
   // Music Detection elements
   const musicContent      = document.getElementById('music-content');
-  const musicHistogram    = document.getElementById('music-histogram');
-  const musicHistogramFit = document.getElementById('music-histogram-fit');
   const musicTbody        = document.getElementById('music-tbody');
-  const musicVerdictRing  = document.getElementById('music-verdict-ring');
-  const musicVerdictIcon  = document.getElementById('music-verdict-icon');
-  const musicVerdictLabel = document.getElementById('music-verdict-label');
-  const musicVerdictSplit = document.getElementById('music-verdict-split');
   const musicSidebar      = document.getElementById('results-music-verdict');
-  const musicViewBtns     = document.querySelectorAll('.music-view-btn');
 
   // AI Music Detection elements
   const aimusicContent       = document.getElementById('aimusic-content');
   const aimusicSidebar       = document.getElementById('results-aimusic-verdict');
-  const aimusicHero          = document.getElementById('aimusic-hero');
-  const aimusicHeroBadge     = document.getElementById('aimusic-hero-badge');
-  const aimusicHeroBadgeText = document.getElementById('aimusic-hero-badge-text');
-  const aimusicHeroHeadline  = document.getElementById('aimusic-hero-headline');
-  const aimusicHeroSub       = document.getElementById('aimusic-hero-sub');
-  const aimusicPaths           = document.getElementById('aimusic-paths');
-  const aimusicPathVocal       = document.getElementById('aimusic-path-vocal');
-  const aimusicPathVocalIcon   = document.getElementById('aimusic-path-vocal-icon');
-  const aimusicPathVocalValue  = document.getElementById('aimusic-path-vocal-value');
-  const aimusicPathInstr       = document.getElementById('aimusic-path-instr');
-  const aimusicPathInstrIcon   = document.getElementById('aimusic-path-instr-icon');
-  const aimusicPathInstrValue  = document.getElementById('aimusic-path-instr-value');
-  const aimusicPathNote        = document.getElementById('aimusic-path-note');
-  const aimusicHeroMeta        = document.getElementById('aimusic-hero-meta');
-  const aimusicTimelineWrap    = document.getElementById('aimusic-timeline-wrap');
-  const aimusicTimeline        = document.getElementById('aimusic-timeline');
-  const aimusicAxis            = document.getElementById('aimusic-axis');
-  const aimusicTimelineStatus  = document.getElementById('aimusic-timeline-status');
   const aimusicTbody           = document.getElementById('aimusic-tbody');
 
   // Language Detection elements
   const languageContent      = document.getElementById('language-content');
   const languageSidebar      = document.getElementById('results-language-verdict');
-  const emotionContent       = document.getElementById('emotion-content');
-  const emotionSidebar       = document.getElementById('results-emotion-verdict');
-  const accentContent        = document.getElementById('accent-content');
-  const accentSidebar        = document.getElementById('results-accent-verdict');
-  const langHero             = document.getElementById('lang-hero');
-  const langHeroFlag         = document.getElementById('lang-hero-flag');
-  const langHeroName         = document.getElementById('lang-hero-name');
-  const langHeroCode         = document.getElementById('lang-hero-code');
-  const langHeroConfRow      = document.getElementById('lang-hero-conf-row');
-  const langHeroConfVal      = document.getElementById('lang-hero-conf-val');
-  const langHeroMeta         = document.getElementById('lang-hero-meta');
-  const langHeroWarning      = document.getElementById('lang-hero-warning');
 
   // Redaction elements
   const redactionContent        = document.getElementById('redaction-content');
-  const redactionTimeline       = document.getElementById('redaction-timeline');
-  const redactionPlayhead       = document.getElementById('redaction-playhead');
-  const redactionTimelineAxis   = document.getElementById('redaction-timeline-axis');
   const redactionTranscriptList = document.getElementById('redaction-transcript-list');
-  const redactionStats          = document.getElementById('redaction-stats');
   const redactionOptions        = document.getElementById('redaction-options');
-  const redactionSidebar        = document.getElementById('results-redaction-sidebar');
   const optRedactDiarization    = document.getElementById('redact-opt-diarization');
   const optRedactStartPad       = document.getElementById('redact-opt-start-pad');
   const optRedactEndPad         = document.getElementById('redact-opt-end-pad');
 
-  // Modals
-  const statsModal    = document.getElementById('stats-modal');
-  const statsModalTitle = document.getElementById('stats-modal-title');
+  // Bottom columns (Raw JSON + statistics) — replaced the old stats/JSON modals.
+  // statsModalTitle is a write-only sink: per-mode titles are covered by the
+  // stat-card group headers in the design layout.
+  const statsModalTitle = { textContent: '' };
   const statsGrid     = document.getElementById('stats-grid');
-  const jsonModal     = document.getElementById('json-modal');
   const jsonPre       = document.getElementById('json-pre');
   const jsonCopyBtn   = document.getElementById('json-copy-btn');
 
@@ -394,9 +304,6 @@
   let lastLanguageFilename = null;
   let musicPlaybackTracker = null;
   let aimusicPlaybackTracker = null;
-  let musicView = 'heatmap'; // 'heatmap' | 'detailed'
-  let musicCells = [];       // cells currently rendered (for playback tracking)
-  let musicResizeObserver = null;
   let isAnalyzing = false;
   let sttChartTracker = null;
 
@@ -410,61 +317,118 @@
   let sttPartial = null;
   let sttData = null;
 
-  // ── Mobile layout ───────────────────────────────────────────────────────────
-  const resultsLayout   = document.querySelector('.results-layout');
-  const resultsMain     = document.querySelector('.results-main');
-  const histogramSection = document.querySelector('.histogram-section');
+  // ── Design-chrome DOM refs ──────────────────────────────────────────────────
+  const pageTitleEl     = document.getElementById('pg-page-title');
+  const uploadPlate     = document.getElementById('pg-upload-plate');
+  const plateHeader     = document.getElementById('plate-header');
+  const plateHeaderTitle = document.getElementById('plate-header-title');
+  const sttOptionsRow   = document.getElementById('stt-options-row');
+  const plateStages     = document.getElementById('plate-stages');
+  const plateUploadingLabel = document.getElementById('plate-uploading-label');
+  const plateStreamingLabel = document.getElementById('plate-streaming-label');
+  const plateQuotaDefault = document.getElementById('plate-quota-default');
+  const plateQuotaLow   = document.getElementById('plate-quota-low');
+  const streamSplit     = document.getElementById('stream-split');
+  const bottomColumns   = document.getElementById('pg-bottom-columns');
+  const navLinks        = document.querySelectorAll('.models-nav__link[data-mode]');
+  const redactionAb     = document.getElementById('redaction-ab');
+  const abOriginalBtn   = document.getElementById('redaction-ab-original');
+  const abRedactedBtn   = document.getElementById('redaction-ab-redacted');
+  const velmaDemoBtn    = document.getElementById('velma-demo-action');
 
-  function applyMobileLayout(isMobile) {
-    if (!resultsLayout || !resultsMain) return;
-    if (currentMode === 'deepfake' && resultsVerdict && histogramSection) {
-      if (isMobile) resultsMain.insertBefore(resultsVerdict, histogramSection);
-      else resultsLayout.appendChild(resultsVerdict);
-    } else if (currentMode === 'music' && musicSidebar && musicContent) {
-      if (isMobile) resultsMain.insertBefore(musicSidebar, musicContent);
-      else resultsLayout.appendChild(musicSidebar);
-    } else if (currentMode === 'language' && languageSidebar && languageContent) {
-      if (isMobile) resultsMain.insertBefore(languageSidebar, languageContent);
-      else resultsLayout.appendChild(languageSidebar);
-    } else if (currentMode === 'emotion' && emotionSidebar && emotionContent) {
-      if (isMobile) resultsMain.insertBefore(emotionSidebar, emotionContent);
-      else resultsLayout.appendChild(emotionSidebar);
-    } else if (currentMode === 'accent' && accentSidebar && accentContent) {
-      if (isMobile) resultsMain.insertBefore(accentSidebar, accentContent);
-      else resultsLayout.appendChild(accentSidebar);
-    } else if (currentMode === 'aimusic' && aimusicSidebar && aimusicContent) {
-      if (isMobile) resultsMain.insertBefore(aimusicSidebar, aimusicContent);
-      else resultsLayout.appendChild(aimusicSidebar);
-    }
+  // ── Declarative per-mode configuration ──────────────────────────────────────
+  // optionsRow: element shown (with .visible) in the plate's top row
+  // plateTitle: text for the generic plate header (detection modes)
+  // verdict:    the verdict-slot child to unhide
+  // panels:     content panels shown for the mode
+  // streaming:  whether the "Start streaming" split-button is available
+  const MODES = {
+    velma: {
+      path: '/velma', title: 'Velma Triage',
+      optionsRow: () => velmaOptions, verdict: null,
+      panels: () => [velmaContent, transcriptContainer],
+      streaming: true, demoButton: true,
+      stages: ['Transcript', 'Speakers', 'Emotions', 'Roles', 'Behaviors', 'Summary'],
+    },
+    transcription: {
+      path: '/transcription', title: 'Multilingual Transcription',
+      optionsRow: () => sttOptionsRow, verdict: null,
+      panels: () => [transcriptContainer],
+      streaming: true,
+      stages: ['Transcript', 'Speakers', 'Signals'],
+    },
+    deepfake: {
+      path: '/deepfake', title: 'Deepfake Detection', plateTitle: 'Detect synthetic speech',
+      optionsRow: () => plateHeader, verdict: () => resultsVerdict,
+      panels: () => [deepfakeContent],
+      streaming: true,
+      stages: ['Analyzing audio'],
+    },
+    redaction: {
+      path: '/redaction', title: 'PII/PHI Redaction',
+      optionsRow: () => redactionOptions,
+      verdict: () => document.getElementById('results-redaction-verdict'),
+      panels: () => [redactionContent],
+      streaming: false, abToggle: true,
+      stages: ['Transcript', 'Redaction'],
+    },
+    music: {
+      path: '/music', title: 'Music & Speech Detection', plateTitle: 'Detect music and speech',
+      optionsRow: () => plateHeader, verdict: () => musicSidebar,
+      panels: () => [musicContent],
+      streaming: true,
+      stages: ['Analyzing audio'],
+    },
+    aimusic: {
+      path: '/ai-music', title: 'AI Music Detection', plateTitle: 'Detect AI-generated music',
+      optionsRow: () => plateHeader, verdict: () => aimusicSidebar,
+      panels: () => [aimusicContent],
+      streaming: true,
+      stages: ['Analyzing audio'],
+    },
+    language: {
+      path: '/language', title: 'Language Detection', plateTitle: 'Identify spoken language',
+      optionsRow: () => plateHeader, verdict: () => languageSidebar,
+      panels: () => [languageContent],
+      streaming: false,
+      stages: ['Analyzing audio'],
+    },
+    emotion: {
+      path: '/emotion', title: 'Emotion Detection', plateTitle: 'Detect emotional tone',
+      optionsRow: () => plateHeader,
+      verdict: () => document.getElementById('results-emotion-verdict'),
+      panels: () => [document.getElementById('emotion-content')],
+      streaming: false,
+      stages: ['Analyzing audio'],
+    },
+    accent: {
+      path: '/accent', title: 'Accent Detection', plateTitle: 'Detect speaker accent',
+      optionsRow: () => plateHeader,
+      verdict: () => document.getElementById('results-accent-verdict'),
+      panels: () => [document.getElementById('accent-content')],
+      streaming: false,
+      stages: ['Analyzing audio'],
+    },
+  };
+
+  function setPageTitle(text) {
+    if (pageTitleEl) pageTitleEl.textContent = text || (MODES[currentMode] ? MODES[currentMode].title : '');
   }
-
-  const mobileQuery = window.matchMedia('(max-width: 768px)');
-  applyMobileLayout(mobileQuery.matches);
-  mobileQuery.addEventListener('change', e => applyMobileLayout(e.matches));
 
   // ── Mode Switching ──────────────────────────────────────────────────────────
   function switchMode(mode, pushUrl) {
+    if (!MODES[mode]) mode = 'velma';
     currentMode = mode;
+    const cfg = MODES[mode];
     const isDeepfake    = mode === 'deepfake';
     const isRedaction   = mode === 'redaction';
     const isMusic       = mode === 'music';
     const isAimusic     = mode === 'aimusic';
     const isLanguage    = mode === 'language';
-    const isEmotion     = mode === 'emotion';
-    const isAccent      = mode === 'accent';
-    const isTranscription = mode === 'transcription';
     const isVelma       = mode === 'velma';
 
     // Update URL
-    const targetPath = isDeepfake ? '/deepfake'
-      : isRedaction ? '/redaction'
-      : isMusic ? '/music'
-      : isAimusic ? '/ai-music'
-      : isLanguage ? '/language'
-      : isEmotion ? '/emotion'
-      : isAccent ? '/accent'
-      : isVelma ? '/velma'
-      : '/transcription';
+    const targetPath = cfg.path;
     if (pushUrl !== false && location.pathname !== targetPath) {
       history.pushState({ mode: mode }, '', targetPath + location.search);
       try {
@@ -474,47 +438,47 @@
       } catch (e) {}
     }
 
-    deepfakeContent.style.display = isDeepfake ? '' : 'none';
-    resultsVerdict.style.display = isDeepfake ? '' : 'none';
-    // Velma reuses the transcription stt-chart + transcript-list, so show it in both modes.
-    transcriptContainer.classList.toggle('visible', isTranscription || isVelma);
-    resultsSidebar.classList.toggle('visible', isTranscription);
-    sttOptions.classList.toggle('visible', isTranscription);
-    redactionContent.style.display = isRedaction ? 'block' : 'none';
-    redactionSidebar.classList.toggle('visible', isRedaction);
-    redactionOptions.classList.toggle('visible', isRedaction);
-    if (musicContent) musicContent.style.display = isMusic ? '' : 'none';
-    if (musicSidebar) musicSidebar.style.display = isMusic ? '' : 'none';
-    if (aimusicContent) aimusicContent.classList.toggle('visible', isAimusic);
-    if (aimusicSidebar) aimusicSidebar.style.display = isAimusic ? '' : 'none';
-    if (languageContent) languageContent.classList.toggle('visible', isLanguage);
-    if (languageSidebar) languageSidebar.style.display = isLanguage ? '' : 'none';
-    if (emotionContent) emotionContent.classList.toggle('visible', isEmotion);
-    if (emotionSidebar) emotionSidebar.style.display = isEmotion ? '' : 'none';
-    if (accentContent) accentContent.classList.toggle('visible', isAccent);
-    if (accentSidebar) accentSidebar.style.display = isAccent ? '' : 'none';
-    if (velmaContent) velmaContent.classList.toggle('visible', isVelma);
-    if (velmaSidebar) velmaSidebar.classList.toggle('visible', isVelma);
-    if (velmaOptions) velmaOptions.classList.toggle('visible', isVelma);
-    if (velmaDemoAction) velmaDemoAction.style.display = isVelma ? '' : 'none';
-    if (playerEntryOriginal) playerEntryOriginal.style.display = isRedaction ? '' : 'none';
-    if (redactedLabel) redactedLabel.style.display = isRedaction ? '' : 'none';
-    if (streamDemoAction) {
-      streamDemoAction.style.display = (isTranscription || isMusic || isVelma || isAimusic) ? '' : 'none';
-      streamDemoAction.classList.remove('streaming-soon');
-    }
-    if (streamFileAction) {
-      streamFileAction.style.display = (isTranscription || isMusic || isVelma || isAimusic) ? '' : 'none';
-      streamFileAction.classList.remove('streaming-soon');
-    }
-    if (recordAction) {
-      // Redaction, language, emotion, and accent are batch-only in the UI —
-      // hide live record. Transcription, Music, Velma, and AI Music support
-      // mic streaming.
-      recordAction.style.display = (isRedaction || isLanguage || isEmotion || isAccent) ? 'none' : '';
-      recordAction.classList.toggle('disabled-soon', isRedaction);
-      recordAction.classList.remove('streaming-soon');
-    }
+    // CSS scope hook (per-mode player strip sizing, language dataviz hiding)
+    document.body.dataset.mode = mode;
+
+    // Sidebar active state
+    navLinks.forEach(a => a.classList.toggle('active', a.dataset.mode === mode));
+
+    // Plate: option rows (exactly one visible), generic header title
+    [velmaOptions, sttOptionsRow, redactionOptions, plateHeader].forEach(row => {
+      if (row) row.classList.remove('visible');
+    });
+    const activeRow = cfg.optionsRow && cfg.optionsRow();
+    if (activeRow) activeRow.classList.add('visible');
+    if (plateHeaderTitle) plateHeaderTitle.textContent = cfg.plateTitle || '';
+
+    // Plate: actions
+    if (streamSplit) streamSplit.style.display = cfg.streaming ? '' : 'none';
+    if (velmaDemoBtn) velmaDemoBtn.style.display = cfg.demoButton ? '' : 'none';
+
+    // Verdict slot: unhide only this mode's statement container
+    [resultsVerdict, musicSidebar, aimusicSidebar, languageSidebar,
+     document.getElementById('results-redaction-verdict'),
+     document.getElementById('results-emotion-verdict'),
+     document.getElementById('results-accent-verdict')].forEach(el => {
+      if (el) el.hidden = true;
+    });
+    const verdictEl = cfg.verdict && cfg.verdict();
+    if (verdictEl) verdictEl.hidden = false;
+
+    // Content panels
+    [velmaContent, transcriptContainer, deepfakeContent, redactionContent,
+     musicContent, aimusicContent, languageContent,
+     document.getElementById('emotion-content'),
+     document.getElementById('accent-content')].forEach(el => {
+      if (el) el.classList.remove('visible');
+    });
+    (cfg.panels ? cfg.panels() : []).forEach(el => { if (el) el.classList.add('visible'); });
+
+    // Redaction A/B source toggle on the player
+    if (redactionAb) redactionAb.hidden = !cfg.abToggle;
+    setActiveAudio(isRedaction ? 'redacted' : 'main');
+
     renderDebugPanel(true);
 
     // Stop any running animation frame trackers
@@ -525,13 +489,8 @@
     if (musicPlaybackTracker) { cancelAnimationFrame(musicPlaybackTracker); musicPlaybackTracker = null; }
     if (aimusicPlaybackTracker) { cancelAnimationFrame(aimusicPlaybackTracker); aimusicPlaybackTracker = null; }
 
-    if (recordAction) {
-      recordAction.classList.toggle('disabled-soon', isRedaction);
-      const span = recordAction.querySelector('span');
-      if (span) span.textContent = 'Start streaming';
-    }
-
     if (isRecording) stopRecording();
+    setPlateState('initial');
 
     if (isDeepfake) {
       const dfData = lastDeepfakeData || DEMO_DATA;
@@ -545,7 +504,6 @@
         processingMs: 2660,
       };
       renderDeepfakeResults(dfData, dfAudio);
-      applyMobileLayout(mobileQuery.matches);
     } else if (isRedaction) {
       if (lastRedactionData) {
         redactionData = lastRedactionData;
@@ -560,7 +518,6 @@
         renderRedactionTranscript(lastRedactionData.utterances || []);
         renderRedactionSidebar(ranges, durMs);
         if (durMs) {
-          setupRedactionPlaybackTracking(durMs);
           setupRedactionTranscriptTracking(lastRedactionData.utterances || []);
         }
       } else {
@@ -585,7 +542,6 @@
         renderRedactionTranscript(rData.utterances || []);
         renderRedactionSidebar(ranges, durMs);
         if (durMs) {
-          setupRedactionPlaybackTracking(durMs);
           setupRedactionTranscriptTracking(rData.utterances || []);
         }
       }
@@ -601,7 +557,6 @@
         processingMs: DEMO_MUSIC_DATA.latency_ms || 0,
       };
       renderMusicResults(mData, mAudio);
-      applyMobileLayout(mobileQuery.matches);
     } else if (isAimusic) {
       const aData = lastAimusicData || DEMO_AIMUSIC_DATA;
       const aAudio = lastAimusicAudioUrl || DEMO_AIMUSIC_AUDIO_URL;
@@ -617,7 +572,6 @@
       resultsFilename.textContent = lastAimusicFilename || aData.filename || 'big-mac-papelao.mp3';
       resultsAudio.src = aAudio;
       renderAimusicResult(aData);
-      applyMobileLayout(mobileQuery.matches);
     } else if (isLanguage) {
       const lData = lastLanguageData || DEMO_LANGUAGE_DATA;
       currentData = lData;
@@ -630,10 +584,8 @@
       resultsFilename.textContent = lastLanguageFilename || DEMO_LANGUAGE_FILENAME;
       resultsAudio.src = lastLanguageAudioUrl || DEMO_LANGUAGE_AUDIO_URL;
       renderLanguageResult(lData);
-      applyMobileLayout(mobileQuery.matches);
-    } else if (isEmotion || isAccent) {
+    } else if (mode === 'emotion' || mode === 'accent') {
       showEaMode(mode);
-      applyMobileLayout(mobileQuery.matches);
     } else if (isVelma) {
       if (lastVelmaData) {
         velmaData = lastVelmaData;
@@ -666,11 +618,17 @@
       resultsAudio.src = sAudio;
       renderTranscript();
     }
+
+    setPageTitle(resultsFilename.textContent);
+    refreshBottomPanels();
+    syncPlayerMeta();
   }
 
-  modeRadios.forEach(radio => {
-    radio.addEventListener('change', () => {
-      if (radio.checked) switchMode(radio.value);
+  // Sidebar model nav drives the SPA mode switch
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (link.dataset.mode !== currentMode) switchMode(link.dataset.mode);
     });
   });
 
@@ -715,7 +673,7 @@
   // so Debug is unavailable in Fast mode — hide and force it off.
   function syncFastDebugExclusion() {
     if (!optDebug) return;
-    const debugLabel = optDebug.closest('.stt-option');
+    const debugLabel = optDebug.closest('.pg-stt-option');
     if (optFast.checked) {
       if (optDebug.checked) { optDebug.checked = false; sttDebug = false; }
       optDebug.disabled = true;
@@ -802,7 +760,6 @@
         else if (currentMode === 'music') startMusicAnalysis(e.dataTransfer.files[0]);
         else if (currentMode === 'aimusic') startAimusicAnalysis(e.dataTransfer.files[0]);
         else if (currentMode === 'language') startLanguageDetection(e.dataTransfer.files[0]);
-        else if (currentMode === 'emotion' || currentMode === 'accent') startEaDetection(currentMode, e.dataTransfer.files[0]);
         else if (currentMode === 'velma') startVelmaBatch(e.dataTransfer.files[0]);
         else startTranscriptionBatch(e.dataTransfer.files[0]);
       }
@@ -871,6 +828,272 @@
   }
 
   // ══════════════════════════════════════════════════════════════════════════
+  // ── UPLOAD PLATE STATE MACHINE ────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  // States: initial | file-dropping | uploading | processing | streaming |
+  //         uploaded | low-quota | exhausted   (driven via data-state, CSS does the rest)
+
+  const LOW_QUOTA_THRESHOLD = 5;
+
+  function setPlateState(state) {
+    if (!uploadPlate) return;
+    // Normalize idle: an exhausted/low quota overrides "initial".
+    if (state === 'initial' && quotaRemaining != null) {
+      if (quotaRemaining <= 0) state = 'exhausted';
+      else if (quotaRemaining <= LOW_QUOTA_THRESHOLD) state = 'low-quota';
+    }
+    uploadPlate.dataset.state = state;
+    const expandBtn = uploadPlate.querySelector('[data-upload-plate-expand]');
+    if (expandBtn) expandBtn.setAttribute('aria-expanded', state === 'uploaded' ? 'false' : 'true');
+  }
+
+  // Rate-limit rejections (HTTP 429 or WS upgrade refusal) land here from any mode.
+  function handleRateLimited() {
+    quotaRemaining = 0;
+    setPlateState('exhausted');
+    updateRateLimit();
+  }
+
+  function handleDroppedFile(file) {
+    if (currentMode === 'deepfake') startDeepfakeAnalysis(file);
+    else if (currentMode === 'redaction') startRedactionBatch(file);
+    else if (currentMode === 'music') startMusicAnalysis(file);
+    else if (currentMode === 'aimusic') startAimusicAnalysis(file);
+    else if (currentMode === 'language') startLanguageDetection(file);
+    else if (currentMode === 'emotion' || currentMode === 'accent') startEaDetection(currentMode, file);
+    else if (currentMode === 'velma') startVelmaBatch(file);
+    else startTranscriptionBatch(file);
+  }
+
+  function initPlateChrome() {
+    if (!uploadPlate) return;
+
+    // Collapsed plate ("New analysis") expands back to the idle state.
+    uploadPlate.addEventListener('click', (e) => {
+      if (uploadPlate.dataset.state !== 'uploaded') return;
+      setPlateState('initial');
+    });
+
+    // Whole-plate drag & drop (the design drops onto the plate, not a button).
+    let plateDragCtr = 0;
+    uploadPlate.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      plateDragCtr++;
+      const st = uploadPlate.dataset.state;
+      if (st === 'initial' || st === 'low-quota' || st === 'uploaded') setPlateState('file-dropping');
+    });
+    uploadPlate.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      plateDragCtr--;
+      if (plateDragCtr <= 0) {
+        plateDragCtr = 0;
+        if (uploadPlate.dataset.state === 'file-dropping') setPlateState('initial');
+      }
+    });
+    uploadPlate.addEventListener('dragover', (e) => e.preventDefault());
+    uploadPlate.addEventListener('drop', (e) => {
+      e.preventDefault();
+      plateDragCtr = 0;
+      if (uploadPlate.dataset.state === 'file-dropping') setPlateState('initial');
+      if (e.dataTransfer.files.length > 0) handleDroppedFile(e.dataTransfer.files[0]);
+    });
+
+    // Streaming split-button dropdown
+    if (streamSplit) {
+      const toggle = streamSplit.querySelector('.pg-upload-stream__toggle');
+      const menu = streamSplit.querySelector('.pg-upload-stream__menu');
+      const close = () => {
+        streamSplit.dataset.open = 'false';
+        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+        if (menu) menu.hidden = true;
+      };
+      if (toggle && menu) {
+        toggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isOpen = streamSplit.dataset.open === 'true';
+          streamSplit.dataset.open = isOpen ? 'false' : 'true';
+          toggle.setAttribute('aria-expanded', String(!isOpen));
+          menu.hidden = isOpen;
+        });
+        document.addEventListener('click', (e) => {
+          if (!streamSplit.contains(e.target)) close();
+        });
+        menu.addEventListener('click', (e) => {
+          if (e.target.closest('[role="menuitem"]')) close();
+        });
+      }
+    }
+
+    // Media-container hover line follows the cursor across player + dataviz
+    document.querySelectorAll('.media-container').forEach((container) => {
+      container.addEventListener('mousemove', (e) => {
+        const rect = container.getBoundingClientRect();
+        container.style.setProperty('--pg-hover-x', (e.clientX - rect.left) + 'px');
+        container.dataset.hover = 'true';
+      });
+      container.addEventListener('mouseleave', () => {
+        container.dataset.hover = 'false';
+      });
+    });
+
+    // Stop button in the streaming overlay. stopPropagation: the click would
+    // otherwise bubble to the plate's expand handler after the state flips.
+    const stopBtn = document.getElementById('plate-stop-btn');
+    if (stopBtn) stopBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isRecording) stopRecording();
+    });
+
+    // Exhausted-state CTA opens the HubSpot access modal
+    const exhaustedCta = document.getElementById('plate-exhausted-cta');
+    if (exhaustedCta) exhaustedCta.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openHsModal();
+    });
+
+    // Velma "Try demo audio" re-runs the cached demo (showVelmaDemo syncs
+    // the title/columns/player itself once the async data lands)
+    if (velmaDemoBtn) {
+      velmaDemoBtn.addEventListener('click', () => {
+        if (currentMode !== 'velma') return;
+        showVelmaDemo();
+      });
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── PLAYER CONTROLLER (design media-box around the hidden <audio>) ────────
+  // ══════════════════════════════════════════════════════════════════════════
+  const mediaBox = document.getElementById('audio-player');
+  const playerIcon = mediaBox ? mediaBox.querySelector('.player-icon') : null;
+  const playerPosIndicator = mediaBox ? mediaBox.querySelector('.player-position-indicator') : null;
+  const playerCurrentTimeEl = mediaBox ? mediaBox.querySelector('[data-current-time]') : null;
+  const playerTotalTimeEl = mediaBox ? mediaBox.querySelector('[data-total-time]') : null;
+  const playerHoverIndicator = mediaBox ? mediaBox.querySelector('.player-hover-position-indicator') : null;
+  const playerHoverTimeEl = mediaBox ? mediaBox.querySelector('[data-hover-time]') : null;
+
+  // Which <audio> the transport controls drive. Redaction can flip to the
+  // original (unredacted) track via the A/B chip; everything else uses results-audio.
+  let abSelection = 'redacted';
+  function activeAudio() {
+    return (currentMode === 'redaction' && abSelection === 'original' && originalAudio)
+      ? originalAudio : resultsAudio;
+  }
+
+  function setActiveAudio(which) {
+    const prev = activeAudio();
+    abSelection = which === 'original' ? 'original' : 'redacted';
+    const next = activeAudio();
+    if (abOriginalBtn) abOriginalBtn.classList.toggle('active', abSelection === 'original');
+    if (abRedactedBtn) abRedactedBtn.classList.toggle('active', abSelection !== 'original');
+    if (prev !== next) {
+      const wasPlaying = prev && !prev.paused;
+      const at = prev ? prev.currentTime : 0;
+      if (prev) prev.pause();
+      if (next) {
+        try { next.currentTime = at; } catch (e) {}
+        if (wasPlaying) next.play().catch(() => {});
+      }
+    }
+    syncPlayerMeta();
+  }
+
+  function fmtPlayerTime(sec) {
+    if (!isFinite(sec) || sec < 0) return '0:00';
+    const s = Math.floor(sec);
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  function syncPlayerMeta() {
+    const a = activeAudio();
+    if (!a || !mediaBox) return;
+    if (playerTotalTimeEl) playerTotalTimeEl.textContent = fmtPlayerTime(a.duration);
+    if (playerCurrentTimeEl) playerCurrentTimeEl.textContent = fmtPlayerTime(a.currentTime);
+    syncPlayerPosition();
+  }
+
+  function syncPlayerPosition() {
+    const a = activeAudio();
+    if (!a || !mediaBox) return;
+    const dur = a.duration;
+    const pct = (isFinite(dur) && dur > 0) ? (a.currentTime / dur) * 100 : 0;
+    if (playerPosIndicator) playerPosIndicator.style.left = pct + '%';
+    if (playerCurrentTimeEl) playerCurrentTimeEl.textContent = fmtPlayerTime(a.currentTime);
+    if (playerIcon) playerIcon.dataset.playing = a.paused ? 'false' : 'true';
+    if (mediaBox) mediaBox.dataset.playbackStarted = a.currentTime > 0 ? 'true' : 'false';
+  }
+
+  function initPlayerController() {
+    if (!mediaBox) return;
+
+    if (playerIcon) {
+      playerIcon.addEventListener('click', (e) => {
+        e.preventDefault();
+        const a = activeAudio();
+        if (!a || !a.src) return;
+        if (a.paused) a.play().catch(() => {}); else a.pause();
+      });
+    }
+
+    // Keep the view in sync with whichever audio element is active.
+    [resultsAudio, originalAudio].forEach((a) => {
+      if (!a) return;
+      a.addEventListener('timeupdate', () => { if (a === activeAudio()) syncPlayerPosition(); });
+      a.addEventListener('play',  () => { if (a === activeAudio() && playerIcon) playerIcon.dataset.playing = 'true'; });
+      a.addEventListener('pause', () => { if (a === activeAudio() && playerIcon) playerIcon.dataset.playing = 'false'; });
+      a.addEventListener('ended', () => { if (a === activeAudio() && playerIcon) playerIcon.dataset.playing = 'false'; });
+      a.addEventListener('loadedmetadata', () => { if (a === activeAudio()) syncPlayerMeta(); });
+      a.addEventListener('durationchange', () => { if (a === activeAudio()) syncPlayerMeta(); });
+    });
+
+    // Hover time + click-to-seek across the whole media container
+    const container = mediaBox.closest('.media-container');
+    const seekTarget = container || mediaBox;
+    seekTarget.addEventListener('mousemove', (e) => {
+      const a = activeAudio();
+      if (!a || !isFinite(a.duration) || a.duration <= 0) return;
+      const rect = mediaBox.getBoundingClientRect();
+      const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      if (playerHoverIndicator) playerHoverIndicator.style.left = (frac * 100) + '%';
+      if (playerHoverTimeEl) playerHoverTimeEl.textContent = fmtPlayerTime(frac * a.duration);
+    });
+    seekTarget.addEventListener('click', (e) => {
+      if (e.target.closest('.player-icon') || e.target.closest('.pg-ab-toggle')) return;
+      if (e.target.closest('.player-visualization') && e.target !== seekTarget) {
+        // Clip strips have their own click-to-seek handlers with utterance context.
+        if (e.target.closest('.transcript-clip, .pg-histo-bar, .mx-player-heat-cell, .aim-player-heat-cell, .pg-redaction-seg')) return;
+      }
+      const a = activeAudio();
+      if (!a || !isFinite(a.duration) || a.duration <= 0) return;
+      const rect = mediaBox.getBoundingClientRect();
+      const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      a.currentTime = frac * a.duration;
+      if (a.paused) a.play().catch(() => {});
+    });
+
+    if (abOriginalBtn) abOriginalBtn.addEventListener('click', () => setActiveAudio('original'));
+    if (abRedactedBtn) abRedactedBtn.addEventListener('click', () => setActiveAudio('redacted'));
+  }
+
+  // ── Theme toggle (design service component, folded in) ─────────────────────
+  function initThemeToggle() {
+    const KEY = document.body.dataset.themeStorageKey || 'prototype-theme';
+    const btns = document.querySelectorAll('.theme-toggle');
+    if (!btns.length) return;
+    const update = () => {
+      const isDark = document.body.classList.contains('dark-mode');
+      btns.forEach(btn => btn.setAttribute('aria-checked', isDark ? 'true' : 'false'));
+    };
+    update();
+    btns.forEach(btn => btn.addEventListener('click', () => {
+      const isDark = document.body.classList.contains('dark-mode');
+      document.body.classList.toggle('dark-mode', !isDark);
+      try { localStorage.setItem(KEY, isDark ? 'light' : 'dark'); } catch (e) {}
+      update();
+    }));
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
   // ── DEEPFAKE MODE ─────────────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════
 
@@ -931,28 +1154,22 @@
       if (audioObjectUrl) { URL.revokeObjectURL(audioObjectUrl); audioObjectUrl = null; }
       currentData = null;
 
-      verdictRing.className = 'verdict-ring pending';
-      verdictIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:100%;height:100%"><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>';
-      verdictLabel.textContent = 'Listening';
-      verdictCount.textContent = 'No segments';
+      renderVerdictStatement('deepfake-verdict-statement', {
+        variant: '',
+        title: 'Listening\u2026',
+        stats: [{ value: '', label: 'No segments yet' }],
+      });
 
-      histogram.innerHTML = '';
-      const placeholderBar = document.createElement('div');
-      placeholderBar.className = 'histo-bar';
-      placeholderBar.style.height = '40%';
-      placeholderBar.style.background = 'var(--ui-border)';
-      histogram.appendChild(placeholderBar);
+      clearPlayerStrips();
+      sttChart.innerHTML = '';
 
       resultsTbody.innerHTML = '';
       const placeholderRow = document.createElement('tr');
-      placeholderRow.style.color = 'var(--text-caption)';
       const tdTime = document.createElement('td');
       tdTime.textContent = '0:00 \u2013 \u2026';
       const tdVerdict = document.createElement('td');
       const pill = document.createElement('span');
-      pill.className = 'verdict-pill';
-      pill.style.background = 'var(--ui-border)';
-      pill.style.color = 'var(--text-caption)';
+      pill.className = 'm__tag-flat';
       pill.textContent = 'Pending';
       tdVerdict.appendChild(pill);
       const tdConf = document.createElement('td');
@@ -989,10 +1206,11 @@
     currentFrames = frames;
 
     if (frames.length === 0) {
-      verdictRing.className = 'verdict-ring authentic';
-      verdictIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
-      verdictLabel.textContent = 'Insufficient data';
-      verdictCount.textContent = 'Audio too short to analyze';
+      renderVerdictStatement('deepfake-verdict-statement', {
+        variant: '',
+        title: 'Insufficient data',
+        stats: [{ value: '', label: 'Audio too short to analyze' }],
+      });
       renderHistogram(frames);
       renderTable(frames);
       return;
@@ -1007,76 +1225,78 @@
     window.scrollTo(0, 0);
   }
 
-  function renderVerdict(isSynthetic, syntheticCount, totalCount, reason) {
-    verdictRing.className = 'verdict-ring ' + (isSynthetic ? 'synthetic' : 'authentic');
-
-    verdictIcon.innerHTML = isSynthetic
-      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="14" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.5" fill="currentColor" stroke="none"/><line x1="12" y1="4" x2="12" y2="8"/><circle cx="12" cy="3" r="1"/><line x1="2" y1="13" x2="4" y2="13"/><line x1="20" y1="13" x2="22" y2="13"/></svg>'
-      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
-
-    verdictLabel.textContent = isSynthetic ? 'Deepfake' : 'Authentic';
-    verdictCount.textContent = syntheticCount + '/' + totalCount + ' deepfake segments';
-
-    let reasonEl = verdictCount.parentElement.querySelector('.verdict-reason');
-    if (isSynthetic && reason) {
-      if (!reasonEl) {
-        reasonEl = document.createElement('div');
-        reasonEl.className = 'verdict-reason';
-        reasonEl.style.cssText = 'font-size:0.7rem;opacity:0.55;margin-top:2px;';
-        verdictCount.parentElement.appendChild(reasonEl);
-      }
-      reasonEl.textContent = reason;
-      reasonEl.hidden = false;
-    } else if (reasonEl) {
-      reasonEl.hidden = true;
+  // Shared: design verdict statement into a .pg-verdict-slot container.
+  // spec: { variant: 'danger'|'success'|'', title, stats: [{value, label}] }
+  function renderVerdictStatement(containerId, spec) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.className = 'pg-verdict-statement' + (spec.variant ? ' ' + spec.variant : '');
+    let html = '<h2 class="pg-verdict-statement-title">' +
+      '<a class="pg-verdict-statement-link" href="#audio-player">' + escapeHtml(spec.title) + '</a></h2>';
+    if (spec.stats && spec.stats.length) {
+      html += '<div class="pg-verdict-statement-details">';
+      spec.stats.forEach(s => {
+        html += '<span class="pg-verdict-statement-stat">' +
+          (s.value !== '' && s.value != null
+            ? '<span class="pg-verdict-statement-stat-value">' + escapeHtml(String(s.value)) + '</span> '
+            : '') +
+          '<span class="pg-verdict-statement-stat-label">' + escapeHtml(s.label) + '</span></span>';
+      });
+      html += '</div>';
     }
+    el.innerHTML = html;
+    // Smooth-scroll the title link to the player
+    const link = el.querySelector('.pg-verdict-statement-link');
+    if (link) link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const player = document.getElementById('audio-player');
+      if (player) player.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
+  function renderVerdict(isSynthetic, syntheticCount, totalCount, reason) {
+    const stats = [{ value: syntheticCount + '/' + totalCount, label: 'deepfake segments' }];
+    if (isSynthetic && reason) {
+      // e.g. "3 segments with >98% conf." — split the leading count into the value slot
+      const m = reason.match(/^(\d+)\s+(.*)$/);
+      stats.push(m ? { value: m[1], label: m[2] } : { value: '', label: reason });
+    }
+    renderVerdictStatement('deepfake-verdict-statement', {
+      variant: isSynthetic ? 'danger' : 'success',
+      title: isSynthetic ? 'This is a deepfake' : 'This is authentic',
+      stats: stats,
+    });
+  }
+
+  // Remove any mode-specific strip overlays from the player visualization
+  // (each mode's renderer draws its own; #stt-chart is cleared separately).
+  function clearPlayerStrips() {
+    const viz = document.getElementById('player-visualization');
+    if (!viz) return;
+    viz.querySelectorAll('.df-player-clips, .mx-player-heat, .aim-player-heat, .pg-redaction-player-track')
+      .forEach(el => el.remove());
   }
 
   function renderHistogram(frames) {
-    histogram.innerHTML = '';
-    if (!frames.length) return;
+    const viz = document.getElementById('player-visualization');
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
+    syncSpeakerLanes([]);
+    if (!frames.length || !viz) return;
 
-    const squaresRow = document.createElement('div');
-    squaresRow.className = 'histo-squares';
+    const strip = document.createElement('div');
+    strip.className = 'pg-histo-squares df-player-clips';
 
     frames.forEach((frame, i) => {
       const bar = document.createElement('div');
-      bar.className = 'histo-bar ' + verdictClass(frame);
-      const alpha = confidenceToOpacity(frame.confidence);
-      const vc = verdictClass(frame);
-      const rgb = vc === 'synthetic' ? '255,53,84' : vc === 'no-content' ? '220,220,230' : '21,207,135';
-      bar.style.background = 'rgba(' + rgb + ',' + alpha + ')';
-
-      const verdictWord = verdictText(frame);
-      const verdictColor = vc === 'synthetic' ? 'rgb(255,53,84)' : vc === 'no-content' ? 'rgb(120,120,140)' : 'rgb(21,207,135)';
-      const tooltipHtml =
-        formatMs(frame.start_time_ms) + ' \u2013 ' + formatMs(frame.end_time_ms) +
-        ' <span style="color:' + verdictColor + '">\u00B7 <span style="font-weight:700">' + verdictWord + '</span>' +
-        ' \u00B7 ' + (frame.confidence * 100).toFixed(0) + '%</span>';
-
-      bar.addEventListener('mouseenter', () => {
-        const rect = bar.getBoundingClientRect();
-        histoTooltip.innerHTML = tooltipHtml;
-        histoTooltip.style.display = 'block';
-        histoTooltip.style.top = (rect.top - 6) + 'px';
-        histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
-        histoTooltip.style.transform = 'translate(-50%, -100%)';
-      });
-      bar.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
+      bar.className = 'pg-histo-bar ' + verdictClass(frame);
+      bar.style.opacity = confidenceToOpacity(frame.confidence);
+      bar.dataset.tooltip = formatMs(frame.start_time_ms) + ' \u2013 ' + formatMs(frame.end_time_ms) +
+        ' \u00B7 ' + verdictText(frame) + ' \u00B7 ' + (frame.confidence * 100).toFixed(0) + '%';
       bar.addEventListener('click', () => seekTo(frame.start_time_ms, i));
-      squaresRow.appendChild(bar);
+      strip.appendChild(bar);
     });
-    histogram.appendChild(squaresRow);
-
-    const axisRow = document.createElement('div');
-    axisRow.className = 'histo-axis';
-    frames.forEach((frame, i) => {
-      const tick = document.createElement('div');
-      tick.className = 'histo-tick';
-      if (i % 5 === 0) tick.textContent = formatSecCompact(frame.start_time_ms);
-      axisRow.appendChild(tick);
-    });
-    histogram.appendChild(axisRow);
+    viz.appendChild(strip);
   }
 
   function renderTable(frames) {
@@ -1084,23 +1304,25 @@
     frames.forEach((frame, i) => {
       const tr = document.createElement('tr');
       tr.dataset.index = i;
+      const vc = verdictClass(frame);
+      const chipClass = vc === 'synthetic' ? 'verdict-synthetic' : vc === 'authentic' ? 'verdict-authentic' : '';
 
       const tdTime = document.createElement('td');
       tdTime.textContent = formatMs(frame.start_time_ms) + ' \u2013 ' + formatMs(frame.end_time_ms);
 
       const tdVerdict = document.createElement('td');
       const pill = document.createElement('span');
-      pill.className = 'verdict-pill ' + verdictClass(frame);
+      pill.className = 'm__tag-flat' + (chipClass ? ' ' + chipClass : '');
       pill.textContent = verdictText(frame);
       tdVerdict.appendChild(pill);
 
       const tdConf = document.createElement('td');
       const confWrap = document.createElement('div');
-      confWrap.className = 'confidence-cell';
+      confWrap.className = 'pg-confidence-cell';
       const confTrack = document.createElement('div');
-      confTrack.className = 'confidence-bar-track';
+      confTrack.className = 'pg-confidence-bar-track';
       const confFill = document.createElement('div');
-      confFill.className = 'confidence-bar-fill ' + verdictClass(frame);
+      confFill.className = 'pg-confidence-bar-fill ' + vc;
       confFill.style.width = (frame.confidence * 100) + '%';
       confTrack.appendChild(confFill);
       const confText = document.createElement('span');
@@ -1117,18 +1339,25 @@
     });
   }
 
+  function deepfakeStrip() {
+    const viz = document.getElementById('player-visualization');
+    return viz ? viz.querySelector('.df-player-clips') : null;
+  }
+
   function seekTo(startMs, index) {
     if (resultsAudio) {
       resultsAudio.currentTime = startMs / 1000;
       resultsAudio.play().catch(() => {});
     }
-    histogram.querySelectorAll('.histo-bar').forEach((bar, i) => bar.classList.toggle('active', i === index));
+    const strip = deepfakeStrip();
+    if (strip) strip.querySelectorAll('.pg-histo-bar').forEach((bar, i) => bar.classList.toggle('active', i === index));
     resultsTbody.querySelectorAll('tr').forEach((row, i) => row.classList.toggle('active', i === index));
   }
 
   function setupPlaybackTracking(frames) {
     if (playbackTracker) cancelAnimationFrame(playbackTracker);
-    const bars = histogram.querySelectorAll('.histo-bar');
+    const strip = deepfakeStrip();
+    const bars = strip ? strip.querySelectorAll('.pg-histo-bar') : [];
     const rows = resultsTbody.querySelectorAll('tr');
 
     function tick() {
@@ -1282,7 +1511,9 @@
         if (xhr.status < 200 || xhr.status >= 300) {
           let detail = 'Server error (' + xhr.status + ')';
           try { const body = JSON.parse(new TextDecoder().decode(xhr.response)); detail = body.detail || body.message || detail; } catch {}
-          const err = new Error(detail); err.httpStatus = xhr.status; err.rawText = ''; reject(err); return;
+          const err = new Error(detail); err.httpStatus = xhr.status; err.rawText = '';
+          if (xhr.status === 429) handleRateLimited();
+          reject(err); return;
         }
         const contentType = xhr.getResponseHeader('content-type') || '';
         const bMatch = contentType.match(/boundary=([^;,\s"]+)/);
@@ -1364,7 +1595,6 @@
       renderRedactionTranscript(redactionUtterances);
       renderRedactionSidebar(ranges, durMs);
       if (durMs) {
-        setupRedactionPlaybackTracking(durMs);
         setupRedactionTranscriptTracking(redactionUtterances);
       }
       window.scrollTo(0, 0);
@@ -1375,56 +1605,37 @@
     }
   }
 
+  // Redaction ranges as a strip overlay in the player visualization.
   function renderRedactionTimeline(ranges, durationMs) {
-    redactionTimeline.querySelectorAll('.redaction-range').forEach(el => el.remove());
-    redactionTimelineAxis.innerHTML = '';
+    const viz = document.getElementById('player-visualization');
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
+    syncSpeakerLanes([]);
+    if (!viz || !durationMs || durationMs <= 0) return;
 
-    if (!durationMs || durationMs <= 0) {
-      redactionPlayhead.classList.remove('active');
-      return;
-    }
-
+    const track = document.createElement('div');
+    track.className = 'pg-redaction-player-track';
     ranges.forEach(([startMs, endMs]) => {
-      const range = document.createElement('div');
-      range.className = 'redaction-range';
-      range.style.left = (startMs / durationMs * 100).toFixed(3) + '%';
-      range.style.width = Math.max(0.3, (endMs - startMs) / durationMs * 100).toFixed(3) + '%';
-      range.addEventListener('mouseenter', () => {
-        const rect = range.getBoundingClientRect();
-        histoTooltip.textContent = formatMs(startMs) + ' \u2013 ' + formatMs(endMs) + ' \u00B7 ' + ((endMs - startMs) / 1000).toFixed(1) + 's';
-        histoTooltip.style.display = 'block';
-        histoTooltip.style.top = (rect.top - 6) + 'px';
-        histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
-        histoTooltip.style.transform = 'translate(-50%, -100%)';
-      });
-      range.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
-      range.addEventListener('click', (e) => {
+      const seg = document.createElement('div');
+      seg.className = 'pg-redaction-seg';
+      seg.style.left = (startMs / durationMs * 100).toFixed(3) + '%';
+      seg.style.width = Math.max(0.3, (endMs - startMs) / durationMs * 100).toFixed(3) + '%';
+      seg.dataset.tooltip = formatMs(startMs) + ' \u2013 ' + formatMs(endMs) + ' \u00b7 ' + ((endMs - startMs) / 1000).toFixed(1) + 's silenced';
+      seg.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (resultsAudio) { resultsAudio.currentTime = startMs / 1000; resultsAudio.play().catch(() => {}); }
+        const a = activeAudio();
+        if (a) { a.currentTime = startMs / 1000; a.play().catch(() => {}); }
       });
-      redactionTimeline.insertBefore(range, redactionPlayhead);
+      track.appendChild(seg);
     });
-
-    // Axis ticks
-    const ticks = 5;
-    for (let i = 0; i <= ticks; i++) {
-      const tick = document.createElement('span');
-      tick.textContent = formatMs(durationMs * i / ticks);
-      redactionTimelineAxis.appendChild(tick);
-    }
-
-    redactionTimeline.onclick = (e) => {
-      const rect = redactionTimeline.getBoundingClientRect();
-      const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      if (resultsAudio) { resultsAudio.currentTime = pct * durationMs / 1000; resultsAudio.play().catch(() => {}); }
-    };
+    viz.appendChild(track);
   }
 
   function renderRedactionTranscript(utterances) {
     redactionTranscriptList.innerHTML = '';
     if (!utterances.length) {
       const empty = document.createElement('div');
-      empty.className = 'transcript-empty';
+      empty.className = 'pg-transcript-empty';
       empty.textContent = 'Upload an audio file to see the redacted transcript.';
       redactionTranscriptList.appendChild(empty);
       return;
@@ -1438,45 +1649,43 @@
   function buildRedactionUtteranceEl(u, showDiarization) {
     const el = document.createElement('div');
     const side = (u.speaker != null && u.speaker % 2 === 0) ? 'speaker-right' : 'speaker-left';
-    el.className = 'transcript-utterance ' + side;
-    el.style.setProperty('--ec', '#78909c');
+    el.className = 'pg-transcript-utterance ' + side;
     if (u.start_ms != null) {
       el.addEventListener('click', () => {
-        if (resultsAudio) { resultsAudio.currentTime = u.start_ms / 1000; resultsAudio.play().catch(() => {}); }
+        const a = activeAudio();
+        if (a) { a.currentTime = u.start_ms / 1000; a.play().catch(() => {}); }
       });
     }
     const header = document.createElement('div');
-    header.className = 'transcript-utterance-header';
+    header.className = 'pg-transcript-utterance-header';
     if (u.start_ms != null) {
       const time = document.createElement('span');
-      time.className = 'transcript-time';
+      time.className = 'pg-transcript-time';
       time.textContent = formatMs(u.start_ms);
       header.appendChild(time);
     }
     if (u.speaker != null && showDiarization) {
       const sp = document.createElement('span');
-      sp.className = 'transcript-speaker';
+      sp.className = 'pg-transcript-speaker';
       sp.textContent = 'Speaker ' + u.speaker;
       header.appendChild(sp);
     }
     if (u.language) {
-      const flag = LANGUAGE_FLAGS[u.language.toUpperCase()];
-      if (flag) {
-        const lf = document.createElement('span');
-        lf.className = 'transcript-accent';
-        lf.textContent = flag;
-        lf.title = u.language.toUpperCase();
-        header.appendChild(lf);
-      }
+      const lf = document.createElement('span');
+      lf.className = 'pg-transcript-flag';
+      lf.textContent = languageName(u.language);
+      header.appendChild(lf);
     }
     el.appendChild(header);
     const text = document.createElement('div');
-    text.className = 'transcript-text';
+    text.className = 'pg-transcript-text';
+    const par = document.createElement('p');
     if (u.text && (/\[REDACTED\]/i.test(u.text) || /<(pii|phi)/i.test(u.text))) {
-      text.innerHTML = renderRedactionText(u.text);
+      par.innerHTML = renderRedactionText(u.text);
     } else {
-      text.textContent = u.text || '';
+      par.textContent = u.text || '';
     }
+    text.appendChild(par);
     el.appendChild(text);
     return el;
   }
@@ -1493,7 +1702,7 @@
         result += escapeHtml(rawText.slice(lastIdx, match.index));
         const tagKind = match[1].toUpperCase(); // PII or PHI
         const label = match[2] ? match[2].replace(/_/g, ' ').toUpperCase() : tagKind;
-        result += '<span class="redacted-marker">[' + label + ']</span>';
+        result += '<span class="pii-tag" data-tooltip="' + escapeHtml(tagKind) + ': ' + escapeHtml(label.toLowerCase()) + '">[' + label + ']</span>';
         lastIdx = match.index + match[0].length;
       }
       result += escapeHtml(rawText.slice(lastIdx));
@@ -1502,39 +1711,22 @@
     // Handle [REDACTED] markers
     const parts = rawText.split(/(\[REDACTED\])/gi);
     return parts.map(p => /^\[REDACTED\]$/i.test(p)
-      ? '<span class="redacted-marker">[REDACTED]</span>'
+      ? '<span class="pii-tag">[REDACTED]</span>'
       : escapeHtml(p)
     ).join('');
   }
 
   function renderRedactionSidebar(ranges, durationMs) {
-    redactionStats.innerHTML = '';
     const totalSilencedMs = ranges.reduce((s, [a, b]) => s + (b - a), 0);
     const pct = durationMs > 0 ? totalSilencedMs / durationMs * 100 : 0;
-    [
-      { val: String(ranges.length), lbl: 'Redactions' },
-      { val: (totalSilencedMs / 1000).toFixed(1) + 's', lbl: 'Silenced' },
-      { val: pct.toFixed(1) + '%', lbl: 'Of audio' },
-    ].forEach(({ val, lbl }) => {
-      const card = document.createElement('div');
-      card.className = 'redaction-stat-card';
-      const v = document.createElement('div'); v.className = 'redaction-stat-val'; v.textContent = val;
-      const l = document.createElement('div'); l.className = 'redaction-stat-lbl'; l.textContent = lbl;
-      card.appendChild(v); card.appendChild(l);
-      redactionStats.appendChild(card);
+    renderVerdictStatement('redaction-verdict-statement', {
+      variant: 'success',
+      title: ranges.length + ' redaction' + (ranges.length === 1 ? '' : 's') + ' made',
+      stats: [
+        { value: (totalSilencedMs / 1000).toFixed(1) + 's', label: 'silenced' },
+        { value: pct.toFixed(1) + '%', label: 'of audio' },
+      ],
     });
-  }
-
-  function setupRedactionPlaybackTracking(durationMs) {
-    if (redactionPlaybackTracker) cancelAnimationFrame(redactionPlaybackTracker);
-    if (!durationMs) return;
-    redactionPlayhead.classList.add('active');
-    function tick() {
-      const pct = Math.min(resultsAudio.currentTime * 1000 / durationMs, 1);
-      redactionPlayhead.style.left = (pct * 100).toFixed(3) + '%';
-      redactionPlaybackTracker = requestAnimationFrame(tick);
-    }
-    redactionPlaybackTracker = requestAnimationFrame(tick);
   }
 
   function setupRedactionTranscriptTracking(utterances) {
@@ -1547,7 +1739,7 @@
       for (let i = sorted.length - 1; i >= 0; i--) {
         if (currentMs >= sorted[i].start_ms) { activeIdx = i; break; }
       }
-      redactionTranscriptList.querySelectorAll('.transcript-utterance').forEach((el, i) => {
+      redactionTranscriptList.querySelectorAll('.pg-transcript-utterance').forEach((el, i) => {
         el.classList.toggle('active', i === activeIdx);
       });
       redactionTranscriptTracker = requestAnimationFrame(tick);
@@ -1616,7 +1808,7 @@
 
     renderMusicVerdict(data);
     renderMusicHistogram(frames);
-    renderMusicTable(frames, musicView);
+    renderMusicTable(frames);
     if (frames.length) setupMusicPlaybackTracking(frames);
     window.scrollTo(0, 0);
   }
@@ -1624,48 +1816,6 @@
   // ══════════════════════════════════════════════════════════════════════════
   // ── LANGUAGE DETECTION MODE ──────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════
-
-  // The hero card itself acts as a click + drop target so the user doesn't
-  // have to use the small "Upload or drop a file" button at the top.
-  if (langHero && fileInput) {
-    langHero.addEventListener('click', (e) => {
-      // Don't intercept clicks on interactive children (e.g. the embedded audio).
-      if (e.target.closest('button, a, audio, input')) return;
-      fileInput.click();
-    });
-    let langDragCtr = 0;
-    langHero.addEventListener('dragenter', (e) => {
-      e.preventDefault();
-      langDragCtr++;
-      langHero.classList.add('drag-over');
-    });
-    langHero.addEventListener('dragleave', (e) => {
-      e.preventDefault();
-      langDragCtr--;
-      if (langDragCtr <= 0) { langDragCtr = 0; langHero.classList.remove('drag-over'); }
-    });
-    langHero.addEventListener('dragover', (e) => e.preventDefault());
-    langHero.addEventListener('drop', (e) => {
-      e.preventDefault();
-      langDragCtr = 0;
-      langHero.classList.remove('drag-over');
-      if (e.dataTransfer.files.length > 0) {
-        startLanguageDetection(e.dataTransfer.files[0]);
-      }
-    });
-  }
-
-  function resetLanguageHero() {
-    if (!langHeroFlag) return;
-    langHeroFlag.textContent = '\u{1F310}';
-    langHeroName.textContent = '—';
-    langHeroCode.textContent = 'Upload an audio clip to detect its language';
-    langHeroConfRow.style.display = 'none';
-    langHeroConfVal.classList.remove('low');
-    langHeroConfVal.textContent = '—';
-    langHeroMeta.textContent = '';
-    langHeroWarning.style.display = 'none';
-  }
 
   async function startLanguageDetection(file) {
     if (isAnalyzing) return;
@@ -1719,40 +1869,24 @@
     const conf = typeof data.confidence === 'number' ? data.confidence : 0;
     const durMs = typeof data.duration_ms === 'number' ? data.duration_ms : null;
 
-    langHeroFlag.textContent = flagForLanguage(code);
-    langHeroName.textContent = name;
-    langHeroCode.textContent = code ? code.toUpperCase() : '—';
-
-    langHeroConfRow.style.display = '';
     const pct = Math.max(0, Math.min(1, conf));
-    langHeroConfVal.textContent = (pct * 100).toFixed(1) + '%';
-    langHeroConfVal.classList.toggle('low', conf < 0.5);
-
-    const parts = [];
-    if (durMs != null) {
-      const secs = (durMs / 1000).toFixed(1);
-      parts.push(`Audio: ${secs} s`);
-      if (durMs > 30000) parts.push('first 30 s analyzed');
+    const lowConf = conf < 0.5;
+    const stats = [
+      { value: (pct * 100).toFixed(1) + '%', label: 'confidence' },
+      { value: '', label: (durMs != null && durMs > 30000) ? 'First 30s analyzed' : 'Full clip analyzed' },
+    ];
+    if (lowConf) {
+      stats.push({ value: '', label: 'Low confidence — consider a longer or cleaner clip' });
     }
-    // Processing time is captured per-request in currentMeta and persisted in
-    // lastLanguageMeta, so it survives mode-switches too.
-    const procMs = currentMeta && currentMeta.processingMs;
-    if (procMs) {
-      parts.push(`Processed in ${(procMs / 1000).toFixed(2)} s`);
-      // Compare against the actually-analyzed audio (capped at 30 s) for an
-      // honest real-time multiplier — otherwise a 5-minute clip would show
-      // a misleading 200x factor when the model only looked at 30 s.
-      if (durMs != null) {
-        const analyzedMs = Math.min(durMs, 30000);
-        const factor = analyzedMs / procMs;
-        if (factor > 0 && isFinite(factor)) {
-          parts.push(`${factor.toFixed(1)}× real-time`);
-        }
-      }
-    }
-    langHeroMeta.textContent = parts.join(' · ');
+    renderVerdictStatement('language-verdict-statement', {
+      variant: lowConf ? '' : 'success',
+      title: 'This is ' + name + (code ? ' (' + code.toUpperCase() + ')' : ''),
+      stats: stats,
+    });
 
-    langHeroWarning.style.display = conf < 0.5 ? '' : 'none';
+    // Language mode hides the dataviz (body[data-mode] CSS); clear any leftover strip.
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -1760,9 +1894,13 @@
   // ══════════════════════════════════════════════════════════════════════════
   // Both models share the same response shape ({<label>, time_series: [{start_ms,
   // duration_ms, <label>}]}), so one implementation drives both tabs,
-  // parameterized by EA_KINDS.
+  // parameterized by EA_KINDS. Emotion windows color via the design system's
+  // --emotion-* tokens; accents get a deterministic fallback palette.
 
   const EA_FALLBACK_PALETTE = ['#5b7fc7', '#c76b5b', '#5bc7a8', '#c7a85b', '#8f5bc7', '#c75b96', '#5bb2c7', '#96c75b'];
+
+  // API emotion labels the design tokens don't name directly.
+  const EA_EMOTION_ALIASES = { fearful: 'afraid', content: 'calm' };
 
   const EA_KINDS = {
     emotion: {
@@ -1771,20 +1909,10 @@
       model: 'velma-2-emotion-batch',
       title: 'Emotion Detection',
       overlayMsg: 'Detecting emotional tone',
-      emptySub: 'Upload an audio clip to detect its emotional tone',
-      fallbackIcon: '\u{1F3AD}',
-      icons: {
-        angry: '\u{1F620}', frustrated: '\u{1F624}', anxious: '\u{1F630}',
-        fearful: '\u{1F628}', neutral: '\u{1F610}', calm: '\u{1F60C}',
-        happy: '\u{1F60A}', excited: '\u{1F929}', sad: '\u{1F622}',
-        surprised: '\u{1F632}', disgusted: '\u{1F922}', bored: '\u{1F971}',
-        confused: '\u{1F615}', content: '\u{1F642}',
-      },
-      colors: {
-        angry: '#d64545', frustrated: '#e07b39', anxious: '#d9a520',
-        fearful: '#b0609e', neutral: '#9aa5b1', calm: '#4a9e8f',
-        happy: '#58a55c', excited: '#7d5bc6', sad: '#4a7fc1',
-        surprised: '#c65bb0', disgusted: '#7a9944', bored: '#8b8b9e',
+      verdictTitle: (label) => 'This sounds ' + String(label || 'unknown').toLowerCase(),
+      color: (label) => {
+        const key = String(label || '').toLowerCase();
+        return emotionVar(EA_EMOTION_ALIASES[key] || key);
       },
       demoData: DEMO_EMOTION_DATA,
       demoAudioUrl: DEMO_EMOTION_AUDIO_URL,
@@ -1798,20 +1926,15 @@
       model: 'velma-2-accent-batch',
       title: 'Accent Detection',
       overlayMsg: 'Detecting speaker accent',
-      emptySub: "Upload an audio clip to detect the speaker's accent",
-      fallbackIcon: '\u{1F5E3}\u{FE0F}',
-      icons: {
-        american: '\u{1F1FA}\u{1F1F8}', british: '\u{1F1EC}\u{1F1E7}', australian: '\u{1F1E6}\u{1F1FA}',
-        indian: '\u{1F1EE}\u{1F1F3}', irish: '\u{1F1EE}\u{1F1EA}', canadian: '\u{1F1E8}\u{1F1E6}',
-        'south african': '\u{1F1FF}\u{1F1E6}', french: '\u{1F1EB}\u{1F1F7}', german: '\u{1F1E9}\u{1F1EA}',
-        spanish: '\u{1F1EA}\u{1F1F8}', italian: '\u{1F1EE}\u{1F1F9}', russian: '\u{1F1F7}\u{1F1FA}',
-        chinese: '\u{1F1E8}\u{1F1F3}', japanese: '\u{1F1EF}\u{1F1F5}', korean: '\u{1F1F0}\u{1F1F7}',
-        mexican: '\u{1F1F2}\u{1F1FD}', brazilian: '\u{1F1E7}\u{1F1F7}', filipino: '\u{1F1F5}\u{1F1ED}',
-        vietnamese: '\u{1F1FB}\u{1F1F3}', nigerian: '\u{1F1F3}\u{1F1EC}', arabic: '\u{1F1F8}\u{1F1E6}',
+      verdictTitle: (label) => {
+        const l = String(label || 'Unknown');
+        return 'This is ' + (/^[aeiou]/i.test(l) ? 'an ' : 'a ') + l + ' accent';
       },
-      colors: {
-        american: '#4a7fc1', british: '#d64545', australian: '#58a55c',
-        indian: '#e07b39', irish: '#4a9e8f', canadian: '#c65bb0',
+      color: (label) => {
+        const key = String(label || '').toLowerCase();
+        let hash = 0;
+        for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+        return EA_FALLBACK_PALETTE[hash % EA_FALLBACK_PALETTE.length];
       },
       demoData: DEMO_ACCENT_DATA,
       demoAudioUrl: DEMO_ACCENT_AUDIO_URL,
@@ -1824,49 +1947,9 @@
   // Per-kind DOM refs + last-run state.
   for (const kind of Object.keys(EA_KINDS)) {
     const cfg = EA_KINDS[kind];
-    cfg.hero         = document.getElementById(kind + '-hero');
-    cfg.heroIcon     = document.getElementById(kind + '-hero-icon');
-    cfg.heroLabel    = document.getElementById(kind + '-hero-label');
-    cfg.heroSub      = document.getElementById(kind + '-hero-sub');
-    cfg.heroMeta     = document.getElementById(kind + '-hero-meta');
-    cfg.timelineWrap = document.getElementById(kind + '-timeline-wrap');
-    cfg.timeline     = document.getElementById(kind + '-timeline');
-    cfg.axis         = document.getElementById(kind + '-axis');
-    cfg.legend       = document.getElementById(kind + '-legend');
+    cfg.tbody  = document.getElementById(kind + '-tbody');
+    cfg.legend = document.getElementById(kind + '-legend');
     cfg.last = { data: null, audioUrl: null, meta: null, filename: null };
-  }
-
-  function eaIcon(cfg, label) {
-    return cfg.icons[String(label || '').toLowerCase()] || cfg.fallbackIcon;
-  }
-
-  function eaColor(cfg, label) {
-    const key = String(label || '').toLowerCase();
-    if (cfg.colors[key]) return cfg.colors[key];
-    // Deterministic fallback so an unmapped label keeps its color across runs.
-    let hash = 0;
-    for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-    return EA_FALLBACK_PALETTE[hash % EA_FALLBACK_PALETTE.length];
-  }
-
-  // Hero cards double as click + drop targets, same as the language tab.
-  for (const kind of Object.keys(EA_KINDS)) {
-    const cfg = EA_KINDS[kind];
-    if (!cfg.hero || !fileInput) continue;
-    cfg.hero.addEventListener('click', (e) => {
-      if (e.target.closest('button, a, audio, input')) return;
-      fileInput.click();
-    });
-    let dragCtr = 0;
-    cfg.hero.addEventListener('dragenter', (e) => { e.preventDefault(); dragCtr++; cfg.hero.classList.add('drag-over'); });
-    cfg.hero.addEventListener('dragleave', (e) => { e.preventDefault(); dragCtr--; if (dragCtr <= 0) { dragCtr = 0; cfg.hero.classList.remove('drag-over'); } });
-    cfg.hero.addEventListener('dragover', (e) => e.preventDefault());
-    cfg.hero.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dragCtr = 0;
-      cfg.hero.classList.remove('drag-over');
-      if (e.dataTransfer.files.length > 0) startEaDetection(kind, e.dataTransfer.files[0]);
-    });
   }
 
   async function startEaDetection(kind, file) {
@@ -1882,8 +1965,6 @@
       const { data, meta } = await uploadAndAnalyze(file, cfg.endpoint);
       const processingMs = Date.now() - startedAt;
       await finishProgress();
-      hideOverlay();
-      isAnalyzing = false;
 
       if (cfg.last.audioUrl && cfg.last.audioUrl !== cfg.demoAudioUrl) {
         URL.revokeObjectURL(cfg.last.audioUrl);
@@ -1906,6 +1987,8 @@
       resultsFilename.textContent = file.name;
       resultsAudio.src = audioObjectUrl;
       renderEaResult(kind, data);
+      hideOverlay();
+      isAnalyzing = false;
       window.scrollTo(0, 0);
       updateRateLimit();
     } catch (err) {
@@ -1916,87 +1999,121 @@
 
   function renderEaResult(kind, data) {
     const cfg = EA_KINDS[kind];
-    if (!cfg.hero) return;
     const label = data[cfg.field] || 'Unknown';
     const windows = data.time_series || [];
 
-    cfg.hero.classList.add('has-result');
-    cfg.heroIcon.textContent = eaIcon(cfg, label);
-    cfg.heroLabel.textContent = label;
-    cfg.heroSub.textContent = 'Whole-file ' + cfg.field;
-
-    const parts = [];
+    // ── Verdict statement ──
+    const stats = [];
     if (windows.length) {
-      parts.push(windows.length + ' windows × 15 s');
+      stats.push({ value: windows.length, label: 'windows × 15 s' });
+      const distinct = [...new Set(windows.map(w => w[cfg.field]).filter(Boolean))];
+      if (distinct.length > 1) stats.push({ value: '', label: distinct.join(' · ') });
     } else {
-      parts.push('Clip shorter than one 15 s window — whole-file label only');
+      stats.push({ value: '', label: 'Clip shorter than one 15 s window — whole-file label only' });
     }
-    const procMs = currentMeta && currentMeta.processingMs;
-    if (procMs) parts.push('Processed in ' + (procMs / 1000).toFixed(2) + ' s');
-    cfg.heroMeta.textContent = parts.join(' · ');
+    renderVerdictStatement(kind + '-verdict-statement', {
+      variant: 'success',
+      title: cfg.verdictTitle(label),
+      stats,
+    });
 
-    // ── Per-window timeline ──
-    if (!windows.length) {
-      cfg.timelineWrap.style.display = 'none';
-      return;
-    }
-    cfg.timelineWrap.style.display = '';
-    cfg.timeline.innerHTML = '';
-    const seen = [];
+    // ── Per-window strip in the player visualization ──
+    const viz = document.getElementById('player-visualization');
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
+    syncSpeakerLanes([]);
+    if (cfg.tbody) cfg.tbody.innerHTML = '';
+    if (cfg.legend) cfg.legend.innerHTML = '';
+    if (!windows.length || !viz) return;
+
+    const spanMs = windows[windows.length - 1].start_ms + windows[windows.length - 1].duration_ms;
+    const strip = document.createElement('div');
+    strip.className = 'ea-player-strip';
+    // clearPlayerStrips() removes it on the next mode's render
+    strip.classList.add('pg-redaction-player-track');
     windows.forEach((w) => {
       const wLabel = w[cfg.field] || 'Unknown';
-      if (!seen.includes(wLabel)) seen.push(wLabel);
       const seg = document.createElement('div');
       seg.className = 'ea-seg';
-      seg.style.background = eaColor(cfg, wLabel);
-      const t0 = formatTimelineTime(w.start_ms);
-      const t1 = formatTimelineTime(w.start_ms + w.duration_ms);
-      seg.title = t0 + '–' + t1 + ' · ' + wLabel;
+      seg.style.left = (w.start_ms / spanMs * 100).toFixed(3) + '%';
+      seg.style.width = (w.duration_ms / spanMs * 100).toFixed(3) + '%';
+      seg.style.background = cfg.color(wLabel);
+      seg.dataset.tooltip = formatMs(w.start_ms) + ' – ' + formatMs(w.start_ms + w.duration_ms) + ' · ' + wLabel;
       seg.dataset.startMs = w.start_ms;
       seg.dataset.endMs = w.start_ms + w.duration_ms;
-      seg.addEventListener('click', () => {
+      seg.addEventListener('click', (e) => {
+        e.stopPropagation();
         resultsAudio.currentTime = w.start_ms / 1000;
         resultsAudio.play().catch(() => {});
       });
-      cfg.timeline.appendChild(seg);
+      strip.appendChild(seg);
     });
+    viz.appendChild(strip);
 
-    // Axis: start, midpoint, end of the analyzed span.
-    const spanMs = windows[windows.length - 1].start_ms + windows[windows.length - 1].duration_ms;
-    cfg.axis.innerHTML = '';
-    [0, spanMs / 2, spanMs].forEach((ms) => {
-      const tick = document.createElement('span');
-      tick.textContent = formatTimelineTime(ms);
-      cfg.axis.appendChild(tick);
+    // ── Legend ──
+    const seen = [];
+    windows.forEach(w => {
+      const l = w[cfg.field] || 'Unknown';
+      if (!seen.includes(l)) seen.push(l);
     });
+    if (cfg.legend) {
+      seen.forEach((l) => {
+        const item = document.createElement('span');
+        item.className = 'ea-legend-item';
+        const sw = document.createElement('i');
+        sw.className = 'ea-legend-sw';
+        sw.style.background = cfg.color(l);
+        item.appendChild(sw);
+        item.appendChild(document.createTextNode(l));
+        cfg.legend.appendChild(item);
+      });
+    }
 
-    cfg.legend.innerHTML = '';
-    seen.forEach((l) => {
-      const item = document.createElement('span');
-      item.className = 'ea-legend-item';
-      const sw = document.createElement('i');
-      sw.className = 'ea-legend-sw';
-      sw.style.background = eaColor(cfg, l);
-      item.appendChild(sw);
-      item.appendChild(document.createTextNode(l));
-      cfg.legend.appendChild(item);
-    });
-  }
-
-  function formatTimelineTime(ms) {
-    const s = Math.round(ms / 1000);
-    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    // ── Windows table ──
+    if (cfg.tbody) {
+      windows.forEach((w, i) => {
+        const wLabel = w[cfg.field] || 'Unknown';
+        const tr = document.createElement('tr');
+        tr.dataset.index = i;
+        const tdTime = document.createElement('td');
+        tdTime.textContent = formatMs(w.start_ms) + ' – ' + formatMs(w.start_ms + w.duration_ms);
+        tr.appendChild(tdTime);
+        const tdLabel = document.createElement('td');
+        const cell = document.createElement('span');
+        cell.className = 'ea-legend-item';
+        const sw = document.createElement('i');
+        sw.className = 'ea-legend-sw';
+        sw.style.background = cfg.color(wLabel);
+        cell.appendChild(sw);
+        cell.appendChild(document.createTextNode(wLabel));
+        tdLabel.appendChild(cell);
+        tr.appendChild(tdLabel);
+        tr.addEventListener('click', () => {
+          resultsAudio.currentTime = w.start_ms / 1000;
+          resultsAudio.play().catch(() => {});
+        });
+        cfg.tbody.appendChild(tr);
+      });
+    }
   }
 
   // Highlight the window under the playhead while the audio plays.
   resultsAudio.addEventListener('timeupdate', () => {
     if (currentMode !== 'emotion' && currentMode !== 'accent') return;
-    const cfg = EA_KINDS[currentMode];
-    if (!cfg.timeline) return;
+    const viz = document.getElementById('player-visualization');
+    const strip = viz ? viz.querySelector('.ea-player-strip') : null;
+    if (!strip) return;
     const ms = resultsAudio.currentTime * 1000;
-    for (const seg of cfg.timeline.children) {
-      seg.classList.toggle('active', ms >= +seg.dataset.startMs && ms < +seg.dataset.endMs);
-    }
+    let activeIdx = -1;
+    Array.from(strip.children).forEach((seg, i) => {
+      const on = ms >= +seg.dataset.startMs && ms < +seg.dataset.endMs;
+      seg.classList.toggle('active', on);
+      if (on) activeIdx = i;
+    });
+    const cfg = EA_KINDS[currentMode];
+    if (cfg.tbody) cfg.tbody.querySelectorAll('tr').forEach((row, i) => {
+      row.classList.toggle('active', i === activeIdx);
+    });
   });
 
   // Restore the tab's last run (or the pre-cached demo) on mode switch / init.
@@ -2064,91 +2181,51 @@
   }
 
   function renderAimusicResult(data) {
-    if (!aimusicHero) return;
     const verdict = data.primary_verdict || 'unknown';
-    aimusicHero.className = 'aimusic-hero ' + verdict;
-
-    const headlines = {
-      'ai-vocal-music':   'AI Vocal Music',
-      'ai-instrumental':  'AI Instrumental',
-      'not-ai-music':     'Not AI Music',
-    };
-    const subs = {
-      'ai-vocal-music':   'Synthetic voice detected in a musical context — likely an AI song or AI-generated topline.',
-      'ai-instrumental':  'No synthetic voice, but the instrumental fingerprint matches AI-generated music.',
-      'not-ai-music':     'Neither the vocal nor the instrumental path crossed the AI-generation threshold.',
-    };
-    const robotIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><circle cx="8.5" cy="16" r="1" fill="currentColor"/><circle cx="15.5" cy="16" r="1" fill="currentColor"/></svg>';
-    const badges = {
-      'ai-vocal-music':   { text: 'AI Detected', icon: robotIcon },
-      'ai-instrumental':  { text: 'AI Detected', icon: robotIcon },
-      'not-ai-music':     { text: 'Clean', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' },
-    };
-    const badge = badges[verdict] || { text: 'Unknown', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>' };
-    aimusicHeroBadge.innerHTML = badge.icon + '<span>' + badge.text + '</span>';
-    aimusicHeroHeadline.textContent = headlines[verdict] || verdict;
-    aimusicHeroSub.textContent = subs[verdict] || '';
-
-    // Two-path summary. The server now derives `primary_verdict`; we surface
-    // each path's AI score + confidence and highlight whichever drove the
-    // verdict. Both paths are always reported in the new schema.
     const n = (x) => (typeof x === 'number' && isFinite(x)) ? x : 0;
     const vAiPct = n(data.vocal_ai_percentage);
-    const vConf  = n(data.vocal_ai_confidence);
     const iAiPct = n(data.instrumental_ai_percentage);
     const iConf  = n(data.instrumental_ai_confidence);
-    const vocalFired = verdict === 'ai-vocal-music';
-    const instrFired = verdict === 'ai-instrumental';
 
-    aimusicPathVocal.className = 'aimusic-path' + (vocalFired ? ' fired-ai' : '');
-    aimusicPathVocalIcon.textContent = vocalFired ? '✓' : '○';
-    aimusicPathVocalValue.textContent = vAiPct.toFixed(1) + '% AI' + (vConf > 0 ? ' · conf ' + vConf.toFixed(2) : '');
-
-    aimusicPathInstr.className = 'aimusic-path' + (instrFired ? ' fired-ai' : '');
-    aimusicPathInstrIcon.textContent = instrFired ? '✓' : '○';
-    aimusicPathInstrValue.textContent = iAiPct.toFixed(1) + '% AI' + (iConf > 0 ? ' · conf ' + iConf.toFixed(2) : '');
-
-    // Content breakdown — vocals can overlap instrumental, so these need not sum to 100.
-    aimusicPathNote.textContent =
-      'Content — vocals ' + n(data.vocal_percentage).toFixed(0) + '%' +
-      ' · instrumental ' + n(data.instrumental_percentage).toFixed(0) + '%' +
-      ' · silence ' + n(data.silence_percentage).toFixed(0) + '%';
-
-    aimusicPaths.style.display = '';
-
-    const durationS = (typeof data.duration_s === 'number') ? data.duration_s
-      : (typeof data.duration_ms === 'number') ? data.duration_ms / 1000 : 0;
-    const parts = [];
-    if (durationS) parts.push('Audio: ' + durationS.toFixed(1) + ' s');
-    const procMs = currentMeta && currentMeta.processingMs;
-    if (procMs) {
-      parts.push('Processed in ' + (procMs / 1000).toFixed(2) + ' s');
-      if (durationS > 0) {
-        const factor = (durationS * 1000) / procMs;
-        if (factor > 0 && isFinite(factor)) parts.push(factor.toFixed(1) + '× real-time');
-      }
+    const titles = {
+      'ai-vocal-music':  'This is AI vocal music',
+      'ai-instrumental': 'This is AI instrumental',
+      'not-ai-music':    'Not AI music',
+    };
+    const isAi = verdict === 'ai-vocal-music' || verdict === 'ai-instrumental';
+    const stats = [];
+    stats.push({ value: vAiPct.toFixed(1) + '%', label: 'AI on vocals' });
+    if (iConf > 0 || iAiPct > 0) {
+      stats.push({ value: iAiPct.toFixed(1) + '%', label: 'AI on instrumental' });
+    } else {
+      stats.push({ value: '', label: 'Instrumental not evaluated' });
     }
-    aimusicHeroMeta.textContent = parts.join(' · ');
+    stats.push({
+      value: '',
+      label: 'Content: vocals ' + n(data.vocal_percentage).toFixed(0) + '% \u00b7 instrumental ' +
+        n(data.instrumental_percentage).toFixed(0) + '% \u00b7 silence ' + n(data.silence_percentage).toFixed(0) + '%',
+    });
+    renderVerdictStatement('aimusic-verdict-statement', {
+      variant: isAi ? 'danger' : (verdict === 'not-ai-music' ? 'success' : ''),
+      title: titles[verdict] || 'Unknown content',
+      stats: stats,
+    });
 
-    // Per-window timeline. Batch ships windows[]; streaming's final render
+    // Per-window strip + table. Batch ships windows[]; streaming's final render
     // passes the accumulated windows through data.windows.
     const windows = (Array.isArray(data.windows) && data.windows.length) ? data.windows : liveAimusicWindows;
     renderAimusicTimeline(windows);
-    if (aimusicTimelineStatus) {
-      const wc = (typeof data.window_count === 'number') ? data.window_count : (windows ? windows.length : 0);
-      aimusicTimelineStatus.textContent = wc ? (wc + ' window' + (wc !== 1 ? 's' : '')) : '';
-    }
     setupAimusicPlaybackTracking(windows);
   }
 
-  // ── AI Music per-window timeline + table (shared by batch + streaming) ────
-  let aimusicWindows = [];   // windows backing the current timeline/table (for seek + playback)
+  // ── AI Music per-window strip + table (shared by batch + streaming) ────
+  let aimusicWindows = [];   // windows backing the current strip/table (for seek + playback)
 
   function aimusicWinDurMs(w) {
     return Math.max(0, (w.end_time_ms || 0) - (w.start_time_ms || 0));
   }
 
-  // The headline question is "AI or not?", so the timeline + pills collapse to
+  // The headline question is "AI or not?", so the strip + chips collapse to
   // three states: `ai` (synthetic vocals OR AI instrumental), `human` (real
   // content, not flagged), `silence`. The vocal/instrumental nuance lives in
   // the table's Type column instead.
@@ -2185,67 +2262,53 @@
 
   const AIMUSIC_VERDICT_TEXT = { ai: 'AI', human: 'Not AI', silence: 'Silence' };
   const AIMUSIC_TYPE_TEXT    = { vocal: 'Vocal', instrumental: 'Instrumental', silence: 'Silence' };
-  // Map our 3 states onto the existing deepfake pill/bar colour classes.
-  const AIMUSIC_PILL_CLASS   = { ai: 'synthetic', human: 'authentic', silence: 'no-content' };
+  const AIMUSIC_CELL_VERDICT = { ai: 'ai', human: 'not-ai', silence: 'silence' };
+  const AIMUSIC_CHIP_CLASS   = { ai: 'aim-verdict-ai', human: 'aim-verdict-not-ai', silence: '' };
 
-  // HTML for the shared floating hover tooltip (#histo-tooltip), styled like the
-  // Deepfake histogram: "time · Type · **Verdict** · conf%", verdict coloured.
-  function aimusicTooltipHtml(w) {
+  function aimusicTooltipText(w) {
     const v = aimusicVerdict(w), t = aimusicType(w);
-    const color = v === 'ai' ? 'rgb(255,53,84)' : v === 'human' ? 'rgb(21,207,135)' : 'rgb(170,170,180)';
-    const time = aimusicClock(w.start_time_ms) + ' – ' + aimusicClock(w.end_time_ms);
-    if (t === 'silence') {
-      return time + ' <span style="color:' + color + '">· <span style="font-weight:700">Silence</span></span>';
-    }
+    const time = aimusicClock(w.start_time_ms) + ' \u2013 ' + aimusicClock(w.end_time_ms);
+    if (t === 'silence') return time + ' \u00b7 Silence';
     const c = aimusicWindowConfidence(w);
-    const confStr = (v === 'ai' && c > 0) ? ' · ' + (c * 100).toFixed(0) + '%' : '';
-    return time +
-      ' <span style="opacity:0.7">· ' + AIMUSIC_TYPE_TEXT[t] + '</span>' +
-      ' <span style="color:' + color + '">· <span style="font-weight:700">' + AIMUSIC_VERDICT_TEXT[v] + '</span>' + confStr + '</span>';
+    const confStr = (v === 'ai' && c > 0) ? ' \u00b7 ' + (c * 100).toFixed(0) + '%' : '';
+    return time + ' \u00b7 ' + AIMUSIC_TYPE_TEXT[t] + ' \u00b7 ' + AIMUSIC_VERDICT_TEXT[v] + confStr;
   }
 
-  function aimusicShowTooltip(el, html) {
-    const rect = el.getBoundingClientRect();
-    histoTooltip.innerHTML = html;
-    histoTooltip.style.display = 'block';
-    histoTooltip.style.top = (rect.top - 6) + 'px';
-    histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
-    histoTooltip.style.transform = 'translate(-50%, -100%)';
-  }
-
+  // Strip inside the player visualization, one cell per window, width \u221d duration.
   function renderAimusicTimeline(windows) {
-    if (!aimusicTimeline) return;
     windows = windows || [];
     aimusicWindows = windows;
-    aimusicTimeline.innerHTML = '';
+    const viz = document.getElementById('player-visualization');
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
+    syncSpeakerLanes([]);
     if (aimusicTbody) aimusicTbody.innerHTML = '';
-    if (!windows.length) {
-      if (aimusicTimelineWrap) aimusicTimelineWrap.style.display = 'none';
-      return;
-    }
-    if (aimusicTimelineWrap) aimusicTimelineWrap.style.display = '';
+    if (!windows.length || !viz) return;
 
+    const heat = document.createElement('div');
+    heat.className = 'aim-player-heat';
     windows.forEach((w, i) => {
+      const v = aimusicVerdict(w);
       const cell = document.createElement('div');
-      cell.className = 'aimusic-cell ' + aimusicVerdict(w);
+      cell.className = 'aim-player-heat-cell';
+      cell.dataset.verdict = AIMUSIC_CELL_VERDICT[v];
+      cell.dataset.index = i;
       cell.style.flexGrow = String(Math.max(1, aimusicWinDurMs(w)));
       cell.style.flexBasis = '0';
-      cell.dataset.index = i;
-      const tip = aimusicTooltipHtml(w);
-      cell.addEventListener('mouseenter', () => aimusicShowTooltip(cell, tip));
-      cell.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
+      if (v === 'ai') {
+        cell.style.opacity = confidenceToOpacity(aimusicWindowConfidence(w));
+      } else if (v === 'human') {
+        cell.style.opacity = '0.85';
+      }
+      cell.dataset.tooltip = aimusicTooltipText(w);
       cell.addEventListener('click', () => seekAimusic(w.start_time_ms, i));
-      aimusicTimeline.appendChild(cell);
+      heat.appendChild(cell);
     });
-    if (aimusicAxis) {
-      aimusicAxis.innerHTML =
-        '<span>' + aimusicClock(windows[0].start_time_ms || 0) + '</span>' +
-        '<span>' + aimusicClock(windows[windows.length - 1].end_time_ms || 0) + '</span>';
-    }
+    viz.appendChild(heat);
+
     renderAimusicTable(windows);
   }
 
-  // Per-window table, styled like the Deepfake detection table.
   function renderAimusicTable(windows) {
     if (!aimusicTbody) return;
     aimusicTbody.innerHTML = '';
@@ -2255,15 +2318,14 @@
       tr.dataset.index = i;
 
       const tdTime = document.createElement('td');
-      tdTime.textContent = aimusicClock(w.start_time_ms) + ' – ' + aimusicClock(w.end_time_ms);
+      tdTime.textContent = aimusicClock(w.start_time_ms) + ' \u2013 ' + aimusicClock(w.end_time_ms);
 
       const tdType = document.createElement('td');
       tdType.textContent = AIMUSIC_TYPE_TEXT[t];
-      tdType.style.color = 'var(--text-caption)';
 
       const tdVerdict = document.createElement('td');
       const pill = document.createElement('span');
-      pill.className = 'verdict-pill ' + AIMUSIC_PILL_CLASS[v];
+      pill.className = 'm__tag-flat' + (AIMUSIC_CHIP_CLASS[v] ? ' ' + AIMUSIC_CHIP_CLASS[v] : '');
       pill.textContent = AIMUSIC_VERDICT_TEXT[v];
       tdVerdict.appendChild(pill);
 
@@ -2271,21 +2333,22 @@
       const c = aimusicWindowConfidence(w);
       if (v === 'ai' && c > 0) {
         const wrap = document.createElement('div');
-        wrap.className = 'confidence-cell';
+        wrap.className = 'aim-cell';
         const track = document.createElement('div');
-        track.className = 'confidence-bar-track';
+        track.className = 'aim-bar';
         const fill = document.createElement('div');
-        fill.className = 'confidence-bar-fill synthetic';
+        fill.className = 'aim-bar-fill';
         fill.style.width = (c * 100) + '%';
         track.appendChild(fill);
         const txt = document.createElement('span');
+        txt.className = 'aim-pct';
         txt.textContent = (c * 100).toFixed(1) + '%';
         wrap.appendChild(track);
         wrap.appendChild(txt);
         tdConf.appendChild(wrap);
       } else {
-        tdConf.textContent = '—';
-        tdConf.style.color = 'var(--text-caption)';
+        tdConf.textContent = '\u2014';
+        tdConf.className = 'aim-empty';
       }
 
       tr.appendChild(tdTime);
@@ -2298,7 +2361,9 @@
   }
 
   function aimusicSetActive(index) {
-    if (aimusicTimeline) aimusicTimeline.querySelectorAll('.aimusic-cell').forEach((c, i) => c.classList.toggle('active', i === index));
+    const viz = document.getElementById('player-visualization');
+    const heat = viz ? viz.querySelector('.aim-player-heat') : null;
+    if (heat) heat.querySelectorAll('.aim-player-heat-cell').forEach((c, i) => c.classList.toggle('active', i === index));
     if (aimusicTbody) aimusicTbody.querySelectorAll('tr').forEach((r, i) => r.classList.toggle('active', i === index));
   }
 
@@ -2328,32 +2393,20 @@
   }
 
   // ── AI Music Detection: streaming (mirrors the Music Detection demo) ──────
-  // Reset the hero to a "listening" state and clear the timeline at stream start.
+  // Reset to a "listening" state and clear the strip at stream start.
   function resetAimusicLiveUI() {
     liveAimusicWindows = [];
     aimusicDoneData = null;
-    if (!aimusicHero) return;
-    aimusicHero.className = 'aimusic-hero pending';
-    if (aimusicHeroBadge) aimusicHeroBadge.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Analyzing…</span>';
-    if (aimusicHeroHeadline) aimusicHeroHeadline.textContent = 'Listening';
-    if (aimusicHeroSub) aimusicHeroSub.textContent = 'Streaming audio — per-window verdicts appear below as they arrive.';
-    if (aimusicPaths) aimusicPaths.style.display = 'none';
-    if (aimusicHeroMeta) aimusicHeroMeta.textContent = '';
+    renderVerdictStatement('aimusic-verdict-statement', {
+      variant: '',
+      title: 'Listening\u2026',
+      stats: [{ value: '', label: 'Per-window verdicts appear below as they arrive.' }],
+    });
     renderAimusicTimeline([]);
-    if (aimusicTimelineWrap) aimusicTimelineWrap.style.display = '';
-    if (aimusicTimelineStatus) aimusicTimelineStatus.textContent = 'Listening…';
   }
 
   function renderAimusicLive() {
     renderAimusicTimeline(liveAimusicWindows);
-    if (aimusicTimelineWrap) aimusicTimelineWrap.style.display = '';
-    if (aimusicTimelineStatus) {
-      const aiN = liveAimusicWindows.filter(w => aimusicVerdict(w) === 'ai').length;
-      aimusicTimelineStatus.textContent =
-        liveAimusicWindows.length + ' window' + (liveAimusicWindows.length !== 1 ? 's' : '') +
-        ' · ' + aiN + ' AI';
-    }
   }
 
   function handleAimusicStreamMessage(msg) {
@@ -2743,7 +2796,7 @@
         lastMusicMeta = { ...currentMeta };
         renderMusicVerdict(data);
         renderMusicHistogram(liveMusicFrames);
-        renderMusicTable(liveMusicFrames, musicView);
+        renderMusicTable(liveMusicFrames);
         setupMusicPlaybackTracking(liveMusicFrames);
       }
     };
@@ -2777,335 +2830,110 @@
     currentFrames = liveMusicFrames;
     renderMusicVerdict(data);
     renderMusicHistogram(liveMusicFrames);
-    renderMusicTable(liveMusicFrames, musicView);
+    renderMusicTable(liveMusicFrames);
   }
 
   function renderMusicVerdict(data) {
-    const label = (data.primary_label || 'unknown').toLowerCase();
-    musicVerdictRing.className = 'verdict-ring ' + label;
-
-    const ICONS = {
-      music:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
-      speech:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
-      neither: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
-      unknown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-    };
-    musicVerdictIcon.innerHTML = ICONS[label] || ICONS.unknown;
-
-    const TEXT = { music: 'Music', speech: 'Speech', neither: 'Neither', unknown: 'Unknown' };
-    musicVerdictLabel.textContent = TEXT[label] || 'Unknown';
-
     const musicPct = (data.music_pct != null) ? data.music_pct : 0;
     const speechPct = (data.speech_pct != null) ? data.speech_pct : 0;
-    musicVerdictSplit.innerHTML =
-      '<div class="verdict-ring-split-item music"><span class="v">' + musicPct.toFixed(0) + '%</span><span class="l">Music</span></div>' +
-      '<div class="verdict-ring-split-item speech"><span class="v">' + speechPct.toFixed(0) + '%</span><span class="l">Speech</span></div>';
+    const label = (data.primary_label || 'unknown').toLowerCase();
+    let title;
+    if (label === 'music') title = 'This is ' + musicPct.toFixed(0) + '% music';
+    else if (label === 'speech') title = 'This is ' + speechPct.toFixed(0) + '% speech';
+    else if (label === 'neither') title = 'Neither music nor speech';
+    else title = 'Unknown content';
+    const other = (label === 'speech')
+      ? { value: musicPct.toFixed(0) + '%', label: 'music' }
+      : { value: speechPct.toFixed(0) + '%', label: 'speech' };
+    renderVerdictStatement('music-verdict-statement', { variant: 'success', title: title, stats: [other] });
   }
 
-  // Build the cells we'll render based on current view + available width.
-  // Returns { cells, fit } where fit=true means cells fill the container width
-  // (heatmap mode); fit=false means fixed-width cells with possible scroll.
-  function buildMusicCells(frames, view) {
-    if (!frames.length) return { cells: [], fit: false };
-
-    const DETAILED_PX = 11;       // legacy fixed width
-    const HEATMAP_TARGET_PX = 6;  // ideal cell width when there's room
-    const HEATMAP_MIN_PX = 2;     // smallest readable cell
-
-    if (view === 'detailed') {
-      const cells = frames.map((f, i) => ({
-        cellWidth: DETAILED_PX,
-        music: f.music_prob,
-        speech: f.speech_prob,
-        startMs: f.start_time_s * 1000,
-        endMs: f.end_time_s * 1000,
-        firstFrameIdx: i,
-        lastFrameIdx: i,
-        groupSize: 1,
-      }));
-      return { cells, fit: false };
-    }
-
-    // Heatmap: fit to container
-    const containerWidth = musicHistogramFit
-      ? musicHistogramFit.clientWidth - rowLabelOffsetPx() - 2  // -2 for safe rounding
-      : 800;
-    const W = Math.max(200, containerWidth);
-
-    if (frames.length * HEATMAP_TARGET_PX <= W) {
-      // Plenty of room: one cell per frame at target width
-      const cells = frames.map((f, i) => ({
-        cellWidth: HEATMAP_TARGET_PX,
-        music: f.music_prob,
-        speech: f.speech_prob,
-        startMs: f.start_time_s * 1000,
-        endMs: f.end_time_s * 1000,
-        firstFrameIdx: i,
-        lastFrameIdx: i,
-        groupSize: 1,
-      }));
-      return { cells, fit: true };
-    }
-
-    // Aggregate: max-pool adjacent frames so cells get at least MIN_CELL_PX wide
-    const maxCells = Math.max(1, Math.floor(W / HEATMAP_MIN_PX));
-    const groupSize = Math.ceil(frames.length / maxCells);
-    const numCells = Math.ceil(frames.length / groupSize);
-    const cellWidth = Math.max(HEATMAP_MIN_PX, Math.floor(W / numCells));
-    const cells = [];
-    for (let g = 0; g < numCells; g++) {
-      const start = g * groupSize;
-      const end = Math.min(start + groupSize, frames.length);
-      let mMax = 0, sMax = 0;
-      for (let k = start; k < end; k++) {
-        if (frames[k].music_prob  > mMax) mMax = frames[k].music_prob;
-        if (frames[k].speech_prob > sMax) sMax = frames[k].speech_prob;
-      }
-      cells.push({
-        cellWidth,
-        music: mMax,
-        speech: sMax,
-        startMs: frames[start].start_time_s * 1000,
-        endMs:   frames[end - 1].end_time_s * 1000,
-        firstFrameIdx: start,
-        lastFrameIdx: end - 1,
-        groupSize: end - start,
-      });
-    }
-    return { cells, fit: true };
-  }
-
-  // Width of the row label slot (e.g. "MUSIC") so the bars fill the rest.
-  // Falls back to 4.1rem ≈ 65.6px (3.5rem label + 0.6rem gap).
-  function rowLabelOffsetPx() {
-    const root = document.documentElement;
-    const fs = parseFloat(getComputedStyle(root).fontSize) || 16;
-    return Math.round(4.1 * fs);
-  }
-
+  // Two-row music/speech probability heatmap inside the player visualization.
   function renderMusicHistogram(frames) {
-    musicHistogram.innerHTML = '';
-    if (!frames.length) { musicCells = []; return; }
+    const viz = document.getElementById('player-visualization');
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
+    syncSpeakerLanes(['Music', 'Speech']);
+    if (!frames.length || !viz) return;
 
-    const { cells, fit } = buildMusicCells(frames, musicView);
-    musicCells = cells;
+    const heat = document.createElement('div');
+    heat.className = 'mx-player-heat';
 
-    if (musicHistogramFit) musicHistogramFit.classList.toggle('scrollable', !fit);
-
-    musicHistogram.appendChild(buildMusicRow('music',  'Music',  cells, fit));
-    musicHistogram.appendChild(buildMusicRow('speech', 'Speech', cells, fit));
-    musicHistogram.appendChild(buildMusicAxis(frames, fit));
-  }
-
-  function buildMusicRow(kind, label, cells, fit) {
-    const row = document.createElement('div');
-    row.className = 'music-histo-row';
-    const lbl = document.createElement('div');
-    lbl.className = 'music-histo-row-label ' + kind;
-    lbl.textContent = label;
-    const bars = document.createElement('div');
-    bars.className = 'music-histo-row-bars' + (fit ? ' fit' : '');
-    cells.forEach((cell, ci) => bars.appendChild(makeMusicCellBar(kind, cell, ci, fit)));
-    row.appendChild(lbl);
-    row.appendChild(bars);
-    return row;
-  }
-
-  function makeMusicCellBar(kind, cell, cellIndex, fit) {
-    const prob = kind === 'music' ? cell.music : cell.speech;
-    const bar = document.createElement('div');
-    bar.className = 'histo-bar ' + kind;
-    bar.dataset.cellIndex = cellIndex;
-    if (fit) {
-      // Heatmap: stretch equally so cells fill the row width
-      bar.style.flex = '1 1 0';
-      bar.style.width = 'auto';
-      bar.style.minWidth = '0';
-    } else {
-      bar.style.flex = '0 0 ' + cell.cellWidth + 'px';
-      bar.style.width = cell.cellWidth + 'px';
-    }
-    bar.style.aspectRatio = 'auto';
-    bar.style.height = '22px';
-    const alpha = Math.max(0.12, Math.pow(prob, 1.4));
-    const rgb = kind === 'music' ? '124,58,237' : '20,184,166';
-    bar.style.background = 'rgba(' + rgb + ',' + alpha.toFixed(3) + ')';
-
-    const labelWord = kind === 'music' ? 'Music' : 'Speech';
-    const labelColor = kind === 'music' ? 'rgb(196,167,255)' : 'rgb(110,232,212)';
-    const groupNote = cell.groupSize > 1
-      ? ' <span style="opacity:0.6">(max of ' + cell.groupSize + ' frames)</span>'
-      : '';
-    const tooltipHtml =
-      formatMs(cell.startMs) + ' – ' + formatMs(cell.endMs) +
-      ' <span style="color:' + labelColor + '">· <span style="font-weight:700">' + labelWord + '</span> ' +
-      (prob * 100).toFixed(1) + '%</span>' + groupNote;
-
-    bar.addEventListener('mouseenter', () => {
-      const rect = bar.getBoundingClientRect();
-      histoTooltip.innerHTML = tooltipHtml;
-      histoTooltip.style.display = 'block';
-      histoTooltip.style.top = (rect.top - 6) + 'px';
-      histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
-      histoTooltip.style.transform = 'translate(-50%, -100%)';
-    });
-    bar.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
-    bar.addEventListener('click', () => seekToMusic(cell.startMs, cell.firstFrameIdx));
-    return bar;
-  }
-
-  // Adaptive time axis: pick a tick interval producing 5–10 ticks total.
-  function buildMusicAxis(frames, fit) {
-    const axisRow = document.createElement('div');
-    axisRow.className = 'histo-axis music-histo-axis' + (fit ? '' : ' gapped');
-    if (!frames.length) return axisRow;
-
-    const lastFrame = frames[frames.length - 1];
-    const totalMs = lastFrame.end_time_s * 1000;
-
-    if (fit) {
-      // Heatmap: position absolute, percentage-based
-      const intervalMs = pickAxisIntervalMs(totalMs);
-      let lastTickMs = 0;
-      for (let t = 0; t <= totalMs; t += intervalMs) {
-        const tick = document.createElement('span');
-        tick.className = 'music-histo-axis-tick-abs';
-        if (t === 0) tick.classList.add('first');
-        tick.style.left = ((t / totalMs) * 100).toFixed(3) + '%';
-        tick.textContent = formatSecCompact(t);
-        axisRow.appendChild(tick);
-        lastTickMs = t;
-      }
-      // Final tick at duration end (only if far enough from previous)
-      if (totalMs - lastTickMs > intervalMs * 0.7) {
-        const endTick = document.createElement('span');
-        endTick.className = 'music-histo-axis-tick-abs last';
-        endTick.style.left = '100%';
-        endTick.textContent = formatSecCompact(totalMs);
-        axisRow.appendChild(endTick);
-      }
-    } else {
-      // Detailed: legacy per-frame ticks every 5 frames
-      frames.forEach((frame, i) => {
-        const tick = document.createElement('div');
-        tick.className = 'histo-tick';
-        if (i % 5 === 0) tick.textContent = formatSecCompact(frame.start_time_s * 1000);
-        axisRow.appendChild(tick);
+    ['music', 'speech'].forEach(kind => {
+      const row = document.createElement('div');
+      row.className = 'mx-player-heat-row';
+      row.dataset.row = kind;
+      frames.forEach((f, i) => {
+        const prob = kind === 'music' ? (f.music_prob || 0) : (f.speech_prob || 0);
+        const cell = document.createElement('div');
+        cell.className = 'mx-player-heat-cell';
+        cell.style.opacity = prob.toFixed(3);
+        cell.dataset.idx = i;
+        cell.dataset.tooltip = formatSecPrecise(f.start_time_s) + ' \u2013 ' + formatSecPrecise(f.end_time_s) +
+          ' \u00b7 ' + (kind === 'music' ? 'Music' : 'Speech') + ' ' + (prob * 100).toFixed(1) + '%';
+        cell.addEventListener('click', () => seekToMusic(f.start_time_s * 1000, i));
+        row.appendChild(cell);
       });
-    }
-    return axisRow;
+      heat.appendChild(row);
+    });
+    viz.appendChild(heat);
   }
 
-  function pickAxisIntervalMs(totalMs) {
-    const totalS = totalMs / 1000;
-    const candidates = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 1200];
-    for (const sec of candidates) {
-      if (totalS / sec <= 8) return sec * 1000;
-    }
-    return 1800 * 1000;
-  }
-
-  // Build table rows. In 'detailed' view: one row per ~192ms frame. In 'heatmap' view:
-  // bucket frames into 1-second groups, max-pooling music/speech probabilities. Each row
-  // tracks its underlying frame-index range so click/seek and playback tracking work in
-  // both modes.
-  function renderMusicTable(frames, view) {
+  function renderMusicTable(frames) {
     musicTbody.innerHTML = '';
-    if (!frames.length) return;
-
-    let groups;
-    if (view === 'detailed') {
-      groups = frames.map((f, i) => ({
-        startMs: f.start_time_s * 1000,
-        endMs:   f.end_time_s   * 1000,
-        music:   f.music_prob,
-        speech:  f.speech_prob,
-        firstFrameIdx: i,
-        lastFrameIdx:  i,
-      }));
-    } else {
-      const BUCKET_MS = 1000;
-      groups = [];
-      let i = 0;
-      while (i < frames.length) {
-        const startMs = frames[i].start_time_s * 1000;
-        const bucketEndMs = Math.floor(startMs / BUCKET_MS + 1) * BUCKET_MS;
-        let j = i;
-        let mMax = 0, sMax = 0;
-        while (j < frames.length && frames[j].start_time_s * 1000 < bucketEndMs) {
-          if (frames[j].music_prob  > mMax) mMax = frames[j].music_prob;
-          if (frames[j].speech_prob > sMax) sMax = frames[j].speech_prob;
-          j++;
-        }
-        groups.push({
-          startMs,
-          endMs: frames[j - 1].end_time_s * 1000,
-          music: mMax,
-          speech: sMax,
-          firstFrameIdx: i,
-          lastFrameIdx:  j - 1,
-        });
-        i = j;
-      }
-    }
-
-    groups.forEach((g) => {
+    frames.forEach((f, i) => {
       const tr = document.createElement('tr');
-      tr.dataset.firstFrame = g.firstFrameIdx;
-      tr.dataset.lastFrame  = g.lastFrameIdx;
+      tr.dataset.index = i;
 
       const tdTime = document.createElement('td');
-      tdTime.textContent = formatSecPrecise(g.startMs / 1000) + ' – ' + formatSecPrecise(g.endMs / 1000);
-
+      tdTime.textContent = formatSecPrecise(f.start_time_s) + ' \u2013 ' + formatSecPrecise(f.end_time_s);
       tr.appendChild(tdTime);
-      tr.appendChild(buildProbCell(g.music, 'music'));
-      tr.appendChild(buildProbCell(g.speech, 'speech'));
-      tr.addEventListener('click', () => seekToMusic(g.startMs, g.firstFrameIdx));
+
+      [['music', f.music_prob || 0], ['speech', f.speech_prob || 0]].forEach(([kind, prob]) => {
+        const td = document.createElement('td');
+        const cell = document.createElement('div');
+        cell.className = 'mx-cell';
+        const bar = document.createElement('div');
+        bar.className = 'mx-bar';
+        const fill = document.createElement('div');
+        fill.className = 'mx-bar-fill ' + kind;
+        fill.style.width = (prob * 100).toFixed(1) + '%';
+        bar.appendChild(fill);
+        const pct = document.createElement('span');
+        pct.className = 'mx-pct';
+        pct.textContent = (prob * 100).toFixed(1) + '%';
+        cell.appendChild(bar);
+        cell.appendChild(pct);
+        td.appendChild(cell);
+        tr.appendChild(td);
+      });
+
+      tr.addEventListener('click', () => seekToMusic(f.start_time_s * 1000, i));
       musicTbody.appendChild(tr);
     });
   }
 
-  function buildProbCell(prob, kind) {
-    const td = document.createElement('td');
-    const wrap = document.createElement('div');
-    wrap.className = 'confidence-cell';
-    const track = document.createElement('div');
-    track.className = 'confidence-bar-track';
-    const fill = document.createElement('div');
-    fill.className = 'confidence-bar-fill ' + kind;
-    fill.style.width = (prob * 100) + '%';
-    track.appendChild(fill);
-    const text = document.createElement('span');
-    text.textContent = (prob * 100).toFixed(1) + '%';
-    wrap.appendChild(track);
-    wrap.appendChild(text);
-    td.appendChild(wrap);
-    return td;
+  function musicHeatEl() {
+    const viz = document.getElementById('player-visualization');
+    return viz ? viz.querySelector('.mx-player-heat') : null;
   }
 
-  // Highlight whatever histogram cell + table row contain `frameIdx` (a representative
-  // underlying frame index). Used by both click-to-seek and playback tracking so the two
-  // views stay in sync regardless of grouping.
+  function highlightMusicFrame(frameIdx) {
+    const heat = musicHeatEl();
+    if (heat) heat.querySelectorAll('.mx-player-heat-cell').forEach(cell => {
+      cell.classList.toggle('active', Number(cell.dataset.idx) === frameIdx);
+    });
+    musicTbody.querySelectorAll('tr').forEach(row => {
+      row.classList.toggle('active', Number(row.dataset.index) === frameIdx);
+    });
+  }
+
   function seekToMusic(startMs, frameIdx) {
     if (resultsAudio) {
       resultsAudio.currentTime = startMs / 1000;
       resultsAudio.play().catch(() => {});
     }
-    let activeCellIdx = -1;
-    for (let c = 0; c < musicCells.length; c++) {
-      if (frameIdx >= musicCells[c].firstFrameIdx && frameIdx <= musicCells[c].lastFrameIdx) {
-        activeCellIdx = c;
-        break;
-      }
-    }
-    musicHistogram.querySelectorAll('.histo-bar').forEach((bar) => {
-      bar.classList.toggle('active', Number(bar.dataset.cellIndex) === activeCellIdx);
-    });
-    musicTbody.querySelectorAll('tr').forEach((row) => {
-      const first = Number(row.dataset.firstFrame);
-      const last  = Number(row.dataset.lastFrame);
-      row.classList.toggle('active', frameIdx >= first && frameIdx <= last);
-    });
+    highlightMusicFrame(frameIdx);
   }
 
   function setupMusicPlaybackTracking(frames) {
@@ -3119,54 +2947,10 @@
         const endMs   = frames[i].end_time_s * 1000;
         if (currentMs >= startMs && currentMs < endMs) { activeFrameIdx = i; break; }
       }
-      // Map active frame to its containing cell (in current view)
-      let activeCellIdx = -1;
-      if (activeFrameIdx >= 0 && musicCells.length) {
-        for (let c = 0; c < musicCells.length; c++) {
-          if (activeFrameIdx >= musicCells[c].firstFrameIdx && activeFrameIdx <= musicCells[c].lastFrameIdx) {
-            activeCellIdx = c;
-            break;
-          }
-        }
-      }
-      musicHistogram.querySelectorAll('.histo-bar').forEach((bar) => {
-        bar.classList.toggle('active', Number(bar.dataset.cellIndex) === activeCellIdx);
-      });
-      musicTbody.querySelectorAll('tr').forEach((row) => {
-        const first = Number(row.dataset.firstFrame);
-        const last  = Number(row.dataset.lastFrame);
-        row.classList.toggle('active', activeFrameIdx >= first && activeFrameIdx <= last);
-      });
+      highlightMusicFrame(activeFrameIdx);
       musicPlaybackTracker = requestAnimationFrame(tick);
     }
     musicPlaybackTracker = requestAnimationFrame(tick);
-  }
-
-  // Toggle handler
-  musicViewBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const view = btn.dataset.view;
-      if (view === musicView) return;
-      musicView = view;
-      musicViewBtns.forEach(b => b.classList.toggle('active', b.dataset.view === view));
-      if (currentMode === 'music' && currentData && currentData.frames) {
-        renderMusicHistogram(currentData.frames);
-        renderMusicTable(currentData.frames, musicView);
-      }
-    });
-  });
-
-  // Re-layout heatmap when the container width changes (window resize, sidebar reflow)
-  if (window.ResizeObserver && musicHistogramFit) {
-    let resizeRaf = null;
-    musicResizeObserver = new ResizeObserver(() => {
-      if (currentMode !== 'music') return;
-      if (musicView !== 'heatmap') return;
-      if (!currentData || !currentData.frames) return;
-      if (resizeRaf) cancelAnimationFrame(resizeRaf);
-      resizeRaf = requestAnimationFrame(() => renderMusicHistogram(currentData.frames));
-    });
-    musicResizeObserver.observe(musicHistogramFit);
   }
 
   function formatSecPrecise(s) {
@@ -3930,7 +3714,7 @@
       }
     } else if (isRecording) {
       const indicator = document.createElement('div');
-      indicator.className = 'transcript-empty';
+      indicator.className = 'pg-transcript-empty';
       indicator.textContent = 'Listening\u2026';
       indicator.style.opacity = '0.5';
       indicator.setAttribute('data-listening', 'true');
@@ -3944,7 +3728,7 @@
 
     if (sttUtterances.length === 0 && !sttPartial) {
       const empty = document.createElement('div');
-      empty.className = 'transcript-empty';
+      empty.className = 'pg-transcript-empty';
       empty.textContent = isRecording ? 'Listening\u2026' : 'Upload an audio file or start recording to see the transcript.';
       if (isRecording) empty.setAttribute('data-listening', 'true');
       transcriptList.appendChild(empty);
@@ -3986,7 +3770,7 @@
     // Show a live "listening" indicator only when recording and no partial is active
     if (isRecording && !sttPartial) {
       const indicator = document.createElement('div');
-      indicator.className = 'transcript-empty';
+      indicator.className = 'pg-transcript-empty';
       indicator.textContent = 'Listening\u2026';
       indicator.style.opacity = '0.5';
       indicator.setAttribute('data-listening', 'true');
@@ -4024,7 +3808,7 @@
       for (let i = sttUtterances.length - 1; i >= 0; i--) {
         if (currentMs >= sttUtterances[i].start_ms) { activeIdx = i; break; }
       }
-      transcriptList.querySelectorAll('.transcript-utterance').forEach((el, i) => {
+      transcriptList.querySelectorAll('.pg-transcript-utterance').forEach((el, i) => {
         const wasActive = el.classList.contains('active');
         const nowActive = i === activeIdx;
         el.classList.toggle('active', nowActive);
@@ -4035,7 +3819,39 @@
     sttPlaybackTracker = requestAnimationFrame(tick);
   }
 
+  // Speaker lanes on the player dataviz: distinct speakers → lanes 1..5.
+  // Sets --speaker-count (drives strip height + lane math) and the labels.
+  const playerDataviz = document.querySelector('.pg-player-dataviz');
+  const speakerLabelsEl = document.getElementById('speaker-labels');
+
+  function syncSpeakerLanes(labels) {
+    const count = Math.min(Math.max(labels.length, 1), 5);
+    if (playerDataviz) playerDataviz.style.setProperty('--speaker-count', count);
+    if (mediaBox) mediaBox.setAttribute('data-speaker-count', count);
+    if (speakerLabelsEl) {
+      speakerLabelsEl.innerHTML = labels.slice(0, 5).map((label, i) =>
+        '<div class="speaker-label" data-speaker-index="' + (i + 1) + '"><span>' +
+        escapeHtml(label) + '</span></div>'
+      ).join('');
+    }
+  }
+
+  function clipTooltipText(u) {
+    const endTimeMs = u.start_ms + (u.duration_ms || 2000);
+    let dfTooltip = '';
+    if (u.deepfake_score != null) {
+      const s = u.deepfake_score;
+      if (s > 0.7) dfTooltip = ' \u00b7 Deepfake (' + Math.round((s - 0.5) * 200) + '%)';
+      else if (s < 0.3) dfTooltip = ' \u00b7 Authentic (' + Math.round((0.5 - s) * 200) + '%)';
+      else dfTooltip = ' \u00b7 Uncertain authenticity';
+    }
+    return formatMs(u.start_ms) + ' \u2013 ' + formatMs(endTimeMs) +
+      ' \u00b7 ' + (u.speaker_label || ('Speaker ' + (u.speaker || 0))) +
+      (u.emotion ? ' \u00b7 ' + u.emotion : '') + dfTooltip;
+  }
+
   function renderSttChart() {
+    clearPlayerStrips();
     sttChart.innerHTML = '';
     if (!sttUtterances.length) { sttChart.classList.remove('visible'); return; }
 
@@ -4046,94 +3862,59 @@
       : (lastU.start_ms + (lastU.duration_ms || 4000));
     if (totalMs <= 0) return;
 
-    // Group utterances by speaker
-    const speakerMap = new Map();
+    // Distinct speakers \u2192 lanes
+    const speakers = Array.from(
+      new Set(sttUtterances.map(u => (u.speaker != null ? u.speaker : 0)))
+    ).sort((a, b) => a - b);
+    const laneOf = new Map(speakers.map((s, i) => [s, Math.min(i + 1, 5)]));
+    syncSpeakerLanes(speakers.map(s => 'Speaker ' + s));
+
     sttUtterances.forEach((u, i) => {
-      const spk = u.speaker != null ? u.speaker : 0;
-      if (!speakerMap.has(spk)) speakerMap.set(spk, []);
-      speakerMap.get(spk).push({ u, i });
-    });
-    const speakers = Array.from(speakerMap.keys()).sort((a, b) => a - b);
-
-    // Build rows
-    speakers.forEach(spk => {
-      const row = document.createElement('div');
-      row.className = 'stt-chart-row';
-
-      const label = document.createElement('div');
-      label.className = 'stt-chart-label';
-      label.textContent = 'Speaker ' + spk;
-      row.appendChild(label);
-
-      speakerMap.get(spk).forEach(({ u, i }) => {
-        const bar = document.createElement('div');
-        bar.className = 'stt-chart-bar';
-
-        // Extend bar to the start of the next utterance from ANY speaker
-        let nextStartMs = totalMs;
-        for (let j = 0; j < sttUtterances.length; j++) {
-          if (sttUtterances[j].start_ms > u.start_ms) {
-            nextStartMs = sttUtterances[j].start_ms;
-            break;
-          }
+      // Extend the clip to the start of the next utterance from ANY speaker
+      let nextStartMs = totalMs;
+      for (let j = 0; j < sttUtterances.length; j++) {
+        if (sttUtterances[j].start_ms > u.start_ms) {
+          nextStartMs = sttUtterances[j].start_ms;
+          break;
         }
-        const endMs = Math.max(nextStartMs, u.start_ms + (u.duration_ms || 2000));
-        const leftPct = (u.start_ms / totalMs * 100).toFixed(3);
-        const widthPct = ((endMs - u.start_ms) / totalMs * 100).toFixed(3);
-        bar.style.left = leftPct + '%';
-        bar.style.width = widthPct + '%';
+      }
+      const endMs = Math.max(nextStartMs, u.start_ms + (u.duration_ms || 2000));
 
-        const ec = u.emotion ? (EMOTION_COLORS[u.emotion.toLowerCase()] || '#78909c') : '#78909c';
-        bar.style.background = ec;
+      const clip = document.createElement('div');
+      clip.className = 'transcript-clip emotion-' + emotionSlug(u.emotion);
+      clip.setAttribute('data-speaker-index', laneOf.get(u.speaker != null ? u.speaker : 0));
+      clip.style.left = (u.start_ms / totalMs * 100).toFixed(3) + '%';
+      clip.style.width = ((endMs - u.start_ms) / totalMs * 100).toFixed(3) + '%';
+      clip.dataset.tooltip = clipTooltipText(u);
+      clip.dataset.uttIdx = i;
 
-        // Tooltip
-        const endTimeMs = u.start_ms + (u.duration_ms || 2000);
-        let dfTooltip = '';
-        if (u.deepfake_score != null) {
-          const s = u.deepfake_score;
-          if (s > 0.7) dfTooltip = ' · Deepfake (' + Math.round((s - 0.5) * 200) + '%)';
-          else if (s < 0.3) dfTooltip = ' · Authentic (' + Math.round((0.5 - s) * 200) + '%)';
-          else dfTooltip = ' · Uncertain authenticity';
+      const viz = document.createElement('div');
+      viz.className = 'clip-visualization';
+      clip.appendChild(viz);
+
+      // Click to seek and highlight transcript row
+      clip.addEventListener('click', () => {
+        if (resultsAudio) {
+          resultsAudio.currentTime = u.start_ms / 1000;
+          resultsAudio.play().catch(() => {});
         }
-        const tooltipText = formatMs(u.start_ms) + ' \u2013 ' + formatMs(endTimeMs) +
-          ' · Speaker ' + (u.speaker || 0) + (u.emotion ? ' · ' + u.emotion : '') + dfTooltip;
-        bar.addEventListener('mouseenter', () => {
-          const rect = bar.getBoundingClientRect();
-          histoTooltip.textContent = tooltipText;
-          histoTooltip.style.display = 'block';
-          histoTooltip.style.top = (rect.top - 6) + 'px';
-          histoTooltip.style.left = (rect.left + rect.width / 2) + 'px';
-          histoTooltip.style.transform = 'translate(-50%, -100%)';
-        });
-        bar.addEventListener('mouseleave', () => { histoTooltip.style.display = 'none'; });
-
-        // Click to seek and highlight transcript bubble
-        bar.addEventListener('click', () => {
-          if (resultsAudio) {
-            resultsAudio.currentTime = u.start_ms / 1000;
-            resultsAudio.play().catch(() => {});
-          }
-          const bubbles = transcriptList.querySelectorAll('.transcript-utterance');
-          bubbles.forEach((el, j) => el.classList.toggle('active', j === i));
-          if (bubbles[i]) bubbles[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
-
-        bar.dataset.uttIdx = i;
-        row.appendChild(bar);
+        const bubbles = transcriptList.querySelectorAll('.pg-transcript-utterance');
+        bubbles.forEach((el, j) => el.classList.toggle('active', j === i));
+        if (bubbles[i]) bubbles[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
 
-      sttChart.appendChild(row);
+      sttChart.appendChild(clip);
     });
 
     sttChart.classList.add('visible');
 
-    // Sync chart bars with playback
+    // Sync clip highlight with playback
     setupSttChartPlaybackTracking();
   }
 
   function setupSttChartPlaybackTracking() {
     if (sttChartTracker) cancelAnimationFrame(sttChartTracker);
-    const bars = sttChart.querySelectorAll('.stt-chart-bar');
+    const clips = sttChart.querySelectorAll('.transcript-clip');
 
     function tick() {
       const currentMs = resultsAudio.currentTime * 1000;
@@ -4141,26 +3922,13 @@
       for (let i = sttUtterances.length - 1; i >= 0; i--) {
         if (currentMs >= sttUtterances[i].start_ms) { activeIdx = i; break; }
       }
-      bars.forEach(bar => {
-        bar.classList.toggle('active', parseInt(bar.dataset.uttIdx) === activeIdx);
+      clips.forEach(clip => {
+        clip.classList.toggle('hover', parseInt(clip.dataset.uttIdx) === activeIdx);
       });
       sttChartTracker = requestAnimationFrame(tick);
     }
     sttChartTracker = requestAnimationFrame(tick);
   }
-
-  const LANGUAGE_FLAGS = {
-    EN: '🇬🇧', ES: '🇪🇸', FR: '🇫🇷', DE: '🇩🇪', IT: '🇮🇹',
-    PT: '🇵🇹', RU: '🇷🇺', ZH: '🇨🇳', JA: '🇯🇵', KO: '🇰🇷',
-    AR: '🇸🇦', HI: '🇮🇳', NL: '🇳🇱', PL: '🇵🇱', SV: '🇸🇪',
-    DA: '🇩🇰', NO: '🇳🇴', FI: '🇫🇮', TR: '🇹🇷', EL: '🇬🇷',
-    HE: '🇮🇱', TH: '🇹🇭', VI: '🇻🇳', ID: '🇮🇩', MS: '🇲🇾',
-    UK: '🇺🇦', CS: '🇨🇿', RO: '🇷🇴', HU: '🇭🇺', BG: '🇧🇬',
-    HR: '🇭🇷', SK: '🇸🇰', SL: '🇸🇮', LT: '🇱🇹', LV: '🇱🇻',
-    ET: '🇪🇪', CA: '🏳️', GL: '🏳️', EU: '🏳️', FA: '🇮🇷',
-    UR: '🇵🇰', BN: '🇧🇩', TA: '🇮🇳', TE: '🇮🇳', MR: '🇮🇳',
-    SW: '🇰🇪', AF: '🇿🇦', TL: '🇵🇭', CY: '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
-  };
 
   const ACCENT_SHORT = {
     American: 'American', British: 'British', Australian: 'Australian',
@@ -4169,28 +3937,43 @@
     Latin_American: 'Latin Am.', Middle_Eastern: 'Middle Eastern', Unknown: 'Unknown',
   };
 
-  const EMOTION_COLORS = {
-    angry: '#e53935', contemptuous: '#c62828', disgusted: '#e91e63',
-    afraid: '#ef5350', anxious: '#ff7043',
-    stressed: '#8e24aa', surprised: '#7b1fa2', frustrated: '#6a1b9a',
-    excited: '#ff5722', hopeful: '#ff9800', amused: '#ff9800',
-    proud: '#ec407a', curious: '#ab47bc',
-    sad: '#5c6bc0', disappointed: '#42a5f5', bored: '#5c6bc0', tired: '#7986cb',
-    concerned: '#26a69a', confused: '#ff8a65',
-    calm: '#42a5f5', confident: '#5c6bc0', interested: '#7986cb',
-    neutral: '#78909c', unknown: '#546e7a', affectionate: '#ec407a',
-  };
+  // Emotion coloring comes from the design system's --emotion-* tokens.
+  // Unknown emotions fall back to the "unknown" gray token.
+  const KNOWN_EMOTIONS = new Set([
+    'affectionate', 'afraid', 'amused', 'angry', 'anxious', 'ashamed', 'bored',
+    'calm', 'concerned', 'confident', 'confused', 'contemptuous', 'curious',
+    'disappointed', 'disgusted', 'excited', 'frustrated', 'happy', 'hopeful',
+    'interested', 'neutral', 'proud', 'relieved', 'sad', 'stressed',
+    'surprised', 'tired',
+  ]);
+
+  function emotionSlug(name) {
+    const s = String(name || '').toLowerCase();
+    return KNOWN_EMOTIONS.has(s) ? s : 'unknown';
+  }
+
+  // CSS color value for inline styles (emo bars, chips)
+  function emotionVar(name) {
+    return 'var(--emotion-' + emotionSlug(name) + ', var(--emotion-unknown))';
+  }
+
+  // Human-readable language name from an ISO code ("en" → "English")
+  let langDisplayNames = null;
+  try { langDisplayNames = new Intl.DisplayNames(['en'], { type: 'language' }); } catch (e) {}
+  function languageName(code) {
+    if (!code) return '';
+    try {
+      const name = langDisplayNames && langDisplayNames.of(code.toLowerCase());
+      return name && name !== code.toLowerCase() ? name : code.toUpperCase();
+    } catch (e) { return code.toUpperCase(); }
+  }
 
   function buildUtteranceEl(u, opts, isPartial, index) {
     const el = document.createElement('div');
-    // Alternate bubble alignment by speaker (odd left, even right)
+    // Side follows the actual speaker (not row parity): odd speakers left, even right.
     const side = (u.speaker != null && u.speaker % 2 === 0) ? 'speaker-right' : 'speaker-left';
-    el.className = 'transcript-utterance ' + side;
-
-    // No emotion coloring on bubbles
-    const emotionColor = (u.emotion && opts.emotion_signal)
-      ? EMOTION_COLORS[u.emotion.toLowerCase()] || null : null;
-    el.style.setProperty('--ec', emotionColor || '#78909c');
+    el.className = 'pg-transcript-utterance ' + side + ' ec-' +
+      emotionSlug(u.emotion && opts.emotion_signal ? u.emotion : 'neutral');
 
     if (u.start_ms != null && !isPartial) {
       el.addEventListener('click', () => {
@@ -4202,12 +3985,12 @@
     }
 
     const header = document.createElement('div');
-    header.className = 'transcript-utterance-header';
+    header.className = 'pg-transcript-utterance-header';
 
     // Timestamp (start only)
     if (u.start_ms != null) {
       const time = document.createElement('span');
-      time.className = 'transcript-time';
+      time.className = 'pg-transcript-time';
       time.textContent = formatMs(u.start_ms);
       header.appendChild(time);
     }
@@ -4215,67 +3998,59 @@
     // Speaker name
     if (u.speaker != null && opts.speaker_diarization) {
       const sp = document.createElement('span');
-      sp.className = 'transcript-speaker';
-      sp.textContent = 'Speaker ' + u.speaker;
+      sp.className = 'pg-transcript-speaker';
+      sp.textContent = u.speaker_label || ('Speaker ' + u.speaker);
       header.appendChild(sp);
     }
 
-    // Emotion inline
+    // Emotion inline (colored via the utterance's ec-* class)
     if (u.emotion && opts.emotion_signal) {
       const em = document.createElement('span');
-      em.className = 'transcript-emotion';
-      if (emotionColor) em.style.color = emotionColor;
+      em.className = 'pg-transcript-emotion';
       em.textContent = u.emotion;
       header.appendChild(em);
     }
 
-    // Language flag
+    // Language name
     if (u.language) {
-      const flag = LANGUAGE_FLAGS[u.language.toUpperCase()];
-      if (flag) {
-        const lf = document.createElement('span');
-        lf.className = 'transcript-accent';
-        lf.textContent = flag;
-        lf.title = u.language.toUpperCase();
-        header.appendChild(lf);
-      }
+      const lf = document.createElement('span');
+      lf.className = 'pg-transcript-flag';
+      lf.textContent = languageName(u.language);
+      header.appendChild(lf);
     }
 
-    // Accent (shortened text, bolded)
+    // Accent
     if (u.accent && opts.accent_signal) {
       const la = document.createElement('span');
-      la.className = 'transcript-accent';
-      la.style.fontWeight = '700';
+      la.className = 'pg-transcript-accent';
       la.textContent = (ACCENT_SHORT[u.accent] || u.accent) + ' accent';
       header.appendChild(la);
     }
 
-    // Deepfake verdict pill
+    // Deepfake verdict
     if (opts.deepfake_signal && u.deepfake_score != null) {
       const score = u.deepfake_score;
       const df = document.createElement('span');
-      df.className = 'verdict-pill sm';
+      df.className = 'pg-transcript-verdict';
       if (score > 0.7) {
         const conf = Math.round((score - 0.5) * 2 * 100);
-        df.className += ' synthetic';
+        df.classList.add('m__tag--error');
         df.textContent = 'Deepfake';
-        df.title = 'Deepfake · ' + conf + '% confidence';
+        df.dataset.tooltip = 'Deepfake · ' + conf + '% confidence';
       } else if (score < 0.3) {
         const conf = Math.round((0.5 - score) * 2 * 100);
-        df.className += ' authentic';
         df.textContent = 'Authentic';
-        df.title = 'Authentic · ' + conf + '% confidence';
+        df.dataset.tooltip = 'Authentic · ' + conf + '% confidence';
       } else {
-        df.className += ' uncertain';
         df.textContent = 'Uncertain authenticity';
         if (score > 0.5) {
           const conf = Math.round((score - 0.5) * 2 * 100);
-          df.title = 'Uncertain · leans Deepfake at ' + conf + '% confidence';
+          df.dataset.tooltip = 'Uncertain · leans Deepfake at ' + conf + '% confidence';
         } else if (score < 0.5) {
           const conf = Math.round((0.5 - score) * 2 * 100);
-          df.title = 'Uncertain · leans Authentic at ' + conf + '% confidence';
+          df.dataset.tooltip = 'Uncertain · leans Authentic at ' + conf + '% confidence';
         } else {
-          df.title = 'Uncertain · 50/50';
+          df.dataset.tooltip = 'Uncertain · 50/50';
         }
       }
       header.appendChild(df);
@@ -4284,12 +4059,14 @@
     el.appendChild(header);
 
     const text = document.createElement('div');
-    text.className = 'transcript-text' + (isPartial ? ' partial' : '');
+    text.className = 'pg-transcript-text' + (isPartial ? ' partial' : '');
+    const p = document.createElement('p');
     if (opts.pii_phi_tagging && u.text && /<pii|<phi/i.test(u.text)) {
-      text.innerHTML = renderPiiText(u.text);
+      p.innerHTML = renderPiiText(u.text);
     } else {
-      text.textContent = u.text || '';
+      p.textContent = u.text || '';
     }
+    text.appendChild(p);
     el.appendChild(text);
 
     return el;
@@ -4459,7 +4236,7 @@
       lastMusicMeta = { ...currentMeta };
       renderMusicVerdict(data);
       renderMusicHistogram(liveMusicFrames);
-      renderMusicTable(liveMusicFrames, musicView);
+      renderMusicTable(liveMusicFrames);
       setupMusicPlaybackTracking(liveMusicFrames);
     } else if (currentMode === 'aimusic' && (aimusicDoneData || liveAimusicWindows.length > 0)) {
       finalizeAimusicStream();
@@ -4479,37 +4256,50 @@
   function cleanupRecording() {
     isRecording = false;
     updateRecordButton();
+    // Re-sync the quota meter — a refused WS upgrade (rate limit) is only
+    // visible to the client as a connection error, so poll to find out.
+    updateRateLimit();
     if (scriptProcessor) { scriptProcessor.disconnect(); scriptProcessor = null; }
     if (audioContext) { audioContext.close().catch(() => {}); audioContext = null; }
     if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
   }
 
   function updateRecordButton() {
-    if (!recordAction) return;
-    const span = recordAction.querySelector('span');
-    if (isRecording) { recordAction.classList.add('recording'); span.textContent = 'Stop streaming'; }
-    else { recordAction.classList.remove('recording'); span.textContent = 'Start streaming'; }
+    if (isRecording) {
+      if (plateStreamingLabel) {
+        plateStreamingLabel.textContent =
+          currentMode === 'transcription' || currentMode === 'velma' ? 'Listening…' : 'Streaming…';
+      }
+      setPlateState('streaming');
+    } else if (uploadPlate && uploadPlate.dataset.state === 'streaming') {
+      // Stream ended — collapse to "New analysis" with the results visible below.
+      setPlateState('uploaded');
+      refreshBottomPanels();
+      setPageTitle(resultsFilename.textContent);
+      syncPlayerMeta();
+    }
   }
 
   // ══════════════════════════════════════════════════════════════════════════
   // ── MODALS ────────────────────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════
 
-  document.getElementById('btn-show-stats').addEventListener('click', () => showStatsModal());
-  document.getElementById('btn-show-json').addEventListener('click', () => showJsonModal());
-  document.getElementById('btn-show-stats-stt').addEventListener('click', () => showStatsModal());
-  document.getElementById('btn-show-json-stt').addEventListener('click', () => showJsonModal());
-  document.getElementById('btn-show-json-redaction').addEventListener('click', () => showJsonModal());
-  document.getElementById('btn-show-stats-music').addEventListener('click', () => showStatsModal());
-  document.getElementById('btn-show-json-music').addEventListener('click', () => showJsonModal());
-  document.getElementById('btn-show-stats-aimusic').addEventListener('click', () => showStatsModal());
-  document.getElementById('btn-show-json-aimusic').addEventListener('click', () => showJsonModal());
-  document.getElementById('btn-show-stats-language').addEventListener('click', () => showStatsModal());
-  document.getElementById('btn-show-json-language').addEventListener('click', () => showJsonModal());
-  document.getElementById('btn-show-stats-emotion').addEventListener('click', () => showStatsModal());
-  document.getElementById('btn-show-json-emotion').addEventListener('click', () => showJsonModal());
-  document.getElementById('btn-show-stats-accent').addEventListener('click', () => showStatsModal());
-  document.getElementById('btn-show-json-accent').addEventListener('click', () => showJsonModal());
+  // The Raw JSON + statistics live in the always-visible bottom columns now —
+  // re-render both from currentData/currentMeta after every analysis.
+  function refreshBottomPanels() {
+    if (!currentData) {
+      if (bottomColumns) bottomColumns.classList.remove('visible');
+      return;
+    }
+    if (currentMode === 'velma') {
+      statsGrid.innerHTML = renderVelmaStats(currentData, currentMeta);
+      if (bottomColumns) bottomColumns.classList.add('visible');
+      showJsonModal();
+      return;
+    }
+    showStatsModal();
+    showJsonModal();
+  }
 
   // Close a modal on a genuine backdrop click — but NOT when the click is the tail
   // end of a text-selection drag that started inside the modal. Dragging to select
@@ -4522,18 +4312,11 @@
     modalEl.addEventListener('click', (e) => { if (e.target === modalEl && downOnBackdrop) closeFn(); });
   }
 
-  document.getElementById('stats-modal-close').addEventListener('click', () => statsModal.classList.remove('visible'));
-  document.getElementById('json-modal-close').addEventListener('click', () => jsonModal.classList.remove('visible'));
-  closeOnBackdrop(statsModal, () => statsModal.classList.remove('visible'));
-  closeOnBackdrop(jsonModal, () => jsonModal.classList.remove('visible'));
-
   jsonCopyBtn.addEventListener('click', () => {
     const text = JSON.stringify(currentData, null, 2);
     const onSuccess = () => {
-      jsonCopyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
-      setTimeout(() => {
-        jsonCopyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy';
-      }, 2000);
+      jsonCopyBtn.textContent = 'Copied!';
+      setTimeout(() => { jsonCopyBtn.textContent = 'Copy'; }, 2000);
     };
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(text).then(onSuccess).catch(() => fallbackCopy(text, onSuccess));
@@ -4546,10 +4329,11 @@
   const hsModal = document.getElementById('hs-modal');
   const hsClose = document.getElementById('hs-modal-close');
   const ctaBtn = document.getElementById('cta-access-btn');
+  function openHsModal() { if (hsModal) hsModal.hidden = false; }
   if (ctaBtn && hsModal) {
-    ctaBtn.addEventListener('click', () => hsModal.classList.add('visible'));
-    hsClose.addEventListener('click', () => hsModal.classList.remove('visible'));
-    closeOnBackdrop(hsModal, () => hsModal.classList.remove('visible'));
+    ctaBtn.addEventListener('click', openHsModal);
+    hsClose.addEventListener('click', () => { hsModal.hidden = true; });
+    closeOnBackdrop(hsModal, () => { hsModal.hidden = true; });
   }
 
   function fallbackCopy(text, onSuccess) {
@@ -4716,7 +4500,6 @@
       const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
       const eaFilename = cfg.last.filename || cfg.demoFilename;
       const fileType = m.fileType || (eaFilename ? eaFilename.split('.').pop().toUpperCase() : 'N/A');
-      const labelName = cfg.field.replace(/^./, c => c.toUpperCase());
 
       groups = [
         { group: 'Detection', rows: [
@@ -4825,22 +4608,33 @@
       ];
     }
 
-    let html = '<table class="stats-table">';
+    statsGrid.innerHTML = statsCardsHtml(groups);
+    if (bottomColumns) bottomColumns.classList.add('visible');
+  }
+
+  // groups: [{group, rows: [[label, value], …]}, …] → design stat cards
+  function statsCardsHtml(groups) {
+    let html = '';
     groups.forEach(g => {
-      html += '<tr class="stats-group-row"><td colspan="2">' + g.group + '</td></tr>';
+      html += '<section class="pg-stats-card"><h6 class="pg-stats-card-title">' + escapeHtml(g.group) + '</h6><dl class="pg-stats-list">';
       g.rows.forEach(([label, value]) => {
-        html += '<tr><td class="stats-label">' + escapeHtml(String(label)) + '</td><td class="stats-value">' + escapeHtml(String(value)) + '</td></tr>';
+        html += '<dt>' + escapeHtml(String(label)) + '</dt><dd>' + escapeHtml(String(value)) + '</dd>';
       });
+      html += '</dl></section>';
     });
-    html += '</table>';
-    statsGrid.innerHTML = html;
-    statsModal.classList.add('visible');
+    return html;
   }
 
   function showJsonModal() {
     if (!currentData) return;
-    jsonPre.innerHTML = syntaxHighlightJson(JSON.stringify(currentData, null, 2));
-    jsonModal.classList.add('visible');
+    // Cap the pretty-printed payload — velma responses can run to megabytes.
+    let text = JSON.stringify(currentData, null, 2);
+    const MAX_JSON_CHARS = 400000;
+    if (text.length > MAX_JSON_CHARS) {
+      text = text.slice(0, MAX_JSON_CHARS) + '\n… (truncated for display — use Copy for the full payload)';
+    }
+    jsonPre.innerHTML = syntaxHighlightJson(text);
+    if (bottomColumns) bottomColumns.classList.add('visible');
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -4881,6 +4675,7 @@
           const err = new Error(msg);
           err.rawText = responseText;
           err.httpStatus = xhr.status;
+          if (xhr.status === 429) handleRateLimited();
           reject(err);
           return;
         }
@@ -4929,62 +4724,66 @@
     });
   }
 
-  function startProgress(estimatedMs) {
-    const start = Date.now();
-    progressFill.style.transition = 'none';
-    progressFill.style.width = '0%';
-    void progressFill.offsetWidth;
+  // \u2500\u2500 Analysis progress \u2192 upload-plate states \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // The old full-screen overlay is gone; the plate itself narrates the flow:
+  //   showOverlay()      \u2192 'uploading'   (spinner + label)
+  //   startProgress()    \u2192 'processing'  (stage chips ticking through)
+  //   finishProgress()   \u2192 all stages checked, brief beat
+  //   hideOverlay()      \u2192 'uploaded'    (collapsed "New analysis" plate)
+  //   showOverlayError() \u2192 'initial' + error toast
+  function buildStages() {
+    if (!plateStages) return;
+    const names = (MODES[currentMode] && MODES[currentMode].stages) || ['Analyzing audio'];
+    // Stage check-off timing is pure CSS (per-chip --stage-delay via nth-child).
+    plateStages.innerHTML = names.map(n =>
+      '<span class="pg-processing-stage">' +
+      '<svg class="pg-stage-check" width="20" height="20" viewBox="0 0 10 10" aria-hidden="true">' +
+      '<path d="M 1.5 4.55 L 4 7.95 L 9 2.05" fill="none" stroke="currentColor" stroke-width="1" /></svg>' +
+      escapeHtml(n) + '</span>'
+    ).join('');
+  }
 
-    const tick = () => {
-      const elapsed = Date.now() - start;
-      const pct = (1 - Math.exp(-elapsed / estimatedMs)) * 88;
-      progressFill.style.transition = 'width 0.3s linear';
-      progressFill.style.width = pct + '%';
-      progressTimer = requestAnimationFrame(tick);
-    };
-    progressTimer = requestAnimationFrame(tick);
+  function startProgress(estimatedMs) {
+    buildStages();
+    setPlateState('processing');
   }
 
   function finishProgress() {
-    return new Promise((resolve) => {
-      if (progressTimer) cancelAnimationFrame(progressTimer);
-      progressFill.style.transition = 'width 0.4s ease-out';
-      progressFill.style.width = '100%';
-      setTimeout(resolve, 500);
-    });
+    return new Promise((resolve) => setTimeout(resolve, 350));
   }
 
-  function stopProgress() { if (progressTimer) cancelAnimationFrame(progressTimer); }
+  function stopProgress() {}
 
   function showOverlay(filename, statusText) {
-    if (analysisTitle) analysisTitle.textContent = 'Analyzing \u201c' + truncate(filename, 30) + '\u201d';
-    if (analysisStatus) analysisStatus.textContent = statusText || 'Processing audio';
-    progressFill.style.width = '0%';
-    overlay.classList.remove('error');
-    overlay.classList.add('visible');
+    if (plateUploadingLabel) {
+      plateUploadingLabel.textContent = statusText || ('Uploading \u201c' + truncate(filename || 'audio', 30) + '\u201d\u2026');
+    }
+    setPlateState('uploading');
   }
 
   function hideOverlay() {
-    overlay.classList.remove('visible', 'error');
+    stopProgress();
+    setPlateState('uploaded');
+    // Success handlers assign filename/currentData right AFTER calling
+    // hideOverlay — defer the chrome sync one tick so it reads fresh values.
+    setTimeout(() => {
+      setPageTitle(resultsFilename.textContent);
+      refreshBottomPanels();
+      syncPlayerMeta();
+    }, 0);
   }
 
   function showOverlayError(msg, rawText) {
     stopProgress();
-    overlay.classList.add('error');
-    document.getElementById('overlay-error-msg').textContent = msg;
-    const pre = document.getElementById('overlay-error-json');
+    setPlateState('initial');
+    showError(msg);
     if (rawText) {
-      try { pre.textContent = JSON.stringify(JSON.parse(rawText), null, 2); }
-      catch { pre.textContent = rawText; }
-    } else {
-      pre.textContent = '(no response body)';
+      // Surface the raw error payload in the JSON panel for inspection.
+      try { jsonPre.textContent = JSON.stringify(JSON.parse(rawText), null, 2); }
+      catch { jsonPre.textContent = rawText; }
+      if (bottomColumns) bottomColumns.classList.add('visible');
     }
   }
-
-  document.getElementById('overlay-dismiss-btn').addEventListener('click', () => {
-    hideOverlay();
-    isAnalyzing = false;
-  });
 
   function showError(msg) {
     errorToast.textContent = msg;
@@ -4994,12 +4793,12 @@
 
   function syntaxHighlightJson(json) {
     return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")\s*:/g, '<span class="json-key">$1</span>:')
-      .replace(/:\s*("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")/g, ': <span class="json-string">$1</span>')
-      .replace(/:\s*(-?\d+\.?\d*([eE][+-]?\d+)?)/g, ': <span class="json-number">$1</span>')
-      .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>')
-      .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>')
-      .replace(/([{}[\]])/g, '<span class="json-brace">$1</span>');
+      .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")\s*:/g, '<span class="pg-json-key">$1</span>:')
+      .replace(/:\s*("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")/g, ': <span class="pg-json-string">$1</span>')
+      .replace(/:\s*(-?\d+\.?\d*([eE][+-]?\d+)?)/g, ': <span class="pg-json-number">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="pg-json-bool">$1</span>')
+      .replace(/:\s*(null)/g, ': <span class="pg-json-null">$1</span>')
+      .replace(/([{}[\]])/g, '<span class="pg-json-brace">$1</span>');
   }
 
   // Render PII/PHI tagged text with blurred spans
@@ -5163,22 +4962,17 @@
 
   // Velma DOM refs
   const velmaContent       = document.getElementById('velma-content');
-  const velmaSidebar       = document.getElementById('results-velma-sidebar');
   const velmaOptions       = document.getElementById('velma-options');
   const velmaConfigBtn     = document.getElementById('velma-config-btn');
   const velmaConfigSummary = document.getElementById('velma-config-summary');
   const velmaSetupBtn      = document.getElementById('velma-setup-btn');
-  const velmaDemoAction    = document.getElementById('results-velma-demo-action');
   const velmaSummaryText   = document.getElementById('velma-summary-text');
-  const velmaConvTypePick  = document.getElementById('velma-conv-type-pick');
-  const velmaRolePicks     = document.getElementById('velma-role-picks');
   const velmaSpeakersTbody = document.getElementById('velma-speakers-tbody');
   const velmaBehaviorsTbody= document.getElementById('velma-behaviors-tbody');
   const velmaBehaviorsTable = document.querySelector('.velma-behaviors-table');
   const velmaResultsBehaviorsNote = document.getElementById('velma-results-behaviors-note');
   const velmaTopicsBySpeaker = document.getElementById('velma-topics-by-speaker');
   const velmaSummarySection      = document.getElementById('velma-summary-section');
-  const velmaPicksSection        = document.getElementById('velma-picks-section');
   const velmaSpeakersSection     = document.getElementById('velma-speakers-section');
   const velmaBehaviorsSection    = document.getElementById('velma-behaviors-section');
   const velmaTopicsSection       = document.getElementById('velma-topics-section');
@@ -5208,9 +5002,6 @@
   const velmaCfgProdTopics   = document.getElementById('velma-cfg-prod-topics');
   const velmaCfgProdSentiments = document.getElementById('velma-cfg-prod-sentiments');
   const velmaCfgProdSummary  = document.getElementById('velma-cfg-prod-summary');
-  const btnShowStatsVelma    = document.getElementById('btn-show-stats-velma');
-  const btnShowJsonVelma     = document.getElementById('btn-show-json-velma');
-  const btnEditConfigVelma   = document.getElementById('btn-edit-config-velma');
 
   // Velma state
   let velmaData = null;
@@ -5257,15 +5048,12 @@
     velmaData = null;
     velmaClipBehaviorsByUuid = {};
     velmaSummaryText.textContent = '';
-    velmaConvTypePick.innerHTML = '';
-    velmaRolePicks.innerHTML = '';
     velmaSpeakersTbody.innerHTML = '';
     velmaBehaviorsTbody.innerHTML = '';
     velmaTopicsBySpeaker.innerHTML = '';
     if (velmaResultsBehaviorsNote) velmaResultsBehaviorsNote.style.display = 'none';
     if (velmaBehaviorsTable) velmaBehaviorsTable.style.display = '';
     if (velmaSummarySection)   velmaSummarySection.style.display = 'none';
-    if (velmaPicksSection)     velmaPicksSection.style.display = 'none';
     if (velmaSpeakersSection)  velmaSpeakersSection.style.display = 'none';
     if (velmaBehaviorsSection) velmaBehaviorsSection.style.display = 'none';
     if (velmaTopicsSection)    velmaTopicsSection.style.display = 'none';
@@ -5307,6 +5095,13 @@
     const data = await loadDemoVelmaData();
     if (!data) { clearVelmaResults(); return; }
     renderVelmaDemo();
+    // The demo loads async — switchMode's refresh already ran with no data,
+    // so sync the title, bottom columns and player once it's actually rendered.
+    if (currentMode === 'velma') {
+      setPageTitle(resultsFilename.textContent);
+      refreshBottomPanels();
+      syncPlayerMeta();
+    }
   }
 
   async function startVelmaBatch(file) {
@@ -5369,13 +5164,6 @@
     } catch (err) {
       showError(err.message || 'Could not load demo audio');
     }
-  }
-
-  if (velmaDemoAction) {
-    velmaDemoAction.addEventListener('click', () => {
-      if (currentMode !== 'velma') return;
-      startVelmaDemo();
-    });
   }
 
   // ── Velma Streaming (WebSocket /api/velma-2-streaming) ──────────────────────
@@ -5641,32 +5429,26 @@
       velmaSummarySection.style.display = 'none';
     }
 
-    // ── Conversation type pick + role picks
-    velmaConvTypePick.innerHTML = '';
-    velmaRolePicks.innerHTML = '';
-    const havePicks = !!data.conversation_type_pick || (data.participant_role_picks && data.participant_role_picks.length);
-    velmaPicksSection.style.display = havePicks ? '' : 'none';
-
-    if (data.conversation_type_pick) {
-      const p = data.conversation_type_pick;
-      velmaConvTypePick.appendChild(buildPickBadge('Type', p.name, p.confidence, p.selection_source, p.reasoning, p.detail));
-    }
+    // ── Role picks feed the Speakers table (design: role name + reasoning +
+    //    "Inferred, N%" tag live inside the speaker cell). The conversation-type
+    //    pick renders as the lead-in paragraph of Topics & Sentiment.
     const rolePicks = data.participant_role_picks || [];
-    rolePicks.forEach(rp => {
-      velmaRolePicks.appendChild(buildPickBadge(rp.speaker_label, rp.name, rp.confidence, rp.selection_source, rp.reasoning, rp.detail));
-    });
 
-    // ── Speaker→role map (used by behavior table + transcript chips + topics)
+    // ── Speaker→role maps (used by behavior table + transcript chips + topics)
     const clips = data.clips || [];
     const speakerToRole = {};
-    rolePicks.forEach(rp => { speakerToRole[rp.speaker_label] = rp.name; });
+    const speakerToPick = {};
+    rolePicks.forEach(rp => {
+      speakerToRole[rp.speaker_label] = rp.name;
+      speakerToPick[rp.speaker_label] = rp;
+    });
 
-    // ── Per-speaker emotion stacked bar chart
+    // ── Per-speaker emotion pattern rows
     const speakerStats = computeSpeakerStats(clips, data.duration_ms || 0);
     velmaSpeakersTbody.innerHTML = '';
     if (speakerStats.length) {
       velmaSpeakersSection.style.display = '';
-      speakerStats.forEach(s => velmaSpeakersTbody.appendChild(buildSpeakerRow(s, speakerToRole[s.label])));
+      speakerStats.forEach(s => velmaSpeakersTbody.appendChild(buildSpeakerRow(s, speakerToPick[s.label])));
     } else {
       velmaSpeakersSection.style.display = 'none';
     }
@@ -5696,24 +5478,7 @@
       } else {
         if (velmaBehaviorsTable) velmaBehaviorsTable.style.display = '';
         if (velmaResultsBehaviorsNote) velmaResultsBehaviorsNote.style.display = 'none';
-        // Sort: detected first (by speaker_label asc, then confidence desc), then undetected, then skipped/errored
-        const sorted = [...behaviors].sort((a, b) => {
-          const rank = (x) => x.error_reason ? 3 : x.skipped ? 2 : x.detected ? 0 : 1;
-          const ra = rank(a), rb = rank(b);
-          if (ra !== rb) return ra - rb;
-          const sa = a.speaker_label || '';
-          const sb = b.speaker_label || '';
-          if (sa !== sb) return sa.localeCompare(sb);
-          return (b.confidence || 0) - (a.confidence || 0);
-        });
-        // Group consecutive rows by speaker to render speaker cell once per group
-        let lastSpeaker = null;
-        sorted.forEach(b => {
-          const speakerKey = b.speaker_label || '—';
-          const isNewGroup = speakerKey !== lastSpeaker;
-          velmaBehaviorsTbody.appendChild(buildBehaviorRow(b, speakerToRole[b.speaker_label], isNewGroup));
-          lastSpeaker = speakerKey;
-        });
+        renderVelmaBehaviorsTable(behaviors, speakerToRole);
       }
     } else {
       velmaBehaviorsSection.style.display = 'none';
@@ -5723,9 +5488,9 @@
     velmaTopicsBySpeaker.innerHTML = '';
     const topics = data.topics || [];
     const ts = data.topic_sentiments || [];
-    if (topics.length || ts.length) {
+    if (topics.length || ts.length || data.conversation_type_pick) {
       velmaTopicsSection.style.display = '';
-      renderVelmaTopicsBySpeaker(topics, ts, speakerToRole);
+      renderVelmaTopicsBySpeaker(topics, ts, speakerToRole, data.conversation_type_pick);
     } else {
       velmaTopicsSection.style.display = 'none';
     }
@@ -5771,20 +5536,23 @@
     sttPartial = null;
     sttData = { utterances: sttUtterances, duration_ms: data.duration_ms };
 
-    // 3. Render via the shared pipeline (this draws #stt-chart + #transcript-list bubbles)
+    // 3. Render via the shared pipeline (this draws the emotion clip strip in
+    //    the player + the transcript rows below).
     renderTranscript();
 
-    // 4. Velma has its own per-speaker emotion chart; hide the transcription
-    //    timeline that renderTranscript draws.
-    const chart = document.getElementById('stt-chart');
-    if (chart) { chart.innerHTML = ''; chart.classList.remove('visible'); }
+    // 4. Relabel the player's speaker lanes with the inferred role names
+    //    (design shows e.g. "Customer" / "Support specialist" on the strip).
+    const laneLabels = Object.keys(speakerOrder)
+      .sort((a, b) => speakerOrder[a] - speakerOrder[b])
+      .map(label => speakerToRole[label] || label);
+    if (laneLabels.length) syncSpeakerLanes(laneLabels);
 
-    // 5. Patch the rendered bubbles: replace "Speaker N" with role name; add behavior chips.
+    // 5. Patch the rendered rows: replace "Speaker N" with role name; add behavior links.
     patchVelmaTranscriptBubbles();
   }
 
   function patchVelmaTranscriptBubbles() {
-    const bubbles = transcriptList.querySelectorAll('.transcript-utterance');
+    const bubbles = transcriptList.querySelectorAll('.pg-transcript-utterance');
     bubbles.forEach((bEl, i) => {
       const u = sttUtterances[i];
       if (!u) return;
@@ -5792,25 +5560,24 @@
       if (u.clip_uuid) bEl.setAttribute('data-clip-uuid', u.clip_uuid);
       // Replace "Speaker N" with the inferred role name from participant_role_picks
       if (u.__velma_role_name) {
-        const sp = bEl.querySelector('.transcript-speaker');
+        const sp = bEl.querySelector('.pg-transcript-speaker');
         if (sp) sp.textContent = u.__velma_role_name;
       }
-      // Add behavior chips after the timestamp
+      // Add behavior links after the speaker (design: linked behavior names in the header)
       const clipB = velmaClipBehaviorsByUuid[u.clip_uuid] || [];
       if (clipB.length) {
-        const header = bEl.querySelector('.transcript-utterance-header');
+        const header = bEl.querySelector('.pg-transcript-utterance-header');
         if (header) {
-          const wrap = document.createElement('span');
-          wrap.className = 'velma-bubble-behaviors';
+          const anchor = header.querySelector('.pg-transcript-speaker') || header.querySelector('.pg-transcript-time');
           clipB.forEach(cb => {
-            const chip = document.createElement('span');
-            chip.className = 'velma-bubble-behavior' + (cb.definitive ? ' definitive' : '');
+            const chip = document.createElement('a');
+            chip.href = '#';
+            chip.className = 'pg-behavior-link' + (cb.definitive ? ' definitive' : '');
             chip.textContent = cb.name;
-            wrap.appendChild(chip);
+            chip.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+            if (anchor && anchor.nextSibling) header.insertBefore(chip, anchor.nextSibling);
+            else header.appendChild(chip);
           });
-          const time = header.querySelector('.transcript-time');
-          if (time && time.nextSibling) header.insertBefore(wrap, time.nextSibling);
-          else header.appendChild(wrap);
         }
       }
       // Surface detection_model_results when present (raw debug signal — per-clip
@@ -5835,7 +5602,7 @@
   // Jump a behavior click to its evidence clip and briefly flash the bubble
   function jumpToClip(clipUuid) {
     if (!clipUuid) return;
-    const bubble = transcriptList.querySelector(`.transcript-utterance[data-clip-uuid="${clipUuid}"]`);
+    const bubble = transcriptList.querySelector(`.pg-transcript-utterance[data-clip-uuid="${clipUuid}"]`);
     if (!bubble) return;
     bubble.scrollIntoView({ behavior: 'smooth', block: 'center' });
     bubble.classList.remove('velma-bubble-flash');
@@ -5847,25 +5614,6 @@
     if (u && resultsAudio && typeof u.start_ms === 'number') {
       try { resultsAudio.currentTime = u.start_ms / 1000; } catch {}
     }
-  }
-
-  function buildPickBadge(label, value, confidence, source, reasoning, detail) {
-    const el = document.createElement('div');
-    el.className = 'velma-pick';
-    el.innerHTML =
-      `<span class="velma-pick-label">${escapeHtml(label)}:</span>` +
-      `<span class="velma-pick-value">${escapeHtml(value || '')}</span>` +
-      (confidence != null ? `<span class="velma-pick-conf">${Math.round(confidence * 100)}%</span>` : '') +
-      (source ? `<span class="velma-pick-source">${escapeHtml(source)}</span>` : '');
-    // Show model's reasoning inline (or detail if reasoning is null) — raw API output for debugging
-    const text = reasoning || detail || '';
-    if (text) {
-      const r = document.createElement('span');
-      r.className = 'velma-pick-reasoning';
-      r.textContent = text;
-      el.appendChild(r);
-    }
-    return el;
   }
 
   // Per-speaker emotion pattern bar chart (one row per speaker)
@@ -5896,45 +5644,59 @@
     for (const k of Object.keys(counts)) { if (counts[k] > bestN) { best = k; bestN = counts[k]; } }
     return best;
   }
-  function buildSpeakerRow(s, roleName) {
+  function buildSpeakerRow(s, rolePick) {
+    const roleName = rolePick ? rolePick.name : null;
     const tr = document.createElement('tr');
+
     const tdSpeaker = document.createElement('td');
-    tdSpeaker.innerHTML =
-      `<div class="velma-speaker-name">${escapeHtml(roleName || s.label)}</div>` +
-      (roleName ? `<span class="velma-speaker-role">${escapeHtml(s.label)}</span>` : '');
+    let cell = '<span class="pg-speaker-cell-name">' + escapeHtml(roleName || s.label) + '</span>';
+    const desc = rolePick ? (rolePick.reasoning || rolePick.detail || '') : '';
+    if (desc) cell += '<div class="pg-speaker-cell-desc">' + escapeHtml(desc) + '</div>';
+    if (rolePick && rolePick.confidence != null) {
+      const source = rolePick.selection_source
+        ? rolePick.selection_source.charAt(0).toUpperCase() + rolePick.selection_source.slice(1)
+        : 'Inferred';
+      cell += '<span class="m__tag-flat">' + escapeHtml(source) + ', ' + Math.round(rolePick.confidence * 100) + '%</span>';
+    }
+    tdSpeaker.innerHTML = cell;
     tr.appendChild(tdSpeaker);
+
+    // Emotion pattern: bar width = share of speaking time, segments = clip emotions
     const tdBar = document.createElement('td');
     const bar = document.createElement('div');
-    bar.className = 'velma-emotion-bar';
+    bar.className = 'pg-emo-bar';
+    bar.style.width = Math.max(2, Math.round(s.speakingPct * 100)) + '%';
     const totalSegMs = s.segments.reduce((a, x) => a + x.durationMs, 0) || 1;
     s.segments.forEach(seg => {
       const seg2 = document.createElement('div');
-      seg2.className = 'velma-emotion-bar-seg';
-      const color = EMOTION_COLORS[seg.emotion] || '#78909c';
-      seg2.style.background = color;
-      seg2.style.flexBasis = ((seg.durationMs / totalSegMs) * 100).toFixed(2) + '%';
-      seg2.title = `${seg.emotion} · ${(seg.durationMs / 1000).toFixed(1)}s`;
+      seg2.className = 'pg-emo-seg';
+      seg2.style.width = ((seg.durationMs / totalSegMs) * 100).toFixed(2) + '%';
+      seg2.style.background = emotionVar(seg.emotion);
+      seg2.dataset.tooltip = seg.emotion + ' \u00b7 ' + (seg.durationMs / 1000).toFixed(1) + 's';
       bar.appendChild(seg2);
     });
     tdBar.appendChild(bar);
-    const legend = document.createElement('div');
-    legend.className = 'velma-emotion-legend';
+    const labels = document.createElement('div');
+    labels.className = 'pg-emo-labels';
     s.distinctEmotions.forEach((em, i) => {
       const chip = document.createElement('span');
-      chip.className = 'velma-emotion-legend-chip';
-      chip.style.color = EMOTION_COLORS[em.toLowerCase()] || '#78909c';
-      chip.textContent = (i === 0 ? '' : ', ') + em;
-      legend.appendChild(chip);
+      chip.className = 'ec-' + emotionSlug(em);
+      chip.textContent = em;
+      if (i > 0) labels.appendChild(document.createTextNode(', '));
+      labels.appendChild(chip);
     });
-    tdBar.appendChild(legend);
+    tdBar.appendChild(labels);
     tr.appendChild(tdBar);
+
     const tdTime = document.createElement('td');
+    tdTime.className = 'pg-num';
     tdTime.textContent = Math.round(s.speakingPct * 100) + '%';
     tr.appendChild(tdTime);
+
     const tdLang = document.createElement('td');
-    const langName = s.language ? (s.language.toUpperCase() === 'EN' ? 'English' : s.language) : '';
+    const langName2 = s.language ? languageName(s.language) : '';
     const accentName = s.accent ? (ACCENT_SHORT[s.accent] || s.accent) + ' accent' : '';
-    tdLang.textContent = [langName, accentName].filter(Boolean).join(', ');
+    tdLang.textContent = [langName2, accentName].filter(Boolean).join(', ');
     tr.appendChild(tdLang);
     return tr;
   }
@@ -5942,53 +5704,77 @@
   // Topics grouped by speaker — each speaker row shows their topics as
   // sentiment-colored chips. Fall back to a single "All speakers" row if
   // topic_sentiments is empty.
-  function renderVelmaTopicsBySpeaker(topics, topicSentiments, speakerToRole) {
+  function renderVelmaTopicsBySpeaker(topics, topicSentiments, speakerToRole, convPick) {
+    // Lead-in: the conversation-type pick as a paragraph with an "Inferred, N%" tag
+    if (convPick) {
+      const type = document.createElement('div');
+      type.className = 'pg-topics-type';
+      let html = '<strong>' + escapeHtml(convPick.name || '') + '.</strong> ' +
+        escapeHtml(convPick.reasoning || convPick.detail || '');
+      if (convPick.confidence != null) {
+        const source = convPick.selection_source
+          ? convPick.selection_source.charAt(0).toUpperCase() + convPick.selection_source.slice(1)
+          : 'Inferred';
+        html += '<span class="m__tag-flat">' + escapeHtml(source) + ', ' + Math.round(convPick.confidence * 100) + '%</span>';
+      }
+      type.innerHTML = html;
+      velmaTopicsBySpeaker.appendChild(type);
+    }
+
     const bySpeaker = new Map();
     topicSentiments.forEach(s => {
       const k = s.speaker_label;
       if (!bySpeaker.has(k)) bySpeaker.set(k, []);
       bySpeaker.get(k).push(s);
     });
+    if (bySpeaker.size === 0 && !topics.length) return;
+
+    const section = document.createElement('div');
+    section.className = 'pg-results-table-section';
+    const table = document.createElement('table');
+    table.className = 'pg-topics-table';
+    table.innerHTML = '<thead><tr><th>Speaker</th><th>Topics</th></tr></thead>';
+    const tbody = document.createElement('tbody');
+
+    const appendRow = (label, chips) => {
+      const tr = document.createElement('tr');
+      const tdSpeaker = document.createElement('td');
+      tdSpeaker.innerHTML = '<span class="pg-speaker-cell-name">' + escapeHtml(label) + '</span>';
+      tr.appendChild(tdSpeaker);
+      const tdTopics = document.createElement('td');
+      const group = document.createElement('div');
+      group.className = 'm__tag-group';
+      chips.forEach(c => group.appendChild(c));
+      tdTopics.appendChild(group);
+      tr.appendChild(tdTopics);
+      tbody.appendChild(tr);
+    };
+
     if (bySpeaker.size === 0) {
-      // No per-speaker breakdown — render the flat topics list
-      const row = document.createElement('div');
-      row.className = 'velma-topics-speaker-row';
-      const label = document.createElement('span');
-      label.className = 'velma-topics-speaker-label';
-      label.textContent = 'All speakers';
-      row.appendChild(label);
-      topics.forEach(t => row.appendChild(buildTopicChip(t, null)));
-      velmaTopicsBySpeaker.appendChild(row);
-      return;
+      appendRow('All speakers', topics.map(t => buildTopicChip(t, null)));
+    } else {
+      bySpeaker.forEach((sents, speakerLabel) => {
+        const roleName = speakerToRole[speakerLabel];
+        appendRow(roleName || speakerLabel, sents.map(s => buildTopicChip(s.topic, s)));
+      });
     }
-    bySpeaker.forEach((sents, speakerLabel) => {
-      const row = document.createElement('div');
-      row.className = 'velma-topics-speaker-row';
-      const label = document.createElement('span');
-      label.className = 'velma-topics-speaker-label';
-      const roleName = speakerToRole[speakerLabel];
-      label.innerHTML = escapeHtml(roleName || speakerLabel) +
-        (roleName ? `<span class="velma-topics-speaker-label-sub">(${escapeHtml(speakerLabel)})</span>` : '');
-      row.appendChild(label);
-      sents.forEach(s => row.appendChild(buildTopicChip(s.topic, s)));
-      velmaTopicsBySpeaker.appendChild(row);
-    });
+    table.appendChild(tbody);
+    section.appendChild(table);
+    velmaTopicsBySpeaker.appendChild(section);
   }
 
   function buildTopicChip(topic, sentiment) {
     const chip = document.createElement('span');
-    let kind = 'neu';
-    if (sentiment && sentiment.sentiment_score > 0.1) kind = 'pos';
-    else if (sentiment && sentiment.sentiment_score < -0.1) kind = 'neg';
-    chip.className = 'velma-topic-chip ' + kind;
-    chip.appendChild(document.createTextNode(topic));
+    chip.className = 'm__tag';
+    if (sentiment && sentiment.sentiment_score < -0.1) chip.classList.add('m__tag--error');
+    chip.appendChild(document.createTextNode(topic + ' '));
     if (sentiment) {
       const score = document.createElement('span');
-      score.className = 'velma-topic-chip-score';
+      score.className = 'pg-num muted';
       const s = Number(sentiment.sentiment_score || 0).toFixed(2);
       score.textContent = (sentiment.sentiment_score > 0 ? '+' : '') + s;
       chip.appendChild(score);
-      chip.title = `${sentiment.sentiment_label} (${s})`;
+      if (sentiment.sentiment_label) chip.dataset.tooltip = sentiment.sentiment_label + ' (' + s + ')';
     }
     return chip;
   }
@@ -5999,86 +5785,135 @@
     }[c]));
   }
 
-  function buildBehaviorRow(b, roleName, isNewGroup) {
-    const tr = document.createElement('tr');
-    tr.className = 'velma-behavior-row' +
-      (b.detected ? '' : ' undetected') +
-      (b.skipped ? ' skipped' : '') +
-      (b.error_reason ? ' error' : '');
+  // Design behaviors table: one speaker cell (rowspan) per group, detected rows
+  // with linked names + evidence quotes, then a "Not detected" subhead for the rest.
+  function renderVelmaBehaviorsTable(behaviors, speakerToRole) {
+    const rank = (x) => x.error_reason ? 3 : x.skipped ? 2 : x.detected ? 0 : 1;
+    const bySpeaker = new Map();
+    behaviors.forEach(b => {
+      const k = b.speaker_label || '\u2014';
+      if (!bySpeaker.has(k)) bySpeaker.set(k, []);
+      bySpeaker.get(k).push(b);
+    });
 
-    // Speaker cell — only render if start of new speaker group
-    const tdSpeaker = document.createElement('td');
-    if (isNewGroup) {
-      tdSpeaker.innerHTML =
-        `<div class="velma-behavior-speaker-cell">${escapeHtml(roleName || b.speaker_label || '—')}</div>` +
-        (roleName && b.speaker_label ? `<span class="velma-behavior-speaker-role">${escapeHtml(b.speaker_label)}</span>` : '');
-    }
-    tr.appendChild(tdSpeaker);
+    // Quote lookup: clip_uuid → clip text (for evidence links)
+    const clipText = {};
+    sttUtterances.forEach(u => { if (u.clip_uuid) clipText[u.clip_uuid] = u.text || ''; });
 
-    // ── Behavior name + status pill (raw API: detected / skipped / error)
-    const tdName = document.createElement('td');
-    const name = document.createElement('span');
-    name.className = 'velma-behavior-name';
-    name.textContent = b.behavior_name;
-    // Tooltip with the configured definition (what we asked the model to detect)
-    const cfg = (velmaConfig.behaviors || []).find(x => x.behavior_uuid === b.behavior_uuid);
-    if (cfg) {
-      const parts = [];
-      if (cfg.short_description) parts.push(cfg.short_description);
-      if (cfg.detailed_description) parts.push(cfg.detailed_description);
-      if (parts.length) name.title = parts.join('\n\n');
-    }
-    // Click target → jump to first evidence clip in the transcript
-    const targetClipUuid = b.definitive_clip_uuid || (Array.isArray(b.evidence_clip_uuids) && b.evidence_clip_uuids[0]) || null;
-    if (targetClipUuid) {
-      name.addEventListener('click', () => jumpToClip(targetClipUuid));
-    } else {
-      name.classList.add('no-evidence');
-    }
-    tdName.appendChild(name);
+    bySpeaker.forEach((list, speakerLabel) => {
+      const sorted = list.slice().sort((a, b) => {
+        const ra = rank(a), rb = rank(b);
+        if (ra !== rb) return ra - rb;
+        return (b.confidence || 0) - (a.confidence || 0);
+      });
+      const detected = sorted.filter(b => rank(b) === 0);
+      const rest = sorted.filter(b => rank(b) !== 0);
+      // subhead counts as a row for the rowspan
+      const groupRows = sorted.length + (detected.length && rest.length ? 1 : 0);
 
-    let statusText, statusKind;
-    if (b.error_reason)      { statusText = 'error';        statusKind = 'error'; }
-    else if (b.skipped)      { statusText = 'skipped';      statusKind = 'skipped'; }
-    else if (b.detected)     { statusText = 'detected';     statusKind = 'detected'; }
-    else                     { statusText = 'not detected'; statusKind = 'undetected'; }
-    const pill = document.createElement('span');
-    pill.className = 'velma-behavior-pill velma-behavior-pill--' + statusKind;
-    pill.textContent = statusText;
-    tdName.appendChild(pill);
+      let emittedSpeakerCell = false;
+      const speakerCellHtml = () => {
+        const roleName = speakerToRole[speakerLabel];
+        return escapeHtml(roleName || speakerLabel);
+      };
 
-    // Evidence clip count (raw API)
-    if (Array.isArray(b.evidence_clip_uuids) && b.evidence_clip_uuids.length > 0) {
-      const ev = document.createElement('span');
-      ev.className = 'velma-behavior-evidence';
-      ev.textContent = `Evidence: ${b.evidence_clip_uuids.length} clip${b.evidence_clip_uuids.length === 1 ? '' : 's'}`;
-      if (b.definitive_clip_uuid) ev.textContent += ' (1 definitive)';
-      tdName.appendChild(ev);
-    }
-    tr.appendChild(tdName);
+      const emitRow = (b, opts) => {
+        const tr = document.createElement('tr');
+        tr.className = 'pg-behavior-row' +
+          (opts.detected ? ' pg-behavior-row--detected' : ' pg-behavior-row--inactive') +
+          (opts.detectedLast ? ' pg-behavior-row--detected-last' : '') +
+          (opts.groupEnd ? ' pg-behavior-row--group-end' : '');
 
-    // ── Model reasoning (raw API output only — reasoning / skip_reason / error_reason)
-    const tdReasoning = document.createElement('td');
-    tdReasoning.className = 'velma-behavior-reasoning';
-    const reasoning = b.reasoning || b.skip_reason || b.error_reason || '';
-    if (reasoning) {
-      tdReasoning.textContent = reasoning;
-    } else {
-      tdReasoning.innerHTML = '<span class="velma-behavior-reasoning-empty">No reasoning returned</span>';
-    }
-    tr.appendChild(tdReasoning);
+        if (!emittedSpeakerCell) {
+          const tdSpeaker = document.createElement('td');
+          tdSpeaker.rowSpan = groupRows;
+          tdSpeaker.className = 'pg-behavior-speaker-cell';
+          tdSpeaker.innerHTML = speakerCellHtml();
+          tr.appendChild(tdSpeaker);
+          emittedSpeakerCell = true;
+        }
 
-    // ── Confidence (raw API value, no reinterpretation)
-    const tdConf = document.createElement('td');
-    tdConf.className = 'velma-behavior-confidence';
-    if (b.confidence == null) {
-      tdConf.textContent = '—';
-    } else {
-      tdConf.textContent = Math.round(b.confidence * 100) + '%';
-    }
-    tr.appendChild(tdConf);
+        // Behavior name (linked when there is evidence to jump to)
+        const tdName = document.createElement('td');
+        const targetClipUuid = b.definitive_clip_uuid ||
+          (Array.isArray(b.evidence_clip_uuids) && b.evidence_clip_uuids[0]) || null;
+        if (opts.detected && targetClipUuid) {
+          const link = document.createElement('a');
+          link.href = '#';
+          link.className = 'pg-behavior-link';
+          link.innerHTML = '<svg width="18" height="18" aria-hidden="true"><use href="#behaviors" /></svg>' +
+            escapeHtml(b.behavior_name);
+          link.addEventListener('click', (e) => { e.preventDefault(); jumpToClip(targetClipUuid); });
+          tdName.appendChild(link);
+        } else {
+          const name = document.createElement('span');
+          name.className = 'pg-behavior-name' + (opts.detected ? '' : ' pg-behavior-name--inactive');
+          name.textContent = b.behavior_name;
+          tdName.appendChild(name);
+        }
+        // Config tooltip: what we asked the model to detect
+        const cfg = (velmaConfig.behaviors || []).find(x => x.behavior_uuid === b.behavior_uuid);
+        if (cfg && (cfg.short_description || cfg.detailed_description)) {
+          tdName.dataset.tooltip = [cfg.short_description, cfg.detailed_description].filter(Boolean).join(' \u2014 ');
+        }
+        if (b.skipped || b.error_reason) {
+          const flag = document.createElement('div');
+          flag.className = 'caption';
+          flag.textContent = b.error_reason ? 'error' : 'skipped';
+          tdName.appendChild(flag);
+        }
+        tr.appendChild(tdName);
 
-    return tr;
+        // Model reasoning + evidence quotes
+        const tdReasoning = document.createElement('td');
+        const reasoning = document.createElement('div');
+        reasoning.className = 'pg-model-reasoning';
+        reasoning.textContent = b.reasoning || b.skip_reason || b.error_reason || '';
+        tdReasoning.appendChild(reasoning);
+        if (opts.detected && Array.isArray(b.evidence_clip_uuids) && b.evidence_clip_uuids.length) {
+          const evList = document.createElement('div');
+          evList.className = 'pg-evidence-list';
+          b.evidence_clip_uuids.slice(0, 3).forEach(uuid => {
+            const text = (clipText[uuid] || '').replace(/<[^>]+>/g, '');
+            if (!text) return;
+            const ev = document.createElement('a');
+            ev.href = '#';
+            ev.className = 'pg-evidence-link pg-evidence-link--fade';
+            ev.textContent = text.length > 60 ? text.slice(0, 60) : text;
+            ev.addEventListener('click', (e) => { e.preventDefault(); jumpToClip(uuid); });
+            evList.appendChild(ev);
+          });
+          if (evList.children.length) tdReasoning.appendChild(evList);
+        }
+        tr.appendChild(tdReasoning);
+
+        // Confidence
+        const tdConf = document.createElement('td');
+        tdConf.className = 'pg-num';
+        tdConf.textContent = b.confidence == null ? '\u2014' : Math.round(b.confidence * 100) + '%';
+        tr.appendChild(tdConf);
+
+        velmaBehaviorsTbody.appendChild(tr);
+      };
+
+      detected.forEach((b, i) => emitRow(b, {
+        detected: true,
+        detectedLast: i === detected.length - 1 && rest.length > 0,
+        groupEnd: i === detected.length - 1 && rest.length === 0,
+      }));
+
+      if (detected.length && rest.length) {
+        const subhead = document.createElement('tr');
+        subhead.className = 'pg-behavior-subhead-row';
+        subhead.innerHTML = '<td colspan="3"><span class="pg-behavior-subhead">Not detected</span></td>';
+        velmaBehaviorsTbody.appendChild(subhead);
+      }
+
+      rest.forEach((b, i) => emitRow(b, {
+        detected: false,
+        groupEnd: i === rest.length - 1,
+      }));
+    });
   }
 
   // ── Velma config editor ────────────────────────────────────────────────────
@@ -6099,13 +5934,13 @@
     renderVelmaEditorForm();
     renderVelmaEditorJson();
     setRawJsonEditable(false);
-    velmaConfigModal.classList.add('visible');
+    velmaConfigModal.hidden = false;
     // Presets load lazily (read-only, no usage cost) and re-render when ready.
     renderVelmaPresetsList();
     loadVelmaPresets().then(renderVelmaPresetsList);
   }
   function closeVelmaConfigModal() {
-    velmaConfigModal.classList.remove('visible');
+    velmaConfigModal.hidden = true;
   }
 
   // ── Form rendering (left pane) ─────────────────────────────────────────────
@@ -6534,7 +6369,6 @@
 
   if (velmaConfigBtn) velmaConfigBtn.addEventListener('click', openVelmaConfigModal);
   if (velmaSetupBtn) velmaSetupBtn.addEventListener('click', openVelmaConfigModal);
-  if (btnEditConfigVelma) btnEditConfigVelma.addEventListener('click', openVelmaConfigModal);
   if (velmaConfigModalClose) velmaConfigModalClose.addEventListener('click', closeVelmaConfigModal);
   if (velmaConfigModal) {
     closeOnBackdrop(velmaConfigModal, closeVelmaConfigModal);
@@ -6658,23 +6492,6 @@
     });
   }
 
-  // ── Velma sidebar buttons ──────────────────────────────────────────────────
-  if (btnShowJsonVelma) {
-    btnShowJsonVelma.addEventListener('click', () => {
-      if (!velmaData) return;
-      jsonPre.textContent = JSON.stringify(velmaData, null, 2);
-      jsonModal.classList.add('visible');
-    });
-  }
-  if (btnShowStatsVelma) {
-    btnShowStatsVelma.addEventListener('click', () => {
-      if (!velmaData) return;
-      statsModalTitle.textContent = 'Velma Statistics';
-      statsGrid.innerHTML = renderVelmaStats(velmaData, currentMeta);
-      statsModal.classList.add('visible');
-    });
-  }
-
   function renderVelmaStats(data, meta) {
     const clips = data.clips || [];
     const behaviors = data.behaviors || [];
@@ -6699,18 +6516,15 @@
       ['Response size', meta && meta.responseSize ? Math.round(meta.responseSize / 1024) + ' KB' : '—'],
       ['HTTP', meta && meta.httpStatus ? meta.httpStatus + ' ' + (meta.httpStatusText || '') : '—'],
     ];
-    let html = '<table class="stats-table">';
-    rows.forEach(([k, v]) => {
-      html += '<tr><td class="stats-label">' + escapeHtml(k) + '</td><td class="stats-value">' + escapeHtml(String(v)) + '</td></tr>';
-    });
-    html += '</table>';
-    return html;
+    return statsCardsHtml([
+      { group: 'General Statistics', rows: rows.slice(0, 10) },
+      { group: 'Request', rows: rows.slice(10) },
+    ]);
   }
 
   // ── URL Routing ──────────────────────────────────────────────────────────
   window.addEventListener('popstate', (e) => {
     const mode = (e.state && e.state.mode) || getModeFromPath();
-    document.getElementById('mode-' + mode).checked = true;
     switchMode(mode, false);
   });
 
@@ -6736,219 +6550,41 @@
     scrollTimer = setTimeout(() => document.documentElement.classList.remove('is-scrolling'), 1200);
   }, { passive: true });
 
-  // ── Rate limit display ───────────────────────────────────────────────
-  const rateLimitBar = document.getElementById('rate-limit-bar');
+  // ── Rate limit display (plate quota meter) ───────────────────────────
+  let quotaRemaining = null;
+  let quotaLimit = null;
+
+  function applyQuotaToPlate() {
+    if (quotaRemaining == null) return;
+    if (plateQuotaDefault) plateQuotaDefault.textContent = quotaRemaining + ' / ' + quotaLimit;
+    if (plateQuotaLow) {
+      plateQuotaLow.innerHTML = '<span class="pg-upload-meta-danger">' + quotaRemaining + '</span> / ' + quotaLimit;
+    }
+    // Only flip between the idle-ish states; never interrupt an active flow.
+    const st = uploadPlate ? uploadPlate.dataset.state : 'initial';
+    if (st === 'initial' || st === 'low-quota' || st === 'exhausted') {
+      setPlateState('initial'); // setPlateState normalizes to low-quota/exhausted
+    }
+  }
+
   function updateRateLimit() {
     fetch('/api/usage').then(r => r.json()).then(d => {
-      rateLimitBar.textContent = d.remaining + '/' + d.limit + ' requests available';
-      rateLimitBar.style.color = d.remaining <= 2 ? 'var(--deepfake)' : '';
+      quotaRemaining = d.remaining;
+      quotaLimit = d.limit;
+      applyQuotaToPlate();
     }).catch(() => {});
   }
   updateRateLimit();
 
   // ── Init ────────────────────────────────────────────────────────────────
+  // Wire the design chrome once, then let switchMode drive everything.
+  initPlateChrome();
+  initPlayerController();
+  initThemeToggle();
+
   const initMode = getModeFromPath();
-  currentMode = initMode;
-  document.getElementById('mode-' + initMode).checked = true;
-
-  if (initMode === 'deepfake') {
-    // Deepfake init
-    transcriptContainer.classList.remove('visible');
-    resultsSidebar.classList.remove('visible');
-    redactionContent.style.display = 'none';
-    if (musicContent) musicContent.style.display = 'none';
-    if (musicSidebar) musicSidebar.style.display = 'none';
-    currentMeta = {
-      fileSize: 1.87 * 1024 * 1024, fileType: 'audio/mpeg',
-      httpStatus: 200, httpStatusText: 'OK',
-      responseSize: 4.2 * 1024, processingMs: 2660,
-    };
-    renderDeepfakeResults(DEMO_DATA, DEMO_AUDIO_URL);
-  } else if (initMode === 'music') {
-    // Music Detection init
-    deepfakeContent.style.display = 'none';
-    resultsVerdict.style.display = 'none';
-    transcriptContainer.classList.remove('visible');
-    resultsSidebar.classList.remove('visible');
-    sttOptions.classList.remove('visible');
-    redactionContent.style.display = 'none';
-    if (recordAction) { recordAction.style.display = ''; recordAction.classList.remove('disabled-soon'); }
-    if (streamDemoAction) streamDemoAction.style.display = '';
-    if (streamFileAction) streamFileAction.style.display = '';
-    currentMeta = {
-      fileSize: 243900, fileType: 'audio/opus',
-      httpStatus: 200, httpStatusText: 'OK',
-      responseSize: JSON.stringify(DEMO_MUSIC_DATA).length,
-      processingMs: DEMO_MUSIC_DATA.latency_ms || 0,
-    };
-    renderMusicResults(DEMO_MUSIC_DATA, DEMO_MUSIC_AUDIO_URL);
-  } else if (initMode === 'aimusic') {
-    // AI Music Detection init — render pre-cached demo so the page lights up
-    // without an API call on first load.
-    deepfakeContent.style.display = 'none';
-    resultsVerdict.style.display = 'none';
-    transcriptContainer.classList.remove('visible');
-    resultsSidebar.classList.remove('visible');
-    sttOptions.classList.remove('visible');
-    redactionContent.style.display = 'none';
-    if (musicContent) musicContent.style.display = 'none';
-    if (musicSidebar) musicSidebar.style.display = 'none';
-    if (aimusicContent) aimusicContent.classList.add('visible');
-    if (aimusicSidebar) aimusicSidebar.style.display = '';
-    // AI Music supports mic + file streaming AND batch — show the full streaming
-    // trio (mic record + stream demo + stream file), same as transcription/music.
-    if (recordAction) { recordAction.style.display = ''; recordAction.classList.remove('disabled-soon'); recordAction.classList.remove('streaming-soon'); }
-    if (streamDemoAction) { streamDemoAction.style.display = ''; streamDemoAction.classList.remove('streaming-soon'); }
-    if (streamFileAction) { streamFileAction.style.display = ''; streamFileAction.classList.remove('streaming-soon'); }
-    currentData = DEMO_AIMUSIC_DATA;
-    currentMeta = {
-      fileSize: 2124230, fileType: 'audio/mpeg',
-      httpStatus: 200, httpStatusText: 'OK',
-      responseSize: JSON.stringify(DEMO_AIMUSIC_DATA).length,
-      processingMs: DEMO_AIMUSIC_DATA.latency_ms || 0,
-    };
-    resultsFilename.textContent = DEMO_AIMUSIC_DATA.filename || 'big-mac-papelao.mp3';
-    resultsAudio.src = DEMO_AIMUSIC_AUDIO_URL;
-    renderAimusicResult(DEMO_AIMUSIC_DATA);
-  } else if (initMode === 'language') {
-    // Language Detection init — render pre-cached demo so the page lights up
-    // without an API call on first load.
-    deepfakeContent.style.display = 'none';
-    resultsVerdict.style.display = 'none';
-    transcriptContainer.classList.remove('visible');
-    resultsSidebar.classList.remove('visible');
-    sttOptions.classList.remove('visible');
-    redactionContent.style.display = 'none';
-    if (musicContent) musicContent.style.display = 'none';
-    if (musicSidebar) musicSidebar.style.display = 'none';
-    if (languageContent) languageContent.classList.add('visible');
-    if (languageSidebar) languageSidebar.style.display = '';
-    if (recordAction) recordAction.style.display = 'none';
-    if (streamDemoAction) streamDemoAction.style.display = 'none';
-    if (streamFileAction) streamFileAction.style.display = 'none';
-    currentData = DEMO_LANGUAGE_DATA;
-    currentMeta = {
-      fileSize: 1.87 * 1024 * 1024, fileType: 'audio/mpeg',
-      httpStatus: 200, httpStatusText: 'OK',
-      responseSize: JSON.stringify(DEMO_LANGUAGE_DATA).length,
-      processingMs: 1100,
-    };
-    resultsFilename.textContent = DEMO_LANGUAGE_FILENAME;
-    resultsAudio.src = DEMO_LANGUAGE_AUDIO_URL;
-    lastLanguageFilename = DEMO_LANGUAGE_FILENAME;
-    renderLanguageResult(DEMO_LANGUAGE_DATA);
-  } else if (initMode === 'emotion' || initMode === 'accent') {
-    // Emotion / Accent init — render pre-cached demo so the page lights up
-    // without an API call on first load.
-    deepfakeContent.style.display = 'none';
-    resultsVerdict.style.display = 'none';
-    transcriptContainer.classList.remove('visible');
-    resultsSidebar.classList.remove('visible');
-    sttOptions.classList.remove('visible');
-    redactionContent.style.display = 'none';
-    if (musicContent) musicContent.style.display = 'none';
-    if (musicSidebar) musicSidebar.style.display = 'none';
-    const eaInitContent = initMode === 'emotion' ? emotionContent : accentContent;
-    const eaInitSidebar = initMode === 'emotion' ? emotionSidebar : accentSidebar;
-    if (eaInitContent) eaInitContent.classList.add('visible');
-    if (eaInitSidebar) eaInitSidebar.style.display = '';
-    if (recordAction) recordAction.style.display = 'none';
-    if (streamDemoAction) streamDemoAction.style.display = 'none';
-    if (streamFileAction) streamFileAction.style.display = 'none';
-    showEaMode(initMode);
-  } else if (initMode === 'velma') {
-    // Velma init — open pre-loaded with the cached demo, like the other model tabs.
-    deepfakeContent.style.display = 'none';
-    resultsVerdict.style.display = 'none';
-    transcriptContainer.classList.add('visible'); // reuse stt-chart + transcript-list
-    resultsSidebar.classList.remove('visible');
-    sttOptions.classList.remove('visible');
-    redactionContent.style.display = 'none';
-    if (musicContent) musicContent.style.display = 'none';
-    if (musicSidebar) musicSidebar.style.display = 'none';
-    if (velmaContent) velmaContent.classList.add('visible');
-    if (velmaSidebar) velmaSidebar.classList.add('visible');
-    if (velmaOptions) velmaOptions.classList.add('visible');
-    if (velmaDemoAction) velmaDemoAction.style.display = '';
-    // Velma supports mic + file streaming AND batch — show the same streaming
-    // trio as transcription (mic record + stream demo + stream file).
-    if (recordAction) recordAction.style.display = '';
-    if (streamDemoAction) streamDemoAction.style.display = '';
-    if (streamFileAction) streamFileAction.style.display = '';
-    showVelmaDemo();
-    updateVelmaConfigSummary();
-  } else if (initMode === 'redaction') {
-    // Redaction init
-    deepfakeContent.style.display = 'none';
-    resultsVerdict.style.display = 'none';
-    transcriptContainer.classList.remove('visible');
-    resultsSidebar.classList.remove('visible');
-    sttOptions.classList.remove('visible');
-    redactionContent.style.display = 'block';
-    redactionSidebar.classList.add('visible');
-    redactionOptions.classList.add('visible');
-    if (musicContent) musicContent.style.display = 'none';
-    if (musicSidebar) musicSidebar.style.display = 'none';
-    if (recordAction) { recordAction.style.display = ''; recordAction.classList.add('disabled-soon'); }
-    if (streamDemoAction) streamDemoAction.style.display = 'none';
-    if (streamFileAction) streamFileAction.style.display = 'none';
-    if (playerEntryOriginal) playerEntryOriginal.style.display = '';
-    if (redactedLabel) redactedLabel.style.display = '';
-    redactionData = DEMO_REDACTION_DATA;
-    currentData = DEMO_REDACTION_DATA;
-    currentMeta = {
-      fileSize: 1958055, fileType: 'audio/mpeg',
-      httpStatus: 200, httpStatusText: 'OK',
-      responseSize: JSON.stringify(DEMO_REDACTION_DATA).length, processingMs: 2800,
-    };
-    resultsFilename.textContent = DEMO_REDACTION_DATA.filename || 'AIAgentFrustration.mp3';
-    resultsAudio.src = DEMO_REDACTION_AUDIO_URL;
-    if (originalAudio) originalAudio.src = DEMO_REDACTION_ORIGINAL_AUDIO_URL;
-    const initRanges = DEMO_REDACTION_DATA.redaction_ranges || [];
-    const initDurMs = DEMO_REDACTION_DATA.duration_ms || 0;
-    renderRedactionTimeline(initRanges, initDurMs);
-    renderRedactionTranscript(DEMO_REDACTION_DATA.utterances || []);
-    renderRedactionSidebar(initRanges, initDurMs);
-    if (initDurMs) {
-      setupRedactionPlaybackTracking(initDurMs);
-      setupRedactionTranscriptTracking(DEMO_REDACTION_DATA.utterances || []);
-    }
-  } else {
-    // Transcription init (default)
-    deepfakeContent.style.display = 'none';
-    resultsVerdict.style.display = 'none';
-    redactionContent.style.display = 'none';
-    transcriptContainer.classList.add('visible');
-    resultsSidebar.classList.add('visible');
-    sttOptions.classList.add('visible');
-    if (musicContent) musicContent.style.display = 'none';
-    if (musicSidebar) musicSidebar.style.display = 'none';
-    if (recordAction) {
-      recordAction.classList.remove('disabled-soon');
-      recordAction.querySelector('span').textContent = 'Start streaming';
-    }
-
-    sttData = DEMO_STT_DATA;
-    currentData = DEMO_STT_DATA;
-    sttUtterances = DEMO_STT_DATA.utterances || [];
-    sttPartial = null;
-    currentMeta = {
-      fileSize: 1958055, fileType: 'audio/mpeg',
-      httpStatus: 200, httpStatusText: 'OK',
-      responseSize: JSON.stringify(DEMO_STT_DATA).length, processingMs: 2660,
-    };
-    resultsFilename.textContent = DEMO_STT_DATA.filename || 'AIAgentFrustration.mp3';
-    resultsAudio.src = DEMO_STT_AUDIO_URL;
-    renderTranscript();
-  }
+  switchMode(initMode, false);
 
   // Replace initial state so back button works
-  const initPath = initMode === 'deepfake' ? '/deepfake'
-    : initMode === 'redaction' ? '/redaction'
-    : initMode === 'music' ? '/music'
-    : initMode === 'aimusic' ? '/ai-music'
-    : initMode === 'language' ? '/language'
-    : initMode === 'velma' ? '/velma'
-    : '/transcription';
-  history.replaceState({ mode: initMode }, '', initPath + location.search);
+  history.replaceState({ mode: initMode }, '', MODES[initMode].path + location.search);
 })();

@@ -1,3083 +1,637 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Modulate AI — Voice Intelligence</title>
-<meta name="robots" content="noindex, nofollow">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%23430f92'/%3E%3Cstop offset='.5' stop-color='%23fb3958'/%3E%3Cstop offset='1' stop-color='%23fc7856'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='%23120021'/%3E%3Cg stroke='url(%23g)' stroke-width='2.5' stroke-linecap='round' fill='none'%3E%3Cline x1='6' y1='13' x2='6' y2='19'/%3E%3Cline x1='10.5' y1='9' x2='10.5' y2='23'/%3E%3Cline x1='15' y1='5' x2='15' y2='27'/%3E%3Cline x1='19.5' y1='10' x2='19.5' y2='22'/%3E%3Cline x1='24' y1='7' x2='24' y2='25'/%3E%3Cline x1='28.5' y1='12' x2='28.5' y2='20'/%3E%3C/g%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-/* ── Reset & Tokens ──────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-/* Hide scrollbar until user scrolls */
-html { scrollbar-gutter: stable; }
-html::-webkit-scrollbar { width: 6px; }
-html::-webkit-scrollbar-track { background: transparent; }
-html::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; transition: background 0.3s; }
-html.is-scrolling::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); }
-html { scrollbar-width: thin; scrollbar-color: transparent transparent; }
-html.is-scrolling { scrollbar-color: rgba(0,0,0,0.2) transparent; }
-
-:root {
-  font-size: 100%;
-
-  --text-color:    rgb(30, 30, 35);
-  --text-caption:  rgb(120, 120, 140);
-  --text-inverted: rgb(242, 242, 246);
-  --bg:            #ffffff;
-  --bg-surface:    rgb(245, 245, 248);
-  --bg-accent:     rgb(20, 20, 50);
-  --bg-hover:      rgb(40, 95, 235);
-  --ui-border:     rgb(220, 220, 230);
-  --ui-success:    rgb(21, 207, 135);
-  --ui-error:      rgb(255, 53, 84);
-  --purple:        rgb(124, 58, 237);
-  --purple-light:  rgb(196, 167, 255);
-
-  --radius-s:  0.3rem;
-  --radius-m:  0.5rem;
-  --radius-l:  0.75rem;
-  --radius-xl: 1rem;
-
-  --space-xxs: 0.3rem;
-  --space-xs:  0.7rem;
-  --space-s:   0.9rem;
-  --space-m:   1.2rem;
-  --space-l:   2.4rem;
-  --space-xl:  4.8rem;
-
-  --font-xs:   0.8rem;
-  --font-s:    0.9rem;
-  --font-m:    1rem;
-  --font-l:    1.125rem;
-  --font-xl:   1.25rem;
-  --font-xxl:  1.5rem;
-
-  --hover-in:  0s;
-  --hover-out: 0.3s ease;
-}
-
-body {
-  font-family: "Inter", -apple-system, "Segoe UI", sans-serif;
-  color: var(--text-color);
-  background: var(--bg);
-  line-height: 1.55;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* ── Layout Shell ────────────────────────────────────────────────────── */
-.page {
-  max-width: 1040px;
-  margin: 0 auto;
-  padding: 0 var(--space-m);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ── Header ──────────────────────────────────────────────────────────── */
-.header {
-  padding: var(--space-m) 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-xs);
-}
-
-.header-logo {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  text-decoration: none;
-  color: var(--text-color);
-}
-
-.header-logo svg { height: 1.4rem; width: auto; flex-shrink: 0; position: relative; top: -1px; }
-
-.header-wordmark {
-  font-size: var(--font-s);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.header-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.7rem 1.8rem;
-  font-size: var(--font-s);
-  font-weight: 600;
-  font-family: inherit;
-  color: #fff;
-  background: linear-gradient(135deg, #430f92, #fb3958);
-  border: none;
-  border-radius: var(--radius-m);
-  cursor: pointer;
-  transition: filter var(--hover-out);
-  white-space: nowrap;
-}
-.header-cta:hover { filter: brightness(1.2); transition-duration: var(--hover-in); }
-.header-cta svg { width: 1rem; height: 1rem; }
-
-.hs-modal-backdrop {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(4px);
-  justify-content: center;
-  align-items: center;
-}
-.hs-modal-backdrop.visible { display: flex; }
-.hs-modal {
-  background: #fff;
-  border-radius: 12px;
-  width: min(480px, 90vw);
-  max-height: 85vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-  animation: modalIn 0.2s ease-out;
-}
-.hs-modal-header {
-  padding: 1.5rem 1.5rem 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-.hs-modal-header h3 {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--text-color);
-}
-.hs-modal-header p {
-  margin-top: 0.25rem;
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-}
-.hs-modal-close {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-caption);
-  padding: 0.25rem;
-  border-radius: 4px;
-  transition: background 0.15s;
-}
-.hs-modal-close:hover { background: var(--bg-surface); }
-.hs-modal-close svg { width: 1.1rem; height: 1.1rem; }
-.hs-modal-body {
-  padding: 1rem 1.5rem 1.5rem;
-}
-
-.file-input { display: none; }
-
-/* ── Mode Toggle ─────────────────────────────────────────────────────── */
-.mode-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-s);
-  margin-bottom: var(--space-xxs);
-  flex-wrap: wrap;
-}
-
-.mode-toggle input[type="radio"] { display: none; }
-
-.mode-toggle label {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0;
-  font-size: var(--font-l);
-  font-weight: 700;
-  color: var(--bg-accent);
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  user-select: none;
-  letter-spacing: -0.015em;
-  border-bottom: 2.5px solid transparent;
-  padding-bottom: 0.1rem;
-}
-
-.mode-toggle label:hover {
-  border-bottom-color: var(--purple-light);
-}
-
-.mode-toggle input[type="radio"]:checked + label {
-  border-bottom-color: var(--purple);
-}
-
-/* ── Options Checkboxes ──────────────────────────────────────────────── */
-/* Options row occupies space in both modes for alignment */
-.options-row {
-  min-height: calc(1rem + var(--space-xs) * 2 + var(--space-l));
-  display: flex;
-  align-items: flex-start;
-  padding-top: var(--space-xs);
-  padding-bottom: var(--space-m);
-}
-
-.stt-options {
-  display: none;
-  flex-wrap: wrap;
-  gap: var(--space-xs) var(--space-m);
-}
-
-.stt-options.visible { display: flex; }
-
-.stt-option-divider {
-  color: var(--text-caption);
-  padding: 0 0.1rem;
-  user-select: none;
-}
-
-.stt-option[hidden] { display: none !important; }
-
-.stt-option {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: var(--font-s);
-  font-weight: 500;
-  color: var(--text-color);
-  cursor: pointer;
-  user-select: none;
-  position: relative;
-}
-
-.stt-option::after {
-  content: attr(data-tip);
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--bg-accent);
-  color: var(--text-inverted);
-  font-size: 0.7rem;
-  font-weight: 500;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0s;
-  z-index: 50;
-}
-
-.stt-option:hover::after {
-  opacity: 1;
-}
-
-.stt-option input[type="checkbox"] {
-  width: 1rem;
-  height: 1rem;
-  accent-color: var(--purple);
-  cursor: pointer;
-}
-
-/* ── Analysis Progress Overlay ───────────────────────────────────────── */
-.analysis-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(12px);
-  flex-direction: column;
-}
-
-.analysis-overlay.visible { display: flex; }
-
-.analysis-overlay .overlay-header {
-  padding: var(--space-m);
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  max-width: 1040px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-.analysis-overlay .overlay-content {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: var(--space-m);
-}
-
-.analysis-overlay .overlay-footer {
-  padding: var(--space-m) 0 var(--space-l);
-  text-align: center;
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-}
-
-.analysis-overlay .overlay-footer a {
-  color: var(--text-caption);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--text-caption) 30%, transparent);
-  text-underline-offset: 0.15em;
-}
-
-.analysis-overlay h3 {
-  font-size: var(--font-xl);
-  font-weight: 700;
-  color: var(--bg-accent);
-}
-
-.analysis-overlay p {
-  font-size: var(--font-s);
-  color: var(--text-caption);
-}
-
-.overlay-error {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-s);
-  width: 100%;
-  max-width: 640px;
-  margin-top: var(--space-s);
-}
-
-.analysis-overlay.error .overlay-error { display: flex; }
-.analysis-overlay.error #analysis-status { display: none; }
-.analysis-overlay.error .progress-track { display: none; }
-
-.overlay-error-msg {
-  color: var(--ui-error) !important;
-  font-weight: 600;
-  font-size: var(--font-s) !important;
-  text-align: center;
-}
-
-.overlay-error-json {
-  width: 100%;
-  max-height: 280px;
-  overflow: auto;
-  background: #f5f5f7;
-  border: 1px solid var(--ui-border);
-  border-radius: 0.5rem;
-  padding: var(--space-s);
-  font-size: 0.72rem;
-  line-height: 1.5;
-  text-align: left;
-  white-space: pre-wrap;
-  word-break: break-all;
-  color: var(--text-color);
-}
-
-.overlay-dismiss-btn {
-  padding: 0.4rem 1.2rem;
-  border-radius: 2rem;
-  border: 1px solid var(--ui-border);
-  background: white;
-  font-size: var(--font-s);
-  cursor: pointer;
-  color: var(--text-color);
-}
-
-.overlay-dismiss-btn:hover { background: #f0f0f2; }
-
-.progress-track {
-  width: 320px;
-  height: 6px;
-  background: var(--ui-border);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  width: 0%;
-  background: var(--purple);
-  border-radius: 3px;
-  transition: width 0.3s linear;
-}
-
-/* ── Action bar: upload dropzone + record ────────────────────────────── */
-.results-actions {
-  display: flex;
-  gap: var(--space-xs);
-  margin-bottom: var(--space-l);
-}
-
-.results-action {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  flex: 1;
-  white-space: nowrap;
-  padding: 0.7rem 1.8rem;
-  font-size: var(--font-s);
-  font-weight: 600;
-  font-family: inherit;
-  color: var(--text-color);
-  background: var(--bg-surface);
-  border: 1.5px solid var(--ui-border);
-  border-radius: var(--radius-m);
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-  position: relative;
-}
-
-.results-action:hover {
-  border-color: var(--purple-light);
-  background: color-mix(in srgb, var(--purple) 4%, transparent);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--purple) 8%, transparent);
-}
-
-.results-action svg {
-  width: 1.1rem;
-  height: 1.1rem;
-  color: var(--purple);
-  flex-shrink: 0;
-}
-
-.results-action-upload.drag-over {
-  border-color: var(--purple);
-  background: color-mix(in srgb, var(--purple) 8%, transparent);
-}
-
-.results-action.recording {
-  border-color: #e74c3c;
-  background: color-mix(in srgb, #e74c3c 6%, transparent);
-  animation: pulse-recording 1.5s ease-in-out infinite;
-}
-
-.results-action.recording svg { color: #e74c3c; }
-
-.results-action.recording:hover {
-  border-color: #c0392b;
-  background: color-mix(in srgb, #e74c3c 10%, transparent);
-}
-
-@keyframes pulse-recording {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(231, 76, 60, 0); }
-}
-
-.results-action .file-input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.results-action.disabled-soon {
-  opacity: 0.45;
-  pointer-events: none;
-  cursor: default;
-}
-
-/* Streaming buttons shown as "coming soon": greyed, non-clickable, with a
-   "Soon" pill. Used for AI Music streaming until its backend goes live. */
-.results-action.streaming-soon {
-  opacity: 0.5;
-  pointer-events: none;
-  cursor: default;
-  position: relative;
-}
-.results-action.streaming-soon::after {
-  content: 'Soon';
-  position: absolute;
-  top: -0.45rem;
-  right: -0.4rem;
-  padding: 0.05rem 0.4rem;
-  font-size: 0.55rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  line-height: 1.35;
-  color: #fff;
-  background: linear-gradient(135deg, #430f92, #fb3958);
-  border-radius: 3px;
-  pointer-events: none;
-}
-
-/* ── Results Layout ─────────────────────────────────────────────────── */
-.results-section {
-  margin-bottom: var(--space-xl);
-  flex: 1;
-}
-
-.results-layout {
-  display: grid;
-  grid-template-columns: 1fr 240px;
-  gap: var(--space-l);
-  align-items: start;
-}
-
-.results-main { min-width: 0; }
-
-.results-filename {
-  font-size: var(--font-xxl);
-  font-weight: 700;
-  color: var(--bg-accent);
-  letter-spacing: -0.02em;
-  margin-bottom: var(--space-xxs);
-  word-break: break-word;
-}
-
-/* Audio Player — sticky */
-.results-player {
-  width: 100%;
-  margin-bottom: var(--space-s);
-  border-radius: var(--radius-m);
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: var(--bg);
-  padding: var(--space-xs) 0;
-}
-
-.results-player audio {
-  width: 100%;
-  height: 44px;
-  border-radius: var(--radius-m);
-}
-.player-entry + .player-entry { margin-top: var(--space-s); }
-.player-entry-label {
-  display: block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--fg-muted);
-  margin-bottom: 4px;
-}
-
-/* Histogram */
-.histogram-section { margin-bottom: var(--space-s); }
-
-.histogram-scroll { overflow-x: auto; }
-
-.histogram {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding: 0;
-}
-
-.histo-squares {
-  display: flex;
-  align-items: center;
-  gap: 1px;
-  padding: 3px 0;
-}
-
-.histo-axis {
-  display: flex;
-  gap: 1px;
-}
-
-.histo-tick {
-  flex: 0 0 auto;
-  width: 11px;
-  font-size: 0.6rem;
-  color: var(--text-caption);
-  text-align: left;
-  height: 1rem;
-  line-height: 1rem;
-  overflow: visible;
-  white-space: nowrap;
-}
-
-.histo-bar {
-  flex: 0 0 auto;
-  width: 11px;
-  aspect-ratio: 1 / 2;
-  border-radius: 2px;
-  cursor: pointer;
-  position: relative;
-  transition: opacity 0.15s;
-}
-
-.histo-bar:hover {
-  z-index: 10;
-  filter: brightness(1.15);
-  outline: 1.5px solid var(--text-caption);
-  outline-offset: 0px;
-}
-
-.histo-bar.synthetic { background: var(--ui-error); }
-.histo-bar.authentic { background: var(--ui-success); }
-.histo-bar.no-content { background: var(--ui-border); }
-.histo-bar.music { background: var(--purple); }
-.histo-bar.speech { background: rgb(20, 184, 166); }
-
-.histo-bar.active {
-  outline: 2px solid var(--bg-accent);
-  outline-offset: 1px;
-  z-index: 5;
-  filter: none;
-}
-
-.histo-bar.active:hover {
-  outline: 2px solid var(--bg-accent);
-  filter: none;
-}
-
-.histo-bar-tooltip {
-  display: none;
-  position: fixed;
-  background: var(--bg-accent);
-  color: var(--text-inverted);
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 100;
-}
-
-/* Results Table */
-.results-table-section { margin-bottom: var(--space-m); }
-
-.results-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--font-s);
-}
-
-.results-table th {
-  text-align: left;
-  font-weight: 600;
-  padding: 0.5rem 0.6rem;
-  border-bottom: 2px solid var(--bg-accent);
-  color: var(--bg-accent);
-  font-size: var(--font-xs);
-}
-
-.results-table td {
-  padding: 0.45rem 0.6rem;
-  border-bottom: 1px solid var(--ui-border);
-  color: var(--text-color);
-}
-
-.results-table tbody tr {
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.results-table tbody tr:hover { background: var(--bg-surface); }
-.results-table tbody tr.active { background: color-mix(in srgb, var(--purple) 6%, transparent); }
-
-.verdict-pill {
-  display: inline-block;
-  padding: 0.15rem 0.55rem;
-  border-radius: 2rem;
-  font-size: var(--font-xs);
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.verdict-pill.synthetic {
-  background: color-mix(in srgb, var(--ui-error) 12%, transparent);
-  color: var(--ui-error);
-}
-
-.verdict-pill.authentic {
-  background: color-mix(in srgb, var(--ui-success) 12%, transparent);
-  color: rgb(10, 150, 95);
-}
-
-.verdict-pill.no-content {
-  background: color-mix(in srgb, var(--ui-border) 40%, transparent);
-  color: var(--text-caption);
-}
-
-.verdict-pill.uncertain {
-  background: color-mix(in srgb, var(--ui-border) 40%, transparent);
-  color: var(--text-caption);
-}
-
-.verdict-pill.music {
-  background: color-mix(in srgb, var(--purple) 12%, transparent);
-  color: var(--purple);
-}
-.verdict-pill.speech {
-  background: color-mix(in srgb, rgb(20, 184, 166) 14%, transparent);
-  color: rgb(15, 140, 125);
-}
-.verdict-pill.neither {
-  background: color-mix(in srgb, var(--ui-border) 40%, transparent);
-  color: var(--text-caption);
-}
-
-/* Smaller inline variant for transcript header */
-.verdict-pill.sm {
-  font-size: 0.65rem;
-  padding: 0.05rem 0.35rem;
-  font-weight: 600;
-}
-
-/* Confidence bar in table */
-.confidence-cell {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.confidence-bar-track {
-  flex: 1;
-  height: 4px;
-  background: var(--ui-border);
-  border-radius: 2px;
-  overflow: hidden;
-  max-width: 80px;
-}
-
-.confidence-bar-fill { height: 100%; border-radius: 2px; }
-.confidence-bar-fill.synthetic { background: var(--ui-error); }
-.confidence-bar-fill.authentic { background: var(--ui-success); }
-.confidence-bar-fill.no-content { background: var(--ui-border); }
-.confidence-bar-fill.music { background: var(--purple); }
-.confidence-bar-fill.speech { background: rgb(20, 184, 166); }
-
-/* Music detection: view toggle */
-.music-view-toggle {
-  display: flex;
-  gap: 0.25rem;
-  margin-bottom: var(--space-xs);
-}
-.music-view-btn {
-  border: 1px solid var(--ui-border);
-  background: var(--bg);
-  color: var(--text-caption);
-  padding: 0.25rem 0.7rem;
-  border-radius: 999px;
-  font-family: inherit;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.music-view-btn:hover { color: var(--text-color); }
-.music-view-btn.active {
-  background: var(--bg-accent);
-  color: var(--text-inverted);
-  border-color: var(--bg-accent);
-}
-
-/* Music histogram: fit-to-width container (heatmap mode) */
-.music-histogram-fit {
-  width: 100%;
-  overflow: hidden;
-}
-.music-histogram-fit.scrollable { overflow-x: auto; }
-
-/* Music detection: dual-row stacked histogram (music + speech sharing time axis) */
-.music-histo-row {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 2px 0;
-}
-.music-histo-row-label {
-  flex: 0 0 3.5rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.music-histo-row-label.music { color: var(--purple); }
-.music-histo-row-label.speech { color: rgb(15, 140, 125); }
-.music-histo-row-bars {
-  display: flex;
-  align-items: center;
-  gap: 1px;
-  flex: 1;
-  min-width: 0;
-}
-.music-histo-row-bars.fit { gap: 0; }
-.music-histo-row-bars.fit .histo-bar { border-radius: 0; }
-.music-histo-axis {
-  display: flex;
-  margin-left: calc(3.5rem + 0.6rem);
-  position: relative;
-  height: 1rem;
-}
-.music-histo-axis.gapped { gap: 1px; }
-.music-histo-axis-tick-abs {
-  position: absolute;
-  top: 0;
-  font-size: 0.6rem;
-  color: var(--text-caption);
-  line-height: 1rem;
-  white-space: nowrap;
-  transform: translateX(-50%);
-}
-.music-histo-axis-tick-abs.first { transform: none; }
-.music-histo-axis-tick-abs.last { transform: translateX(-100%); }
-
-/* Overall Verdict */
-.results-verdict {
-  text-align: center;
-  margin-top: 9.5rem;
-  padding: 0 var(--space-m);
-  position: sticky;
-  top: min(0.4rem, calc(100vh - 26rem));
-}
-
-.verdict-ring {
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  margin: 0 auto;
-  position: relative;
-  gap: 0.15rem;
-}
-
-.verdict-ring.synthetic {
-  background: color-mix(in srgb, var(--ui-error) 6%, transparent);
-  box-shadow: 0 0 0 3px var(--ui-error), 0 0 50px color-mix(in srgb, var(--ui-error) 12%, transparent);
-}
-
-.verdict-ring.authentic {
-  background: color-mix(in srgb, var(--ui-success) 6%, transparent);
-  box-shadow: 0 0 0 3px var(--ui-success), 0 0 50px color-mix(in srgb, var(--ui-success) 12%, transparent);
-}
-
-.verdict-ring.pending {
-  background: color-mix(in srgb, var(--text-caption) 6%, transparent);
-  box-shadow: 0 0 0 3px var(--ui-border), 0 0 50px color-mix(in srgb, var(--text-caption) 8%, transparent);
-}
-
-.verdict-ring.pending .verdict-ring-icon { color: var(--text-caption); }
-.verdict-ring.pending .verdict-ring-label { color: var(--text-caption); }
-.verdict-ring.pending .verdict-ring-count { color: var(--text-caption); }
-
-.verdict-ring-icon { width: 2.2rem; height: 2.2rem; }
-
-.verdict-ring.synthetic .verdict-ring-icon { color: var(--ui-error); }
-.verdict-ring.authentic .verdict-ring-icon { color: var(--ui-success); }
-.verdict-ring.music .verdict-ring-icon { color: var(--purple); }
-.verdict-ring.speech .verdict-ring-icon { color: rgb(20, 184, 166); }
-.verdict-ring.neither .verdict-ring-icon { color: var(--text-caption); }
-
-.verdict-ring.music {
-  background: color-mix(in srgb, var(--purple) 6%, transparent);
-  box-shadow: 0 0 0 3px var(--purple), 0 0 50px color-mix(in srgb, var(--purple) 12%, transparent);
-}
-.verdict-ring.speech {
-  background: color-mix(in srgb, rgb(20, 184, 166) 6%, transparent);
-  box-shadow: 0 0 0 3px rgb(20, 184, 166), 0 0 50px color-mix(in srgb, rgb(20, 184, 166) 12%, transparent);
-}
-.verdict-ring.neither {
-  background: color-mix(in srgb, var(--text-caption) 6%, transparent);
-  box-shadow: 0 0 0 3px var(--ui-border), 0 0 50px color-mix(in srgb, var(--text-caption) 8%, transparent);
-}
-.verdict-ring.music .verdict-ring-label { color: var(--purple); }
-.verdict-ring.speech .verdict-ring-label { color: rgb(15, 140, 125); }
-.verdict-ring.neither .verdict-ring-label { color: var(--text-caption); }
-.verdict-ring.music .verdict-ring-count { color: color-mix(in srgb, var(--purple) 70%, var(--text-color)); }
-.verdict-ring.speech .verdict-ring-count { color: var(--text-caption); }
-.verdict-ring.neither .verdict-ring-count { color: var(--text-caption); }
-
-/* Music: dual probability split inside ring */
-.verdict-ring-split {
-  display: flex;
-  gap: 0.6rem;
-  font-size: var(--font-xs);
-  font-weight: 600;
-  margin-top: 0.25rem;
-}
-.verdict-ring-split-item { display: flex; flex-direction: column; align-items: center; gap: 0.05rem; line-height: 1; }
-.verdict-ring-split-item .v { font-size: var(--font-m); font-weight: 700; }
-.verdict-ring-split-item .l { font-size: 0.6rem; opacity: 0.7; letter-spacing: 0.04em; text-transform: uppercase; }
-.verdict-ring-split-item.music .v { color: var(--purple); }
-.verdict-ring-split-item.speech .v { color: rgb(15, 140, 125); }
-
-.verdict-ring-label {
-  font-size: var(--font-xl);
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
-
-.verdict-ring.synthetic .verdict-ring-label { color: var(--ui-error); }
-.verdict-ring.authentic .verdict-ring-label { color: rgb(10, 150, 95); }
-
-.verdict-ring-count {
-  font-size: var(--font-xs);
-  font-weight: 500;
-  line-height: 1.3;
-  margin-top: 0.1rem;
-}
-
-.verdict-ring.synthetic .verdict-ring-count { color: color-mix(in srgb, var(--ui-error) 70%, var(--text-color)); }
-.verdict-ring.authentic .verdict-ring-count { color: var(--text-caption); }
-
-/* Verdict / sidebar links */
-.verdict-links {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.3rem;
-  margin-top: var(--space-s);
-}
-
-.verdict-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: var(--font-xs);
-  font-weight: 500;
-  color: var(--text-caption);
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-  padding: 0;
-  transition: color 0.2s;
-}
-
-.verdict-link:hover { color: var(--purple); }
-.verdict-link svg { width: 0.85rem; height: 0.85rem; }
-
-/* ── Language Detection Hero ─────────────────────────────────────────── */
-#language-content { display: none; }
-#language-content.visible { display: block; }
-
-.lang-hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: var(--space-l) var(--space-m);
-  min-height: 26rem;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--radius-l);
-  background: linear-gradient(180deg, rgb(245, 250, 255) 0%, var(--bg) 100%);
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-}
-
-.lang-hero:hover {
-  border-color: var(--purple-light);
-  box-shadow: 0 2px 12px color-mix(in srgb, var(--purple) 6%, transparent);
-}
-
-.lang-hero.drag-over {
-  border-color: var(--purple);
-  background: color-mix(in srgb, var(--purple) 5%, rgb(245, 250, 255));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple) 15%, transparent);
-}
-
-.lang-hero-flag {
-  font-size: 7rem;
-  line-height: 1;
-  margin-bottom: var(--space-s);
-  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.08));
-}
-
-.lang-hero-name {
-  font-size: 4.5rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-  color: var(--text-color);
-  margin-bottom: 0.4rem;
-}
-
-.lang-hero-code {
-  font-size: var(--font-l);
-  color: var(--text-caption);
-  font-weight: 500;
-  margin-bottom: var(--space-m);
-  font-variant-numeric: tabular-nums;
-}
-
-.lang-hero-conf-row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.05rem;
-  margin-bottom: var(--space-xs);
-}
-
-.lang-hero-conf-val {
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  font-size: 2.4rem;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  color: rgb(15, 140, 125);
-}
-
-.lang-hero-conf-val.low { color: rgb(200, 120, 20); }
-
-.lang-hero-conf-label {
-  font-size: var(--font-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-caption);
-  font-weight: 600;
-}
-
-.lang-hero-meta {
-  font-size: var(--font-s);
-  color: var(--text-caption);
-  font-variant-numeric: tabular-nums;
-}
-
-.lang-hero-warning {
-  margin-top: var(--space-s);
-  font-size: var(--font-xs);
-  color: rgb(180, 100, 10);
-  background: rgb(255, 247, 232);
-  border: 1px solid rgb(245, 215, 165);
-  border-radius: var(--radius-m);
-  padding: 0.45rem 0.8rem;
-  max-width: min(480px, 90%);
-}
-
-.lang-hero-note {
-  margin-top: var(--space-m);
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-}
-
-/* ── Emotion / Accent Detection ─────────────────────────────────────── */
-#emotion-content, #accent-content { display: none; }
-#emotion-content.visible, #accent-content.visible { display: block; }
-
-/* Result heroes are shorter than the language one — the timeline sits below. */
-.ea-hero.has-result { min-height: 18rem; }
-
-.ea-timeline-wrap {
-  margin-top: var(--space-m);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--radius-l);
-  padding: var(--space-m);
-  background: var(--bg);
-}
-
-.ea-timeline-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: var(--space-s);
-}
-
-.ea-timeline-title {
-  font-size: var(--font-s);
-  font-weight: 600;
-  color: var(--text-color);
-}
-
-.ea-timeline-hint {
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-}
-
-.ea-timeline {
-  display: flex;
-  width: 100%;
-  height: 3.2rem;
-  border-radius: var(--radius-m);
-  overflow: hidden;
-  border: 1px solid var(--ui-border);
-}
-
-.ea-seg {
-  flex: 1 1 0;
-  min-width: 0;
-  cursor: pointer;
-  position: relative;
-  transition: filter 0.15s;
-}
-
-.ea-seg:hover { filter: brightness(0.92); }
-
-.ea-seg.active {
-  outline: 2px solid var(--text-color);
-  outline-offset: -2px;
-  z-index: 1;
-}
-
-.ea-seg + .ea-seg { border-left: 1px solid rgba(255, 255, 255, 0.55); }
-
-.ea-axis {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.3rem;
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-  font-variant-numeric: tabular-nums;
-}
-
-.ea-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 1rem;
-  margin-top: var(--space-s);
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-}
-
-.ea-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.ea-legend-sw {
-  width: 0.7rem;
-  height: 0.7rem;
-  border-radius: 3px;
-  display: inline-block;
-}
-
-/* ── AI Music Detection Hero ────────────────────────────────────────── */
-#aimusic-content { display: none; }
-#aimusic-content.visible { display: block; }
-
-.aimusic-hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: var(--space-l) var(--space-m);
-  min-height: 26rem;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--radius-l);
-  background: linear-gradient(180deg, rgb(248, 246, 255) 0%, var(--bg) 100%);
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.aimusic-hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.4rem 0.95rem;
-  border-radius: 999px;
-  font-size: var(--font-xs);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-bottom: var(--space-m);
-}
-.aimusic-hero-badge svg { width: 1rem; height: 1rem; }
-
-.aimusic-hero.ai-vocal-music .aimusic-hero-badge {
-  background: color-mix(in srgb, var(--ui-error) 10%, transparent);
-  color: var(--ui-error);
-  border: 1px solid color-mix(in srgb, var(--ui-error) 35%, transparent);
-}
-.aimusic-hero.ai-instrumental .aimusic-hero-badge {
-  background: color-mix(in srgb, rgb(220, 130, 30) 10%, transparent);
-  color: rgb(180, 100, 10);
-  border: 1px solid color-mix(in srgb, rgb(220, 130, 30) 35%, transparent);
-}
-.aimusic-hero.not-ai-music .aimusic-hero-badge {
-  background: color-mix(in srgb, var(--ui-success) 10%, transparent);
-  color: rgb(10, 150, 95);
-  border: 1px solid color-mix(in srgb, var(--ui-success) 35%, transparent);
-}
-.aimusic-hero.pending .aimusic-hero-badge {
-  background: color-mix(in srgb, var(--text-caption) 8%, transparent);
-  color: var(--text-caption);
-  border: 1px solid var(--ui-border);
-}
-
-.aimusic-hero-headline {
-  font-size: 3.6rem;
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  line-height: 1.05;
-  color: var(--text-color);
-  margin-bottom: 0.4rem;
-}
-.aimusic-hero.ai-vocal-music .aimusic-hero-headline { color: var(--ui-error); }
-.aimusic-hero.ai-instrumental .aimusic-hero-headline { color: rgb(180, 100, 10); }
-.aimusic-hero.not-ai-music .aimusic-hero-headline { color: rgb(10, 150, 95); }
-
-.aimusic-hero-sub {
-  font-size: var(--font-m);
-  color: var(--text-caption);
-  margin-bottom: var(--space-l);
-  max-width: 36rem;
-}
-
-.aimusic-paths {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  margin-bottom: var(--space-m);
-  padding: var(--space-s) var(--space-m);
-  border-radius: var(--radius-m);
-  background: color-mix(in srgb, var(--purple) 3%, transparent);
-  min-width: 22rem;
-}
-.aimusic-path {
-  display: grid;
-  grid-template-columns: 1.5rem 1fr auto auto;
-  align-items: baseline;
-  gap: 0.55rem;
-  font-size: var(--font-m);
-  font-variant-numeric: tabular-nums;
-  text-align: left;
-}
-.aimusic-path-icon {
-  font-size: 1.05rem;
-  line-height: 1;
-  color: var(--text-caption);
-  text-align: center;
-}
-.aimusic-path-name {
-  font-weight: 600;
-  color: var(--text-color);
-}
-.aimusic-path-sep {
-  color: var(--text-caption);
-  opacity: 0.5;
-}
-.aimusic-path-value {
-  font-weight: 700;
-  color: var(--text-color);
-}
-.aimusic-path.fired .aimusic-path-icon { color: var(--ui-success); }
-.aimusic-path.fired-ai .aimusic-path-icon { color: var(--ui-error); }
-.aimusic-path.fired-ai .aimusic-path-value { color: var(--ui-error); }
-.aimusic-path.skipped { opacity: 0.6; }
-.aimusic-path.skipped .aimusic-path-icon { color: var(--text-caption); }
-.aimusic-path.skipped .aimusic-path-value { color: var(--text-caption); font-weight: 500; font-style: italic; }
-
-.aimusic-path-note {
-  grid-column: 2 / -1;
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-  padding-left: 2.05rem;
-  margin-top: -0.1rem;
-}
-
-.aimusic-hero-meta {
-  font-size: var(--font-s);
-  color: var(--text-caption);
-  font-variant-numeric: tabular-nums;
-  margin-bottom: var(--space-s);
-}
-
-.aimusic-hero-caveat {
-  margin-top: var(--space-m);
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-  max-width: 44rem;
-  line-height: 1.45;
-  padding: 0 var(--space-s);
-}
-
-/* ── Per-window timeline (shared by batch + streaming) ───────────────────── */
-.aimusic-timeline-wrap {
-  width: 100%;
-  max-width: 56rem;
-  margin: var(--space-m) auto 0;
-}
-.aimusic-timeline-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-.aimusic-timeline-title {
-  font-size: var(--font-s);
-  font-weight: 700;
-  color: var(--text-color);
-  letter-spacing: -0.01em;
-}
-.aimusic-timeline-status {
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-  font-variant-numeric: tabular-nums;
-}
-.aimusic-timeline {
-  display: flex;
-  width: 100%;
-  height: 2.5rem;
-  gap: 1px;
-  border-radius: var(--radius-s);
-  overflow: hidden;
-  background: var(--ui-border);
-}
-.aimusic-cell {
-  min-width: 2px;
-  transition: filter 0.12s;
-  cursor: pointer;
-}
-.aimusic-cell:hover { filter: brightness(1.12) saturate(1.1); }
-.aimusic-cell.active { box-shadow: inset 0 0 0 2px var(--text-color); }
-.aimusic-cell.ai      { background: var(--ui-error); }
-.aimusic-cell.human   { background: var(--ui-success); }
-.aimusic-cell.silence { background: color-mix(in srgb, var(--text-caption) 22%, transparent); }
-.aimusic-axis {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.35rem;
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-  font-variant-numeric: tabular-nums;
-}
-.aimusic-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 1rem;
-  justify-content: center;
-  margin-top: 0.8rem;
-}
-.aimusic-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-}
-.aimusic-sw {
-  width: 0.7rem;
-  height: 0.7rem;
-  border-radius: 2px;
-  display: inline-block;
-}
-.aimusic-sw.ai      { background: var(--ui-error); }
-.aimusic-sw.human   { background: var(--ui-success); }
-.aimusic-sw.silence { background: color-mix(in srgb, var(--text-caption) 30%, transparent); }
-
-.aimusic-table-section { margin-top: var(--space-m); margin-bottom: 0; }
-
-@media (max-width: 768px) {
-  .aimusic-hero-headline { font-size: 2.4rem; }
-  .aimusic-hero { min-height: 20rem; }
-}
-
-@media (max-width: 768px) {
-  .lang-hero-flag { font-size: 5rem; }
-  .lang-hero-name { font-size: 3rem; }
-  .lang-hero { min-height: 20rem; }
-}
-
-/* ── Transcription Output ────────────────────────────────────────────── */
-.transcript-container { display: none; }
-.transcript-container.visible { display: block; }
-
-/* ── STT Debug panel (lives in the sidebar slot of results-layout) ───── */
-.stt-debug-panel {
-  padding: var(--space-s);
-  border: 1px solid #d8d8de;
-  border-radius: 8px;
-  background: #fafafb;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.78rem;
-  color: #222;
-  position: sticky;
-  top: var(--space-m);
-  max-height: calc(100vh - 2 * var(--space-m));
-  display: flex;
-  flex-direction: column;
-}
-.stt-debug-panel[hidden] { display: none !important; }
-
-/* When debug panel is visible, widen page to viewport and give panel majority of space */
-body:has(#stt-debug-panel:not([hidden])) .page {
-  max-width: none;
-}
-.results-layout:has(#stt-debug-panel:not([hidden])) {
-  grid-template-columns: minmax(360px, 520px) minmax(500px, 1fr);
-}
-.results-layout:has(#stt-debug-panel:not([hidden])) .results-sidebar {
-  display: none !important;
-}
-/* Align top of debug panel with the start of transcript content (below actions bar) */
-.stt-debug-panel {
-  margin-top: calc(48px + var(--space-l));
-}
-
-@media (max-width: 900px) {
-  .stt-debug-panel { position: static; max-height: 420px; margin-top: 0; }
-  body:has(#stt-debug-panel:not([hidden])) .page { max-width: 1040px; }
-  .results-layout:has(#stt-debug-panel:not([hidden])) { grid-template-columns: 1fr; }
-}
-
-/* Toolbar inside the debug status bar */
-.stt-debug-tools { margin-left: auto; display: inline-flex; gap: 0.35rem; }
-.stt-debug-btn {
-  font-family: inherit;
-  font-size: 0.7rem;
-  padding: 0.2rem 0.55rem;
-  border: 1px solid #d0d0d5;
-  background: #fff;
-  border-radius: 4px;
-  cursor: pointer;
-  color: #444;
-  white-space: nowrap;
-}
-.stt-debug-btn:hover { background: #f0f0f5; }
-.stt-debug-btn.active { background: #3a2d9a; color: #fff; border-color: #3a2d9a; }
-
-/* Legend below the two columns */
-.stt-debug-legend {
-  padding-top: 0.45rem;
-  border-top: 1px solid #e4e4e8;
-  margin-top: 0.45rem;
-  font-size: 0.68rem;
-  color: #555;
-  line-height: 1.5;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem 1rem;
-}
-.stt-debug-legend .chip {
-  padding: 0 0.35rem;
-  border-radius: 3px;
-  font-weight: 600;
-}
-.stt-debug-legend .chip.yellow { background: #fff9e5; border: 1px solid #f2e0a3; color: #7a5a00; }
-.stt-debug-legend .chip.dim { background: #fcfcfd; border: 1px solid #eceef0; color: #888; opacity: 0.7; }
-.stt-debug-legend .chip.kept { background: #eaf7ef; border: 1px solid #b5dcc2; color: #0d5c2e; }
-
-.stt-debug-status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e4e4e8;
-  margin-bottom: 0.5rem;
-}
-
-.stt-debug-phase {
-  display: inline-block;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  font-weight: 600;
-  background: #e5e7ea;
-  color: #333;
-}
-.stt-debug-model {
-  display: inline-block;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.72rem;
-  font-weight: 600;
-  background: #ece7ff;
-  color: #3a2d9a;
-  border: 1px solid #d4c9ff;
-}
-.stt-debug-model[hidden] { display: none !important; }
-.stt-debug-phase.connecting { background: #fff4d6; color: #7a5a00; }
-.stt-debug-phase.streaming  { background: #d5f1df; color: #0d5c2e; }
-.stt-debug-phase.end-sent   { background: #e0dcff; color: #3a2d9a; }
-.stt-debug-phase.done       { background: #d2e7ff; color: #0b3f7a; }
-.stt-debug-phase.closed     { background: #e4e4e8; color: #444; }
-.stt-debug-phase.error      { background: #fbe0dd; color: #7a1f15; }
-
-.stt-debug-since,
-.stt-debug-counters,
-.stt-debug-info {
-  color: #666;
-  font-size: 0.72rem;
-}
-.stt-debug-info { color: #7a1f15; }
-
-.stt-debug-cols {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  flex: 1;
-  min-height: 0;
-}
-
-.stt-debug-col {
-  border: 1px solid #e4e4e8;
-  border-radius: 6px;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  min-height: 120px;
-  min-width: 0;
-}
-
-.stt-debug-col-head {
-  padding: 0.35rem 0.6rem;
-  border-bottom: 1px solid #e4e4e8;
-  font-weight: 600;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #555;
-  background: #f5f5f7;
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.stt-debug-col-count {
-  font-family: ui-monospace, monospace;
-  color: #888;
-  font-weight: 500;
-}
-
-.stt-debug-col-body {
-  overflow-y: auto;
-  padding: 0.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.stt-debug-row {
-  padding: 0.4rem 0.5rem;
-  border: 1px solid #eceef0;
-  border-radius: 4px;
-  background: #fcfcfd;
-}
-
-.stt-debug-row.superseded { opacity: 0.55; }
-.stt-debug-row.merged { background: #fff9e5; border-color: #f2e0a3; }
-.stt-debug-row.error-row { background: #fbe0dd; border-color: #f0b5b0; }
-.stt-debug-row.event-row { background: #eef1ff; border-color: #ccd2f0; }
-
-.stt-debug-row-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.6rem;
-  font-size: 0.68rem;
-  color: #666;
-  margin-bottom: 0.2rem;
-}
-
-.stt-debug-row-meta .seq  { color: #333; font-weight: 700; min-width: 2.8em; }
-.stt-debug-row-meta .t   { color: #0b6cc4; font-weight: 600; }
-.stt-debug-row-meta .sp  { color: #7a1fa6; }
-.stt-debug-row-meta .lg  { color: #555; }
-.stt-debug-row-meta .em  { color: #0078c8; font-weight: 600; }
-.stt-debug-row-meta .ac  { color: #555; }
-.stt-debug-row-meta .df  { color: #c4430b; font-variant-numeric: tabular-nums; }
-.stt-debug-row-meta .uid { color: #999; font-family: ui-monospace, monospace; }
-.stt-debug-row-meta .tag { color: #0d5c2e; font-weight: 600; }
-.stt-debug-row-meta .tag.merged { color: #7a5a00; }
-.stt-debug-row-meta .claim { color: #0d5c2e; font-weight: 700; }
-
-.stt-debug-row-text {
-  font-size: 0.82rem;
-  line-height: 1.45;
-  color: #222;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  word-break: break-word;
-}
-
-.stt-debug-row.is-group { cursor: pointer; }
-.stt-debug-row.is-group:hover { background: #f6f7fb; }
-.stt-debug-row.merged.is-group:hover { background: #fff3c7; }
-
-.stt-debug-row-meta .exp-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.1em;
-  color: #888;
-  font-size: 0.8rem;
-  user-select: none;
-  cursor: pointer;
-}
-.stt-debug-row-meta .exp-toggle-spacer { display: inline-block; width: 1.1em; }
-.stt-debug-row-meta .count {
-  color: #666;
-  background: #eceef0;
-  border-radius: 3px;
-  padding: 0 0.3rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.stt-debug-row-children {
-  margin-top: 0.35rem;
-  padding: 0.3rem 0 0 1.2rem;
-  border-top: 1px dashed #e3e5e8;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-.stt-debug-row-children[hidden] { display: none !important; }
-.stt-debug-row-child {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  padding: 0.25rem 0.4rem;
-  border-left: 2px solid #d8dadf;
-  background: #f9fafb;
-  border-radius: 0 3px 3px 0;
-}
-.stt-debug-claimed-group {
-  cursor: pointer;
-}
-.stt-debug-claimed-group:hover {
-  background: #eef0f5;
-  border-left-color: #3a2d9a;
-}
-.stt-debug-row-child-meta {
-  display: flex;
-  gap: 0.5rem;
-  font-size: 0.65rem;
-  color: #666;
-}
-.stt-debug-row-child-meta .seq { color: #333; font-weight: 700; }
-.stt-debug-row-child-meta .count { color: #666; }
-.stt-debug-row-child-text {
-  font-size: 0.78rem;
-  line-height: 1.4;
-  color: #333;
-  word-break: break-word;
-}
-
-.stt-debug-row.is-linked {
-  outline: 2px solid #3a2d9a;
-  outline-offset: -1px;
-  background: #eef0ff;
-}
-.stt-debug-row.is-linked.merged { background: #fff3c7; outline-color: #7a5a00; }
-
-.transcript-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.transcript-utterance {
-  background: #eeeef0;
-  border-radius: 2rem;
-  padding: 0.7rem 1rem;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.transcript-utterance.speaker-left  { margin-right: 3rem; }
-.transcript-utterance.speaker-right { margin-left: 3rem; }
-
-.transcript-utterance:hover { filter: brightness(0.97); }
-.transcript-utterance.active {
-  background: color-mix(in srgb, var(--ec) 20%, #eeeef0) !important;
-}
-
-.transcript-utterance-header {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.2rem;
-  font-size: var(--font-xs);
-  opacity: 0.8;
-}
-
-.transcript-time {
-  font-variant-numeric: tabular-nums;
-}
-
-.transcript-speaker {
-  font-weight: 400;
-}
-
-.transcript-emotion {
-  color: #0078c8;
-  font-weight: 700;
-}
-
-.transcript-accent {
-  color: var(--text-caption);
-}
-
-.transcript-deepfake-score {
-  color: var(--text-caption);
-  font-family: monospace;
-  font-size: 0.75rem;
-}
-
-.transcript-lang {
-  font-size: 0.7rem;
-  color: var(--text-caption);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.transcript-text {
-  font-size: var(--font-m);
-  line-height: 1.6;
-  color: var(--text-color);
-}
-
-.transcript-text.partial {
-  font-style: italic;
-  color: var(--text-caption);
-}
-
-/* ── STT Emotion Chart ──────────────────────────────────────────────── */
-.stt-chart {
-  display: none;
-  flex-direction: column;
-  gap: 0;
-  margin-bottom: var(--space-s);
-}
-
-.stt-chart.visible { display: flex; }
-
-.stt-chart-row {
-  position: relative;
-  height: 22px;
-}
-
-.stt-chart-label {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  font-size: 0.6rem;
-  color: #000;
-  font-weight: 600;
-  z-index: 2;
-  pointer-events: none;
-  padding-left: 0.2rem;
-}
-
-.stt-chart-bar {
-  position: absolute;
-  top: 0;
-  height: 22px;
-  cursor: pointer;
-  transition: opacity 0.15s;
-  min-width: 3px;
-}
-
-.stt-chart-bar:hover {
-  z-index: 10;
-  filter: brightness(1.15);
-  outline: 1.5px solid var(--text-caption);
-  outline-offset: 0px;
-}
-
-.stt-chart-bar.active {
-  outline: 2px solid var(--bg-accent);
-  outline-offset: 1px;
-  z-index: 5;
-}
-
-/* PII/PHI blur */
-.pii-blur {
-  filter: blur(5px);
-  transition: filter 0.2s;
-  cursor: help;
-  padding: 0 0.15em;
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--ui-error) 8%, transparent);
-}
-
-.pii-blur:hover {
-  filter: none;
-  background: color-mix(in srgb, var(--ui-error) 12%, transparent);
-}
-
-.transcript-empty {
-  text-align: center;
-  padding: var(--space-xl) var(--space-m);
-  color: var(--text-caption);
-  font-size: var(--font-s);
-}
-
-/* Transcription sidebar — aligned with player */
-.results-sidebar {
-  display: none;
-  padding: 0 var(--space-m);
-  position: sticky;
-  top: var(--space-m);
-  /* Align links with the audio player: skip past actions bar + filename */
-  margin-top: calc(48px + var(--space-l) + 37px + var(--space-xxs) + var(--space-xs));
-}
-
-.results-sidebar.visible { display: block; }
-
-.sidebar-links {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.3rem;
-}
-
-/* Modal */
-.modal-backdrop {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 300;
-  background: rgba(0,0,0,0.4);
-  backdrop-filter: blur(4px);
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-backdrop.visible { display: flex; }
-
-.modal {
-  background: var(--bg);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-  max-width: 640px;
-  width: 90vw;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-m) var(--space-m) var(--space-s);
-  border-bottom: 1px solid var(--ui-border);
-}
-
-.modal-header h3 {
-  font-size: var(--font-l);
-  font-weight: 700;
-  color: var(--bg-accent);
-}
-
-.modal-close {
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: var(--bg-surface);
-  border-radius: var(--radius-m);
-  cursor: pointer;
-  color: var(--text-caption);
-  transition: background 0.15s;
-}
-
-.modal-close:hover { background: var(--ui-border); }
-.modal-close svg { width: 1rem; height: 1rem; }
-
-.modal-body {
-  padding: var(--space-m);
-  overflow-y: auto;
-  flex: 1;
-}
-
-/* Stats table */
-.stats-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--font-s);
-}
-
-.stats-table tr.stats-group-row td {
-  font-size: var(--font-xs);
-  font-weight: 600;
-  color: var(--text-caption);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: var(--space-m) 0 0.3rem;
-  border-bottom: none;
-  text-align: left;
-}
-
-.stats-table tr.stats-group-row:first-child td { padding-top: 0; }
-
-.stats-table td {
-  padding: 0.35rem 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--ui-border) 50%, transparent);
-  vertical-align: baseline;
-}
-
-.stats-table .stats-label {
-  color: var(--text-caption);
-  font-weight: 500;
-  padding-right: var(--space-m);
-  white-space: nowrap;
-}
-
-.stats-table .stats-value {
-  font-weight: 600;
-  color: var(--bg-accent);
-  font-variant-numeric: tabular-nums;
-}
-
-/* JSON modal */
-.json-container { position: relative; }
-
-.json-pre {
-  background: var(--bg-surface);
-  border-radius: var(--radius-m);
-  padding: var(--space-m);
-  font-family: "SF Mono", "Fira Code", monospace;
-  font-size: 0.78rem;
-  line-height: 1.5;
-  overflow-x: auto;
-  white-space: pre;
-  color: var(--text-color);
-  max-height: 60vh;
-}
-
-.json-key { color: rgb(124, 58, 237); }
-.json-string { color: rgb(21, 150, 100); }
-.json-number { color: rgb(40, 95, 235); }
-.json-bool { color: rgb(220, 80, 50); }
-.json-null { color: var(--text-caption); }
-.json-brace { color: var(--text-caption); }
-
-.json-copy-btn {
-  position: absolute;
-  top: var(--space-xs);
-  right: var(--space-xs);
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.35rem 0.7rem;
-  font-size: var(--font-xs);
-  font-weight: 600;
-  font-family: inherit;
-  color: var(--text-color);
-  background: var(--bg);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--radius-s);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.json-copy-btn:hover { background: var(--ui-border); }
-.json-copy-btn svg { width: 0.8rem; height: 0.8rem; }
-
-/* Error toast */
-.error-toast {
-  display: none;
-  position: fixed;
-  top: var(--space-l);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--ui-error);
-  color: white;
-  padding: 0.6rem 1.2rem;
-  border-radius: var(--radius-m);
-  font-size: var(--font-s);
-  font-weight: 500;
-  z-index: 200;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-}
-
-.error-toast.visible { display: block; }
-
-/* ── Rate Limit Bar ──────────────────────────────────────────────────── */
-.rate-limit-bar {
-  padding: var(--space-xs) 0;
-  text-align: center;
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-}
-
-/* ── Footer ──────────────────────────────────────────────────────────── */
-.footer {
-  padding: var(--space-m) 0 var(--space-l);
-  text-align: center;
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-  border-top: 1px solid var(--ui-border);
-}
-
-.footer a {
-  color: var(--text-caption);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--text-caption) 30%, transparent);
-  text-underline-offset: 0.15em;
-  transition: color var(--hover-out);
-}
-
-.footer a:hover {
-  color: var(--bg-hover);
-  transition-duration: var(--hover-in);
-}
-
-/* ── Redaction Options ──────────────────────────────────────────────── */
-.redaction-options {
-  display: none;
-  flex-wrap: wrap;
-  gap: var(--space-xs) var(--space-m);
-  align-items: center;
-}
-.redaction-options.visible { display: flex; }
-.redaction-num-field {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: var(--font-s);
-  font-weight: 500;
-  color: var(--text-color);
-  position: relative;
-}
-.redaction-num-field::after {
-  content: attr(data-tip);
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--bg-accent);
-  color: var(--text-inverted);
-  font-size: 0.7rem;
-  font-weight: 500;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0s;
-  z-index: 50;
-}
-.redaction-num-field:hover::after { opacity: 1; }
-.redaction-num-field input[type="number"] {
-  width: 4.5rem;
-  padding: 0.1rem 0.3rem;
-  border: 1px solid var(--ui-border);
-  border-radius: 4px;
-  background: var(--bg-card);
-  color: var(--text-color);
-  font-size: var(--font-s);
-  font-family: inherit;
-  text-align: right;
-}
-.redaction-num-field input[type="number"]:focus {
-  outline: none;
-  border-color: var(--purple);
-}
-
-/* ── Redaction Content ──────────────────────────────────────────────── */
-#redaction-content { display: none; }
-.redaction-timeline-section { margin-bottom: var(--space-l); }
-.redaction-timeline {
-  position: relative;
-  height: 36px;
-  background: var(--bg-card);
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid var(--ui-border);
-  cursor: pointer;
-  user-select: none;
-}
-.redaction-range {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  background: rgba(255,53,84,0.35);
-  border-left: 2px solid rgba(255,53,84,0.6);
-  box-sizing: border-box;
-  transition: background 0.1s;
-}
-.redaction-range:hover { background: rgba(255,53,84,0.65); }
-.redaction-playhead {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--purple);
-  pointer-events: none;
-  z-index: 2;
-  left: 0;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.redaction-playhead.active { opacity: 1; }
-.redaction-timeline-axis {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.65rem;
-  color: var(--text-caption);
-  margin-top: 3px;
-  padding: 0 2px;
-  user-select: none;
-}
-.redacted-marker {
-  background: rgba(255,53,84,0.12);
-  color: rgb(220,50,70);
-  border-radius: 3px;
-  padding: 0 3px;
-  font-weight: 600;
-  font-size: 0.85em;
-  letter-spacing: 0.01em;
-}
-
-/* ── Redaction sidebar ──────────────────────────────────────────────── */
-#results-redaction-sidebar {
-  display: none;
-  padding: 0 var(--space-m);
-  position: sticky;
-  top: calc(var(--space-m) + 44px);
-  align-self: start;
-  margin-top: calc(48px + var(--space-l) + 37px + var(--space-xxs) + var(--space-xs));
-}
-#results-redaction-sidebar.visible { display: block; }
-.redaction-stat-card {
-  text-align: center;
-  padding: var(--space-s) 0;
-  border-bottom: 1px solid var(--ui-border);
-}
-.redaction-stat-card:first-child { padding-top: 0; }
-.redaction-stat-val {
-  font-size: 1.9rem;
-  font-weight: 700;
-  color: var(--text-color);
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-.redaction-stat-lbl {
-  font-size: 0.65rem;
-  color: var(--text-caption);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-top: 2px;
-}
-.redaction-sidebar-btns {
-  display: inline-flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  width: 100%;
-  margin-top: var(--space-m);
-}
-
-/* ── Velma options row ──────────────────────────────────────────────── */
-.velma-options { display: none; flex-wrap: wrap; gap: var(--space-xs) var(--space-m); align-items: center; }
-.velma-options.visible { display: flex; }
-.velma-config-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.7rem;
-  font-size: var(--font-s);
-  font-weight: 500;
-  font-family: inherit;
-  color: var(--text-color);
-  background: var(--bg-surface);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--radius-s);
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-.velma-config-btn:hover { border-color: var(--purple-light); background: color-mix(in srgb, var(--purple) 4%, transparent); }
-.velma-config-btn svg { width: 0.95rem; height: 0.95rem; color: var(--purple); }
-.velma-config-summary { font-size: var(--font-xs); color: var(--text-caption); }
-
-/* ── Velma content ──────────────────────────────────────────────────── */
-#velma-content { display: none; }
-#velma-content.visible { display: block; }
-
-.velma-section-h {
-  font-size: var(--font-xl);
-  font-weight: 700;
-  color: var(--bg-accent);
-  margin-bottom: var(--space-xs);
-  letter-spacing: -0.01em;
-}
-
-.velma-summary-section { margin-bottom: var(--space-l); }
-.velma-summary-text {
-  font-size: var(--font-m);
-  line-height: 1.65;
-  color: var(--text-color);
-}
-
-/* Picks badges — one per row when reasoning is present, so the model's
-   reasoning has room to read. Compact inline layout for the metadata line. */
-.velma-picks-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: var(--space-l);
-}
-.velma-pick, .velma-pick-role {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0.8rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--radius-m);
-  font-size: var(--font-xs);
-}
-.velma-pick-value { white-space: nowrap; }
-.velma-pick-label { color: var(--text-caption); }
-.velma-pick-value { font-weight: 600; color: var(--text-color); }
-.velma-pick-conf { color: var(--text-caption); font-variant-numeric: tabular-nums; }
-.velma-pick-source {
-  font-size: 0.65rem;
-  color: var(--text-caption);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0.05rem 0.3rem;
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--purple) 8%, transparent);
-}
-.velma-pick-roles { display: contents; }
-.velma-pick-reasoning {
-  flex-basis: 100%;
-  margin-top: 0.3rem;
-  font-size: 0.78rem;
-  color: var(--text-caption);
-  line-height: 1.45;
-  font-weight: 400;
-}
-
-/* Behavior name click target → first evidence clip in transcript */
-.velma-behavior-name {
-  cursor: pointer;
-}
-.velma-behavior-name.no-evidence {
-  cursor: default;
-  text-decoration-color: transparent;
-}
-.velma-behavior-name.no-evidence:hover { color: var(--text-color); }
-.velma-behavior-name:not(.no-evidence):hover { color: var(--purple); }
-
-/* Bubble flash highlight when jumped to from a behavior */
-@keyframes velmaBubbleFlash {
-  0%   { box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple) 55%, transparent); }
-  60%  { box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple) 35%, transparent); }
-  100% { box-shadow: 0 0 0 0 transparent; }
-}
-.velma-bubble-flash { animation: velmaBubbleFlash 1.6s ease-out; }
-
-/* Detection model results on each clip (raw debug signal) */
-.velma-clip-models {
-  margin-top: 0.4rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  font-size: 0.7rem;
-}
-.velma-clip-model {
-  background: var(--bg-surface);
-  border: 1px solid var(--ui-border);
-  border-radius: 3px;
-  padding: 0.05rem 0.4rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-color);
-}
-.velma-clip-model-name { color: var(--text-caption); margin-right: 0.25rem; }
-
-/* Tables */
-.velma-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--font-s);
-  table-layout: fixed;
-}
-.velma-table thead th {
-  text-align: left;
-  font-weight: 600;
-  color: var(--text-color);
-  font-size: var(--font-xs);
-  padding: 0.5rem 0.5rem 0.5rem 0;
-  border-bottom: 1px solid var(--ui-border);
-}
-.velma-table tbody td {
-  padding: var(--space-s) 0.5rem var(--space-s) 0;
-  vertical-align: top;
-  border-bottom: 1px solid var(--ui-border);
-  word-wrap: break-word;
-}
-.velma-table tbody tr:last-child td { border-bottom: none; }
-
-/* Speaker stats row */
-.velma-speakers-section { margin-bottom: var(--space-l); }
-.velma-speaker-name {
-  font-weight: 600;
-  color: var(--text-color);
-}
-.velma-speaker-role {
-  color: var(--text-caption);
-  font-size: 0.78rem;
-  font-weight: 400;
-  display: block;
-  margin-top: 2px;
-}
-.velma-emotion-bar {
-  position: relative;
-  height: 20px;
-  width: 100%;
-  border-radius: 3px;
-  overflow: hidden;
-  background: #eeeef0;
-  display: flex;
-}
-.velma-emotion-bar-seg {
-  height: 100%;
-  min-width: 2px;
-}
-.velma-emotion-legend {
-  margin-top: 4px;
-  font-size: 0.7rem;
-  color: var(--text-caption);
-  line-height: 1.5;
-}
-.velma-emotion-legend-chip {
-  display: inline-block;
-  margin-right: 0.45rem;
-  font-weight: 500;
-}
-
-/* Behaviors table */
-.velma-behaviors-section { margin-bottom: var(--space-l); }
-.velma-behavior-speaker-cell {
-  font-weight: 600;
-  color: var(--text-color);
-}
-.velma-behavior-speaker-role {
-  display: block;
-  color: var(--text-caption);
-  font-size: 0.78rem;
-  font-weight: 400;
-  margin-top: 2px;
-}
-.velma-behavior-name {
-  font-weight: 700;
-  color: var(--text-color);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--text-color) 30%, transparent);
-  text-underline-offset: 0.18em;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.35rem;
-}
-.velma-behavior-name::before {
-  content: "\2731";
-  color: var(--purple);
-  font-weight: 700;
-}
-.velma-behavior-desc-short {
-  font-weight: 600;
-  color: var(--text-color);
-}
-.velma-behavior-desc-detail {
-  color: var(--text-color);
-  font-weight: 400;
-}
-.velma-behavior-confidence {
-  font-variant-numeric: tabular-nums;
-  color: var(--text-color);
-  white-space: nowrap;
-}
-.velma-behavior-reasoning {
-  color: var(--text-color);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-.velma-behavior-reasoning-empty {
-  color: var(--text-caption);
-  font-style: italic;
-}
-/* Status pill */
-.velma-behavior-pill {
-  display: inline-block;
-  margin-left: 0.5rem;
-  padding: 0.05rem 0.4rem;
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-radius: 3px;
-  vertical-align: 0.15em;
-}
-.velma-behavior-pill--detected {
-  background: color-mix(in srgb, var(--ui-success) 15%, transparent);
-  color: rgb(8, 130, 80);
-}
-.velma-behavior-pill--undetected {
-  background: var(--bg-surface);
-  color: var(--text-caption);
-}
-.velma-behavior-pill--skipped {
-  background: color-mix(in srgb, #ff9800 18%, transparent);
-  color: rgb(180, 90, 0);
-}
-.velma-behavior-pill--error {
-  background: color-mix(in srgb, var(--ui-error) 15%, transparent);
-  color: rgb(170, 30, 50);
-}
-.velma-behavior-evidence {
-  display: block;
-  margin-top: 0.35rem;
-  font-size: 0.7rem;
-  color: var(--text-caption);
-  font-weight: 500;
-}
-/* Slight mute on non-detected/skipped/errored rows — the status pill still reads at full opacity */
-.velma-behavior-row.undetected { opacity: 0.7; }
-.velma-behavior-row.skipped    { opacity: 0.7; }
-.velma-behavior-row.error      { background: color-mix(in srgb, var(--ui-error) 4%, transparent); }
-.velma-behavior-row.undetected .velma-behavior-name::before { color: var(--text-caption); }
-.velma-behavior-row.error .velma-behavior-confidence { color: var(--ui-error); }
-
-.velma-setup-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  width: 100%;
-  margin-top: var(--space-s);
-  padding: 0.75rem 1.2rem;
-  font-size: var(--font-s);
-  font-weight: 500;
-  font-family: inherit;
-  color: var(--text-color);
-  background: transparent;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--radius-m);
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-.velma-setup-btn:hover { border-color: var(--purple-light); background: color-mix(in srgb, var(--purple) 4%, transparent); }
-.velma-setup-btn svg { width: 0.85rem; height: 0.85rem; color: var(--text-caption); }
-
-/* Topics — grouped by speaker, each topic shown as a chip with sentiment color */
-.velma-topics-section { margin-bottom: var(--space-l); }
-.velma-topics-by-speaker { display: flex; flex-direction: column; gap: 0.75rem; }
-.velma-topics-speaker-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.5rem;
-}
-.velma-topics-speaker-label {
-  font-size: var(--font-s);
-  font-weight: 600;
-  color: var(--text-color);
-  min-width: 14rem;
-}
-.velma-topics-speaker-label-sub {
-  font-size: 0.7rem;
-  color: var(--text-caption);
-  font-weight: 400;
-  margin-left: 0.25rem;
-}
-.velma-topic-chip {
-  padding: 0.2rem 0.55rem;
-  font-size: var(--font-xs);
-  font-weight: 500;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  border: 1px solid transparent;
-  cursor: default;
-}
-.velma-topic-chip.neu { background: color-mix(in srgb, var(--text-caption) 10%, transparent); color: var(--text-color); border-color: color-mix(in srgb, var(--text-caption) 22%, transparent); }
-.velma-topic-chip.pos { background: color-mix(in srgb, var(--ui-success) 10%, transparent); color: rgb(8, 100, 60); border-color: color-mix(in srgb, var(--ui-success) 25%, transparent); }
-.velma-topic-chip.neg { background: color-mix(in srgb, var(--ui-error) 10%, transparent); color: rgb(170, 30, 50); border-color: color-mix(in srgb, var(--ui-error) 25%, transparent); }
-.velma-topic-chip-score {
-  font-size: 0.65rem;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.65;
-  font-weight: 600;
-}
-
-/* Topic sentiments */
-.velma-topic-sentiments-section { margin-bottom: var(--space-l); }
-.velma-sentiment-bar-cell { vertical-align: middle; }
-.velma-sentiment-bar-wrap {
-  position: relative;
-  height: 6px;
-  width: 100%;
-  background: #eeeef0;
-  border-radius: 3px;
-}
-.velma-sentiment-bar-mid {
-  position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--text-caption); opacity: 0.4;
-}
-.velma-sentiment-bar-fill {
-  position: absolute; top: 0; bottom: 0; border-radius: 3px;
-}
-.velma-sentiment-bar-fill.pos { background: var(--ui-success); }
-.velma-sentiment-bar-fill.neg { background: var(--ui-error); }
-.velma-sentiment-bar-fill.neu { background: var(--text-caption); }
-.velma-sentiment-label { font-weight: 500; color: var(--text-color); }
-
-/* Transcript section */
-.velma-transcript-section { margin-bottom: var(--space-l); }
-.velma-transcript-h { display: flex; align-items: center; gap: 0.6rem; }
-.velma-transcript-toggle {
-  font-size: 0.7rem;
-  font-weight: 500;
-  font-family: inherit;
-  color: var(--text-caption);
-  background: var(--bg-surface);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--radius-s);
-  padding: 0.1rem 0.5rem;
-  cursor: pointer;
-}
-.velma-transcript-toggle:hover { color: var(--text-color); }
-.velma-transcript-collapsed #velma-transcript-list { display: none; }
-
-/* Transcript bubble extensions for Velma */
-.velma-bubble-behaviors {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-}
-.velma-bubble-behavior {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-color);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--text-color) 30%, transparent);
-  text-underline-offset: 0.16em;
-}
-.velma-bubble-behavior::before { content: "\2731 "; color: var(--purple); }
-.velma-bubble-behavior.definitive { color: var(--purple); }
-
-/* Velma config modal */
-.velma-config-modal-inner { max-width: 1120px; max-height: 90vh; }
-.velma-config-body { display: flex; flex-direction: column; gap: var(--space-s); padding: var(--space-m); overflow: hidden; min-height: 0; }
-.velma-config-hint { font-size: var(--font-xs); color: var(--text-caption); margin-top: 0.2rem; max-width: 600px; }
-.velma-config-hint code { background: var(--bg-surface); padding: 0 0.25rem; border-radius: 3px; font-size: 0.85em; }
-
-/* Split: form left, JSON right */
-.velma-config-split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-s);
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-/* Form column */
-.velma-config-form {
-  overflow-y: auto;
-  padding-right: var(--space-xs);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-m);
-  min-width: 0;
-}
-.velma-cfg-section { display: flex; flex-direction: column; gap: 0.5rem; }
-.velma-cfg-h {
-  font-size: var(--font-s);
-  font-weight: 700;
-  color: var(--bg-accent);
-  letter-spacing: -0.01em;
-}
-.velma-cfg-select {
-  padding: 0.45rem 0.6rem;
-  font-family: inherit;
-  font-size: var(--font-s);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--radius-s);
-  background: var(--bg);
-  color: var(--text-color);
-  cursor: pointer;
-}
-.velma-cfg-select:focus { outline: none; border-color: var(--purple); }
-.velma-cfg-defn {
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-  line-height: 1.5;
-}
-
-.velma-cfg-list { display: flex; flex-direction: column; gap: 0.3rem; }
-.velma-cfg-row {
-  border: 1px solid var(--ui-border);
-  border-radius: var(--radius-s);
-  background: var(--bg);
-  overflow: hidden;
-}
-.velma-cfg-row-head {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0.6rem;
-  cursor: pointer;
-  user-select: none;
-}
-.velma-cfg-row-head:hover { background: var(--bg-surface); }
-.velma-cfg-row-checkbox {
-  width: 1rem;
-  height: 1rem;
-  accent-color: var(--purple);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.velma-cfg-row-title {
-  flex: 1;
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  min-width: 0;
-}
-.velma-cfg-row-name {
-  font-size: var(--font-s);
-  font-weight: 600;
-  color: var(--text-color);
-}
-.velma-cfg-row-short {
-  font-size: var(--font-xs);
-  color: var(--text-caption);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-  min-width: 0;
-}
-.velma-cfg-row-badge {
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.05rem 0.35rem;
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--purple) 10%, transparent);
-  color: var(--purple);
-}
-.velma-cfg-row-expand {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-caption);
-  padding: 0.25rem;
-  border-radius: 3px;
-  font-size: var(--font-s);
-}
-.velma-cfg-row-expand:hover { color: var(--text-color); }
-.velma-cfg-row-body {
-  display: none;
-  padding: 0.5rem 0.6rem 0.7rem;
-  border-top: 1px solid var(--ui-border);
-  background: var(--bg-surface);
-  gap: 0.4rem;
-  flex-direction: column;
-}
-.velma-cfg-row.expanded .velma-cfg-row-body { display: flex; }
-.velma-cfg-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-.velma-cfg-field-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-caption);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.velma-cfg-input, .velma-cfg-textarea {
-  font-family: inherit;
-  font-size: var(--font-xs);
-  line-height: 1.45;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--radius-s);
-  background: var(--bg);
-  color: var(--text-color);
-  resize: vertical;
-}
-.velma-cfg-textarea { min-height: 4.5rem; }
-.velma-cfg-input:focus, .velma-cfg-textarea:focus { outline: none; border-color: var(--purple); }
-.velma-cfg-row-remove {
-  align-self: flex-end;
-  font-size: var(--font-xs);
-  font-family: inherit;
-  color: var(--ui-error);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.2rem 0.4rem;
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--ui-error) 30%, transparent);
-  text-underline-offset: 0.16em;
-}
-.velma-cfg-row-remove:hover { color: var(--ui-error); }
-
-.velma-cfg-add-btn {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.35rem 0.65rem;
-  font-size: var(--font-xs);
-  font-weight: 500;
-  font-family: inherit;
-  color: var(--purple);
-  background: transparent;
-  border: 1px dashed color-mix(in srgb, var(--purple) 40%, transparent);
-  border-radius: var(--radius-s);
-  cursor: pointer;
-}
-.velma-cfg-add-btn:hover { background: color-mix(in srgb, var(--purple) 6%, transparent); }
-.velma-cfg-add-btn svg { width: 0.8rem; height: 0.8rem; }
-.velma-cfg-add-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-.velma-cfg-example-btn {
-  align-self: flex-start;
-  padding: 0.35rem 0.65rem;
-  font-size: var(--font-xs);
-  font-weight: 500;
-  font-family: inherit;
-  color: var(--text-caption);
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-s);
-  cursor: pointer;
-}
-.velma-cfg-example-btn:hover { color: var(--text-color); border-color: var(--text-caption); }
-
-/* Behaviors warning (behaviors need conversation types + roles to be evaluated) */
-.velma-cfg-warning {
-  margin: 0 0 0.6rem;
-  padding: 0.5rem 0.7rem;
-  font-size: var(--font-xs);
-  line-height: 1.45;
-  color: #8a5800;
-  background: color-mix(in srgb, #f5a623 14%, transparent);
-  border: 1px solid color-mix(in srgb, #f5a623 45%, transparent);
-  border-radius: var(--radius-s);
-}
-
-/* "Use default" shortcut */
-.velma-cfg-default-opt {
-  display: inline-flex; align-items: center; gap: 0.5rem;
-  font-size: var(--font-s); font-weight: 600; cursor: pointer; color: var(--text-color);
-}
-.velma-cfg-default-opt input { accent-color: var(--purple); }
-.velma-cfg-default-opt code { font-weight: 500; }
-
-/* Preset row: expand/collapse control + expanded editable body */
-.velma-cfg-preset-toggle {
-  margin-left: auto; padding: 0.15rem 0.5rem; font-size: var(--font-xs); font-family: inherit;
-  color: var(--purple); background: transparent; border: 1px solid color-mix(in srgb, var(--purple) 35%, transparent);
-  border-radius: var(--radius-s); cursor: pointer; white-space: nowrap;
-}
-.velma-cfg-preset-toggle:hover { background: color-mix(in srgb, var(--purple) 6%, transparent); }
-.velma-cfg-row.expanded-preset { border-color: color-mix(in srgb, var(--purple) 30%, transparent); }
-
-.velma-cfg-stt-opts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 1rem;
-  font-size: var(--font-s);
-}
-.velma-cfg-stt-opts label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  cursor: pointer;
-}
-.velma-cfg-stt-opts input { accent-color: var(--purple); }
-
-/* JSON pane */
-.velma-config-json-pane {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-.velma-config-json-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.4rem;
-  font-size: var(--font-xs);
-  font-weight: 600;
-  color: var(--text-caption);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.velma-config-raw-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: normal;
-  cursor: pointer;
-  color: var(--text-caption);
-}
-.velma-config-raw-toggle input { accent-color: var(--purple); }
-.velma-config-textarea {
-  flex: 1;
-  width: 100%;
-  font-family: ui-monospace, "SF Mono", Monaco, Menlo, Consolas, monospace;
-  font-size: 0.72rem;
-  line-height: 1.5;
-  padding: var(--space-s);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--radius-m);
-  background: var(--bg-surface);
-  color: var(--text-color);
-  resize: none;
-}
-.velma-config-textarea:focus { outline: none; border-color: var(--purple); }
-.velma-config-textarea[readonly] { cursor: default; opacity: 0.85; }
-
-.velma-config-error {
-  min-height: 1.2rem;
-  font-size: var(--font-xs);
-  color: var(--ui-error);
-  white-space: pre-wrap;
-}
-.velma-config-actions { display: flex; justify-content: flex-end; gap: var(--space-xs); }
-.velma-config-action-primary, .velma-config-action-secondary {
-  padding: 0.5rem 1.1rem;
-  font-size: var(--font-s);
-  font-weight: 600;
-  font-family: inherit;
-  border-radius: var(--radius-m);
-  cursor: pointer;
-  border: 1px solid var(--ui-border);
-}
-.velma-config-action-secondary { background: var(--bg-surface); color: var(--text-color); }
-.velma-config-action-secondary:hover { background: #eeeef0; }
-.velma-config-action-primary {
-  background: linear-gradient(135deg, #430f92, #fb3958);
-  color: #fff;
-  border-color: transparent;
-}
-.velma-config-action-primary:hover { filter: brightness(1.1); }
-
-/* On mobile, stack the split */
-@media (max-width: 768px) {
-  .velma-config-split { grid-template-columns: 1fr; }
-  .velma-config-modal-inner { max-width: 95vw; }
-}
-
-/* ── Responsive ──────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .results-layout { display: block; }
-  .results-verdict {
-    position: static;
-    margin-top: 0;
-    padding: var(--space-s) var(--space-m);
-  }
-  .results-sidebar { position: static; }
-  .verdict-ring { width: 140px; height: 140px; }
-  .verdict-ring-label { font-size: var(--font-l); }
-  .results-actions { flex-wrap: wrap; }
-  .mode-toggle label { font-size: var(--font-l); }
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modulate AI — Voice Intelligence</title>
+  <meta name="description" content="Modulate Developer APIs — try voice intelligence models on your own audio" />
+  <link rel="shortcut icon" href="/assets/service/favicon-product.png" />
+  <link rel="stylesheet" href="/styles.css?v=1" />
+  <link rel="stylesheet" href="/showcase.css?v=1" />
 </head>
-<body>
+<body data-theme-storage-key="prototype-theme">
+<script>
+  // Pre-paint theme: dark unless the user explicitly chose light.
+  (function () {
+    var key = document.body.dataset.themeStorageKey;
+    var theme = null;
+    try { theme = localStorage.getItem(key); } catch (e) {}
+    if (theme !== 'light') {
+      document.body.classList.add('dark-mode');
+    }
+  })();
+</script>
 
-<div class="page">
+ <!-- Generated by scripts/generate-svg-sprite.js. Do not edit directly. -->
+<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="position: absolute; width: 0; height: 0; overflow: hidden;">
+  <symbol id="accent" viewBox="0 0 32 32">
+    <polygon fill="var(--m__color-red-500)" points="5.177 9.106 4.74 5.981 27.168 2.279 27.825 6.492 5.177 9.106" />
+      <path fill="currentColor" d="M21.442,28.104l-3.547-2.42c3.282-5.371,2.95-9.924.562-11.587-4.176-2.907-11.028,8.355-10.575,8.887s4.837-2.344,8.611-5.762l2.887,3.188c-1.804,1.633-11.094,9.717-14.888,6.234C0,22.52,11.612,4.847,20.78,10.479c2.66,1.634,4.219,5.116,3.722,9.474,1.178-.669,2.493-1.258,3.928-1.666l1.178,4.135c-4.838,1.378-8.132,5.641-8.165,5.683Z" />
+  </symbol>
+  <symbol id="account" viewBox="0 0 32 32" fill="currentColor">
+    <circle cx="16" cy="10.41" r="5.819" />
+      <rect x="4.975" y="17.736" width="22.05" height="9.289" />
+  </symbol>
+  <symbol id="ai-music" viewBox="0 0 32 32">
+    <path fill="currentColor" d="M21.06,27.197h-1.272v-2.029h5.731s1.526,0,1.526,0v-1.907c1.376-2.084,2.181-4.577,2.181-7.261,0-4.706-2.466-8.828-6.168-11.172h5.259v-2.037h-7.257v.99c-1.559-.646-3.267-1.007-5.06-1.007-7.304,0-13.226,5.921-13.226,13.226s5.921,13.226,13.226,13.226c1.796,0,3.501-.371,5.06-1.023v-1.007ZM27.045,17.027h-7.257v-2.029h7.257v2.029ZM16,19.17c-1.751,0-3.17-1.419-3.17-3.17s1.419-3.17,3.17-3.17,3.17,1.419,3.17,3.17-1.419,3.17-3.17,3.17ZM19.788,8.895h7.257v2.029h-7.257v-2.029Z" />
+      <polygon fill="var(--m__color-yellow-500)" points="27.045 6.866 27.045 6.866 27.045 6.293 27.045 4.828 19.788 4.828 19.788 6.866 21.06 6.866 21.06 7.687 21.06 7.687 21.06 8.894 28.317 8.894 28.317 6.866 27.045 6.866" />
+      <rect fill="var(--m__color-yellow-500)" x="21.06" y="21.093" width="7.257" height="2.037" />
+      <rect fill="var(--m__color-yellow-500)" x="21.06" y="27.197" width="7.257" height="2.037" />
+      <path fill="var(--m__color-yellow-500)" d="M21.06,17.027h-1.272v-2.029h8.529v-2.037h0s-6.808,0-6.808,0h-1.721v-1.977c-1.055-.798-2.364-1.276-3.788-1.276-3.476,0-6.293,2.817-6.293,6.293s2.818,6.293,6.293,6.293c1.424,0,2.733-.479,3.788-1.276v-1.952h1.272v-2.038ZM16,18.062c-1.139,0-2.062-.923-2.062-2.062s.923-2.062,2.062-2.062,2.062.923,2.062,2.062-.923,2.062-2.062,2.062Z" />
+  </symbol>
+  <symbol id="api-docs" viewBox="0 0 32 32" fill="currentColor">
+    <path d="M12.04,11.308v-1.544c0-1.263-.197-2.242-.592-2.938-.394-.695-.927-1.192-1.598-1.49-.672-.297-1.43-.479-2.274-.543-.845-.064-1.721-.096-2.63-.096v3.57c.941,0,1.574.145,1.9.435.325.29.488.853.488,1.688v2.124c0,.434.099.88.296,1.339.196.458.559.878,1.085,1.261.423.306.996.563,1.707.776v.051c-.711.213-1.284.47-1.707.776-.526.381-.889.801-1.085,1.26-.197.458-.296.904-.296,1.339v2.123c0,.837-.163,1.399-.488,1.689-.326.289-.959.434-1.9.434v3.571c.909,0,1.785-.032,2.63-.097s1.603-.245,2.274-.543c.671-.298,1.204-.794,1.598-1.49.395-.695.592-1.674.592-2.937v-1.545c0-.86.198-1.493.597-1.899s1.107-.609,2.129-.609v-4.197c-1.021,0-1.73-.203-2.129-.609-.398-.406-.597-1.039-.597-1.9Z" />
+      <rect x="14.841" y="23.588" width="12.184" height="3.45" />
+  </symbol>
+  <symbol id="api-key" viewBox="0 0 32 32" fill="currentColor">
+    <polygon points="12.442 24.151 15.142 24.455 15.142 21.904 21.592 21.904 21.592 21.904 23.594 19.275 27.025 19.275 27.025 4.975 18.214 4.975 16.84 9.228 12.585 10.603 12.585 13.941 9.248 13.941 9.248 13.941 8.158 18.214 4.975 18.214 4.975 27.025 8.644 27.025 12.442 24.151" />
+      <rect x="4.975" y="4.975" width="7.61" height="5.628" />
+      <rect x="15.142" y="24.455" width="11.883" height="2.57" />
+  </symbol>
+  <symbol id="apple" viewBox="0 0 32 32" fill="currentColor">
+    <path d="M26.223,9.481c-.159.123-2.96,1.701-2.96,5.211,0,4.059,3.564,5.496,3.671,5.531-.016.088-.566,1.967-1.879,3.882-1.171,1.685-2.394,3.367-4.254,3.367s-2.339-1.081-4.486-1.081c-2.093,0-2.837,1.116-4.538,1.116s-2.889-1.559-4.254-3.474c-1.581-2.249-2.859-5.742-2.859-9.057,0-5.318,3.458-8.138,6.861-8.138,1.808,0,3.315,1.187,4.451,1.187,1.081,0,2.766-1.258,4.823-1.258.78,0,3.581.071,5.424,2.714h0ZM19.822,4.516c.851-1.009,1.453-2.41,1.453-3.811,0-.194-.016-.391-.052-.55-1.384.052-3.031.922-4.024,2.073-.78.886-1.507,2.287-1.507,3.707,0,.213.036.427.052.495.088.016.23.036.372.036,1.242,0,2.804-.832,3.707-1.95h0Z" />
+  </symbol>
+  <symbol id="batch" viewBox="0 0 32 32" fill="currentColor">
+    <rect x="4.975" y="4.975" width="15.025" height="15.025" />
+      <polygon points="21.693 14 21.693 21.693 14 21.693 14 27.025 27.025 27.025 27.025 14 21.693 14" />
+  </symbol>
+  <symbol id="behaviors" viewBox="0 0 32 32" fill="currentColor">
+    <polygon points="2.868 12.609 11.284 11.58 7.334 3.37 17.822 10.254 27.138 3.151 22.75 16.238 29.146 19.224 21.451 21.488 20.897 29.132 16.033 20.703 2.856 27.395 9.74 16.238 2.868 12.609" />
+  </symbol>
+  <symbol id="billing" viewBox="0 0 32 32" fill="currentColor">
+    <path d="M27.025,12.168v-1.487c0-1.506-1.221-2.727-2.727-2.727H7.702c-1.506,0-2.727,1.221-2.727,2.727v1.487h22.05Z" />
+      <path d="M4.975,13.861v7.458c0,1.506,1.221,2.727,2.727,2.727h16.596c1.506,0,2.727-1.221,2.727-2.727v-7.458H4.975ZM23.831,20.283h-5.884v-1.693h5.884v1.693Z" />
+  </symbol>
+  <symbol id="calendar" viewBox="0 0 32 32" fill="currentColor">
+    <rect x="13" y="5" width="6.32" height="6.32" />
+      <rect x="21" y="5" width="6.32" height="6.32" />
+      <rect x="5" y="13" width="6.32" height="6.32" />
+      <rect x="13" y="13" width="6.32" height="6.32" />
+      <rect x="21" y="13" width="6.32" height="6.32" />
+      <rect x="5" y="21" width="6.32" height="6.32" />
+      <rect x="13" y="21" width="6.32" height="6.32" />
+  </symbol>
+  <symbol id="checkmark" viewBox="0 0 10 10" fill="currentColor">
+    <polygon points="1.33,5.33 4.02,7.9 8.78,2.66 8.32,2.24 3.98,7 1.77,4.87" />
+  </symbol>
+  <symbol id="chevron-down" viewBox="0 0 12 12" fill="currentColor">
+    <polygon points="1.735,4.265 6,8.53 10.265,4.265 9.735,3.735 6,7.47 2.265,3.735" />
+  </symbol>
+  <symbol id="chevron-left" viewBox="0 0 12 12" fill="currentColor">
+    <polygon points="7.735,1.735 3.47,6 7.735,10.265 8.265,9.735 4.53,6 8.265,2.265" />
+  </symbol>
+  <symbol id="close" viewBox="0 0 16 16" fill="currentColor">
+    <rect x="7.5" y="2" width="1" height="12" transform="rotate(45 8 8)" />
+      <rect x="7.5" y="2" width="1" height="12" transform="rotate(-45 8 8)" />
+  </symbol>
+  <symbol id="decrease" viewBox="0 0 32 32" fill="currentColor">
+    <polygon points="21.3 25.171 4.175 7.71 7.775 4.24 24.43 22.154 21.3 25.171" />
+      <polygon points="27.163 27.504 11.828 26.56 12.134 21.569 22.259 22.846 20.508 13.229 25.477 12.664 27.163 27.504" />
+  </symbol>
+  <symbol id="deepfake" viewBox="0 0 32 32">
+    <rect fill="var(--m__color-red-500)" x="10.202" y="4.063" width="5.798" height="11.938" />
+      <rect fill="var(--m__color-red-500)" x="21.798" y="4.063" width="5.798" height="11.938" />
+      <rect fill="currentColor" x="4.405" y="16.001" width="5.798" height="11.912" />
+      <rect fill="currentColor" x="16" y="16.001" width="5.798" height="11.912" />
+  </symbol>
+  <symbol id="done" viewBox="0 0 32 32" fill="currentColor">
+    <polygon points="12.895 27.958 4.318 16.515 8.318 13.516 12.8 19.71 23.446 4.525 27.518 7.425 12.895 27.958" />
+  </symbol>
+  <symbol id="dots-vertical" viewBox="0 0 12 12" fill="currentColor">
+    <circle cx="6" cy="2" r="1" />
+      <circle cx="6" cy="6" r="1" />
+      <circle cx="6" cy="10" r="1" />
+  </symbol>
+  <symbol id="emotions" viewBox="0 0 32 32">
+    <rect fill="var(--m__color-red-500)" x="4.405" y="16" width="8.065" height="11.937" />
+      <rect fill="rgb(200, 80, 160)" x="8.802" y="4.063" width="6.264" height="11.937" />
+      <rect fill="rgb(255, 120, 80)" x="15.066" y="16" width="6.264" height="11.937" />
+      <rect fill="rgb(0, 120, 200)" x="19.53" y="4.063" width="8.065" height="11.937" />
+  </symbol>
+  <symbol id="facebook" viewBox="0 0 32 32">
+    <g>
+        <path fill="#0866ff" d="M28.32,16c0-6.804-5.516-12.32-12.32-12.32S3.68,9.196,3.68,16c0,5.778,3.978,10.626,9.344,11.957v-8.193h-2.541v-3.765h2.541v-1.622c0-4.193,1.898-6.137,6.015-6.137.781,0,2.127.153,2.678.306v3.413c-.291-.031-.796-.046-1.423-.046-2.02,0-2.801.765-2.801,2.755v1.331h4.024l-.691,3.765h-3.333v8.465c6.1-.737,10.828-5.931,10.828-12.23Z" />
+        <path fill="#fff" d="M20.825,19.765l.691-3.765h-4.024v-1.331c0-1.99.781-2.755,2.801-2.755.627,0,1.133.015,1.423.046v-3.413c-.551-.153-1.898-.306-2.678-.306-4.117,0-6.015,1.944-6.015,6.137v1.622h-2.541v3.765h2.541v8.193c.953.236,1.95.363,2.976.363.505,0,1.003-.031,1.493-.09v-8.465h3.333Z" />
+      </g>
+  </symbol>
+  <symbol id="github" viewBox="0 0 32 32" fill="currentColor">
+    <path d="M14.046,21.239c-3.264-.396-5.564-2.745-5.564-5.787,0-1.236.445-2.572,1.187-3.462-.321-.816-.272-2.547.099-3.264.989-.124,2.325.396,3.116,1.113.94-.297,1.929-.445,3.141-.445s2.201.148,3.091.42c.767-.692,2.127-1.212,3.116-1.088.346.668.396,2.399.074,3.24.791.94,1.212,2.201,1.212,3.487,0,3.042-2.3,5.342-5.614,5.762.841.544,1.41,1.731,1.41,3.091v2.572c0,.742.618,1.162,1.36.866,4.476-1.706,7.988-6.182,7.988-11.722,0-6.998-5.688-12.711-12.686-12.711-6.998,0-12.637,5.712-12.637,12.711,0,5.49,3.487,10.04,8.185,11.746.668.247,1.311-.198,1.311-.866v-1.978c-.346.148-.791.247-1.187.247-1.632,0-2.597-.89-3.289-2.547-.272-.668-.569-1.063-1.138-1.138-.297-.025-.396-.148-.396-.297,0-.297.495-.519.989-.519.717,0,1.335.445,1.978,1.36.495.717,1.014,1.039,1.632,1.039s1.014-.223,1.583-.791c.42-.42.742-.791,1.039-1.039Z" />
+  </symbol>
+  <symbol id="google" viewBox="0 0 32 32">
+    <path fill="#4285f4" d="M27.908,16.281c0-.875-.079-1.717-.224-2.525h-11.625v4.774h6.643c-.286,1.543-1.156,2.85-2.463,3.725v3.097h3.989c2.334-2.149,3.68-5.313,3.68-9.072Z" />
+      <path fill="#34a853" d="M16.059,28.343c3.333,0,6.126-1.105,8.169-2.99l-3.989-3.097c-1.105.741-2.519,1.178-4.18,1.178-3.215,0-5.936-2.171-6.906-5.089h-4.124v3.198c2.031,4.034,6.205,6.8,11.03,6.8Z" />
+      <path fill="#fbbc04" d="M9.153,18.345c-.247-.741-.387-1.532-.387-2.345s.14-1.605.387-2.345v-3.198h-4.124c-.836,1.666-1.313,3.551-1.313,5.543s.477,3.877,1.313,5.543l4.124-3.198Z" />
+      <path fill="#e94235" d="M16.059,8.566c1.812,0,3.439.623,4.718,1.846l3.54-3.54c-2.138-1.992-4.932-3.215-8.258-3.215-4.825,0-8.999,2.766-11.03,6.8l4.124,3.198c.971-2.917,3.692-5.089,6.906-5.089Z" />
+  </symbol>
+  <symbol id="initiative" viewBox="0 0 32 32" fill="currentColor">
+    <path fill-opacity="0.3" d="M15.413,9.268C12.702,2.216,3.193,3.335,3.193,11.307s9.984,13.721,12.221,15.718c2.237-1.997,12.221-7.746,12.221-15.718s-9.509-9.091-12.221-2.039Z" />
+      <polygon points="18.064 9.267 15.954 13.054 20.618 15.257 3.193 17.492 3.821 21.78 21.422 19.044 17.606 23.165 20.969 25.9 29.374 15.568 18.064 9.267" />
+  </symbol>
+  <symbol id="language" viewBox="0 0 32 32" fill="currentColor">
+    <path d="M21.675,28.104l-4.143-1.758c.006-.013.016-.036.029-.068,3.99-9.303,2.318-17.214.107-18.253-.974-.451-3.493,1.003-6.482,6.864-2.139,4.195-3.214,7.664-2.966,7.766.299.123,5.082-4.473,7.143-8.847l4.07,1.918c-2.52,5.35-8.073,11.511-12.015,11.799-1.331.1-2.518-.45-3.219-1.506-.984-1.484-1.536-4.322,2.978-13.175C12.449,2.511,17.213,2.841,19.583,3.952c3.815,1.793,5.466,7.71,4.677,14.575,1.735-1.026,3.829-1.731,6.308-1.731v4.5c-5.777,0-8.661,6.284-8.87,6.76-.007.016-.015.033-.021.049Z" />
+  </symbol>
+  <symbol id="microsoft" viewBox="0 0 32 32">
+    <rect fill="#f25022" x="4.975" y="4.975" width="10.445" height="10.445" />
+      <rect fill="#00a4ef" x="4.975" y="16.58" width="10.445" height="10.445" />
+      <rect fill="#7fba00" x="16.58" y="4.975" width="10.445" height="10.445" />
+      <rect fill="#ffb900" x="16.58" y="16.58" width="10.445" height="10.445" />
+  </symbol>
+  <symbol id="models" viewBox="0 0 32 32" fill="currentColor">
+    <rect x="4.405" y="16" width="8.065" height="11.937" />
+      <rect x="15.066" y="16" width="6.264" height="11.937" />
+      <rect x="8.802" y="4.063" width="6.264" height="11.937" />
+      <rect x="19.53" y="4.063" width="8.065" height="11.937" />
+  </symbol>
+  <symbol id="modulate" viewBox="0 0 32 32" fill="currentColor">
+    <g>
+        <path d="M21.814,13.228c.239.5.417,1.034.521,1.595l5.573-1.811c-.137-.548-.305-1.082-.512-1.598h0s-5.582,1.814-5.582,1.814Z" />
+        <path d="M17.832,9.821c.545.161,1.057.395,1.531.686l2.388-5.364c-.492-.261-1.008-.481-1.536-.675l-2.383,5.352Z" />
+        <path d="M21.309,12.347h0l7.121-6.412c-.353-.435-.723-.855-1.119-1.25l-7.127,6.417c.426.365.805.782,1.124,1.245Z" />
+        <path d="M15.999,22.447h0c-3.561,0-6.448-2.885-6.448-6.447,0-1.836.771-3.489,2.003-4.663l-4.027-4.225c-2.348,2.238-3.818,5.388-3.818,8.889,0,6.787,5.502,12.289,12.289,12.289,4.903,0,9.123-2.879,11.095-7.032l-5.274-2.499c-1.034,2.179-3.249,3.689-5.821,3.689Z" />
+        <path d="M16.839,9.613V.042C16.559.028,16.283,0,16,0s-.559.028-.839.042v9.571c.275-.036.554-.06.839-.06s.564.025.839.06Z" />
+        <path d="M31.958,16.834l-9.519-1c.002.056.008.11.008.166,0,.518-.068,1.019-.183,1.502l9.521,1.001c.086-.548.144-1.104.173-1.668Z" />
+        <path d="M12.636,10.507c.474-.291.987-.525,1.531-.686h0L10.273,1.074c-.525.202-1.037.427-1.534.681l3.896,8.752Z" />
+      </g>
+  </symbol>
+  <symbol id="music" viewBox="0 0 32 32">
+    <path fill="currentColor" d="M16,2.774c-7.304,0-13.226,5.921-13.226,13.226s5.921,13.226,13.226,13.226,13.226-5.921,13.226-13.226S23.304,2.774,16,2.774ZM16,19.17c-1.751,0-3.17-1.419-3.17-3.17s1.419-3.17,3.17-3.17,3.17,1.419,3.17,3.17-1.419,3.17-3.17,3.17Z" />
+      <path fill="var(--m__color-yellow-500)" d="M16,9.707c-3.476,0-6.293,2.817-6.293,6.293s2.817,6.293,6.293,6.293,6.293-2.818,6.293-6.293-2.818-6.293-6.293-6.293ZM16,18.062c-1.139,0-2.062-.923-2.062-2.062s.923-2.062,2.062-2.062,2.062.923,2.062,2.062-.923,2.062-2.062,2.062Z" />
+  </symbol>
+  <symbol id="overview-muted" viewBox="0 0 32 32" fill="currentColor">
+    <rect fill-opacity="0.3" x="4.975" y="4.975" width="22.05" height="10.499" />
+      <rect fill-opacity="0.3" x="4.975" y="17.167" width="22.05" height="5.176" />
+      <rect x="4.975" y="24.036" width="22.05" height="2.989" />
+  </symbol>
+  <symbol id="overview" viewBox="0 0 32 32" fill="currentColor">
+    <rect x="4.975" y="4.975" width="22.05" height="10.499" />
+      <rect x="4.975" y="17.167" width="22.05" height="5.176" />
+      <rect x="4.975" y="24.036" width="22.05" height="2.989" />
+  </symbol>
+  <symbol id="prosocial" viewBox="0 0 32 32" fill="currentColor">
+    <path d="M18.731,28.452c2.536,0,8.46-5.614,8.46-7.699,0-2.566-.251-10.964.76-12.75,0,0-2.054-1.525-3.932.165-.854.768-1.819,3.629-2.279,6.036-5.24-7.398-13.037,8.374-10.304,10.85,2.268,2.054,5.08,3.399,7.295,3.399Z" />
+      <path d="M13.176,26.42c-.924-.581-4.795-3.738-7.006-5.949s.295-4.516.295-4.516l8.552,6.967s-.917,4.08-1.841,3.499Z" />
+      <path d="M11.068,18.322s-5.279-4.752-6.2-5.708,1.746-3.385,1.746-3.385l6.868,6.868-2.414,2.225Z" />
+      <path d="M13.339,14.818s-6.21-6.961-6.862-7.736,2.276-2.94,2.276-2.94l7.002,8.459-2.416,2.217Z" />
+      <path d="M18.903,16.392l-7.056-10.93s2.848-2.185,3.378-1.457,6.727,10.419,6.727,10.419l-3.048,1.968Z" />
+  </symbol>
+  <symbol id="redaction" viewBox="0 0 32 32" fill="currentColor">
+    <polygon points="27.065 27.424 4.509 25.95 4.082 21.812 18.686 17.417 4.923 16.851 4.32 12.936 16.894 8.947 4.269 8.947 4.269 4.674 27.069 4.674 27.724 8.794 12.592 13.674 27.513 14.264 28.048 18.203 13.649 22.526 27.385 23.365 27.065 27.424" />
+  </symbol>
+  <symbol id="restart" viewBox="0 0 32 32" fill="currentColor">
+    <path d="M14.936,25.143l1.726-2.86c-.218.023-.439.035-.663.035-3.483,0-6.317-2.834-6.317-6.317,0-2.095,1.029-3.949,2.603-5.099l1.953-3.237-3.751-2.664c-4.029,2.027-6.806,6.19-6.806,11,0,6.792,5.525,12.317,12.317,12.317,1.02,0,2.006-.138,2.955-.373l-4.018-2.802Z" />
+      <path d="M17.063,6.858l-1.727,2.86c.218-.023.439-.035.663-.035,3.483,0,6.317,2.834,6.317,6.317,0,2.095-1.029,3.949-2.604,5.099l-1.953,3.236,3.75,2.665c4.029-2.027,6.807-6.19,6.807-11,0-6.792-5.525-12.317-12.317-12.317-1.021,0-2.007.138-2.957.374l4.02,2.801Z" />
+  </symbol>
+  <symbol id="search" viewBox="0 0 32 32" fill="currentColor">
+    <path fill-rule="evenodd" d="M 14 4 A 10 10 0 0 1 14 24 A 10 10 0 0 1 14 4 Z M 14 8 A 6 6 0 0 0 14 20 A 6 6 0 0 0 14 8 Z" />
+      <path d="M 24.5 28.4 L 27.5 25.6 L 22.0 19.6 L 19.0 22.4 Z" />
+  </symbol>
+  <symbol id="star" viewBox="0 0 32 32" fill="currentColor">
+    <polygon points="16 2.887 20.333 10.534 28.945 12.292 23.011 18.776 24 27.509 16 23.869 8 27.509 8.989 18.776 3.055 12.292 11.667 10.534 16 2.887" />
+  </symbol>
+  <symbol id="streaming" viewBox="0 0 32 32" fill="currentColor">
+    <rect x="10.488" y="4.975" width="5.512" height="5.512" />
+      <rect x="10.488" y="10.488" width="5.512" height="5.512" />
+      <rect x="21.512" y="10.488" width="5.512" height="5.512" />
+      <rect x="4.975" y="16" width="5.512" height="5.512" />
+      <rect x="16" y="16" width="5.512" height="5.512" />
+      <rect x="16" y="21.512" width="5.512" height="5.512" />
+  </symbol>
+  <symbol id="stt-med" viewBox="0 0 32 32">
+    <rect fill="var(--m__color-red-500)" x="11.663" y="4.975" width="7.874" height="3.708" />
+      <rect fill="var(--m__color-red-500)" x="4.975" y="11.089" width="21.25" height="3.708" />
+      <rect fill="var(--m__color-red-500)" x="4.975" y="17.203" width="21.25" height="3.708" />
+      <rect fill="var(--m__color-red-500)" x="11.663" y="23.317" width="7.874" height="3.708" />
+  </symbol>
+  <symbol id="transcript" viewBox="0 0 32 32" fill="currentColor">
+    <rect x="4.975" y="4.975" width="21.25" height="3.708" />
+      <rect x="4.975" y="11.089" width="17.25" height="3.708" />
+      <rect x="4.975" y="17.203" width="21.25" height="3.708" />
+      <rect x="4.975" y="23.317" width="9.25" height="3.708" />
+  </symbol>
+  <symbol id="usage" viewBox="0 0 32 32" fill="currentColor">
+    <path d="M19.642,21.32h0s3.889,4.32,3.889,4.32c.441-.346.859-.719,1.248-1.121l-3.893-4.323c-.365.426-.782.805-1.245,1.124Z" />
+      <path d="M28.188,15.172h-5.813c.036.275.06.554.06.839s-.025.564-.06.839h5.813c.019-.278.042-.556.042-.839s-.023-.561-.042-.839Z" />
+      <path d="M22.168,14.178h0s5.308-2.363,5.308-2.363c-.193-.529-.413-1.045-.674-1.537l-5.32,2.369c.291.474.525.987.686,1.531Z" />
+      <path d="M21.482,19.375l5.321,2.369c.261-.492.481-1.008.674-1.536l-5.309-2.363c-.161.545-.395,1.057-.686,1.531Z" />
+      <path d="M12.358,21.322c-1.696-1.16-2.816-3.101-2.816-5.311h0c0-3.56,2.886-6.447,6.448-6.447,1.836,0,3.489.771,4.663,2.003l4.19-3.994c-2.229-2.338-5.367-3.803-8.854-3.803-6.761,0-12.242,5.481-12.242,12.242,0,3.919,1.849,7.398,4.716,9.635l3.894-4.324Z" />
+  </symbol>
+  <symbol id="velma" viewBox="0 0 32 32">
+    <polygon fill="currentColor" points="6.357 4.183 4.183 4.183 4.183 16 10.3 16 6.357 4.183" />
+      <polygon fill="var(--m__color-purple-400)" points="19.441 16 4.183 16 4.183 27.817 15.498 27.817 19.441 16" />
+      <polygon fill="var(--m__color-purple-400)" points="21.7 16 17.757 27.817 27.817 27.817 27.817 16 21.7 16" />
+      <polygon fill="currentColor" points="23.383 4.183 8.616 4.183 12.559 16 19.441 16 23.383 4.183" />
+      <polygon fill="currentColor" points="25.642 4.183 21.7 16 27.817 16 27.817 4.183 25.642 4.183" />
+  </symbol>
+  <symbol id="voice-match" viewBox="0 0 32 32">
+    <rect fill="currentColor" x="21.512" y="8.65" width="5.512" height="7.35" />
+      <rect fill="currentColor" x="10.487" y="8.65" width="5.512" height="7.35" />
+      <rect fill="currentColor" x="16" y="4.975" width="5.512" height="11.025" />
+      <rect fill="currentColor" x="4.975" y="12.325" width="5.512" height="3.675" />
+      <rect fill="var(--m__color-green-500)" x="21.512" y="19.675" width="5.512" height="7.35" />
+      <rect fill="var(--m__color-green-500)" x="10.487" y="19.675" width="5.512" height="7.35" />
+      <rect fill="var(--m__color-green-500)" x="16" y="16" width="5.512" height="11.025" />
+      <rect fill="var(--m__color-green-500)" x="4.975" y="23.35" width="5.512" height="3.675" />
+  </symbol>
+</svg>
 
-  <!-- Header -->
-  <header class="header">
-    <a href="/" class="header-logo">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><defs><linearGradient id="hlg1" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#430f92"/><stop offset=".5" stop-color="#fb3958"/><stop offset="1" stop-color="#fc7856"/></linearGradient></defs><rect width="32" height="32" rx="7" fill="#120021"/><g stroke="url(#hlg1)" stroke-width="2.5" stroke-linecap="round" fill="none"><line x1="6" y1="13" x2="6" y2="19"/><line x1="10.5" y1="9" x2="10.5" y2="23"/><line x1="15" y1="5" x2="15" y2="27"/><line x1="19.5" y1="10" x2="19.5" y2="22"/><line x1="24" y1="7" x2="24" y2="25"/><line x1="28.5" y1="12" x2="28.5" y2="20"/></g></svg>
-      <span class="header-wordmark">Voice Models Preview</span>
-    </a>
-    <button class="header-cta" id="cta-access-btn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-      Start building with API access
-    </button>
-  </header>
 
-  <!-- Mode Toggle -->
-  <div class="mode-toggle">
-    <input type="radio" name="mode" id="mode-velma" value="velma" checked>
-    <label for="mode-velma">Velma</label>
-    <input type="radio" name="mode" id="mode-transcription" value="transcription">
-    <label for="mode-transcription">Transcription</label>
-    <input type="radio" name="mode" id="mode-deepfake" value="deepfake">
-    <label for="mode-deepfake">Deepfake</label>
-    <input type="radio" name="mode" id="mode-redaction" value="redaction">
-    <label for="mode-redaction">PII/PHI Redaction</label>
-    <input type="radio" name="mode" id="mode-music" value="music">
-    <label for="mode-music">Music Detection</label>
-    <input type="radio" name="mode" id="mode-aimusic" value="aimusic">
-    <label for="mode-aimusic">AI Music Detection</label>
-    <input type="radio" name="mode" id="mode-language" value="language">
-    <label for="mode-language">Language</label>
-    <input type="radio" name="mode" id="mode-emotion" value="emotion">
-    <label for="mode-emotion">Emotion</label>
-    <input type="radio" name="mode" id="mode-accent" value="accent">
-    <label for="mode-accent">Accent</label>
-  </div>
-
-  <!-- Options row (reserved space in both modes for alignment) -->
-  <div class="options-row" id="options-row">
-    <div class="velma-options" id="velma-options">
-      <button class="velma-config-btn" id="velma-config-btn" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-        Set up conversation type, roles &amp; behaviors
+<header class="prototype-header">
+  <a href="/" class="prototype-header__brand prototype-header__link">
+    <svg class="prototype-header__icon" viewBox="0 0 32 32" aria-hidden="true">
+      <use href="#modulate"></use>
+    </svg>
+    <span class="prototype-header__brand-label">Modulate</span>
+  </a>
+  <div class="prototype-header__right">
+    <nav class="prototype-header__links" aria-label="Primary navigation">
+      <button
+        type="button"
+        class="theme-toggle"
+        role="switch"
+        aria-checked="true"
+        aria-label="Dark theme">
+        <span class="theme-toggle__track">
+          <span class="theme-toggle__thumb"></span>
+        </span>
       </button>
-      <span class="velma-config-summary" id="velma-config-summary"></span>
-    </div>
-    <div class="stt-options" id="stt-options">
-      <label class="stt-option" data-tip="Identify different speakers in the audio"><input type="checkbox" id="opt-diarization" checked> Diarization</label>
-      <label class="stt-option" data-tip="Detect synthetic/AI-generated voice (deepfake) per utterance"><input type="checkbox" id="opt-deepfake" checked> Deepfake</label>
-      <label class="stt-option" data-tip="Detect emotional tone (e.g. Calm, Happy, Frustrated)"><input type="checkbox" id="opt-emotion" checked> Emotions</label>
-      <label class="stt-option" data-tip="Detect speaker accent (e.g. American, British)"><input type="checkbox" id="opt-accent" checked> Accent</label>
-      <label class="stt-option" data-tip="Tag personally identifiable and health information"><input type="checkbox" id="opt-pii" checked> PII/PHI</label>
-      <span class="stt-option-divider">|</span>
-      <label class="stt-option" data-tip="Fast transcription, English only"><input type="checkbox" id="opt-fast"> Fast</label>
-      <span class="stt-option-divider">|</span>
-      <label class="stt-option" data-tip="Show raw streaming debug panel: partials, finals, status, cluster tags"><input type="checkbox" id="opt-debug"> Debug</label>
-    </div>
-    <div class="redaction-options" id="redaction-options">
-      <label class="stt-option" data-tip="Identify different speakers in the audio"><input type="checkbox" id="redact-opt-diarization" checked> Diarization</label>
-      <span class="stt-option-divider">|</span>
-      <span class="redaction-num-field" data-tip="Extra silence (ms) prepended before each redacted range">
-        Start padding <input type="number" id="redact-opt-start-pad" value="80" min="0" step="10"> ms
-      </span>
-      <span class="redaction-num-field" data-tip="Extra silence (ms) appended after each redacted range">
-        End padding <input type="number" id="redact-opt-end-pad" value="10" min="0" step="10"> ms
-      </span>
-    </div>
+      <button type="button" class="m__button-primary S" id="cta-access-btn">Get API Access</button>
+    </nav>
   </div>
+</header>
 
-  <!-- Results -->
-  <section class="results-section" id="results-section">
-    <div class="results-layout">
-      <div class="results-main">
-        <!-- Action bar -->
-        <div class="results-actions">
-          <div class="results-action results-action-upload" id="results-upload-action">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <span>Upload or drop a file</span>
-            <input type="file" class="file-input" id="results-file-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.mp4,.mov,.webm,.opus">
-          </div>
-          <div class="results-action" id="results-record-action">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-            <span>Start streaming</span>
-          </div>
-          <div class="results-action results-action-demo" id="results-stream-demo-action" title="Stream a pre-recorded demo file over the streaming API (for testing)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <span>Stream demo</span>
-          </div>
-          <div class="results-action results-action-stream-file" id="results-stream-file-action" title="Pick any audio file and stream it over the streaming API">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <span>Stream file&hellip;</span>
-            <input type="file" class="file-input" id="results-stream-file-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.mp4,.mov,.webm,.opus">
+<div class="m__wrapper">
+  <div class="m__space XL"></div>
+  <div class="dashboard-layout">
+    <div class="nav-sidebar">
+      <nav id="pg-tabs" class="models-nav models-nav--vertical m__rounded">
+        <div class="models-nav__group">
+          <span class="models-nav__group-title">Triage</span>
+          <div class="models-nav__models">
+            <a href="/velma" data-mode="velma" class="models-nav__link m__rounded active">
+              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#velma"></use></svg>
+              <span>Velma</span>
+            </a>
           </div>
         </div>
-
-        <h2 class="results-filename" id="results-filename"></h2>
-
-        <div class="results-player">
-          <div class="player-entry" id="player-entry-original" style="display:none">
-            <span class="player-entry-label">Original</span>
-            <audio controls id="original-audio"></audio>
+        <div class="models-nav__group">
+          <span class="models-nav__group-title">Redaction</span>
+          <div class="models-nav__models">
+            <a href="/redaction" data-mode="redaction" class="models-nav__link m__rounded">
+              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#redaction"></use></svg>
+              <span>PII/PHI</span>
+            </a>
           </div>
-          <div class="player-entry" id="player-entry-redacted">
-            <span class="player-entry-label" id="redacted-label" style="display:none">Redacted</span>
-            <audio controls id="results-audio"></audio>
+        </div>
+        <div class="models-nav__group">
+          <span class="models-nav__group-title">Transcription</span>
+          <div class="models-nav__models">
+            <a href="/transcription" data-mode="transcription" class="models-nav__link m__rounded">
+              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#transcript"></use></svg>
+              <span>Multilingual</span>
+            </a>
+          </div>
+        </div>
+        <div class="models-nav__group">
+          <span class="models-nav__group-title">Detection</span>
+          <div class="models-nav__models">
+            <a href="/deepfake" data-mode="deepfake" class="models-nav__link m__rounded">
+              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#deepfake"></use></svg>
+              <span>Deepfake</span>
+            </a>
+            <a href="/music" data-mode="music" class="models-nav__link m__rounded">
+              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#music"></use></svg>
+              <span>Music &amp; Speech</span>
+            </a>
+            <a href="/ai-music" data-mode="aimusic" class="models-nav__link m__rounded">
+              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#ai-music"></use></svg>
+              <span>AI Music</span>
+            </a>
+            <a href="/language" data-mode="language" class="models-nav__link m__rounded">
+              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#language"></use></svg>
+              <span>Language</span>
+            </a>
+            <a href="/emotion" data-mode="emotion" class="models-nav__link m__rounded">
+              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#emotions"></use></svg>
+              <span>Emotions</span>
+            </a>
+            <a href="/accent" data-mode="accent" class="models-nav__link m__rounded">
+              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#accent"></use></svg>
+              <span>Accent</span>
+            </a>
+          </div>
+        </div>
+      </nav>
+    </div>
+
+    <main class="pg-content">
+      <div class="pg-page-header">
+        <h1 class="pg-page-title" id="pg-page-title">Velma Triage</h1>
+        <span id="results-filename" hidden></span>
+      </div>
+
+      <div class="pg-upload-section">
+        <div class="pg-upload-plate" data-state="initial" data-upload-plate id="pg-upload-plate">
+
+          <!-- Velma options row -->
+          <div class="pg-options-row pg-velma-setup" id="velma-options">
+            <a href="#" class="pg-velma-setup-link" id="velma-config-btn">
+              <svg width="18" height="18" aria-hidden="true"><use href="#behaviors" /></svg>Set up behaviors</a>
+            <span class="pg-velma-setup-summary" id="velma-config-summary"></span>
+          </div>
+
+          <!-- Transcription options row -->
+          <div class="pg-options-row" id="stt-options-row">
+            <div class="pg-stt-options" id="stt-options">
+              <label class="m__toggle-secondary pg-stt-option" data-tooltip="Fast transcription, English only">
+                <input type="checkbox" id="opt-fast" />
+                Fast (English only)
+              </label>
+              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Identify different speakers in the audio">
+                <input type="checkbox" id="opt-diarization" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Diarization
+              </label>
+              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Detect synthetic/AI-generated voice (deepfake) per utterance">
+                <input type="checkbox" id="opt-deepfake" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Deepfake
+              </label>
+              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Detect emotional tone (e.g. Calm, Happy, Frustrated)">
+                <input type="checkbox" id="opt-emotion" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Emotions
+              </label>
+              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Detect speaker accent (e.g. American, British)">
+                <input type="checkbox" id="opt-accent" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Accent
+              </label>
+              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Tag personally identifiable and health information">
+                <input type="checkbox" id="opt-pii" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> PII/PHI
+              </label>
+              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Show raw streaming debug panel: partials, finals, status, cluster tags">
+                <input type="checkbox" id="opt-debug" /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Debug
+              </label>
+            </div>
+          </div>
+
+          <!-- Redaction options row -->
+          <div class="pg-options-row pg-redaction-options" id="redaction-options">
+            <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Identify different speakers in the audio">
+              <input type="checkbox" id="redact-opt-diarization" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Diarization
+            </label>
+            <span class="m__textfield pg-pad-field" data-tooltip="Extra silence (ms) prepended before each redacted range">
+              <label for="redact-opt-start-pad">Start padding</label>
+              <span class="pg-pad-control">
+                <input type="number" id="redact-opt-start-pad" value="80" min="0" step="10" />
+                <span class="pg-pad-unit">ms</span>
+              </span>
+            </span>
+            <span class="m__textfield pg-pad-field" data-tooltip="Extra silence (ms) appended after each redacted range">
+              <label for="redact-opt-end-pad">End padding</label>
+              <span class="pg-pad-control">
+                <input type="number" id="redact-opt-end-pad" value="10" min="0" step="10" />
+                <span class="pg-pad-unit">ms</span>
+              </span>
+            </span>
+          </div>
+
+          <!-- Generic plate header for detection modes -->
+          <div class="pg-options-row pg-plate-header" id="plate-header">
+            <span class="pg-plate-header__title" id="plate-header-title"></span>
+          </div>
+
+          <div class="pg-upload-plate-body">
+            <div class="pg-upload-actions">
+              <button type="button" class="m__button-primary-outline M pg-upload-primary" id="results-upload-action">
+                <span class="pg-upload-primary__label">Drop or choose file…</span>
+                <input type="file" class="pg-upload-file-input" id="results-file-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.mp4,.mov,.webm,.opus" hidden>
+              </button>
+              <div class="m__split-button pg-upload-stream" data-open="false" id="stream-split">
+                <button type="button" class="m__button-primary-outline M pg-upload-stream__main" id="results-record-action">Start streaming</button>
+                <button
+                  type="button"
+                  class="m__menu-button-primary M pg-upload-stream__toggle"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
+                  aria-label="More streaming options">
+                  <svg class="m__button__icon" viewBox="0 0 12 12" aria-hidden="true"><use href="#chevron-down" /></svg>
+                </button>
+                <div class="pg-upload-stream__menu" role="menu" hidden>
+                  <button type="button" role="menuitem" id="results-stream-demo-action">Stream demo</button>
+                  <button type="button" role="menuitem" id="results-stream-file-action">Stream from file…</button>
+                </div>
+                <input type="file" class="pg-upload-file-input" id="results-stream-file-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.mp4,.mov,.webm,.opus" hidden>
+              </div>
+              <button type="button" class="m__button-primary-outline M" id="velma-demo-action">Try demo audio</button>
+            </div>
+
+            <div class="pg-upload-overlay pg-upload-overlay--dragging" aria-hidden="true">
+              <span class="pg-upload-overlay__icon" aria-hidden="true">↓</span>
+              <span>Drop the file here</span>
+            </div>
+            <div class="pg-upload-overlay pg-upload-overlay--processing" aria-hidden="true">
+              <img class="m__loader" src="/assets/service/loader-icon.svg" alt="" aria-hidden="true" />
+              <span id="plate-uploading-label">Uploading…</span>
+            </div>
+            <div class="pg-upload-overlay pg-upload-overlay--analyzing" aria-hidden="true">
+              <div class="pg-processing-stages" id="plate-stages"></div>
+            </div>
+            <div class="pg-upload-overlay pg-upload-overlay--streaming" aria-hidden="true">
+              <span class="pg-streaming-dot" aria-hidden="true"></span>
+              <span class="pg-streaming-label" id="plate-streaming-label">Listening…</span>
+              <button type="button" class="m__button-primary-outline S pg-stop-streaming" id="plate-stop-btn">Stop</button>
+            </div>
+            <div class="pg-upload-overlay pg-upload-overlay--exhausted" aria-hidden="true">
+              <p>You're out of free requests for now. Get API access to keep going, or come back in an hour.</p>
+              <button type="button" class="m__button-primary-outline M" id="plate-exhausted-cta">Get API Access</button>
+            </div>
+            <button type="button" class="pg-upload-collapsed-cta" aria-expanded="true" data-upload-plate-expand>
+              New analysis
+            </button>
+          </div>
+
+          <div class="pg-upload-plate-footer">
+            <div class="pg-upload-formats-tags">
+              <span class="pg-upload-formats-label">Supports</span>
+              <span class="m__tag-flat">.aac</span>
+              <span class="m__tag-flat">.flac</span>
+              <span class="m__tag-flat">.m4a</span>
+              <span class="m__tag-flat">.mp3</span>
+              <span class="m__tag-flat">.mp4</span>
+              <span class="m__tag-flat">.ogg</span>
+              <span class="m__tag-flat">.opus</span>
+              <span class="m__tag-flat">.wav</span>
+              <span class="pg-upload-formats-label">and</span>
+              <span class="m__tag-flat">.webm</span>
+              <span class="pg-upload-formats-label">up to 50 MB</span>
+            </div>
+            <p class="pg-upload-meta pg-upload-meta--default" id="plate-quota-default"></p>
+            <p class="pg-upload-meta pg-upload-meta--low" id="plate-quota-low"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="m__space L"></div>
+
+      <div class="pg-verdict-slot" id="pg-verdict-slot">
+        <div id="results-verdict" hidden>
+          
+          <div class="pg-verdict-statement" id="deepfake-verdict-statement"></div>
+        </div>
+        <div id="results-music-verdict" hidden>
+          
+          <div class="pg-verdict-statement" id="music-verdict-statement"></div>
+        </div>
+        <div id="results-aimusic-verdict" hidden>
+          <div class="pg-verdict-statement" id="aimusic-verdict-statement"></div>
+        </div>
+        <div id="results-language-verdict" hidden>
+          <div class="pg-verdict-statement" id="language-verdict-statement"></div>
+        </div>
+        <div id="results-redaction-verdict" hidden>
+          <div class="pg-verdict-statement" id="redaction-verdict-statement"></div>
+        </div>
+        <div id="results-emotion-verdict" hidden>
+          <div class="pg-verdict-statement" id="emotion-verdict-statement"></div>
+        </div>
+        <div id="results-accent-verdict" hidden>
+          <div class="pg-verdict-statement" id="accent-verdict-statement"></div>
+        </div>
+      </div>
+
+      <!-- PLAYER + OUTPUT -->
+      <div class="pg-player-output m__rounded" id="pg-player-output">
+        <div class="media-container">
+          <div class="pg-player-dataviz">
+            <div class="player-visualization" id="player-visualization">
+              <div id="stt-chart"></div>
+            </div>
+            <div class="speaker-labels" id="speaker-labels"></div>
+            <div class="behaviour-indicators" id="behaviour-indicators"></div>
+            <div class="behaviour-labels" style="display: none"></div>
+          </div>
+          <div class="media-box" id="audio-player" data-speaker-count="2">
+            <div class="player-controls">
+              <div class="player-control-spacer"></div>
+              <div class="player-control player-control-center" data-action="play-pause">
+                <a href="#" class="player-icon" data-playing="false">
+                  <svg viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+                    <polygon fill="currentColor" points="40 30 40 190 190 110 40 30" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+            <div class="clip-text-caption"><span></span></div>
+            <div class="player-status-caption">
+              <span class="emotion-caption"></span>
+              <span class="pg-ab-toggle" id="redaction-ab" hidden>
+                <button type="button" id="redaction-ab-original">Original</button>
+                <button type="button" class="active" id="redaction-ab-redacted">Redacted</button>
+              </span>
+            </div>
+            <div class="player-start-time">
+              <span class="start-time">0:00</span>
+            </div>
+            <div class="player-total-time">
+              <span class="total-time" data-total-time>0:00</span>
+            </div>
+            <div class="player-position-indicator">
+              <div class="player-position-line"></div>
+              <div class="player-position-caption">
+                <span data-current-time>0:00</span>
+              </div>
+            </div>
+            <div class="player-hover-position-indicator">
+              <div class="player-hover-position-line"></div>
+              <div class="player-hover-position-caption">
+                <span data-hover-time>0:00</span>
+              </div>
+            </div>
+          </div>
+          <div class="pg-media-hover-line" aria-hidden="true"></div>
+        </div>
+        <div hidden>
+          <div id="player-entry-original"><audio id="original-audio" preload="auto"></audio></div>
+          <div id="player-entry-redacted"><span id="redacted-label" hidden></span><audio id="results-audio" preload="auto"></audio></div>
+        </div>
+      </div>
+
+      <div class="m__space M"></div>
+
+      <div class="pg-output-panel" id="pg-output-panel">
+
+        <!-- Velma analysis (above transcript so summary/behaviors come first) -->
+        <div id="velma-content" class="pg-tab-panel pg-velma-output">
+          <div class="m__space S"></div>
+          <section id="velma-summary-section">
+            <h2>Speech Summary</h2>
+            <p id="velma-summary-text"></p>
+          </section>
+
+          
+
+          <section id="velma-speakers-section">
+            <div class="m__space L"></div>
+            <h2>Speakers</h2>
+            <div class="pg-results-table-section">
+              <table class="pg-speakers-table">
+                <thead>
+                  <tr>
+                    <th>Speaker</th>
+                    <th>Emotion pattern</th>
+                    <th>Speaking time</th>
+                    <th>Language</th>
+                  </tr>
+                </thead>
+                <tbody id="velma-speakers-tbody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="velma-topics-section">
+            <div class="m__space L"></div>
+            <h2>Topics &amp; Sentiment</h2>
+            <div id="velma-topics-by-speaker"></div>
+          </section>
+
+          <section id="velma-behaviors-section">
+            <div class="m__space L"></div>
+            <h2>Behaviors</h2>
+            <div id="velma-results-behaviors-note" style="display:none"></div>
+            <div class="pg-results-table-section">
+              <table class="pg-behaviors-table velma-behaviors-table">
+                <thead>
+                  <tr>
+                    <th>Speaker</th>
+                    <th>Behavior</th>
+                    <th>Model reasoning</th>
+                    <th>Confidence</th>
+                  </tr>
+                </thead>
+                <tbody id="velma-behaviors-tbody"></tbody>
+              </table>
+            </div>
+            <button class="m__button-secondary-outline S" id="velma-setup-btn" type="button">Set up your own behaviors</button>
+          </section>
+
+          <div class="m__space L"></div>
+          <h2 id="velma-transcript-heading">Transcript</h2>
+        </div>
+
+        <!-- Transcription content (shared with Velma mode) -->
+        <div class="pg-transcript-container pg-transcription-transcript visible" id="transcript-container">
+          <div class="pg-transcript-list" id="transcript-list">
+            <div class="pg-transcript-empty" id="transcript-empty">Upload an audio file or start streaming to see the transcript.</div>
           </div>
         </div>
 
         <!-- Deepfake content -->
-        <div id="deepfake-content">
-          <div class="histogram-section">
-            <div class="histogram-scroll"><div class="histogram" id="histogram"></div></div>
-          </div>
-          <div class="results-table-section">
-            <table class="results-table">
+        <div id="deepfake-content" class="pg-tab-panel">
+          <div class="pg-results-table-section">
+            <table class="pg-segments-table">
               <thead><tr><th>Timestamp</th><th>Verdict</th><th>Confidence</th></tr></thead>
               <tbody id="results-tbody"></tbody>
             </table>
           </div>
         </div>
 
-        <!-- Velma analysis (above transcript so summary/behaviors come first) -->
-        <div id="velma-content">
-          <section class="velma-summary-section" id="velma-summary-section">
-            <h3 class="velma-section-h">Speech Summary</h3>
-            <p class="velma-summary-text" id="velma-summary-text"></p>
-          </section>
-
-          <section class="velma-picks-section" id="velma-picks-section">
-            <div class="velma-pick" id="velma-conv-type-pick"></div>
-            <div class="velma-pick-roles" id="velma-role-picks"></div>
-          </section>
-
-          <section class="velma-speakers-section" id="velma-speakers-section">
-            <h3 class="velma-section-h">Speakers</h3>
-            <table class="velma-table velma-speakers-table">
-              <thead>
-                <tr>
-                  <th style="width: 22%">Speaker</th>
-                  <th>Emotion pattern</th>
-                  <th style="width: 16%">Speaking time</th>
-                  <th style="width: 22%">Language</th>
-                </tr>
-              </thead>
-              <tbody id="velma-speakers-tbody"></tbody>
-            </table>
-          </section>
-
-          <section class="velma-topics-section" id="velma-topics-section">
-            <h3 class="velma-section-h">Topics</h3>
-            <div class="velma-topics-by-speaker" id="velma-topics-by-speaker"></div>
-          </section>
-
-          <section class="velma-behaviors-section" id="velma-behaviors-section">
-            <h3 class="velma-section-h">Behaviors</h3>
-            <div class="velma-cfg-warning" id="velma-results-behaviors-note" style="display:none"></div>
-            <table class="velma-table velma-behaviors-table">
-              <thead>
-                <tr>
-                  <th style="width: 20%">Speaker</th>
-                  <th style="width: 24%">Behavior</th>
-                  <th>Model reasoning</th>
-                  <th style="width: 12%">Confidence</th>
-                </tr>
-              </thead>
-              <tbody id="velma-behaviors-tbody"></tbody>
-            </table>
-            <button class="velma-setup-btn" id="velma-setup-btn" type="button">
-              <span>Set up your own behaviors</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><polyline points="7 7 17 7 17 17"/></svg>
-            </button>
-          </section>
-
-          <h3 class="velma-section-h" id="velma-transcript-heading" style="margin-top: var(--space-l)">Transcript</h3>
-        </div>
-
-        <!-- Transcription content (shared with Velma mode — chart + bubbles) -->
-        <div class="transcript-container" id="transcript-container">
-          <div class="stt-chart" id="stt-chart"></div>
-          <div class="transcript-list" id="transcript-list">
-            <div class="transcript-empty" id="transcript-empty">Upload an audio file or start recording to see the transcript.</div>
-          </div>
-        </div>
-
         <!-- Music Detection content -->
-        <div id="music-content">
-          <div class="music-view-toggle">
-            <button class="music-view-btn active" data-view="heatmap">Heatmap</button>
-            <button class="music-view-btn" data-view="detailed">Detailed</button>
-          </div>
-          <div class="histogram-section">
-            <div class="music-histogram-fit" id="music-histogram-fit">
-              <div class="histogram" id="music-histogram"></div>
-            </div>
-          </div>
-          <div class="results-table-section">
-            <table class="results-table">
+        <div id="music-content" class="pg-tab-panel mx-panel">
+          <div class="pg-results-table-section">
+            <table class="pg-segments-table mx-detailed">
               <thead><tr><th>Timestamp</th><th>Music</th><th>Speech</th></tr></thead>
               <tbody id="music-tbody"></tbody>
             </table>
@@ -3085,432 +639,232 @@ body:has(#stt-debug-panel:not([hidden])) .page {
         </div>
 
         <!-- AI Music Detection content -->
-        <div id="aimusic-content">
-          <div class="aimusic-hero pending" id="aimusic-hero">
-            <div class="aimusic-hero-badge" id="aimusic-hero-badge">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-              <span id="aimusic-hero-badge-text">Awaiting audio</span>
-            </div>
-            <div class="aimusic-hero-headline" id="aimusic-hero-headline">—</div>
-            <div class="aimusic-hero-sub" id="aimusic-hero-sub">Upload an audio clip to detect AI-generated music.</div>
-            <div class="aimusic-paths" id="aimusic-paths" style="display:none">
-              <div class="aimusic-path" id="aimusic-path-vocal">
-                <span class="aimusic-path-icon" id="aimusic-path-vocal-icon">○</span>
-                <span class="aimusic-path-name">Vocal path</span>
-                <span class="aimusic-path-sep">·</span>
-                <span class="aimusic-path-value" id="aimusic-path-vocal-value">—</span>
-              </div>
-              <div class="aimusic-path" id="aimusic-path-instr">
-                <span class="aimusic-path-icon" id="aimusic-path-instr-icon">○</span>
-                <span class="aimusic-path-name">Instrumental path</span>
-                <span class="aimusic-path-sep">·</span>
-                <span class="aimusic-path-value" id="aimusic-path-instr-value">—</span>
-              </div>
-              <div class="aimusic-path-note" id="aimusic-path-note"></div>
-            </div>
-            <div class="aimusic-hero-meta" id="aimusic-hero-meta"></div>
-            <div class="aimusic-hero-caveat">
-              Best at AI vocal music and Suno-style instrumentals. Can miss AI techno/metal and hip-hop beats; can false-positive on minimalist piano and heavily compressed rap vocals.
-            </div>
-          </div>
-
-          <div class="aimusic-timeline-wrap" id="aimusic-timeline-wrap" style="display:none">
-            <div class="aimusic-timeline-head">
-              <span class="aimusic-timeline-title">Per-window timeline</span>
-              <span class="aimusic-timeline-status" id="aimusic-timeline-status"></span>
-            </div>
-            <div class="aimusic-timeline" id="aimusic-timeline"></div>
-            <div class="aimusic-axis" id="aimusic-axis"></div>
-            <div class="aimusic-legend">
-              <span class="aimusic-legend-item"><i class="aimusic-sw ai"></i>AI-generated</span>
-              <span class="aimusic-legend-item"><i class="aimusic-sw human"></i>Not AI</span>
-              <span class="aimusic-legend-item"><i class="aimusic-sw silence"></i>Silence</span>
-            </div>
-            <div class="results-table-section aimusic-table-section">
-              <table class="results-table">
-                <thead><tr><th>Window</th><th>Type</th><th>Verdict</th><th>AI confidence</th></tr></thead>
-                <tbody id="aimusic-tbody"></tbody>
-              </table>
-            </div>
+        <div id="aimusic-content" class="pg-tab-panel">
+          
+          <p class="caption" id="aimusic-caveat">
+            Best at AI vocal music and Suno-style instrumentals. Can miss AI techno/metal and hip-hop beats;
+            can false-positive on minimalist piano and heavily compressed rap vocals.
+          </p>
+          <div class="pg-results-table-section">
+            <table class="pg-segments-table aim-detailed">
+              <thead><tr><th>Window</th><th>Type</th><th>Verdict</th><th>AI confidence</th></tr></thead>
+              <tbody id="aimusic-tbody"></tbody>
+            </table>
           </div>
         </div>
 
         <!-- Language Detection content -->
-        <div id="language-content">
-          <div class="lang-hero" id="lang-hero">
-            <div class="lang-hero-flag" id="lang-hero-flag">🌐</div>
-            <div class="lang-hero-name" id="lang-hero-name">—</div>
-            <div class="lang-hero-code" id="lang-hero-code">Upload an audio clip to detect its language</div>
-            <div class="lang-hero-note">Only the first 30 seconds of audio are analyzed.</div>
-            <div class="lang-hero-conf-row" id="lang-hero-conf-row" style="display:none">
-              <div class="lang-hero-conf-val" id="lang-hero-conf-val">—</div>
-              <div class="lang-hero-conf-label">confidence</div>
-            </div>
-            <div class="lang-hero-meta" id="lang-hero-meta"></div>
-            <div class="lang-hero-warning" id="lang-hero-warning" style="display:none">
-              Low confidence — the model isn't sure. Consider a fallback or a longer/cleaner clip.
-            </div>
-          </div>
+        <div id="language-content" class="pg-tab-panel">
+          
         </div>
 
         <!-- Emotion Detection content -->
-        <div id="emotion-content">
-          <div class="lang-hero ea-hero" id="emotion-hero">
-            <div class="lang-hero-flag" id="emotion-hero-icon">🎭</div>
-            <div class="lang-hero-name" id="emotion-hero-label">—</div>
-            <div class="lang-hero-code" id="emotion-hero-sub">Upload an audio clip to detect its emotional tone</div>
-            <div class="lang-hero-meta" id="emotion-hero-meta"></div>
-            <div class="lang-hero-note">Analyzed in consecutive 15-second windows. Whole-file label shown above.</div>
-          </div>
-          <div class="ea-timeline-wrap" id="emotion-timeline-wrap" style="display:none">
-            <div class="ea-timeline-head">
-              <span class="ea-timeline-title">Per-window timeline</span>
-              <span class="ea-timeline-hint">Click a window to listen</span>
-            </div>
-            <div class="ea-timeline" id="emotion-timeline"></div>
-            <div class="ea-axis" id="emotion-axis"></div>
-            <div class="ea-legend" id="emotion-legend"></div>
+        <div id="emotion-content" class="pg-tab-panel">
+          <div class="ea-legend" id="emotion-legend"></div>
+          <div class="pg-results-table-section">
+            <table class="pg-segments-table">
+              <thead><tr><th>Window</th><th>Emotion</th></tr></thead>
+              <tbody id="emotion-tbody"></tbody>
+            </table>
           </div>
         </div>
 
         <!-- Accent Detection content -->
-        <div id="accent-content">
-          <div class="lang-hero ea-hero" id="accent-hero">
-            <div class="lang-hero-flag" id="accent-hero-icon">🗣️</div>
-            <div class="lang-hero-name" id="accent-hero-label">—</div>
-            <div class="lang-hero-code" id="accent-hero-sub">Upload an audio clip to detect the speaker's accent</div>
-            <div class="lang-hero-meta" id="accent-hero-meta"></div>
-            <div class="lang-hero-note">Analyzed in consecutive 15-second windows. Whole-file label shown above.</div>
-          </div>
-          <div class="ea-timeline-wrap" id="accent-timeline-wrap" style="display:none">
-            <div class="ea-timeline-head">
-              <span class="ea-timeline-title">Per-window timeline</span>
-              <span class="ea-timeline-hint">Click a window to listen</span>
-            </div>
-            <div class="ea-timeline" id="accent-timeline"></div>
-            <div class="ea-axis" id="accent-axis"></div>
-            <div class="ea-legend" id="accent-legend"></div>
+        <div id="accent-content" class="pg-tab-panel">
+          <div class="ea-legend" id="accent-legend"></div>
+          <div class="pg-results-table-section">
+            <table class="pg-segments-table">
+              <thead><tr><th>Window</th><th>Accent</th></tr></thead>
+              <tbody id="accent-tbody"></tbody>
+            </table>
           </div>
         </div>
 
         <!-- PII/PHI Redaction content -->
-        <div id="redaction-content">
-          <div class="redaction-timeline-section">
-            <div class="redaction-timeline" id="redaction-timeline">
-              <div class="redaction-playhead" id="redaction-playhead"></div>
+        <div id="redaction-content" class="pg-tab-panel">
+          
+          <div class="pg-transcript-container visible">
+            <div class="pg-transcript-list" id="redaction-transcript-list">
+              <div class="pg-transcript-empty">Upload an audio file to see the redacted transcript.</div>
             </div>
-            <div class="redaction-timeline-axis" id="redaction-timeline-axis"></div>
-          </div>
-          <div class="transcript-list" id="redaction-transcript-list">
-            <div class="transcript-empty">Upload an audio file to see the redacted transcript.</div>
           </div>
         </div>
       </div>
 
-      <!-- Deepfake verdict sidebar -->
-      <aside class="results-verdict" id="results-verdict">
-        <div class="verdict-ring" id="verdict-ring">
-          <div class="verdict-ring-icon" id="verdict-icon"></div>
-          <div class="verdict-ring-label" id="verdict-label"></div>
-          <div class="verdict-ring-count" id="verdict-count"></div>
-        </div>
-        <div class="verdict-links">
-          <button class="verdict-link" id="btn-show-stats">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            Full Statistics
-          </button>
-          <button class="verdict-link" id="btn-show-json">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            JSON Response
-          </button>
-        </div>
-      </aside>
-
-      <!-- Music Detection sidebar -->
-      <aside class="results-verdict" id="results-music-verdict">
-        <div class="verdict-ring" id="music-verdict-ring">
-          <div class="verdict-ring-icon" id="music-verdict-icon"></div>
-          <div class="verdict-ring-label" id="music-verdict-label"></div>
-          <div class="verdict-ring-split" id="music-verdict-split"></div>
-        </div>
-        <div class="verdict-links">
-          <button class="verdict-link" id="btn-show-stats-music">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            Full Statistics
-          </button>
-          <button class="verdict-link" id="btn-show-json-music">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            JSON Response
-          </button>
-        </div>
-      </aside>
-
-      <!-- AI Music Detection sidebar -->
-      <aside class="results-verdict" id="results-aimusic-verdict" style="display:none">
-        <div class="verdict-links">
-          <button class="verdict-link" id="btn-show-stats-aimusic">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            Full Statistics
-          </button>
-          <button class="verdict-link" id="btn-show-json-aimusic">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            JSON Response
-          </button>
-        </div>
-      </aside>
-
-      <!-- Language Detection sidebar -->
-      <aside class="results-verdict" id="results-language-verdict" style="display:none">
-        <div class="verdict-links">
-          <button class="verdict-link" id="btn-show-stats-language">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            Full Statistics
-          </button>
-          <button class="verdict-link" id="btn-show-json-language">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            JSON Response
-          </button>
-        </div>
-      </aside>
-
-      <!-- Emotion Detection sidebar -->
-      <aside class="results-verdict" id="results-emotion-verdict" style="display:none">
-        <div class="verdict-links">
-          <button class="verdict-link" id="btn-show-stats-emotion">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            Full Statistics
-          </button>
-          <button class="verdict-link" id="btn-show-json-emotion">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            JSON Response
-          </button>
-        </div>
-      </aside>
-
-      <!-- Accent Detection sidebar -->
-      <aside class="results-verdict" id="results-accent-verdict" style="display:none">
-        <div class="verdict-links">
-          <button class="verdict-link" id="btn-show-stats-accent">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            Full Statistics
-          </button>
-          <button class="verdict-link" id="btn-show-json-accent">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            JSON Response
-          </button>
-        </div>
-      </aside>
-
-      <!-- Transcription sidebar -->
-      <aside class="results-sidebar" id="results-sidebar">
-        <div class="sidebar-links">
-          <button class="verdict-link" id="btn-show-stats-stt">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            Full Statistics
-          </button>
-          <button class="verdict-link" id="btn-show-json-stt">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            JSON Response
-          </button>
-        </div>
-      </aside>
-
-      <!-- Velma sidebar -->
-      <aside class="results-sidebar" id="results-velma-sidebar">
-        <div class="sidebar-links">
-          <button class="verdict-link" id="btn-show-stats-velma">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            Full Statistics
-          </button>
-          <button class="verdict-link" id="btn-show-json-velma">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            JSON Response
-          </button>
-          <button class="verdict-link" id="btn-edit-config-velma">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
-            Edit Config
-          </button>
-        </div>
-      </aside>
-
-      <!-- Redaction sidebar -->
-      <aside id="results-redaction-sidebar">
-        <div class="redaction-stats" id="redaction-stats"></div>
-        <div class="redaction-sidebar-btns">
-          <button class="verdict-link" id="btn-show-json-redaction">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            JSON Response
-          </button>
-        </div>
-      </aside>
-
-      <!-- STT streaming debug panel (takes sidebar slot when active) -->
-      <aside class="stt-debug-panel" id="stt-debug-panel" hidden>
-        <div class="stt-debug-status" id="stt-debug-status">
-          <span class="stt-debug-model" id="stt-debug-model" hidden></span>
-          <span class="stt-debug-phase" id="stt-debug-phase">Idle</span>
-          <span class="stt-debug-since" id="stt-debug-since"></span>
-          <span class="stt-debug-counters" id="stt-debug-counters"></span>
-          <span class="stt-debug-info" id="stt-debug-info"></span>
+      <!-- STT streaming debug panel -->
+      <div class="pg-debug-panel" id="stt-debug-panel" hidden>
+        <div class="pg-debug-head" id="stt-debug-status">
+          <span id="stt-debug-model" hidden></span>
+          <span id="stt-debug-phase">Idle</span>
+          <span id="stt-debug-since"></span>
+          <span id="stt-debug-counters"></span>
+          <span id="stt-debug-info"></span>
           <span class="stt-debug-tools">
-            <button class="stt-debug-btn" id="stt-debug-copy-raw-btn" title="Copy every JSON message received from upstream — unmodified. Share with engineering to prove the duplication is upstream.">⧉ Copy raw</button>
-            <button class="stt-debug-btn" id="stt-debug-reverse-btn" title="Flip transcript order (newest first) to match this panel">↑ Reverse transcript</button>
+            <button class="m__button-secondary-outline S" id="stt-debug-copy-raw-btn" title="Copy every JSON message received from upstream — unmodified.">⧉ Copy raw</button>
+            <button class="m__button-secondary-outline S" id="stt-debug-reverse-btn" title="Flip transcript order (newest first) to match this panel">↑ Reverse transcript</button>
           </span>
         </div>
-        <div class="stt-debug-cols">
-          <div class="stt-debug-col">
-            <div class="stt-debug-col-head">Partials <span class="stt-debug-col-count" id="stt-debug-partials-count">0</span></div>
-            <div class="stt-debug-col-body" id="stt-debug-partials"></div>
+        <div class="pg-debug-columns">
+          <div>
+            <div class="pg-debug-col-title">Partials <span id="stt-debug-partials-count">0</span></div>
+            <div class="pg-debug-list" id="stt-debug-partials"></div>
           </div>
-          <div class="stt-debug-col">
-            <div class="stt-debug-col-head">Finals <span class="stt-debug-col-count" id="stt-debug-finals-count">0</span></div>
-            <div class="stt-debug-col-body" id="stt-debug-finals"></div>
+          <div>
+            <div class="pg-debug-col-title">Finals <span id="stt-debug-finals-count">0</span></div>
+            <div class="pg-debug-list" id="stt-debug-finals"></div>
           </div>
         </div>
-        <div class="stt-debug-legend">
-          <span><span class="chip kept">kept</span> longest final in its 4-second time window — shown in transcript</span>
-          <span><span class="chip yellow">superseded by F#N</span> a later final covering the same window had more text; this one is dropped</span>
-          <span><span class="chip dim">dim partial</span> superseded by a later final covering this region</span>
+        <div class="pg-debug-head">
+          <span><span class="pg-debug-chip kept">kept</span> longest final in its 4-second window — shown in transcript</span>
+          <span><span class="pg-debug-chip yellow">superseded by F#N</span> a later final covering the same window had more text</span>
+          <span><span class="pg-debug-chip dim">dim partial</span> superseded by a later final covering this region</span>
         </div>
-      </aside>
-    </div>
-  </section>
-
-  <!-- Rate limit indicator -->
-  <div class="rate-limit-bar" id="rate-limit-bar"></div>
-
-  <!-- Footer -->
-  <footer class="footer">
-    v4.13.0 (July 16, 2026)
-  </footer>
-
-</div>
-
-<!-- Stats Modal -->
-<div class="modal-backdrop" id="stats-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="stats-modal-title">Detection Statistics</h3>
-      <button class="modal-close" id="stats-modal-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
-    <div class="modal-body"><div id="stats-grid"></div></div>
-  </div>
-</div>
-
-<!-- JSON Modal -->
-<div class="modal-backdrop" id="json-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>API Response</h3>
-      <button class="modal-close" id="json-modal-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
-    <div class="modal-body">
-      <div class="json-container">
-        <button class="json-copy-btn" id="json-copy-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          Copy
-        </button>
-        <pre class="json-pre" id="json-pre"></pre>
       </div>
+
+      <div class="m__space L"></div>
+
+      <div class="pg-bottom-columns" id="pg-bottom-columns">
+        <div class="pg-json-block">
+          <h6 class="pg-section-title">Raw JSON</h6>
+          <div class="pg-json-container" id="json-container">
+            <button class="m__button-secondary-outline S pg-json-copy" id="json-copy-btn">Copy</button>
+            <pre class="pg-json-pre" id="json-pre"></pre>
+          </div>
+        </div>
+        <div class="pg-stats-block">
+          <div class="pg-stats-grid" id="stats-grid"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+  <div class="m__space XL"></div>
+</div>
+
+<footer class="footer">
+  <div class="footer-columns">
+    <div class="footer-column">
+            <div class="footer-logo">
+        <svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 625.02 108.57"
+  fill="currentColor">
+  <g>
+    <path
+      d="M156.47,47.97l-19.99-29.53-2.75,1.79,20.05,29.61c.85-.69,1.75-1.31,2.69-1.88ZM97,50.43c2.57,3.36,3.86,8.21,3.86,14.54v41.83h17.65v-43.61c0-7.12-1.14-13.13-3.41-18.02-2.28-4.89-5.59-8.6-9.94-11.12-4.35-2.52-9.64-3.78-15.87-3.78-5.24,0-10.09,1.19-14.54,3.56-4.45,2.37-8.06,5.64-10.83,9.79-1.48-2.97-3.39-5.44-5.71-7.42-2.32-1.98-4.99-3.46-8.01-4.45-3.02-.99-6.4-1.48-10.16-1.48-5.04,0-9.52,1.06-13.42,3.19-3.59,1.96-6.53,4.61-8.82,7.95v-9.37H0v74.77h17.8v-39.75c0-4.65.74-8.58,2.22-11.79,1.48-3.21,3.53-5.66,6.16-7.34,2.62-1.68,5.56-2.52,8.82-2.52,5.14,0,9,1.68,11.57,5.04,2.57,3.36,3.86,8.21,3.86,14.54v41.83h17.65v-39.75c0-4.65.74-8.58,2.22-11.79,1.48-3.21,3.53-5.66,6.16-7.34,2.62-1.68,5.66-2.52,9.12-2.52,5.04,0,8.85,1.68,11.42,5.04ZM161.04,45.87l-11.24-25.73-3.03,1.26,11.24,25.73c.97-.49,1.99-.91,3.03-1.26ZM210.12,72.24l-18.18-2.77c-.06,1.11-.2,2.19-.41,3.25l18.04,2.75.55-3.23ZM190,77.56l12.41,4.04,1.07-3.1-12.38-4.03c-.3,1.06-.67,2.1-1.1,3.09ZM198.81,40.56l-13.42,11.28c.76.79,1.46,1.63,2.11,2.51l13.38-11.25-2.07-2.55ZM197.31,54.52l-1.54-2.9-7.36,4.07c.58.92,1.09,1.89,1.54,2.9l7.36-4.07ZM511.15,81.72c0,6.23,1.04,11.17,3.11,14.83,2.08,3.66,4.97,6.28,8.68,7.86,3.71,1.58,8.08,2.37,13.13,2.37h9.75v-15.13h-6.2c-3.86,0-6.6-.72-8.23-2.15-1.63-1.43-2.45-4.03-2.45-7.79v-34.71h16.87v-14.98h-16.87V12.31h-15.72l-.08,19.73h-12.75v14.98h10.75v34.71ZM204.4,67.41l-.07-3.28-12.61.49c.16,1.07.25,2.16.26,3.27l12.42-.48ZM414.6,0h-17.8v106.79h17.8V0ZM168.5,44.65c.8,0,1.59.04,2.38.12l-.07-23.37-3.28-.04.07,23.32c.3-.01.6-.02.9-.02ZM179.15,31.61l-3.18-.83-3.45,14.22c1.09.19,2.15.45,3.19.78l3.44-14.18ZM165.84,44.81l-6.93-37.94-3.24.54,6.94,37.99c1.05-.27,2.13-.47,3.23-.59ZM184.13,50.62l18.26-22.43-2.51-2.11-18.34,22.53c.91.61,1.78,1.28,2.59,2.01ZM191.42,63.07l17.89-5.69-.94-3.14-17.88,5.69c.38,1.02.69,2.07.93,3.15ZM180.2,47.78l7.21-15.92-2.97-1.4-7.19,15.88c1.02.41,2.01.89,2.95,1.44ZM478.93,33.89c-4.95-2.42-10.93-3.63-17.95-3.63-5.84,0-11.2,1.06-16.09,3.19-4.89,2.13-8.82,5.09-11.79,8.9-2.97,3.81-4.75,8.38-5.34,13.72h17.5c.69-3.76,2.47-6.55,5.34-8.38,2.87-1.83,6.33-2.74,10.38-2.74,3.56,0,6.48.64,8.75,1.93,2.27,1.29,3.95,3.24,5.04,5.86,1.09,2.62,1.63,5.91,1.63,9.86h-18.84c-6.92,0-12.76.96-17.5,2.89s-8.33,4.62-10.75,8.08c-2.42,3.46-3.63,7.56-3.63,12.31,0,4.06.99,7.81,2.97,11.27,1.98,3.46,4.99,6.23,9.05,8.31,4.05,2.08,9.14,3.11,15.28,3.11,3.16,0,6.01-.35,8.53-1.04,2.52-.69,4.77-1.65,6.75-2.89,1.98-1.23,3.73-2.69,5.27-4.38,1.53-1.68,2.79-3.51,3.78-5.48v12h1.78s15.13,0,15.13,0v-46.27c0-6.33-1.31-11.74-3.93-16.24-2.62-4.5-6.4-7.96-11.35-10.38ZM475.96,74.46c-.3,2.67-.89,5.19-1.78,7.56-.89,2.37-2.15,4.52-3.78,6.45-1.63,1.93-3.56,3.41-5.78,4.45-2.22,1.04-4.77,1.56-7.64,1.56-2.57,0-4.8-.39-6.67-1.19-1.88-.79-3.31-1.93-4.3-3.41-.99-1.48-1.48-3.26-1.48-5.34s.49-3.9,1.48-5.49c.99-1.58,2.62-2.79,4.89-3.63,2.27-.84,5.14-1.26,8.6-1.26h16.46v.3ZM364.55,71.93c0,4.65-.82,8.58-2.45,11.79-1.63,3.21-3.86,5.66-6.67,7.34-2.82,1.68-6.01,2.52-9.57,2.52-5.54,0-9.67-1.65-12.38-4.97-2.72-3.31-4.08-8.18-4.08-14.61v-41.97h-17.8v43.75c0,7.22,1.14,13.27,3.41,18.17,2.27,4.89,5.56,8.55,9.86,10.98,4.3,2.42,9.47,3.63,15.5,3.63s10.75-1.29,15.05-3.86c4.29-2.56,7.57-6.02,9.85-10.35v12.43h17.07V32.04h-17.8v39.9ZM620.58,48.28c-2.97-5.49-7.17-9.86-12.61-13.13-5.44-3.26-11.82-4.89-19.13-4.89s-14.12,1.68-19.8,5.04c-5.69,3.36-10.09,8.01-13.2,13.94-3.11,5.93-4.67,12.85-4.67,20.76s1.58,14.34,4.75,20.17c3.16,5.84,7.56,10.36,13.2,13.57,5.64,3.21,12.16,4.82,19.58,4.82,5.83,0,11.07-1.06,15.72-3.19,4.65-2.12,8.55-5.04,11.72-8.75,3.16-3.71,5.44-7.88,6.82-12.53h-18.09c-1.29,2.97-3.29,5.34-6.01,7.12-2.72,1.78-6.16,2.67-10.31,2.67-3.76,0-7.14-.86-10.16-2.6-3.02-1.73-5.39-4.28-7.12-7.64-1.47-2.85-2.3-6.16-2.53-9.94h56c.2-1.28.3-2.52.3-3.71v-3.26c0-6.82-1.48-12.98-4.45-18.47ZM569.01,62.29c.41-2.85,1.18-5.35,2.33-7.49,1.78-3.31,4.2-5.81,7.27-7.49,3.06-1.68,6.43-2.52,10.09-2.52,5.14,0,9.44,1.56,12.9,4.67,3.46,3.11,5.29,7.39,5.49,12.83h-38.07ZM188.69,80.09c-.12.21-.25.41-.38.62-.15.24-.31.47-.47.71-4.23,6.15-11.3,10.18-19.33,10.18-12.96,0-23.47-10.51-23.47-23.47,0-6.71,2.82-12.77,7.34-17.04h0c.05-.06.1-.11.16-.16l-21.28-22.83-2.44,2.2,10.17,10.92c-6.49,7.1-10.46,16.54-10.46,26.92,0,22.08,17.9,39.98,39.98,39.98,14.4,0,27.01-7.61,34.04-19.03l8.5,4.11,1.48-2.93-23.23-11.23c-.19.36-.4.71-.61,1.06ZM279.53,42.42c-2.47-3.86-5.81-6.85-10.01-8.97-4.2-2.12-9.12-3.19-14.76-3.19-6.92,0-13.13,1.71-18.61,5.12-5.49,3.41-9.77,8.06-12.83,13.94-3.07,5.88-4.6,12.58-4.6,20.1s1.51,14.24,4.52,20.17c3.02,5.93,7.24,10.58,12.68,13.94,5.44,3.36,11.62,5.04,18.54,5.04,4.25,0,7.96-.59,11.12-1.78,3.16-1.19,5.88-2.74,8.16-4.67,2.27-1.93,4.2-3.98,5.78-6.15v10.82h17.8V0h-17.8v42.42ZM277.01,81.72c-1.78,3.56-4.3,6.35-7.56,8.38-3.26,2.03-7.02,3.04-11.27,3.04s-7.71-1.01-10.98-3.04c-3.26-2.03-5.81-4.82-7.64-8.38-1.83-3.56-2.74-7.66-2.74-12.31s.91-8.75,2.74-12.31c1.83-3.56,4.38-6.33,7.64-8.31,3.26-1.98,6.92-2.97,10.98-2.97s8.01.99,11.27,2.97c3.26,1.98,5.78,4.75,7.56,8.31,1.78,3.56,2.67,7.66,2.67,12.31s-.89,8.75-2.67,12.31Z" />
+  </g>
+</svg>
+
+      </div>
+      <p class="caption">
+        Modulate is a frontier voice AI company, delivering real-time
+        conversational intelligence with superior accuracy, transparency, and
+        economics.
+      </p>
+    </div>
+    <div class="footer-column">
+      <p class="caption">
+        <a href="https://preview.modulate.ai/#contact"><strong>Contact us</strong></a>
+      </p>
+      <p class="caption">
+        Support:
+        <a href="mailto:support@modulate.ai">support@modulate.ai</a>
+      </p>
     </div>
   </div>
-</div>
+  <div class="m__space XL"></div>
+  <div class="footer-nav">
+    <div class="footer-nav-item caption">
+      <a href="https://modulate.ai">&copy; <strong>Modulate.ai</strong></a>, 2026
+    </div>
+    <div class="footer-nav-item caption">
+      <a href="http://modulate.ai/demo-terms" target="_blank">Terms of Use</a>
+    </div>
+    <div class="footer-nav-item caption">
+      <a href="https://www.modulate.ai/privacy-policy" target="_blank">Privacy Policy</a>
+    </div>
+    <div class="footer-nav-item caption" id="app-version">v5.0.0</div>
+  </div>
+</footer>
 
 <!-- Velma Config Modal -->
-<div class="modal-backdrop" id="velma-config-modal">
-  <div class="modal velma-config-modal-inner">
-    <div class="modal-header">
+<div class="m__modal-backdrop" id="velma-config-modal" hidden>
+  <div class="m__modal m__modal--wide velma-config-modal-inner">
+    <div class="m__modal__header">
       <div>
-        <h3>Velma Config</h3>
-        <p class="velma-config-hint">Use the endpoint's built-in default, or build a custom configuration (conversation types, roles, behaviors, model signals). The right pane shows exactly what's sent as <code>config</code> to <code>/api/velma-2-batch</code> (batch) or as the first frame on <code>/api/velma-2-streaming</code> (streaming).</p>
+        <h3 class="m__modal__title">Velma Config</h3>
+        <p class="caption velma-config-hint">Use the endpoint's built-in default, or build a custom configuration (conversation types, roles, behaviors, model signals). The right pane shows exactly what's sent as <code>config</code> to <code>/api/velma-2-batch</code> (batch) or as the first frame on <code>/api/velma-2-streaming</code> (streaming).</p>
       </div>
-      <button class="modal-close" id="velma-config-modal-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <button class="m__modal__close" id="velma-config-modal-close" aria-label="Close">✕</button>
     </div>
-    <div class="modal-body velma-config-body">
+    <div class="m__modal__body velma-config-body">
       <div class="velma-config-split">
-        <!-- Structured form (left) -->
         <div class="velma-config-form" id="velma-config-form">
-          <!-- The config is the literal "default" until the tester changes something below. -->
           <section class="velma-cfg-section">
-            <p class="velma-cfg-defn">The pane on the right is the exact <code>config</code> that will be sent. It stays the literal <code>"default"</code> — the server's built-in configuration — until you add or change something below, at which point it becomes an explicit <code>BatchConfig</code>. <strong>Reset</strong> returns it to <code>"default"</code>.</p>
+            <p class="caption velma-cfg-defn">The pane on the right is the exact <code>config</code> that will be sent. It stays the literal <code>"default"</code> — the server's built-in configuration — until you add or change something below, at which point it becomes an explicit <code>BatchConfig</code>. <strong>Reset</strong> returns it to <code>"default"</code>.</p>
           </section>
 
           <div id="velma-cfg-custom">
-            <!-- STT signals (kept at the top — quick model toggles, above the long behaviors list) -->
             <section class="velma-cfg-section">
               <h4 class="velma-cfg-h">STT signals</h4>
               <div class="velma-cfg-stt-opts">
-                <label><input type="checkbox" id="velma-cfg-stt-diar"> Speaker diarization</label>
-                <label><input type="checkbox" id="velma-cfg-stt-emot"> Emotion signal</label>
-                <label><input type="checkbox" id="velma-cfg-stt-acc"> Accent signal</label>
-                <label><input type="checkbox" id="velma-cfg-stt-deepfake"> Deepfake signal</label>
-                <label><input type="checkbox" id="velma-cfg-stt-pii"> PII/PHI tagging</label>
+                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-diar"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Speaker diarization</label>
+                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-emot"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Emotion signal</label>
+                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-acc"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Accent signal</label>
+                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-deepfake"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Deepfake signal</label>
+                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-pii"><svg aria-hidden="true"><use href="#checkmark"></use></svg> PII/PHI tagging</label>
               </div>
-              <label class="velma-cfg-field">
+              <label class="m__textfield velma-cfg-field">
                 <span class="velma-cfg-field-label">Language (optional — blank to auto-detect)</span>
-                <input type="text" class="velma-cfg-input" id="velma-cfg-language" placeholder="e.g. en, es, fr">
+                <input type="text" id="velma-cfg-language" placeholder="e.g. en, es, fr">
               </label>
             </section>
 
-            <!-- Outputs -->
             <section class="velma-cfg-section">
               <h4 class="velma-cfg-h">Outputs</h4>
               <div class="velma-cfg-stt-opts">
-                <label><input type="checkbox" id="velma-cfg-prod-topics"> Topics</label>
-                <label><input type="checkbox" id="velma-cfg-prod-sentiments"> Topic sentiments</label>
-                <label><input type="checkbox" id="velma-cfg-prod-summary"> Summary</label>
+                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-prod-topics"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Topics</label>
+                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-prod-sentiments"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Topic sentiments</label>
+                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-prod-summary"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Summary</label>
               </div>
             </section>
 
-            <!-- Conversation types -->
             <section class="velma-cfg-section">
               <h4 class="velma-cfg-h">Conversation types</h4>
-              <p class="velma-cfg-defn">Candidate types the model picks one of (or none). The endpoint has no built-in catalog — you define them.</p>
+              <p class="caption velma-cfg-defn">Candidate types the model picks one of (or none). The endpoint has no built-in catalog — you define them.</p>
               <div class="velma-cfg-list" id="velma-cfg-conv-list"></div>
               <div class="velma-cfg-add-row">
-                <button class="velma-cfg-add-btn" id="velma-cfg-add-conv-btn" type="button">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  Add conversation type
-                </button>
-                <button class="velma-cfg-example-btn" id="velma-cfg-conv-example-btn" type="button">Load example</button>
+                <button class="m__button-secondary-outline S" id="velma-cfg-add-conv-btn" type="button">+ Add conversation type</button>
+                <button class="m__button-secondary-outline S" id="velma-cfg-conv-example-btn" type="button">Load example</button>
               </div>
             </section>
 
-            <!-- Participant roles -->
             <section class="velma-cfg-section">
               <h4 class="velma-cfg-h">Participant roles</h4>
-              <p class="velma-cfg-defn">Candidate roles the model assigns to each speaker. You define them.</p>
+              <p class="caption velma-cfg-defn">Candidate roles the model assigns to each speaker. You define them.</p>
               <div class="velma-cfg-list" id="velma-cfg-roles-list"></div>
               <div class="velma-cfg-add-row">
-                <button class="velma-cfg-add-btn" id="velma-cfg-add-role-btn" type="button">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  Add role
-                </button>
-                <button class="velma-cfg-example-btn" id="velma-cfg-roles-example-btn" type="button">Load example</button>
+                <button class="m__button-secondary-outline S" id="velma-cfg-add-role-btn" type="button">+ Add role</button>
+                <button class="m__button-secondary-outline S" id="velma-cfg-roles-example-btn" type="button">Load example</button>
               </div>
             </section>
 
-            <!-- Behaviors: server presets + custom defs (long list — kept last) -->
             <section class="velma-cfg-section">
               <h4 class="velma-cfg-h">Behaviors to detect</h4>
-              <p class="velma-cfg-defn">Pick server <strong>presets</strong> (added as <code>preset:&lt;id&gt;</code> refs the server expands), or define your own. Each becomes an entry in <code>behaviors</code>.</p>
+              <p class="caption velma-cfg-defn">Pick server <strong>presets</strong> (added as <code>preset:&lt;id&gt;</code> refs the server expands), or define your own. Each becomes an entry in <code>behaviors</code>.</p>
               <div class="velma-cfg-warning" id="velma-cfg-behaviors-warning" style="display:none"></div>
               <div class="velma-cfg-list" id="velma-cfg-presets-list"></div>
               <div class="velma-cfg-list" id="velma-cfg-behaviors-list"></div>
-              <button class="velma-cfg-add-btn" id="velma-cfg-add-behavior-btn" type="button">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Add custom behavior
-              </button>
+              <button class="m__button-secondary-outline S" id="velma-cfg-add-behavior-btn" type="button">+ Add custom behavior</button>
             </section>
           </div>
         </div>
 
-        <!-- Live JSON (right) -->
         <div class="velma-config-json-pane">
           <div class="velma-config-json-head">
             <span>BatchConfig (live)</span>
-            <label class="velma-config-raw-toggle">
-              <input type="checkbox" id="velma-config-raw-toggle"> Edit raw JSON
+            <label class="m__checkbox-secondary velma-config-raw-toggle">
+              <input type="checkbox" id="velma-config-raw-toggle"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Edit raw JSON
             </label>
           </div>
           <textarea class="velma-config-textarea" id="velma-config-textarea" spellcheck="false" readonly></textarea>
@@ -3518,61 +872,40 @@ body:has(#stt-debug-panel:not([hidden])) .page {
       </div>
       <div class="velma-config-error" id="velma-config-error"></div>
       <div class="velma-config-actions">
-        <button class="velma-config-action-secondary" id="velma-config-reset-btn" type="button">Reset</button>
-        <button class="velma-config-action-primary" id="velma-config-apply-btn" type="button">Apply</button>
+        <button class="m__button-secondary-outline M" id="velma-config-reset-btn" type="button">Reset</button>
+        <button class="m__button-primary M" id="velma-config-apply-btn" type="button">Apply</button>
       </div>
     </div>
   </div>
 </div>
-
-<!-- Analysis Progress Overlay -->
-<div class="analysis-overlay" id="analysis-overlay">
-  <div class="overlay-header">
-    <a href="/" class="header-logo">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><defs><linearGradient id="hlg2" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#430f92"/><stop offset=".5" stop-color="#fb3958"/><stop offset="1" stop-color="#fc7856"/></linearGradient></defs><rect width="32" height="32" rx="7" fill="#120021"/><g stroke="url(#hlg2)" stroke-width="2.5" stroke-linecap="round" fill="none"><line x1="6" y1="13" x2="6" y2="19"/><line x1="10.5" y1="9" x2="10.5" y2="23"/><line x1="15" y1="5" x2="15" y2="27"/><line x1="19.5" y1="10" x2="19.5" y2="22"/><line x1="24" y1="7" x2="24" y2="25"/><line x1="28.5" y1="12" x2="28.5" y2="20"/></g></svg>
-      <span class="header-wordmark">Voice Models Preview</span>
-    </a>
-  </div>
-  <div class="overlay-content">
-    <h3 id="analysis-title">Analyzing audio&hellip;</h3>
-    <p id="analysis-status">Processing audio</p>
-    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
-    <div class="overlay-error" id="overlay-error">
-      <p class="overlay-error-msg" id="overlay-error-msg"></p>
-      <pre class="overlay-error-json" id="overlay-error-json"></pre>
-      <button class="overlay-dismiss-btn" id="overlay-dismiss-btn">Dismiss</button>
-    </div>
-  </div>
-  <div class="overlay-footer">
-    v4.13.0 (July 16, 2026)
-  </div>
-</div>
-
-<!-- Error Toast -->
-<div class="error-toast" id="error-toast"></div>
-
-<!-- Shared histogram tooltip -->
-<div class="histo-bar-tooltip" id="histo-tooltip"></div>
 
 <!-- HubSpot Access Modal -->
-<div class="hs-modal-backdrop" id="hs-modal">
-  <div class="hs-modal">
-    <div class="hs-modal-header">
+<div class="m__modal-backdrop" id="hs-modal" hidden>
+  <div class="m__modal hs-modal-inner">
+    <div class="m__modal__header">
       <div>
-        <h3>Get API Access</h3>
-        <p>Start building with Modulate's voice intelligence APIs.</p>
+        <h3 class="m__modal__title">Get API Access</h3>
+        <p class="caption">Start building with Modulate's voice intelligence APIs.</p>
       </div>
-      <button class="hs-modal-close" id="hs-modal-close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <button class="m__modal__close" id="hs-modal-close" aria-label="Close">✕</button>
     </div>
-    <div class="hs-modal-body">
+    <div class="m__modal__body">
       <div class="hs-form-frame" data-region="na1" data-form-id="58b05257-fab0-4145-90c1-ea658b4d5cda" data-portal-id="22677265"></div>
     </div>
   </div>
 </div>
 
+<!-- Error Toast -->
+<div class="pg-error-toast" id="error-toast"></div>
+
+<!-- Legacy tooltip shim (renderers reposition it inline until the port completes) -->
+<div id="histo-tooltip" style="display:none; position:fixed; z-index:1300;"></div>
+
+<!-- Design-system tooltip -->
+<div class="m__tooltip" hidden></div>
+
 <script src="/app.js?v=4"></script>
+<script src="/assets/components/tooltip.js"></script>
 <script>
   // Skip the HubSpot embed on localhost — the preview sandbox blocks
   // non-localhost URLs and the resulting toast is just noise during dev.
