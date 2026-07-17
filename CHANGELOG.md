@@ -2,6 +2,21 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [5.0.1] - 2026-07-17
+
+### Changed
+- De-branded the demo: header reads "Models preview" (no logo), footer is just
+  the version (no company links/emails/ToU/PP), neutral page title + favicon.
+- Color scheme now defaults to the browser's `prefers-color-scheme`; the header
+  toggle still persists an explicit choice.
+- Tabs with a demo/result on screen now start with the collapsed "New analysis"
+  plate instead of the full upload plate.
+
+### Fixed
+- Repeat uploads: batch success paths left the in-flight flag set, so the next
+  drop after "New analysis" was silently ignored. The flag now resets at the
+  shared completion point (and on error).
+
 ## [5.0.0] - 2026-07-17
 
 ### Changed

@@ -622,6 +622,10 @@
     setPageTitle(resultsFilename.textContent);
     refreshBottomPanels();
     syncPlayerMeta();
+
+    // A demo (or prior run) is already on screen — start the plate collapsed
+    // ("New analysis"), matching the uploaded state the results imply.
+    if (currentData) setPlateState('uploaded');
   }
 
   // Sidebar model nav drives the SPA mode switch
@@ -4764,6 +4768,10 @@
   function hideOverlay() {
     stopProgress();
     setPlateState('uploaded');
+    // Not every batch success path resets the flag itself — this is the one
+    // choke point they all pass through, and a stuck flag silently blocks
+    // every subsequent "New analysis" upload.
+    isAnalyzing = false;
     // Success handlers assign filename/currentData right AFTER calling
     // hideOverlay — defer the chrome sync one tick so it reads fresh values.
     setTimeout(() => {
@@ -4776,6 +4784,7 @@
   function showOverlayError(msg, rawText) {
     stopProgress();
     setPlateState('initial');
+    isAnalyzing = false;
     showError(msg);
     if (rawText) {
       // Surface the raw error payload in the JSON panel for inspection.
@@ -5101,6 +5110,11 @@
       setPageTitle(resultsFilename.textContent);
       refreshBottomPanels();
       syncPlayerMeta();
+      // Demo on screen → collapsed plate, unless an analysis is mid-flight.
+      const st = uploadPlate ? uploadPlate.dataset.state : '';
+      if (!isAnalyzing && !isRecording && (st === 'initial' || st === 'low-quota')) {
+        setPlateState('uploaded');
+      }
     }
   }
 
