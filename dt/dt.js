@@ -95,16 +95,6 @@ const VELMA_CONFIG = {
     },
   ],
   behaviors: [
-    'preset:coercion_manipulation',
-    'preset:inappropriate_speech',
-    'preset:threat_based_harassment',
-    'preset:issue_not_resolved',
-    'preset:issue_resolved',
-    'preset:refund_or_credit_issued',
-    'preset:refund_demand',
-    'preset:escalation_to_supervisor_request',
-    'preset:legal_threat_litigation',
-    'preset:customer_gratitude',
     ...DEFAULT_CUSTOM_BEHAVIORS,
   ],
   stt: {
@@ -119,13 +109,9 @@ const VELMA_CONFIG = {
   produce_summary: true,
 };
 
-// Pretty names for the configured presets (for the "checked for" line before
+// Names of the configured default behaviors (for the "checked for" line before
 // per-behavior results exist).
 const CONFIGURED_BEHAVIOR_NAMES = [
-  'Coercion Manipulation', 'Inappropriate Speech', 'Threat-based harassment',
-  'Issue Not Resolved', 'Issue Resolved', 'Refund or Credit Issued',
-  'Refund Demand', 'Escalation to Supervisor Request', 'Legal Threat - Litigation',
-  'Customer Gratitude',
   ...DEFAULT_CUSTOM_BEHAVIORS.map(b => b.name),
 ];
 
@@ -357,6 +343,7 @@ const errorClose = $('error-close');
 const btnBehaviors = $('btn-behaviors');
 const behaviorsModal = $('behaviors-modal');
 const behaviorsCurrent = $('behaviors-current');
+const behaviorsActiveChips = $('behaviors-active-chips');
 const behaviorsDrop = $('behaviors-drop');
 const behaviorsExampleLink = $('behaviors-example-link');
 const behaviorsPreview = $('behaviors-preview');
@@ -1232,8 +1219,28 @@ function describeActiveSet() {
   return 'Custom · ' + n + ' behaviors (default + ' + behaviorSet.entries.length + ' added)';
 }
 
+// The active set's behavior names, always visible in the modal head — so the
+// settings show *which* behaviors run, not just how many.
+function renderActiveBehaviorChips() {
+  behaviorsActiveChips.textContent = '';
+  (getActiveConfig().behaviors || []).forEach(e => {
+    const isPreset = typeof e === 'string';
+    const name = isPreset
+      ? ((presetCatalog && presetCatalog.get(e.slice('preset:'.length))) || prettifyPresetId(e.slice('preset:'.length)))
+      : e.name;
+    const chip = el('span', 'behavior-chip' + (isPreset ? ' preset' : ''));
+    const star = el('span', 'behavior-chip-star');
+    star.appendChild(svgUse('#icon-star'));
+    chip.appendChild(star);
+    chip.appendChild(document.createTextNode(name || '?'));
+    if (isPreset) chip.title = e;
+    behaviorsActiveChips.appendChild(chip);
+  });
+}
+
 function updateBehaviorSetUi() {
   behaviorsCurrent.textContent = describeActiveSet();
+  renderActiveBehaviorChips();
   if (behaviorSet) {
     const n = (getActiveConfig().behaviors || []).length;
     btnBehaviors.textContent = 'Behaviors · ' + n;

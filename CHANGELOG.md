@@ -2,6 +2,16 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [5.0.4] - 2026-07-19
+
+### Changed
+- /dt default behavior set is now just the 7 team-authored behaviors (Smile in
+  the Voice, Unvoiced Disagreement, Request or order, Tone Mismatch, Reluctance,
+  Accusatory Question, Sarcasm) — the 10 presets are no longer on by default
+  (still available via upload as `preset:` refs).
+- /dt Behaviors panel now lists the active set's behavior names as chips, not
+  just a count — updates on apply/reset, preset entries shown muted.
+
 ## [5.0.3] - 2026-07-17
 
 ### Fixed

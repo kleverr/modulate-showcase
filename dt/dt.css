@@ -815,6 +815,7 @@ td.num { text-align: right; padding-right: 0; font-variant-numeric: tabular-nums
   color: var(--m__text-accent);
 }
 .behaviors-current { margin: 0; color: var(--m__text-caption); font-size: var(--m__font-size-s); }
+.behaviors-active-chips { margin-top: calc(-1 * var(--m__space-xxs)); }
 
 .behaviors-drop {
   display: flex;
