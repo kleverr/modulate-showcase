@@ -424,16 +424,10 @@ function reportDurationMs() {
   return d;
 }
 
-// Role picks → display names
-function speakerRoleMap(data) {
-  const map = {};
-  (data.participant_role_picks || []).forEach(p => {
-    if (p && p.speaker_label != null) map[p.speaker_label] = p.name;
-  });
-  return map;
-}
-function displayName(label, roles) {
-  return roles[label] || ('Speaker ' + label);
+// Speakers are always shown as "Speaker <label>" (labels are 1-based from the
+// API); inferred role names appear only in the conversation meta strip.
+function displayName(label) {
+  return 'Speaker ' + label;
 }
 
 // Stable lane order: first appearance in the clip stream.
@@ -449,7 +443,6 @@ function renderPlayer(data) {
   const clips = data.clips || [];
   updateLaneOrder(clips);
   const durationMs = reportDurationMs();
-  const roles = speakerRoleMap(data);
 
   playerViz.textContent = '';
   speakerLabels.textContent = '';
@@ -495,7 +488,7 @@ function renderPlayer(data) {
     const lab = el('div', 'speaker-label');
     lab.style.setProperty('--row-top', rowTop(idx) + '%');
     lab.style.setProperty('--row-height', (rowH - rowPad * 2) + '%');
-    lab.appendChild(el('span', null, displayName(label, roles)));
+    lab.appendChild(el('span', null, displayName(label)));
     speakerLabels.appendChild(lab);
   });
 
@@ -568,7 +561,6 @@ function computeSpeakerStats(clips) {
 }
 
 function renderSpeakers(data) {
-  const roles = speakerRoleMap(data);
   const stats = computeSpeakerStats(data.clips || []);
   const total = stats.reduce((a, s) => a + s.totalMs, 0) || 1;
 
@@ -577,9 +569,7 @@ function renderSpeakers(data) {
     const tr = document.createElement('tr');
 
     const tdName = document.createElement('td');
-    const roleName = roles[s.label];
-    tdName.appendChild(el('span', 'speaker-name', roleName || ('Speaker ' + s.label)));
-    if (roleName) tdName.appendChild(el('span', 'speaker-sub', 'Speaker ' + s.label));
+    tdName.appendChild(el('span', 'speaker-name', displayName(s.label)));
     tr.appendChild(tdName);
 
     const tdPattern = document.createElement('td');
@@ -618,7 +608,6 @@ function renderSpeakers(data) {
 
 // ── Render: behaviors ────────────────────────────────────────────────────────
 function renderBehaviors(data, isFinal) {
-  const roles = speakerRoleMap(data);
   const behaviors = data.behaviors || [];
   const clipByUuid = new Map((data.clips || []).map(c => [c.clip_uuid, c]));
 
@@ -641,7 +630,7 @@ function renderBehaviors(data, isFinal) {
       const tdSpeaker = document.createElement('td');
       if (i === 0) {
         tdSpeaker.className = 'speaker-group-cell';
-        tdSpeaker.textContent = displayName(label, roles);
+        tdSpeaker.textContent = displayName(label);
       }
       tr.appendChild(tdSpeaker);
 
@@ -711,7 +700,6 @@ function renderBehaviors(data, isFinal) {
 
 // ── Render: transcript ───────────────────────────────────────────────────────
 function renderTranscript(data) {
-  const roles = speakerRoleMap(data);
   const clips = data.clips || [];
 
   // definitive evidence markers
@@ -739,7 +727,7 @@ function renderTranscript(data) {
 
     const body = el('span', 'report-transcript-body');
     const meta = el('span', 'report-transcript-meta');
-    meta.appendChild(el('span', 'report-transcript-from', displayName(c.speaker_label, roles)));
+    meta.appendChild(el('span', 'report-transcript-from', displayName(c.speaker_label)));
     if (c.emotion && String(c.emotion).toLowerCase() !== 'neutral') {
       const pill = el('span', 'emotion-pill', c.emotion.charAt(0).toUpperCase() + c.emotion.slice(1).toLowerCase());
       pill.style.setProperty('--tone', emotionColor(c.emotion));

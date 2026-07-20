@@ -527,7 +527,6 @@ td.num { text-align: right; padding-right: 0; font-variant-numeric: tabular-nums
 .speakers-table .col-time { width: 18%; }
 
 .speaker-name { color: var(--m__text-accent); font-weight: 500; }
-.speaker-sub { display: block; color: var(--m__text-caption); font-size: var(--m__font-size-s); }
 
 .emotion-pattern { display: flex; flex-direction: column; gap: var(--m__space-xxs); }
 .emotion-bar {
