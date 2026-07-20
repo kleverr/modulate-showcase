@@ -522,10 +522,9 @@ td {
 tbody tr:last-child td { border-bottom: 0; }
 td.num { text-align: right; padding-right: 0; font-variant-numeric: tabular-nums; }
 
-.speakers-table .col-speaker { width: 17%; }
-.speakers-table .col-pattern { width: 33%; }
-.speakers-table .col-topics { width: 37%; }
-.speakers-table .col-time { width: 13%; }
+.speakers-table .col-speaker { width: 24%; }
+.speakers-table .col-pattern { width: 58%; }
+.speakers-table .col-time { width: 18%; }
 
 .speaker-name { color: var(--m__text-accent); font-weight: 500; }
 .speaker-sub { display: block; color: var(--m__text-caption); font-size: var(--m__font-size-s); }
@@ -552,23 +551,6 @@ td.num { text-align: right; padding-right: 0; font-variant-numeric: tabular-nums
 .emotion-segment:hover { filter: brightness(125%) saturate(115%); transition-duration: var(--m__duration-hover-in); }
 .emotion-legend { color: var(--m__text-caption); font-size: var(--m__font-size-s); line-height: var(--m__line-height-base); }
 .emotion-legend span { color: var(--tone, var(--m__text-caption)); }
-
-.topic-chip-list { display: flex; flex-wrap: wrap; gap: var(--m__space-xxs); }
-.topic-chip {
-  --tone: var(--m__text-caption);
-  display: inline-flex;
-  align-items: center;
-  gap: .3em;
-  color: var(--tone);
-  background: color-mix(in srgb, var(--tone) 8%, transparent);
-  border-radius: var(--m__radius-s);
-  padding: .15rem .3rem;
-  font-size: var(--m__font-size-s);
-  line-height: var(--m__line-height-base);
-}
-.topic-chip[data-tone="positive"] { --tone: var(--m__emotion-positive); }
-.topic-chip[data-tone="negative"] { --tone: var(--m__emotion-negative); }
-.topic-chip .score { opacity: .7; font-variant-numeric: tabular-nums; }
 
 .cell-placeholder { color: var(--m__text-caption); }
 
@@ -912,8 +894,7 @@ td.num { text-align: right; padding-right: 0; font-variant-numeric: tabular-nums
 
 /* ── Small screens ── */
 @media (max-width: 700px) {
-  .speakers-table .col-pattern { width: 40%; }
-  .speakers-table .col-topics { width: 30%; }
+  .speakers-table .col-pattern { width: 55%; }
   .header-note { display: none; }
   h1 { font-size: 2.6rem; }
 }

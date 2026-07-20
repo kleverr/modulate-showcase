@@ -104,8 +104,8 @@ const VELMA_CONFIG = {
     deepfake_signal: false,
     pii_phi_tagging: false,
   },
-  produce_topics: true,
-  produce_topic_sentiments: true,
+  produce_topics: false,
+  produce_topic_sentiments: false,
   produce_summary: true,
 };
 
@@ -572,14 +572,6 @@ function renderSpeakers(data) {
   const stats = computeSpeakerStats(data.clips || []);
   const total = stats.reduce((a, s) => a + s.totalMs, 0) || 1;
 
-  // Per-speaker topic sentiments
-  const topicsBySpeaker = new Map();
-  (data.topic_sentiments || []).forEach(t => {
-    const k = t.speaker_label == null ? '—' : String(t.speaker_label);
-    if (!topicsBySpeaker.has(k)) topicsBySpeaker.set(k, []);
-    topicsBySpeaker.get(k).push(t);
-  });
-
   speakersTbody.textContent = '';
   stats.forEach(s => {
     const tr = document.createElement('tr');
@@ -616,32 +608,6 @@ function renderSpeakers(data) {
     }
     tdPattern.appendChild(pattern);
     tr.appendChild(tdPattern);
-
-    const tdTopics = document.createElement('td');
-    const sents = topicsBySpeaker.get(s.label) || [];
-    if (sents.length) {
-      const list = el('div', 'topic-chip-list');
-      sents.forEach(t => {
-        const chip = el('span', 'topic-chip');
-        let tone = 'neutral';
-        if (typeof t.sentiment_score === 'number') {
-          if (t.sentiment_score > 0.1) tone = 'positive';
-          else if (t.sentiment_score < -0.1) tone = 'negative';
-        }
-        chip.dataset.tone = tone;
-        chip.appendChild(document.createTextNode(t.topic));
-        if (typeof t.sentiment_score === 'number') {
-          const score = el('span', 'score', (t.sentiment_score > 0 ? '+' : '') + t.sentiment_score.toFixed(2));
-          chip.appendChild(score);
-          chip.title = t.sentiment_label || '';
-        }
-        list.appendChild(chip);
-      });
-      tdTopics.appendChild(list);
-    } else {
-      tdTopics.appendChild(el('span', 'cell-placeholder', '—'));
-    }
-    tr.appendChild(tdTopics);
 
     const tdTime = el('td', 'num', Math.round(s.totalMs / total * 100) + '%');
     tr.appendChild(tdTime);
