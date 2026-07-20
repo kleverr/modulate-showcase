@@ -6,6 +6,7 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["server.js"],
       "port": 8080,
+      "autoPort": true,
       "env": {
         "API_KEY": "93885c34-3996-4708-b958-aef99f034da2"
       }
