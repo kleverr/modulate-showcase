@@ -105,6 +105,10 @@ const VELMA_CONFIG = {
     'preset:escalation_to_supervisor_request',
     'preset:legal_threat_litigation',
     'preset:customer_gratitude',
+    'preset:return_fraud_attempt',
+    'preset:bargaining_manipulation',
+    'preset:cancelled_order',
+    'preset:vishing',
     ...DEFAULT_CUSTOM_BEHAVIORS,
   ],
   stt: {
@@ -125,7 +129,8 @@ const CONFIGURED_BEHAVIOR_NAMES = [
   'Coercion Manipulation', 'Inappropriate Speech', 'Threat-based harassment',
   'Issue Not Resolved', 'Issue Resolved', 'Refund or Credit Issued',
   'Refund Demand', 'Escalation to Supervisor Request', 'Legal Threat - Litigation',
-  'Customer Gratitude',
+  'Customer Gratitude', 'Return Fraud Attempt', 'Bargaining Manipulation',
+  'Cancelled Order', 'Vishing',
   ...DEFAULT_CUSTOM_BEHAVIORS.map(b => b.name),
 ];
 
