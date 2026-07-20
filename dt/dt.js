@@ -95,6 +95,16 @@ const VELMA_CONFIG = {
     },
   ],
   behaviors: [
+    'preset:coercion_manipulation',
+    'preset:inappropriate_speech',
+    'preset:threat_based_harassment',
+    'preset:issue_not_resolved',
+    'preset:issue_resolved',
+    'preset:refund_or_credit_issued',
+    'preset:refund_demand',
+    'preset:escalation_to_supervisor_request',
+    'preset:legal_threat_litigation',
+    'preset:customer_gratitude',
     ...DEFAULT_CUSTOM_BEHAVIORS,
   ],
   stt: {
@@ -112,6 +122,10 @@ const VELMA_CONFIG = {
 // Names of the configured default behaviors (for the "checked for" line before
 // per-behavior results exist).
 const CONFIGURED_BEHAVIOR_NAMES = [
+  'Coercion Manipulation', 'Inappropriate Speech', 'Threat-based harassment',
+  'Issue Not Resolved', 'Issue Resolved', 'Refund or Credit Issued',
+  'Refund Demand', 'Escalation to Supervisor Request', 'Legal Threat - Litigation',
+  'Customer Gratitude',
   ...DEFAULT_CUSTOM_BEHAVIORS.map(b => b.name),
 ];
 
