@@ -12705,13 +12705,6 @@ h6 {
   background: var(--m__success);
 }
 
-.pg-histo-bar.active {
-  outline: 2px solid var(--m__bg-accent);
-  outline-offset: 1px;
-  z-index: 5;
-  filter: none;
-}
-
 .pg-histo-bar-tooltip {
   display: none;
   position: fixed;
@@ -12746,6 +12739,26 @@ h6 {
 .pg-results-table-section td:last-child,
 .pg-confidence-cell span {
   font-variant-numeric: tabular-nums;
+}
+
+/* Whole-pixel row height: fractional heights stack up row over row and land
+   the 4px confidence bars on different subpixel offsets, so anti-aliasing
+   renders visibly different bar thicknesses. */
+.pg-results-table-section .pg-segments-table td {
+  height: 60px;
+}
+
+/* Rows are clickable (they seek the player) — show it on hover */
+.pg-results-table-section .pg-segments-table tbody tr {
+  cursor: pointer;
+  transition: background-color var(--m__duration-fast) var(--m__easing-base);
+}
+.pg-results-table-section .pg-segments-table tbody tr:hover {
+  background-color: var(--m__bg-surface);
+  transition-duration: var(--m__duration-instant);
+}
+.pg-results-table-section .pg-segments-table tbody tr.active {
+  background-color: var(--m__bg-surface);
 }
 
 .pg-confidence-cell {
@@ -13265,6 +13278,61 @@ a.pg-verdict-statement-link:active {
 }
 .pg-verdict-statement-stat-value {
   font-variant-numeric: tabular-nums;
+}
+
+/* "How is this decided?" — small link under the verdict stats that toggles
+   a popover explaining how the file-level verdict is derived. */
+.pg-verdict-info {
+  position: relative;
+  display: inline-block;
+  margin-top: 0.35rem;
+}
+.pg-verdict-info-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: var(--m__font-size-xs);
+  color: var(--m__text-caption);
+  text-decoration: underline dotted;
+  text-underline-offset: 0.22em;
+  cursor: pointer;
+  transition: color var(--m__duration-base) var(--m__easing-base);
+}
+.pg-verdict-info-link:hover,
+.pg-verdict-info-link[aria-expanded="true"] {
+  color: var(--m__text-link-hover);
+  transition-duration: var(--m__duration-instant);
+}
+.pg-verdict-info-pop {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(26rem, 82vw);
+  text-align: left;
+  background: var(--m__bg);
+  color: var(--m__text);
+  border: var(--m__border-width-s) solid var(--m__border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  padding: 0.85rem 1rem;
+  font-size: var(--m__font-size-s);
+  font-weight: var(--m__font-weight-normal, 400);
+  z-index: 60;
+}
+.pg-verdict-info-pop p {
+  margin: 0 0 0.5em;
+}
+.pg-verdict-info-pop p:last-child {
+  margin-bottom: 0;
+}
+.pg-verdict-info-pop ul {
+  margin: 0 0 0.5em;
+  padding-left: 1.15em;
+}
+.pg-verdict-info-pop li {
+  margin: 0.2em 0;
 }
 
 #audio-player {
@@ -14193,6 +14261,60 @@ a.pg-verdict-statement-link:active {
   font-size: 0.8em;
   opacity: 1;
   color: inherit;
+}
+
+/* Timestamp captions that follow the playhead / hover line. The stock design
+   anchors these below a 75%-tall in-box visualization; on this page the
+   dataviz lives outside the media-box, so re-anchor them to the bar's
+   vertical center (like the static start/total labels). The in-box white
+   lines are redundant here — the container-wide red lines
+   (.pg-media-hover-line / .pg-media-position-line) mark the position. */
+#audio-player .player-position-indicator .player-position-line,
+#audio-player .player-hover-position-indicator .player-hover-position-line {
+  display: none;
+}
+#audio-player .player-position-indicator .player-position-caption,
+#audio-player .player-hover-position-indicator .player-hover-position-caption {
+  top: 50%;
+  transform: translateY(-50%);
+  left: calc(var(--padding) + 0.4em);
+  right: auto;
+}
+/* Near the right edge the caption flips to the left of the line */
+#audio-player .player-position-indicator.caption-flipped .player-position-caption,
+#audio-player .player-hover-position-indicator.caption-flipped .player-hover-position-caption {
+  left: auto;
+  right: calc(var(--padding) + 0.4em);
+}
+/* Static start/total labels yield when a moving caption overlaps their corner */
+#audio-player .player-start-time,
+#audio-player .player-total-time {
+  transition: opacity var(--m__duration-fast) var(--m__easing-base);
+}
+#audio-player.media-box[data-playback-started="true"]:not(.has-hover-indicator):has(.player-position-indicator.caption-flipped) .player-total-time,
+#audio-player.media-box.has-hover-indicator:has(.player-hover-position-indicator.active.caption-flipped) .player-total-time,
+#audio-player.media-box[data-playback-started="true"]:not(.has-hover-indicator):has(.player-position-indicator.caption-near-start) .player-start-time,
+#audio-player.media-box.has-hover-indicator:has(.player-hover-position-indicator.active.caption-near-start) .player-start-time {
+  opacity: 0;
+}
+#audio-player .player-position-caption span,
+#audio-player .player-hover-position-caption span {
+  color: var(--m__text);
+  opacity: 1;
+}
+/* Current-time caption appears once playback has started… */
+#audio-player .player-position-indicator .player-position-caption {
+  opacity: 0;
+  visibility: hidden;
+}
+#audio-player.media-box[data-playback-started="true"] .player-position-indicator .player-position-caption {
+  opacity: 1;
+  visibility: visible;
+}
+/* …but yields to the hover caption while the cursor is over the player */
+#audio-player.media-box.has-hover-indicator .player-position-indicator .player-position-caption {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .pg-content .pg-upload-header h2 {

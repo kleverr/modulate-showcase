@@ -470,8 +470,8 @@
 /* mx table fill colors follow the strip semantics */
 .mx-bar-fill.music { background: var(--music-color, var(--m__success)); }
 .mx-bar-fill.speech { background: var(--speech-color, var(--m__error)); }
-.mx-player-heat-cell.active { filter: brightness(1.35); }
-.aim-player-heat-cell.active { filter: brightness(1.35); }
+/* Playing segment is marked by the red playhead line — no extra strip
+   highlight (matches the deepfake strip). */
 
 /* ═══ Velma config modal internals (design-system components + tokens) ═══ */
 .velma-config-hint {
@@ -681,8 +681,7 @@
   transition: filter var(--m__duration-base) var(--m__easing-base),
               opacity var(--m__duration-base) var(--m__easing-base);
 }
-.ea-player-strip .ea-seg:hover,
-.ea-player-strip .ea-seg.active {
+.ea-player-strip .ea-seg:hover {
   opacity: 1;
   filter: brightness(1.15);
 }

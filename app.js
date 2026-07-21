@@ -186,20 +186,44 @@
 
   function computeVerdict(frames) {
     const synFrames = frames.filter(isSyntheticFrame);
+    // Silence ("no-content") segments carry no signal either way — judge
+    // against speech segments only.
+    const n = frames.filter(f => f.verdict !== 'no-content').length;
     const c98 = synFrames.filter(f => f.confidence > 0.98).length;
     const c95 = synFrames.filter(f => f.confidence > 0.95).length;
     const c90 = synFrames.filter(f => f.confidence > 0.90).length;
     const c85 = synFrames.filter(f => f.confidence > 0.85).length;
-    const pct = frames.length > 0 ? synFrames.length / frames.length : 0;
+    const pct = n > 0 ? synFrames.length / n : 0;
+    // Corroboration counts scale down for short clips: a 1-segment file can
+    // never produce 2 corroborating segments, so require at most n of them.
+    const need = (k) => Math.max(1, Math.min(k, n));
+    const seg = (k) => k + ' segment' + (k === 1 ? '' : 's');
     let reason = '';
-    if (c98 >= 1) reason = c98 + ' segment' + (c98 > 1 ? 's' : '') + ' with >98% conf.';
-    else if (c95 >= 2) reason = c95 + ' segments with >95% conf.';
-    else if (c90 >= 3) reason = c90 + ' segments with >90% conf.';
-    else if (c85 >= 5) reason = c85 + ' segments with >85% conf.';
-    else if (frames.length >= 7 && pct > 0.3) reason = Math.round(pct * 100) + '% of segments flagged as deepfake';
+    if (c98 >= 1) reason = seg(c98) + ' with >98% conf.';
+    else if (c95 >= need(2)) reason = seg(c95) + ' with >95% conf.';
+    else if (c90 >= need(3)) reason = seg(c90) + ' with >90% conf.';
+    else if (c85 >= need(5)) reason = seg(c85) + ' with >85% conf.';
+    else if (pct >= 0.5) reason = Math.round(pct * 100) + '% of segments flagged as deepfake';
+    else if (n >= 7 && pct > 0.3) reason = Math.round(pct * 100) + '% of segments flagged as deepfake';
     const isSynthetic = reason !== '';
     return { isSynthetic, synFrames, reason };
   }
+
+  // Plain-language description of computeVerdict, shown in the verdict-info
+  // popover. Keep in sync with the rules above.
+  const DEEPFAKE_VERDICT_RULES_HTML =
+    '<p>The file-level verdict is a derived metric: the model scores each segment ' +
+    'independently, and this page combines those scores into one overall call.</p>' +
+    '<p>A file is called a <strong>deepfake</strong> when any of these hold:</p>' +
+    '<ul>' +
+    '<li>a segment is flagged with &gt;98% confidence</li>' +
+    '<li>2+ segments &gt;95%, 3+ &gt;90%, or 5+ &gt;85% <br>(short clips need only as many segments as they have)</li>' +
+    '<li>half or more of the speech segments are flagged</li>' +
+    '<li>over 30% are flagged in files with 7+ segments</li>' +
+    '</ul>' +
+    '<p>Silent segments are ignored. Everything else reads <strong>authentic</strong>. ' +
+    'Per-segment verdicts and confidences come straight from the model.</p>';
+
   function verdictClass(f) {
     if (f.verdict === 'synthetic') return 'synthetic';
     if (f.verdict === 'no-content') return 'no-content';
@@ -808,6 +832,7 @@
       if (currentMode === 'velma') startVelmaDemoStream();
       else if (currentMode === 'music') startMusicDemoStream();
       else if (currentMode === 'aimusic') startAimusicDemoStream();
+      else if (currentMode === 'deepfake') startDeepfakeDemoStream();
       else startTranscriptionDemoStream();
     });
   }
@@ -825,6 +850,7 @@
         if (currentMode === 'velma') startVelmaFileStream(streamFileInput.files[0]);
         else if (currentMode === 'music') startMusicFileStream(streamFileInput.files[0]);
         else if (currentMode === 'aimusic') startAimusicFileStream(streamFileInput.files[0]);
+        else if (currentMode === 'deepfake') startDeepfakeFileStream(streamFileInput.files[0]);
         else startTranscriptionFileStream(streamFileInput.files[0]);
         streamFileInput.value = '';
       }
@@ -1033,7 +1059,12 @@
     if (!a || !mediaBox) return;
     const dur = a.duration;
     const pct = (isFinite(dur) && dur > 0) ? (a.currentTime / dur) * 100 : 0;
-    if (playerPosIndicator) playerPosIndicator.style.left = pct + '%';
+    if (playerPosIndicator) {
+      playerPosIndicator.style.left = pct + '%';
+      // Near the right edge the caption flips to the left of the line
+      playerPosIndicator.classList.toggle('caption-flipped', pct > 88);
+      playerPosIndicator.classList.toggle('caption-near-start', pct < 7);
+    }
     if (playerCurrentTimeEl) playerCurrentTimeEl.textContent = fmtPlayerTime(a.currentTime);
     updatePlayIcon(!a.paused);
     const started = a.currentTime > 0 ? 'true' : 'false';
@@ -1072,7 +1103,21 @@
       a.addEventListener('play',  () => { if (a === activeAudio()) { updatePlayIcon(true); startPosLoop(); } });
       a.addEventListener('pause', () => { if (a === activeAudio()) updatePlayIcon(false); });
       a.addEventListener('ended', () => { if (a === activeAudio()) updatePlayIcon(false); });
-      a.addEventListener('loadedmetadata', () => { if (a === activeAudio()) syncPlayerMeta(); });
+      a.addEventListener('loadedmetadata', () => {
+        if (a === activeAudio()) syncPlayerMeta();
+        // MediaRecorder blobs (live recordings) load with duration=Infinity in
+        // Chrome — seek far past the end once to force the real duration, so
+        // the total time and playhead position work after streaming stops.
+        if (a.duration === Infinity) {
+          const settle = () => {
+            a.removeEventListener('timeupdate', settle);
+            a.currentTime = 0;
+            if (a === activeAudio()) syncPlayerMeta();
+          };
+          a.addEventListener('timeupdate', settle);
+          a.currentTime = 1e101;
+        }
+      });
       a.addEventListener('durationchange', () => { if (a === activeAudio()) syncPlayerMeta(); });
     });
 
@@ -1084,8 +1129,19 @@
       if (!a || !isFinite(a.duration) || a.duration <= 0) return;
       const rect = mediaBox.getBoundingClientRect();
       const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-      if (playerHoverIndicator) playerHoverIndicator.style.left = (frac * 100) + '%';
+      if (playerHoverIndicator) {
+        playerHoverIndicator.style.left = (frac * 100) + '%';
+        playerHoverIndicator.classList.add('active');
+        // Near the right edge the caption flips to the left of the line
+        playerHoverIndicator.classList.toggle('caption-flipped', frac > 0.88);
+        playerHoverIndicator.classList.toggle('caption-near-start', frac < 0.07);
+      }
+      mediaBox.classList.add('has-hover-indicator');
       if (playerHoverTimeEl) playerHoverTimeEl.textContent = fmtPlayerTime(frac * a.duration);
+    });
+    seekTarget.addEventListener('mouseleave', () => {
+      if (playerHoverIndicator) playerHoverIndicator.classList.remove('active');
+      mediaBox.classList.remove('has-hover-indicator');
     });
     seekTarget.addEventListener('click', (e) => {
       if (e.target.closest('.player-icon') || e.target.closest('.pg-ab-toggle')) return;
@@ -1165,59 +1221,199 @@
     }
   }
 
+  function handleDeepfakeStreamMessage(msg) {
+    if (msg?.type === 'frame' && msg.frame && typeof msg.frame.confidence === 'number') {
+      liveFrames.push(msg.frame);
+      renderDeepfakeLiveResults();
+    } else if (msg?.type === 'done') {
+      stopRecording();
+    } else if (msg?.type === 'error') {
+      showError('Streaming error: ' + (msg.error || 'Unknown'));
+      if (liveFrames.length > 0) stopRecording();
+      else { cleanupRecording(); demoCleanup(); }
+    }
+  }
+
+  function resetDeepfakeLiveUI(title) {
+    currentData = null;
+
+    renderVerdictStatement('deepfake-verdict-statement', {
+      variant: '',
+      title: title,
+      stats: [{ value: '', label: 'No segments yet' }],
+    });
+
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
+
+    resultsTbody.innerHTML = '';
+    const placeholderRow = document.createElement('tr');
+    const tdTime = document.createElement('td');
+    tdTime.textContent = '0:00 \u2013 \u2026';
+    const tdVerdict = document.createElement('td');
+    const pill = document.createElement('span');
+    pill.className = 'm__tag-flat';
+    pill.textContent = 'Pending';
+    tdVerdict.appendChild(pill);
+    const tdConf = document.createElement('td');
+    tdConf.textContent = '\u2014';
+    placeholderRow.appendChild(tdTime);
+    placeholderRow.appendChild(tdVerdict);
+    placeholderRow.appendChild(tdConf);
+    resultsTbody.appendChild(placeholderRow);
+
+    window.scrollTo(0, 0);
+  }
+
   function startDeepfakeRecording() {
-    startRecordingCommon('/api/velma-2-synthetic-voice-detection-streaming?audio_format=s16le&sample_rate=16000&num_channels=1', (msg) => {
-      if (msg?.type === 'frame' && msg.frame && typeof msg.frame.confidence === 'number') {
-        liveFrames.push(msg.frame);
-        renderDeepfakeLiveResults();
-      } else if (msg?.type === 'done') {
-        stopRecording();
-      } else if (msg?.type === 'error') {
-        showError('Streaming error: ' + (msg.error || 'Unknown'));
-        if (liveFrames.length > 0) stopRecording();
-        else cleanupRecording();
-      }
-    }, () => {
+    startRecordingCommon('/api/velma-2-synthetic-voice-detection-streaming?audio_format=s16le&sample_rate=16000&num_channels=1', handleDeepfakeStreamMessage, () => {
       resultsFilename.textContent = 'Live Recording';
       resultsAudio.removeAttribute('src');
       resultsAudio.load();
       if (audioObjectUrl) { URL.revokeObjectURL(audioObjectUrl); audioObjectUrl = null; }
-      currentData = null;
-
-      renderVerdictStatement('deepfake-verdict-statement', {
-        variant: '',
-        title: 'Listening\u2026',
-        stats: [{ value: '', label: 'No segments yet' }],
-      });
-
-      clearPlayerStrips();
-      sttChart.innerHTML = '';
-
-      resultsTbody.innerHTML = '';
-      const placeholderRow = document.createElement('tr');
-      const tdTime = document.createElement('td');
-      tdTime.textContent = '0:00 \u2013 \u2026';
-      const tdVerdict = document.createElement('td');
-      const pill = document.createElement('span');
-      pill.className = 'm__tag-flat';
-      pill.textContent = 'Pending';
-      tdVerdict.appendChild(pill);
-      const tdConf = document.createElement('td');
-      tdConf.textContent = '\u2014';
-      placeholderRow.appendChild(tdTime);
-      placeholderRow.appendChild(tdVerdict);
-      placeholderRow.appendChild(tdConf);
-      resultsTbody.appendChild(placeholderRow);
-
-      window.scrollTo(0, 0);
+      resetDeepfakeLiveUI('Listening\u2026');
     });
+  }
+
+  function startDeepfakeDemoStream() {
+    return startDeepfakeStreamFromUrl(DEMO_AUDIO_URL, 'Demo stream', false);
+  }
+
+  async function startDeepfakeFileStream(file) {
+    const url = URL.createObjectURL(file);
+    await startDeepfakeStreamFromUrl(url, file.name, true);
+  }
+
+  async function startDeepfakeStreamFromUrl(url, filename, isUserFile) {
+    if (isRecording) return;
+    if (currentMode !== 'deepfake') return;
+
+    liveFrames = [];
+
+    resultsFilename.textContent = filename;
+    if (audioObjectUrl) { URL.revokeObjectURL(audioObjectUrl); audioObjectUrl = null; }
+    if (isUserFile) audioObjectUrl = url;
+    resultsAudio.src = url;
+    lastDeepfakeAudioUrl = url;
+    resetDeepfakeLiveUI('Streaming\u2026');
+
+    // Fetch + decode \u2192 16 kHz mono PCM s16le (same pipeline as the music demo)
+    let int16;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const arr = await res.arrayBuffer();
+      const actx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+      const audio = await actx.decodeAudioData(arr);
+      const ch = audio.getChannelData(0);
+      int16 = new Int16Array(ch.length);
+      for (let i = 0; i < ch.length; i++) {
+        int16[i] = Math.max(-32768, Math.min(32767, Math.round(ch[i] * 32767)));
+      }
+      actx.close().catch(() => {});
+    } catch (err) {
+      showError('Failed to load audio: ' + (err && err.message ? err.message : err));
+      return;
+    }
+
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = proto + '//' + location.host + '/api/velma-2-synthetic-voice-detection-streaming?audio_format=s16le&sample_rate=16000&num_channels=1';
+    recordingWs = new WebSocket(wsUrl);
+    recordingWs.binaryType = 'arraybuffer';
+    endFrameSent = false;
+    isDemoStreaming = true;
+
+    recordingWs.onopen = () => {
+      isRecording = true;
+      recordingStartTime = Date.now();
+      updateRecordButton();
+
+      try { resultsAudio.currentTime = 0; } catch {}
+      const playPromise = resultsAudio.play();
+      if (playPromise && playPromise.catch) playPromise.catch(() => { /* autoplay blocked \u2014 silent */ });
+
+      // Pace at realtime: 4096 samples = 256 ms at 16 kHz
+      const CHUNK = 4096;
+      let offset = 0;
+      function sendNext() {
+        if (!isRecording || !recordingWs || recordingWs.readyState !== WebSocket.OPEN) return;
+        if (offset >= int16.length) {
+          try { recordingWs.send(''); } catch (e) {}
+          endFrameSent = true;
+          return;
+        }
+        const end = Math.min(offset + CHUNK, int16.length);
+        const slice = int16.subarray(offset, end);
+        const ab = new ArrayBuffer(slice.byteLength);
+        new Int16Array(ab).set(slice);
+        recordingWs.send(ab);
+        offset = end;
+        demoChunkTimer = setTimeout(sendNext, 256);
+      }
+      sendNext();
+    };
+
+    recordingWs.addEventListener('message', async (event) => {
+      let text = '';
+      try {
+        if (typeof event.data === 'string') text = event.data;
+        else if (event.data instanceof Blob) text = await event.data.text();
+        else if (event.data instanceof ArrayBuffer) text = new TextDecoder().decode(event.data);
+      } catch { return; }
+      if (!text) return;
+      let msg; try { msg = JSON.parse(text); } catch { return; }
+      handleDeepfakeStreamMessage(msg);
+    });
+
+    recordingWs.onerror = () => { demoCleanup(); };
+
+    recordingWs.onclose = () => {
+      const wasRecording = isRecording;
+      demoCleanup();
+      // Finalize if the stream produced data and the user didn't click stop
+      // (which would have routed through stopRecording's deepfake branch already)
+      if (wasRecording && currentMode === 'deepfake' && liveFrames.length > 0) {
+        finalizeDeepfakeStream(filename);
+      } else if (wasRecording && currentMode === 'deepfake') {
+        showError('Streaming returned no results before the connection closed. Try the batch upload instead.');
+      }
+    };
+  }
+
+  // Build the final result from streamed frames and render the verdict.
+  // Called from stopRecording (user stop / done message) and from onclose.
+  function finalizeDeepfakeStream(filename) {
+    const durationMs = liveFrames.length
+      ? liveFrames[liveFrames.length - 1].end_time_ms
+      : (Date.now() - recordingStartTime);
+    const data = {
+      filename: filename || resultsFilename.textContent || 'Live Recording',
+      frames: liveFrames,
+      duration_ms: durationMs,
+    };
+    currentMeta = {
+      fileSize: 0, fileType: 'PCM 16kHz', httpStatus: 101, httpStatusText: 'Switching Protocols',
+      responseSize: JSON.stringify(data).length, processingMs: Date.now() - recordingStartTime,
+    };
+    currentData = data;
+    currentFrames = liveFrames;
+    lastDeepfakeData = data;
+    lastDeepfakeMeta = { ...currentMeta };
+
+    const { isSynthetic, synFrames, reason } = computeVerdict(liveFrames);
+
+    renderVerdict(isSynthetic, synFrames.length, liveFrames.length, reason);
+    renderHistogram(liveFrames);
+    renderTable(liveFrames);
+    setupPlaybackTracking(liveFrames);
   }
 
   function renderDeepfakeLiveResults() {
     if (!liveFrames.length) return;
     const durationMs = Date.now() - recordingStartTime;
-    currentData = { filename: 'Live Recording', frames: liveFrames, duration_ms: durationMs };
-    resultsFilename.textContent = 'Live Recording';
+    // The filename was set by whichever entry point started the stream
+    // (mic recording, demo stream, or file stream).
+    currentData = { filename: resultsFilename.textContent, frames: liveFrames, duration_ms: durationMs };
     currentFrames = liveFrames;
 
     const { isSynthetic, synFrames, reason } = computeVerdict(liveFrames);
@@ -1256,7 +1452,8 @@
   }
 
   // Shared: design verdict statement into a .pg-verdict-slot container.
-  // spec: { variant: 'danger'|'success'|'', title, stats: [{value, label}] }
+  // spec: { variant: 'danger'|'success'|'', title, stats: [{value, label}],
+  //         info: {label, html} — optional "how is this decided?" popover }
   function renderVerdictStatement(containerId, spec) {
     const el = document.getElementById(containerId);
     if (!el) return;
@@ -1274,15 +1471,54 @@
       });
       html += '</div>';
     }
+    if (spec.info) {
+      html += '<div class="pg-verdict-info">' +
+        '<button type="button" class="pg-verdict-info-link" aria-expanded="false">' +
+        escapeHtml(spec.info.label) + '</button>' +
+        '<div class="pg-verdict-info-pop" hidden>' + spec.info.html + '</div>' +
+        '</div>';
+    }
     el.innerHTML = html;
-    // Smooth-scroll the title link to the player
+    // The title toggles playback (and brings the player into view if needed)
     const link = el.querySelector('.pg-verdict-statement-link');
-    if (link) link.addEventListener('click', (e) => {
-      e.preventDefault();
-      const player = document.getElementById('audio-player');
-      if (player) player.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (link) {
+      link.title = 'Play / pause the audio';
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const a = activeAudio();
+        if (a && a.src) {
+          if (a.paused) a.play().catch(() => {}); else a.pause();
+        }
+        const player = document.getElementById('audio-player');
+        if (player) {
+          const r = player.getBoundingClientRect();
+          if (r.top < 0 || r.bottom > window.innerHeight) {
+            player.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      });
+    }
+    const infoLink = el.querySelector('.pg-verdict-info-link');
+    if (infoLink) infoLink.addEventListener('click', () => {
+      const pop = el.querySelector('.pg-verdict-info-pop');
+      const open = pop.hidden;
+      pop.hidden = !open;
+      infoLink.setAttribute('aria-expanded', String(open));
     });
   }
+
+  // Close any open verdict-info popover on outside click or Escape.
+  function closeVerdictInfoPops(except) {
+    document.querySelectorAll('.pg-verdict-info-pop:not([hidden])').forEach(pop => {
+      const wrap = pop.closest('.pg-verdict-info');
+      if (except && wrap && wrap.contains(except)) return;
+      pop.hidden = true;
+      const btn = wrap && wrap.querySelector('.pg-verdict-info-link');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    });
+  }
+  document.addEventListener('click', (e) => closeVerdictInfoPops(e.target));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeVerdictInfoPops(null); });
 
   function renderVerdict(isSynthetic, syntheticCount, totalCount, reason) {
     const stats = [{ value: syntheticCount + '/' + totalCount, label: 'deepfake segments' }];
@@ -1295,6 +1531,7 @@
       variant: isSynthetic ? 'danger' : 'success',
       title: isSynthetic ? 'This is a deepfake' : 'This is authentic',
       stats: stats,
+      info: { label: 'How is this decided?', html: DEEPFAKE_VERDICT_RULES_HTML },
     });
   }
 
@@ -4240,20 +4477,7 @@
     cleanupRecording();
 
     if (currentMode === 'deepfake' && liveFrames.length > 0) {
-      const durationMs = Date.now() - recordingStartTime;
-      const data = { filename: 'Live Recording', frames: liveFrames, duration_ms: durationMs };
-      currentMeta = {
-        fileSize: 0, fileType: 'PCM 16kHz', httpStatus: 101, httpStatusText: 'Switching Protocols',
-        responseSize: JSON.stringify(data).length, processingMs: durationMs,
-      };
-      currentData = data;
-      currentFrames = liveFrames;
-
-      const { isSynthetic, synFrames, reason } = computeVerdict(liveFrames);
-
-      renderVerdict(isSynthetic, synFrames.length, liveFrames.length, reason);
-      renderHistogram(liveFrames);
-      renderTable(liveFrames);
+      finalizeDeepfakeStream();
     } else if (currentMode === 'music' && liveMusicFrames.length > 0) {
       const durationMs = Date.now() - recordingStartTime;
       const data = computeMusicSummary(liveMusicFrames, { filename: resultsFilename.textContent });
@@ -4295,6 +4519,26 @@
     if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
   }
 
+  // While recording from the mic the player has no loaded audio, so its total
+  // time would go stale (it keeps the previous file's duration). Tick the
+  // label with the elapsed recording length instead; streams that play a real
+  // file (demo / stream-from-file) have a finite duration and are left alone.
+  let liveDurationTimer = null;
+  function startLiveDurationTicker() {
+    stopLiveDurationTicker();
+    const tick = () => {
+      const a = activeAudio();
+      if (isRecording && (!a || !a.src || !isFinite(a.duration))) {
+        if (playerTotalTimeEl) playerTotalTimeEl.textContent = fmtPlayerTime((Date.now() - recordingStartTime) / 1000);
+      }
+    };
+    tick();
+    liveDurationTimer = setInterval(tick, 500);
+  }
+  function stopLiveDurationTicker() {
+    if (liveDurationTimer) { clearInterval(liveDurationTimer); liveDurationTimer = null; }
+  }
+
   function updateRecordButton() {
     if (isRecording) {
       if (plateStreamingLabel) {
@@ -4302,12 +4546,16 @@
           currentMode === 'transcription' || currentMode === 'velma' ? 'Listening…' : 'Streaming…';
       }
       setPlateState('streaming');
+      startLiveDurationTicker();
     } else if (uploadPlate && uploadPlate.dataset.state === 'streaming') {
       // Stream ended — collapse to "New analysis" with the results visible below.
+      stopLiveDurationTicker();
       setPlateState('uploaded');
       refreshBottomPanels();
       setPageTitle(resultsFilename.textContent);
       syncPlayerMeta();
+    } else {
+      stopLiveDurationTicker();
     }
   }
 

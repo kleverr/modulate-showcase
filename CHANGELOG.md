@@ -2,6 +2,40 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [5.2.0] - 2026-07-21
+
+### Added
+- Deepfake: "Stream demo" / "Stream from file" now actually stream — realtime
+  WebSocket streaming with live frames and verdict, proper finalize on
+  done/stop/close (previously the buttons silently did nothing in this mode).
+- Deepfake: "How is this decided?" link under the verdict opens a popover
+  explaining that the file-level call is a derived metric and listing the
+  exact rules. Built into the shared verdict statement so other models can
+  add their own.
+
+### Fixed
+- Deepfake verdict no longer reads "authentic" on short clips whose only
+  segments are flagged (e.g. 1/1 deepfake @ 97.9%): corroboration thresholds
+  scale with clip length, silence segments are excluded, and half-or-more
+  flagged speech segments now always mean deepfake.
+- Player: the hover timestamp and the playhead timestamp labels are now
+  visible next to the red line (they were positioned outside the 3rem bar and
+  clipped). Labels flip sides near the right edge; the static 0:00/total
+  labels yield when a moving label would overlap them. All models.
+- Player: total time after stopping a live mic recording is now correct
+  (Chrome loads MediaRecorder blobs with duration=Infinity — forced once via
+  seek-past-end). While recording, the total ticks with the elapsed length
+  instead of showing the previous file's duration. All streaming modes.
+- Verdict title is no longer a dead link — it toggles play/pause (and scrolls
+  the player into view when off-screen). All models.
+- Segment tables (deepfake, music, AI music, emotion, accent): rows highlight
+  on hover to show they're clickable, and the currently-playing row stays
+  highlighted. Uniform 60px rows pin the confidence bars to whole pixels so
+  they no longer render at visibly different thicknesses.
+- Player strips: removed the redundant active-segment highlight (black
+  outline on deepfake bars, brightness bumps elsewhere) — the red playhead
+  already marks the position. All models.
+
 ## [5.0.4] - 2026-07-19
 
 ### Changed
