@@ -335,76 +335,17 @@
   color: var(--m__text);
 }
 
-/* ── STT streaming debug panel (showcase-only feature) ── */
-/* Visibility contract: app.js toggles the [hidden] attribute. */
-.pg-debug-panel[hidden] {
-  display: none;
-}
-.pg-debug-panel {
-  display: block;
-  margin-top: var(--m__spacer-m);
-  border: var(--m__border-width-s) solid var(--m__border);
-  border-radius: var(--m__radius-l);
-  padding: var(--m__spacer-s);
-  font-family: var(--m__font-family-mono);
-  font-size: var(--m__font-size-xs);
-}
-.pg-debug-head {
-  display: flex;
-  align-items: center;
-  gap: var(--m__gap-m);
-  flex-wrap: wrap;
-  margin-bottom: var(--m__spacer-xs);
-  color: var(--m__text-caption);
-}
-.pg-debug-head .m__button-secondary-outline {
-  margin-left: auto;
-}
-.pg-debug-columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--m__gap-m);
-  align-items: start;
-}
-@media (width < 768px) {
-  .pg-debug-columns { grid-template-columns: 1fr; }
-}
-.pg-debug-col-title {
-  font-weight: var(--m__font-weight-bold);
-  color: var(--m__text-caption);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: var(--m__spacer-xxs);
-}
-.pg-debug-list {
-  max-height: 24rem;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-.pg-debug-chip {
-  border-radius: var(--m__radius-s);
-  padding: 0.15rem 0.4rem;
-  background: color-mix(in srgb, var(--m__text) 6%, transparent);
-  word-break: break-word;
-}
-.pg-debug-chip.kept {
-  background: color-mix(in srgb, var(--m__success) 14%, transparent);
-}
-.pg-debug-chip.yellow {
-  background: color-mix(in srgb, var(--m__warning, #d97706) 16%, transparent);
-}
-.pg-debug-chip.dim {
-  opacity: 0.55;
-}
-
 /* ── error toast on design tokens ── */
 .pg-error-toast {
   position: fixed;
   left: 50%;
   bottom: 1.5rem;
-  transform: translateX(-50%) translateY(200%);
+  /* Hide a fixed distance below the viewport edge: a percentage of the
+     toast's own height is not enough when the toast is empty (its padding-
+     only box peeks above the bottom edge), and opacity keeps the box-shadow
+     from bleeding onto the page. */
+  transform: translateX(-50%) translateY(calc(100% + 4rem));
+  opacity: 0;
   background: var(--m__error);
   color: #fff;
   padding: var(--m__spacer-xs) var(--m__spacer-m);
@@ -412,11 +353,13 @@
   font-size: var(--m__font-size-s);
   max-width: min(40rem, calc(100vw - 2rem));
   z-index: 1200;
-  transition: transform var(--m__duration-base) var(--m__easing-base);
+  transition: transform var(--m__duration-base) var(--m__easing-base),
+              opacity var(--m__duration-base) var(--m__easing-base);
   box-shadow: 0 8px 32px color-mix(in srgb, #000 25%, transparent);
 }
 .pg-error-toast.visible {
   transform: translateX(-50%) translateY(0);
+  opacity: 1;
 }
 
 /* ── page title swap (filename after analysis) ── */

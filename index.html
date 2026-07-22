@@ -307,13 +307,13 @@
               <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#language"></use></svg>
               <span>Language</span>
             </a>
-            <a href="/emotion" data-mode="emotion" class="models-nav__link m__rounded">
-              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#emotions"></use></svg>
-              <span>Emotions</span>
-            </a>
             <a href="/accent" data-mode="accent" class="models-nav__link m__rounded">
               <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#accent"></use></svg>
               <span>Accent</span>
+            </a>
+            <a href="/emotion" data-mode="emotion" class="models-nav__link m__rounded">
+              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#emotions"></use></svg>
+              <span>Emotions</span>
             </a>
           </div>
         </div>
@@ -358,9 +358,6 @@
               <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Tag personally identifiable and health information">
                 <input type="checkbox" id="opt-pii" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> PII/PHI
               </label>
-              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Show raw streaming debug panel: partials, finals, status, cluster tags">
-                <input type="checkbox" id="opt-debug" /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Debug
-              </label>
             </div>
           </div>
 
@@ -394,7 +391,7 @@
             <div class="pg-upload-actions">
               <button type="button" class="m__button-primary-outline M pg-upload-primary" id="results-upload-action">
                 <span class="pg-upload-primary__label">Drop or choose file…</span>
-                <input type="file" class="pg-upload-file-input" id="results-file-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.mp4,.mov,.webm,.opus" hidden>
+                <input type="file" class="pg-upload-file-input" id="results-file-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.aiff,.mp4,.mov,.webm,.opus" hidden>
               </button>
               <div class="m__split-button pg-upload-stream" data-open="false" id="stream-split">
                 <button type="button" class="m__button-primary-outline M pg-upload-stream__main" id="results-record-action">Start streaming</button>
@@ -410,7 +407,7 @@
                   <button type="button" role="menuitem" id="results-stream-demo-action">Stream demo</button>
                   <button type="button" role="menuitem" id="results-stream-file-action">Stream from file…</button>
                 </div>
-                <input type="file" class="pg-upload-file-input" id="results-stream-file-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.mp4,.mov,.webm,.opus" hidden>
+                <input type="file" class="pg-upload-file-input" id="results-stream-file-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.aiff,.mp4,.mov,.webm,.opus" hidden>
               </div>
               <button type="button" class="m__button-primary-outline M" id="velma-demo-action">Try demo audio</button>
             </div>
@@ -444,8 +441,9 @@
             <div class="pg-upload-formats-tags">
               <span class="pg-upload-formats-label">Supports</span>
               <span class="m__tag-flat">.aac</span>
+              <span class="m__tag-flat">.aiff</span>
               <span class="m__tag-flat">.flac</span>
-              <span class="m__tag-flat">.m4a</span>
+              <span class="m__tag-flat">.mov</span>
               <span class="m__tag-flat">.mp3</span>
               <span class="m__tag-flat">.mp4</span>
               <span class="m__tag-flat">.ogg</span>
@@ -453,7 +451,7 @@
               <span class="m__tag-flat">.wav</span>
               <span class="pg-upload-formats-label">and</span>
               <span class="m__tag-flat">.webm</span>
-              <span class="pg-upload-formats-label">up to 50 MB</span>
+              <span class="pg-upload-formats-label">up to 100 MB</span>
             </div>
             <p class="pg-upload-meta pg-upload-meta--default" id="plate-quota-default"></p>
             <p class="pg-upload-meta pg-upload-meta--low" id="plate-quota-low"></p>
@@ -689,36 +687,6 @@
         </div>
       </div>
 
-      <!-- STT streaming debug panel -->
-      <div class="pg-debug-panel" id="stt-debug-panel" hidden>
-        <div class="pg-debug-head" id="stt-debug-status">
-          <span id="stt-debug-model" hidden></span>
-          <span id="stt-debug-phase">Idle</span>
-          <span id="stt-debug-since"></span>
-          <span id="stt-debug-counters"></span>
-          <span id="stt-debug-info"></span>
-          <span class="stt-debug-tools">
-            <button class="m__button-secondary-outline S" id="stt-debug-copy-raw-btn" title="Copy every JSON message received from upstream — unmodified.">⧉ Copy raw</button>
-            <button class="m__button-secondary-outline S" id="stt-debug-reverse-btn" title="Flip transcript order (newest first) to match this panel">↑ Reverse transcript</button>
-          </span>
-        </div>
-        <div class="pg-debug-columns">
-          <div>
-            <div class="pg-debug-col-title">Partials <span id="stt-debug-partials-count">0</span></div>
-            <div class="pg-debug-list" id="stt-debug-partials"></div>
-          </div>
-          <div>
-            <div class="pg-debug-col-title">Finals <span id="stt-debug-finals-count">0</span></div>
-            <div class="pg-debug-list" id="stt-debug-finals"></div>
-          </div>
-        </div>
-        <div class="pg-debug-head">
-          <span><span class="pg-debug-chip kept">kept</span> longest final in its 4-second window — shown in transcript</span>
-          <span><span class="pg-debug-chip yellow">superseded by F#N</span> a later final covering the same window had more text</span>
-          <span><span class="pg-debug-chip dim">dim partial</span> superseded by a later final covering this region</span>
-        </div>
-      </div>
-
       <div class="m__space L"></div>
 
       <div class="pg-bottom-columns" id="pg-bottom-columns">
@@ -741,7 +709,7 @@
 
 <footer class="footer">
   <div class="footer-nav">
-    <div class="footer-nav-item caption" id="app-version">v5.2.0 · Jul 21, 2026</div>
+    <div class="footer-nav-item caption" id="app-version">v5.3.0 · Jul 22, 2026</div>
   </div>
 </footer>
 

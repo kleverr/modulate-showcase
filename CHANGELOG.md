@@ -2,6 +2,35 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [5.3.0] - 2026-07-22
+
+### Changed
+- Transcription: per-utterance deepfake chips always state the model's leaning
+  instead of a vague "Uncertain authenticity" on mid-band scores — Deepfake
+  (red, >0.7), Likely deepfake, Likely authentic, Authentic (<0.3). The chip
+  shows the verdict only; the exact score lives in the hover tooltip
+  ("Model deepfake score 0.54 (0 = authentic, 1 = deepfake)") and in the raw
+  JSON.
+- Transcription: accent chips are hidden when the model returns
+  "Unknown"/"Other" (confirmed model-side output — the raw JSON still carries
+  the true value) instead of rendering "Unknown accent" noise.
+- Sidebar: Accent now sits right after Language; Emotions moved last.
+
+### Removed
+- Transcription: the Debug checkbox and the whole streaming debug panel
+  (partials/finals columns, phase pill, copy-raw/reverse tools) — an internal
+  diagnosis feature that is no longer needed. ~600 lines of app code and its
+  CSS removed with it.
+
+### Fixed
+- The empty error toast no longer peeks above the bottom viewport edge as a
+  red sliver on every page: hidden state now moves it a fixed distance
+  off-screen and fades it out (a translateY(200%) of a padding-only box
+  wasn't enough).
+- Upload plate footer now matches what the API actually accepts (verified
+  against the batch endpoint and docs): removed unsupported .m4a, added
+  .aiff and .mov, and corrected the size limit from 50 MB to the real 100 MB.
+
 ## [5.2.0] - 2026-07-21
 
 ### Added
