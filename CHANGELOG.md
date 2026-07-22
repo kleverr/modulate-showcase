@@ -2,6 +2,16 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [5.4.1] - 2026-07-22
+
+### Changed
+- Velma default demo replaced: `Order-status.mp3` (misdelivered-package support
+  call, 4:31) instead of `Irate_Caller_Final.mp3`. New fixture run through the
+  default config — 40 clips, 7 detected behaviors (incl. Return Fraud Attempt,
+  Coercion Manipulation, Refund or Credit Issued). Batch/streaming demo re-runs
+  now use and label the new file; `/dt` and the other model tabs keep their
+  existing demo audio.
+
 ## [5.4.0] - 2026-07-22
 
 ### Changed

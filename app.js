@@ -4625,7 +4625,7 @@
   // ── VELMA MODE (ensemble listening: clips + behaviors + summary + topics)
   // ══════════════════════════════════════════════════════════════════════════
 
-  const DEMO_VELMA_AUDIO_URL = '/deepfake/irate-caller-demo.mp3';
+  const DEMO_VELMA_AUDIO_URL = '/deepfake/order-status-demo.mp3';
   const DEMO_VELMA_DATA_URL = '/velma-demo-data.json';
   let DEMO_VELMA_DATA = null;
 
@@ -4845,14 +4845,14 @@
     velmaData = DEMO_VELMA_DATA;
     currentData = DEMO_VELMA_DATA;
     currentMeta = {
-      fileSize: 5385320,
+      fileSize: 2807818,
       fileType: 'audio/mpeg',
       httpStatus: 200,
       httpStatusText: 'OK',
       responseSize: JSON.stringify(DEMO_VELMA_DATA).length,
       processingMs: 42000,
     };
-    resultsFilename.textContent = DEMO_VELMA_DATA.filename || 'Irate_Caller_Final.mp3';
+    resultsFilename.textContent = DEMO_VELMA_DATA.filename || 'Order-status.mp3';
     resultsAudio.src = DEMO_VELMA_AUDIO_URL;
     renderVelmaResults(DEMO_VELMA_DATA);
   }
@@ -4932,7 +4932,7 @@
       const res = await fetch(DEMO_VELMA_AUDIO_URL);
       if (!res.ok) throw new Error('Could not load demo audio');
       const blob = await res.blob();
-      const file = new File([blob], 'call-center-demo.mp3', { type: blob.type || 'audio/mpeg' });
+      const file = new File([blob], 'Order-status.mp3', { type: blob.type || 'audio/mpeg' });
       startVelmaBatch(file);
     } catch (err) {
       showError(err.message || 'Could not load demo audio');
@@ -5059,7 +5059,7 @@
   }
 
   function startVelmaDemoStream() {
-    return runVelmaStream(DEMO_VELMA_AUDIO_URL, 'Irate_Caller_Final.mp3', false);
+    return runVelmaStream(DEMO_VELMA_AUDIO_URL, 'Order-status.mp3', false);
   }
 
   async function startVelmaFileStream(file) {
