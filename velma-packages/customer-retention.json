@@ -1,0 +1,97 @@
+{
+  "conversation_types": [
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111003",
+      "name": "Enterprise IT support",
+      "short_description": "Any call to assist an employee in accessing or managing internal IT resources",
+      "detailed_description": "business-operationsitprofessional"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111008",
+      "name": "General Customer Support Call",
+      "short_description": "Any call where a customer is contacting a business to assist them with the use of a service or goods provided by the business",
+      "detailed_description": "customer-supportprofessional"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111027",
+      "name": "Finance Account Support",
+      "short_description": "Any call to support the configuration, management, or cancellation of financial accounts",
+      "detailed_description": "customer-supportprofessional"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111028",
+      "name": "Consumer Technical Support",
+      "short_description": "Any call to assist a customer in using a business's software or website",
+      "detailed_description": "customer-supportitprofessional"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111029",
+      "name": "Insurance Policy or Claims Management",
+      "short_description": "Any call to check on the status of, change, cancel, or check on the status of a claim for an insurance policy.",
+      "detailed_description": "customer-supportinsuranceprofessional"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111031",
+      "name": "Retail Customer Support Call",
+      "short_description": "A call to coordinate the delivery or transfer of goods to a consumer",
+      "detailed_description": "customer-supportprofessionalretail"
+    }
+  ],
+  "participant_roles": [
+    {
+      "participant_role_uuid": "22222222-2222-4222-8222-222222222004",
+      "name": "Support Specialist",
+      "short_description": "Someone who works with employees or contractors to solve problems with things like IT, logistics, or communication",
+      "detailed_description": ""
+    },
+    {
+      "participant_role_uuid": "22222222-2222-4222-8222-222222222005",
+      "name": "Employee",
+      "short_description": "someone who is employed by company and exists in professional settings",
+      "detailed_description": ""
+    },
+    {
+      "participant_role_uuid": "22222222-2222-4222-8222-222222222012",
+      "name": "Customer Service Representative",
+      "short_description": "A representative from a business who is assisting a customer with an issue they are having",
+      "detailed_description": ""
+    },
+    {
+      "participant_role_uuid": "22222222-2222-4222-8222-222222222014",
+      "name": "Insurance Agent",
+      "short_description": "A customer support representative from an insurance company",
+      "detailed_description": ""
+    },
+    {
+      "participant_role_uuid": "22222222-2222-4222-8222-222222222017",
+      "name": "Customer",
+      "short_description": "The recipient of a service or good",
+      "detailed_description": ""
+    }
+  ],
+  "behaviors": [
+    "preset:complaints",
+    "preset:vishing",
+    "preset:account_impersonation",
+    "preset:action_plan_created",
+    "preset:cancelled_order",
+    "preset:service_churn",
+    "preset:off_topic_discussion",
+    "preset:coercion_manipulation",
+    "preset:return_fraud_attempt",
+    "preset:feigned_ignorance",
+    "preset:bargaining_manipulation",
+    "preset:pre_established_professional_relationship",
+    "preset:rapport_building",
+    "preset:customer_gratitude",
+    "preset:inclusive_practices",
+    "preset:unaddressed_question",
+    "preset:refund_or_credit_issued",
+    "preset:issue_not_resolved",
+    "preset:inappropriate_speech",
+    "preset:discriminatory_practices",
+    "preset:issue_resolved",
+    "preset:threat_based_harassment",
+    "preset:sexual_harassment"
+  ]
+}

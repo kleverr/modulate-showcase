@@ -7,22 +7,10 @@
       "detailed_description": "institutional-fraud"
     },
     {
-      "conversation_type_uuid": "11111111-1111-4111-8111-111111111002",
-      "name": "Social Conversation",
-      "short_description": "Public or group conversations in social contexts",
-      "detailed_description": "moderation"
-    },
-    {
       "conversation_type_uuid": "11111111-1111-4111-8111-111111111003",
       "name": "Enterprise IT support",
       "short_description": "Any call to assist an employee in accessing or managing internal IT resources",
       "detailed_description": "business-operationsitprofessional"
-    },
-    {
-      "conversation_type_uuid": "11111111-1111-4111-8111-111111111007",
-      "name": "Academic or Professional Presentation",
-      "short_description": "A talk, webinar, workshop, or any other presentation style session",
-      "detailed_description": "mediaprofessional"
     },
     {
       "conversation_type_uuid": "11111111-1111-4111-8111-111111111008",
@@ -73,21 +61,9 @@
       "detailed_description": "business-operationsprofessional"
     },
     {
-      "conversation_type_uuid": "11111111-1111-4111-8111-111111111024",
-      "name": "Internal Business Conversations",
-      "short_description": "Any professional conversation happening inside a business",
-      "detailed_description": "business-operationsprofessional"
-    },
-    {
       "conversation_type_uuid": "11111111-1111-4111-8111-111111111025",
       "name": "Business Contractor and Vendor Logisitics",
       "short_description": "Any call where a business coordinates with a contracted third party",
-      "detailed_description": "business-operationsprofessional"
-    },
-    {
-      "conversation_type_uuid": "11111111-1111-4111-8111-111111111026",
-      "name": "Interview Monitoring",
-      "short_description": "A call to conduct a professional interview for a job or role at a business",
       "detailed_description": "business-operationsprofessional"
     },
     {
@@ -159,12 +135,6 @@
       "detailed_description": ""
     },
     {
-      "participant_role_uuid": "22222222-2222-4222-8222-222222222003",
-      "name": "Social Participant",
-      "short_description": "Participant in social conversation",
-      "detailed_description": ""
-    },
-    {
       "participant_role_uuid": "22222222-2222-4222-8222-222222222004",
       "name": "Support Specialist",
       "short_description": "Someone who works with employees or contractors to solve problems with things like IT, logistics, or communication",
@@ -174,24 +144,6 @@
       "participant_role_uuid": "22222222-2222-4222-8222-222222222005",
       "name": "Employee",
       "short_description": "someone who is employed by company and exists in professional settings",
-      "detailed_description": ""
-    },
-    {
-      "participant_role_uuid": "22222222-2222-4222-8222-222222222006",
-      "name": "Presenter",
-      "short_description": "the main speaker or speakers in a presentation",
-      "detailed_description": ""
-    },
-    {
-      "participant_role_uuid": "22222222-2222-4222-8222-222222222009",
-      "name": "Social Participant",
-      "short_description": "A partipant in a social conversation",
-      "detailed_description": ""
-    },
-    {
-      "participant_role_uuid": "22222222-2222-4222-8222-222222222010",
-      "name": "Manager/Reviewer",
-      "short_description": "A person who either has a manager title or is conducting a performance review of another person",
       "detailed_description": ""
     },
     {
@@ -219,18 +171,6 @@
       "detailed_description": ""
     },
     {
-      "participant_role_uuid": "22222222-2222-4222-8222-222222222015",
-      "name": "Interview Candidate",
-      "short_description": "Someone who is being interview for a job",
-      "detailed_description": ""
-    },
-    {
-      "participant_role_uuid": "22222222-2222-4222-8222-222222222016",
-      "name": "Interviewer",
-      "short_description": "A person giving an interview",
-      "detailed_description": ""
-    },
-    {
       "participant_role_uuid": "22222222-2222-4222-8222-222222222017",
       "name": "Customer",
       "short_description": "The recipient of a service or good",
@@ -238,33 +178,45 @@
     }
   ],
   "behaviors": [
-    "preset:complaints",
-    "preset:vishing",
-    "preset:account_impersonation",
-    "preset:action_plan_created",
     "preset:cancelled_order",
     "preset:service_churn",
+    "preset:off_topic_discussion",
     "preset:coercion_manipulation",
-    "preset:return_fraud_attempt",
     "preset:feigned_ignorance",
-    "preset:storytelling",
+    "preset:social_etiquette",
+    "preset:social_boundary_setting",
     "preset:bargaining_manipulation",
-    "preset:ai_agent_manipulation",
-    "preset:refund_or_credit_issued",
+    "preset:violent_graphic_material",
+    "preset:social_connection_building",
+    "preset:personal_vulnerability",
+    "preset:encouragement",
+    "preset:pre_established_professional_relationship",
+    "preset:rapport_building",
+    "preset:customer_gratitude",
+    "preset:inclusive_practices",
     "preset:issue_not_resolved",
     "preset:inappropriate_speech",
+    "preset:discriminatory_practices",
+    "preset:hateful_or_violent_ideology_propagation",
     "preset:issue_resolved",
     "preset:threat_based_harassment",
-    "preset:sexual_harassment"
-  ],
-  "stt": {
-    "speaker_diarization": true,
-    "emotion_signal": true,
-    "accent_signal": true,
-    "deepfake_signal": true,
-    "pii_phi_tagging": true
-  },
-  "produce_topics": true,
-  "produce_topic_sentiments": true,
-  "produce_summary": true
+    "preset:sexual_harassment",
+    "preset:harassment",
+    "preset:suicidal_and_self_injurious_ideation",
+    "preset:hate",
+    "preset:self_harm_and_self_injury_glorification",
+    "preset:misogyny",
+    "preset:racism",
+    "preset:homophobia",
+    "preset:transphobia",
+    "preset:sizeism",
+    "preset:xenophobia",
+    "preset:ableism",
+    "preset:social_inclusion",
+    "preset:social_proof_threat",
+    "preset:conflict_de_escalation",
+    "preset:conflict_escalation",
+    "preset:caller_under_duress",
+    "preset:discriminatory_complaint"
+  ]
 }

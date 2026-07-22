@@ -425,20 +425,52 @@
   flex-direction: column;
   gap: var(--m__gap-m);
 }
-.velma-config-split {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  gap: var(--m__gap-l);
-  align-items: start;
+
+/* ── Tabs ── */
+.velma-cfg-tabs {
+  display: flex;
+  gap: var(--m__gap-xs);
+  border-bottom: var(--m__border-width-s) solid var(--m__border);
 }
-@media (width < 900px) {
-  .velma-config-split { grid-template-columns: 1fr; }
+.velma-cfg-tab {
+  appearance: none;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  font-size: var(--m__font-size-s);
+  font-weight: var(--m__font-weight-medium);
+  color: var(--m__text-caption);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
 }
-.velma-config-form {
+.velma-cfg-tab:hover {
+  color: var(--m__text);
+}
+.velma-cfg-tab.active {
+  color: var(--m__text);
+  border-bottom-color: var(--m__text);
+}
+.velma-cfg-tab-dot {
+  width: 0.45em;
+  height: 0.45em;
+  border-radius: 50%;
+  background: var(--m__error);
+}
+
+/* ── Panels ── */
+.velma-cfg-panel {
   min-width: 0;
-  max-height: 60vh;
+  max-height: 62vh;
   overflow-y: auto;
   padding-right: var(--m__spacer-xs);
+}
+.velma-cfg-panel[hidden] {
+  display: none;
 }
 .velma-cfg-section {
   margin-bottom: var(--m__spacer-m);
@@ -450,6 +482,12 @@
   letter-spacing: 0.06em;
   color: var(--m__text-caption);
 }
+.velma-cfg-h5 {
+  margin: 0 0 var(--m__spacer-xxs);
+  font-size: var(--m__font-size-s);
+  color: var(--m__text-caption);
+  font-weight: var(--m__font-weight-medium);
+}
 .velma-cfg-defn {
   margin-top: 0;
 }
@@ -457,51 +495,104 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--m__gap-m);
-  margin-bottom: var(--m__spacer-xs);
 }
-.velma-cfg-field {
-  display: block;
-  margin-bottom: var(--m__spacer-xs);
-}
-.velma-cfg-field-label {
-  display: block;
-  font-size: var(--m__font-size-s);
-  color: var(--m__text-caption);
-  margin-bottom: 0.2rem;
+.velma-cfg-switch {
+  white-space: nowrap;
 }
 .velma-cfg-add-row {
   display: flex;
   gap: var(--m__gap-s);
   flex-wrap: wrap;
+  margin-top: var(--m__spacer-xs);
 }
-.velma-cfg-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--m__gap-xs);
+
+.velma-cfg-filter {
   margin-bottom: var(--m__spacer-xs);
+  max-width: 20rem;
 }
-.velma-cfg-row {
+
+/* ── Detection package cards ── */
+.velma-cfg-pkg-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--m__gap-xs);
+}
+@media (width < 800px) {
+  .velma-cfg-pkg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.velma-cfg-pkg {
+  appearance: none;
+  font: inherit;
+  text-align: left;
+  background: none;
+  color: var(--m__text);
   border: var(--m__border-width-s) solid var(--m__border);
   border-radius: var(--m__radius-l);
-  padding: var(--m__spacer-xs);
-}
-.velma-cfg-row-head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--m__gap-s);
+  padding: 0.45rem 0.6rem;
   cursor: pointer;
-}
-.velma-cfg-row-title {
   display: flex;
-  align-items: baseline;
-  gap: var(--m__gap-s);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.15rem;
   min-width: 0;
+  transition: border-color var(--m__duration-base) var(--m__easing-base);
 }
-.velma-cfg-row-name {
+.velma-cfg-pkg:hover {
+  border-color: color-mix(in srgb, var(--m__text) 45%, transparent);
+}
+.velma-cfg-pkg.active {
+  border-color: var(--m__text);
+  box-shadow: inset 0 0 0 1px var(--m__text);
+}
+.velma-cfg-pkg-name {
+  font-size: var(--m__font-size-s);
   font-weight: var(--m__font-weight-medium);
 }
-.velma-cfg-row-badge {
+.velma-cfg-pkg-counts {
+  font-size: var(--m__font-size-xs);
+  color: var(--m__text-caption);
+}
+
+/* ── Compact item grid (behaviors / types / roles) ── */
+.velma-cfg-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--m__gap-xs);
+}
+@media (width < 800px) {
+  .velma-cfg-grid { grid-template-columns: 1fr; }
+}
+.velma-cfg-item {
+  border: var(--m__border-width-s) solid var(--m__border);
+  border-radius: var(--m__radius-l);
+  padding: 0.3rem 0.55rem;
+  min-width: 0;
+}
+.velma-cfg-item.open {
+  grid-column: 1 / -1;
+}
+.velma-cfg-item:not(.on) .velma-cfg-item-name {
+  color: var(--m__text-caption);
+}
+.velma-cfg-item-head {
+  display: flex;
+  align-items: center;
+  gap: var(--m__gap-s);
+  cursor: pointer;
+  min-width: 0;
+}
+.velma-cfg-item-switch {
+  flex: none;
+}
+.velma-cfg-item-name {
+  font-size: var(--m__font-size-s);
+  font-weight: var(--m__font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.velma-cfg-item-badge {
+  flex: none;
   font-size: var(--m__font-size-xs);
   font-family: var(--m__font-family-semi-mono);
   color: var(--m__text-caption);
@@ -510,20 +601,59 @@
   padding: 0 0.5em;
   white-space: nowrap;
 }
-.velma-cfg-row-short {
-  color: var(--m__text-caption);
-  font-size: var(--m__font-size-s);
+.velma-cfg-item-badge.custom {
+  border-color: color-mix(in srgb, var(--m__text) 35%, transparent);
 }
-.velma-cfg-row-body {
+.velma-cfg-scope-chip {
+  flex: none;
+  font-size: var(--m__font-size-xs);
+  color: var(--m__text-caption);
+  background: color-mix(in srgb, var(--m__text) 7%, transparent);
+  border-radius: var(--m__radius-pill);
+  padding: 0 0.5em;
+  white-space: nowrap;
+}
+.velma-cfg-item-caret {
+  margin-left: auto;
+  flex: none;
+  color: var(--m__text-caption);
+  font-size: var(--m__font-size-xs);
+  transition: transform var(--m__duration-base) var(--m__easing-base);
+}
+.velma-cfg-item.open .velma-cfg-item-caret {
+  transform: rotate(180deg);
+}
+.velma-cfg-item-body {
   margin-top: var(--m__spacer-xs);
+  padding-top: var(--m__spacer-xs);
+  border-top: var(--m__border-width-s) solid var(--m__border);
   display: flex;
   flex-direction: column;
   gap: var(--m__gap-s);
 }
-.velma-cfg-row-body input[type="text"],
-.velma-cfg-row-body textarea,
+.velma-cfg-item-note {
+  margin: 0;
+}
+.velma-cfg-item-note a {
+  color: inherit;
+  text-decoration: underline;
+}
+.velma-cfg-item-remove {
+  align-self: flex-start;
+}
+
+/* ── Editable fields (shared by accordions) ── */
+.velma-cfg-field {
+  display: block;
+}
+.velma-cfg-field-label {
+  display: block;
+  font-size: var(--m__font-size-s);
+  color: var(--m__text-caption);
+  margin-bottom: 0.2rem;
+}
 .velma-cfg-input,
-#velma-cfg-language {
+.velma-cfg-textarea {
   width: 100%;
   background: transparent;
   color: var(--m__text);
@@ -533,7 +663,7 @@
   font: inherit;
   font-size: var(--m__font-size-s);
 }
-.velma-cfg-row-body textarea {
+.velma-cfg-textarea {
   min-height: 4.5rem;
   resize: vertical;
 }
@@ -545,23 +675,65 @@
   font-size: var(--m__font-size-s);
   margin-bottom: var(--m__spacer-xs);
 }
-.velma-config-json-pane {
-  display: flex;
-  flex-direction: column;
-  gap: var(--m__gap-xs);
-  min-width: 0;
+
+.velma-cfg-optional {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: var(--m__font-size-xs);
+  border: var(--m__border-width-s) solid var(--m__border);
+  border-radius: var(--m__radius-pill);
+  padding: 0 0.5em;
+  margin-left: 0.4em;
 }
+/* ── Editor layout: group divider + hover hints ── */
+.velma-cfg-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--m__gap-s);
+  margin: var(--m__spacer-m) 0;
+  color: var(--m__text-caption);
+  font-size: var(--m__font-size-s);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.velma-cfg-divider::before,
+.velma-cfg-divider::after {
+  content: '';
+  flex: 1;
+  border-top: var(--m__border-width-s) solid var(--m__border);
+}
+.velma-cfg-info {
+  display: inline-block;
+  color: var(--m__text-caption);
+  font-size: var(--m__font-size-s);
+  font-weight: normal;
+  cursor: help;
+  text-transform: none;
+  letter-spacing: normal;
+}
+/* Tooltips must clear the modal backdrop (z-index 1000). */
+.m__tooltip {
+  z-index: 1400;
+}
+
+/* ── Config tab (raw JSON) ── */
 .velma-config-json-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--m__gap-m);
-  font-size: var(--m__font-size-s);
-  color: var(--m__text-caption);
+  flex-wrap: wrap;
+  gap: var(--m__gap-s);
+  margin-bottom: var(--m__spacer-xs);
+}
+.velma-config-json-tools {
+  display: flex;
+  gap: var(--m__gap-xs);
+  flex-wrap: wrap;
+  margin-left: auto;
 }
 .velma-config-textarea {
   width: 100%;
-  min-height: 46vh;
+  min-height: 44vh;
   background: var(--m__bg-surface);
   color: var(--m__text-code, var(--m__text));
   font-family: var(--m__font-family-mono);
@@ -572,6 +744,32 @@
   padding: var(--m__spacer-xs);
   resize: vertical;
 }
+#velma-cfg-panel-config.drag-over .velma-config-textarea {
+  border-color: var(--m__text);
+  border-style: dashed;
+}
+.velma-cfg-problems {
+  list-style: none;
+  margin: var(--m__spacer-xs) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: var(--m__font-size-s);
+}
+.velma-cfg-problems:empty {
+  display: none;
+}
+.velma-cfg-problems li.err {
+  color: var(--m__error);
+}
+.velma-cfg-problems li.warn {
+  color: var(--m__text-caption);
+}
+.velma-cfg-problems li::before {
+  content: '• ';
+}
+
 .velma-config-error {
   color: var(--m__error);
   font-size: var(--m__font-size-s);

@@ -244,27 +244,24 @@
     "preset:action_plan_created",
     "preset:cancelled_order",
     "preset:service_churn",
+    "preset:off_topic_discussion",
     "preset:coercion_manipulation",
     "preset:return_fraud_attempt",
     "preset:feigned_ignorance",
     "preset:storytelling",
     "preset:bargaining_manipulation",
-    "preset:ai_agent_manipulation",
+    "preset:personal_vulnerability",
+    "preset:pre_established_professional_relationship",
+    "preset:rapport_building",
+    "preset:customer_gratitude",
+    "preset:inclusive_practices",
+    "preset:unclear_speech",
+    "preset:unaddressed_question",
     "preset:refund_or_credit_issued",
     "preset:issue_not_resolved",
     "preset:inappropriate_speech",
     "preset:issue_resolved",
     "preset:threat_based_harassment",
     "preset:sexual_harassment"
-  ],
-  "stt": {
-    "speaker_diarization": true,
-    "emotion_signal": true,
-    "accent_signal": true,
-    "deepfake_signal": true,
-    "pii_phi_tagging": true
-  },
-  "produce_topics": true,
-  "produce_topic_sentiments": true,
-  "produce_summary": true
+  ]
 }

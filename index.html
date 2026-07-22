@@ -7,7 +7,7 @@
   <meta name="description" content="Try voice intelligence models on your own audio" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%23430f92'/%3E%3Cstop offset='.5' stop-color='%23fb3958'/%3E%3Cstop offset='1' stop-color='%23fc7856'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='%23120021'/%3E%3Cg stroke='url(%23g)' stroke-width='2.5' stroke-linecap='round' fill='none'%3E%3Cline x1='6' y1='13' x2='6' y2='19'/%3E%3Cline x1='10.5' y1='9' x2='10.5' y2='23'/%3E%3Cline x1='15' y1='5' x2='15' y2='27'/%3E%3Cline x1='19.5' y1='10' x2='19.5' y2='22'/%3E%3Cline x1='24' y1='7' x2='24' y2='25'/%3E%3Cline x1='28.5' y1='12' x2='28.5' y2='20'/%3E%3C/g%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/styles.css?v=1" />
-  <link rel="stylesheet" href="/showcase.css?v=3" />
+  <link rel="stylesheet" href="/showcase.css?v=4" />
 </head>
 <body data-theme-storage-key="prototype-theme">
 <script>
@@ -709,7 +709,7 @@
 
 <footer class="footer">
   <div class="footer-nav">
-    <div class="footer-nav-item caption" id="app-version">v5.3.0 · Jul 22, 2026</div>
+    <div class="footer-nav-item caption" id="app-version">v5.4.0 · Jul 22, 2026</div>
   </div>
 </footer>
 
@@ -718,84 +718,88 @@
   <div class="m__modal m__modal--wide velma-config-modal-inner">
     <div class="m__modal__header">
       <div>
-        <h3 class="m__modal__title">Velma Config</h3>
-        <p class="caption velma-config-hint">The default configuration ships with 2 conversation types, 3 roles, 17 behaviors and every model signal on — adjust anything below. The right pane shows exactly what's sent as <code>config</code> to <code>/api/velma-2-batch</code> (batch) or as the first frame on <code>/api/velma-2-streaming</code> (streaming).</p>
+        <h3 class="m__modal__title">Velma Config <span class="velma-cfg-info" data-tooltip="One config, two views: the Editor tab configures it with friendly controls, the JSON tab is the same BatchConfig raw — they stay in sync. It's sent as the config field (batch) or the first frame (streaming).">ⓘ</span></h3>
       </div>
       <button class="m__modal__close" id="velma-config-modal-close" aria-label="Close">✕</button>
     </div>
     <div class="m__modal__body velma-config-body">
-      <div class="velma-config-split">
-        <div class="velma-config-form" id="velma-config-form">
-          <section class="velma-cfg-section">
-            <p class="caption velma-cfg-defn">The pane on the right is the exact <code>BatchConfig</code> that will be sent. Changing any field below edits it in place — other settings keep their values. <strong>Reset</strong> returns everything to the default configuration.</p>
-          </section>
-
-          <div id="velma-cfg-custom">
-            <section class="velma-cfg-section">
-              <h4 class="velma-cfg-h">STT signals</h4>
-              <div class="velma-cfg-stt-opts">
-                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-diar"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Speaker diarization</label>
-                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-emot"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Emotion signal</label>
-                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-acc"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Accent signal</label>
-                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-deepfake"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Deepfake signal</label>
-                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-pii"><svg aria-hidden="true"><use href="#checkmark"></use></svg> PII/PHI tagging</label>
-              </div>
-              <label class="m__textfield velma-cfg-field">
-                <span class="velma-cfg-field-label">Language (optional — blank to auto-detect)</span>
-                <input type="text" id="velma-cfg-language" placeholder="e.g. en, es, fr">
-              </label>
-            </section>
-
-            <section class="velma-cfg-section">
-              <h4 class="velma-cfg-h">Outputs</h4>
-              <div class="velma-cfg-stt-opts">
-                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-prod-topics"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Topics</label>
-                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-prod-sentiments"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Topic sentiments</label>
-                <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-prod-summary"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Summary</label>
-              </div>
-            </section>
-
-            <section class="velma-cfg-section">
-              <h4 class="velma-cfg-h">Conversation types</h4>
-              <p class="caption velma-cfg-defn">Candidate types the model picks one of (or none). The endpoint has no built-in catalog — you define them.</p>
-              <div class="velma-cfg-list" id="velma-cfg-conv-list"></div>
-              <div class="velma-cfg-add-row">
-                <button class="m__button-secondary-outline S" id="velma-cfg-add-conv-btn" type="button">+ Add conversation type</button>
-                <button class="m__button-secondary-outline S" id="velma-cfg-conv-example-btn" type="button">Load example</button>
-              </div>
-            </section>
-
-            <section class="velma-cfg-section">
-              <h4 class="velma-cfg-h">Participant roles</h4>
-              <p class="caption velma-cfg-defn">Candidate roles the model assigns to each speaker. You define them.</p>
-              <div class="velma-cfg-list" id="velma-cfg-roles-list"></div>
-              <div class="velma-cfg-add-row">
-                <button class="m__button-secondary-outline S" id="velma-cfg-add-role-btn" type="button">+ Add role</button>
-                <button class="m__button-secondary-outline S" id="velma-cfg-roles-example-btn" type="button">Load example</button>
-              </div>
-            </section>
-
-            <section class="velma-cfg-section">
-              <h4 class="velma-cfg-h">Behaviors to detect</h4>
-              <p class="caption velma-cfg-defn">Pick server <strong>presets</strong> (added as <code>preset:&lt;id&gt;</code> refs the server expands), or define your own. Each becomes an entry in <code>behaviors</code>.</p>
-              <div class="velma-cfg-warning" id="velma-cfg-behaviors-warning" style="display:none"></div>
-              <div class="velma-cfg-list" id="velma-cfg-presets-list"></div>
-              <div class="velma-cfg-list" id="velma-cfg-behaviors-list"></div>
-              <button class="m__button-secondary-outline S" id="velma-cfg-add-behavior-btn" type="button">+ Add custom behavior</button>
-            </section>
-          </div>
-        </div>
-
-        <div class="velma-config-json-pane">
-          <div class="velma-config-json-head">
-            <span>BatchConfig (live)</span>
-            <label class="m__checkbox-secondary velma-config-raw-toggle">
-              <input type="checkbox" id="velma-config-raw-toggle"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Edit raw JSON
-            </label>
-          </div>
-          <textarea class="velma-config-textarea" id="velma-config-textarea" spellcheck="false" readonly></textarea>
-        </div>
+      <div class="velma-cfg-tabs" role="tablist">
+        <button class="velma-cfg-tab active" id="velma-cfg-tab-behaviors" type="button" role="tab" aria-selected="true">Editor</button>
+        <button class="velma-cfg-tab" id="velma-cfg-tab-config" type="button" role="tab" aria-selected="false">JSON<span class="velma-cfg-tab-dot" id="velma-cfg-config-dot" hidden></span></button>
       </div>
+
+      <!-- Tab 1: visual editor -->
+      <div class="velma-cfg-panel" id="velma-cfg-panel-behaviors">
+        <section class="velma-cfg-section">
+          <h4 class="velma-cfg-h">Signals</h4>
+          <div class="velma-cfg-stt-opts">
+            <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-diar"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Speaker diarization</label>
+            <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-emot"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Emotions</label>
+            <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-acc"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Accent</label>
+            <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-deepfake"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Deepfake</label>
+            <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-stt-pii"><svg aria-hidden="true"><use href="#checkmark"></use></svg> PII/PHI</label>
+          </div>
+        </section>
+
+        <section class="velma-cfg-section">
+          <h4 class="velma-cfg-h">Outputs</h4>
+          <div class="velma-cfg-stt-opts">
+            <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-prod-topics"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Topics</label>
+            <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-prod-sentiments"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Topic sentiments</label>
+            <label class="m__checkbox-secondary"><input type="checkbox" id="velma-cfg-prod-summary"><svg aria-hidden="true"><use href="#checkmark"></use></svg> Summary</label>
+          </div>
+        </section>
+
+        <section class="velma-cfg-section">
+          <h4 class="velma-cfg-h">Detection packages <span class="velma-cfg-info" data-tooltip="Ready-made bundles of conversation types, roles and behaviors for a common goal. Picking one replaces the detection set below — signals and outputs stay as set.">ⓘ</span></h4>
+          <div class="velma-cfg-pkg-grid" id="velma-cfg-packages-grid"></div>
+        </section>
+
+        <div class="velma-cfg-divider"><span data-tooltip="Everything below is the exact detection set this config sends: the conversation types and roles Velma matches the call against, and the behaviors it listens for. A package fills it in; hand-tune anything here.">Detection set</span></div>
+
+        <section class="velma-cfg-section">
+          <h4 class="velma-cfg-h">Conversation types <span class="velma-cfg-optional">optional</span> <span class="velma-cfg-info" data-tooltip="Velma classifies each call against these types. With none enabled it falls back to a generic label — and skips behavior detection: behaviors need at least one type and one role (verified against the live endpoint).">ⓘ</span></h4>
+          <div class="velma-cfg-grid" id="velma-cfg-conv-grid"></div>
+          <div class="velma-cfg-add-row">
+            <button class="m__button-secondary-outline S" id="velma-cfg-add-conv-btn" type="button">+ Add conversation type</button>
+          </div>
+        </section>
+
+        <section class="velma-cfg-section">
+          <h4 class="velma-cfg-h">Participant roles <span class="velma-cfg-optional">optional</span> <span class="velma-cfg-info" data-tooltip="Velma assigns each speaker one of these roles. With none enabled it falls back to generic labels — and skips behavior detection: behaviors need at least one type and one role (verified against the live endpoint).">ⓘ</span></h4>
+          <div class="velma-cfg-grid" id="velma-cfg-roles-grid"></div>
+          <div class="velma-cfg-add-row">
+            <button class="m__button-secondary-outline S" id="velma-cfg-add-role-btn" type="button">+ Add role</button>
+          </div>
+        </section>
+
+        <section class="velma-cfg-section">
+          <h4 class="velma-cfg-h">Behaviors <span class="velma-cfg-info" data-tooltip="What Velma listens for. Switch a behavior on to include it; click its name to read or edit the definition. Enabled behaviors apply to every speaker and conversation type.">ⓘ</span></h4>
+          <div class="velma-cfg-warning" id="velma-cfg-behaviors-warning" style="display:none"></div>
+          <input type="text" class="velma-cfg-input velma-cfg-filter" id="velma-cfg-behavior-filter" placeholder="Filter behaviors…" autocomplete="off">
+          <div class="velma-cfg-grid" id="velma-cfg-behaviors-grid"></div>
+          <div class="velma-cfg-add-row">
+            <button class="m__button-secondary-outline S" id="velma-cfg-add-behavior-btn" type="button">+ Add custom behavior</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Tab 2: raw BatchConfig -->
+      <div class="velma-cfg-panel" id="velma-cfg-panel-config" hidden>
+        <div class="velma-config-json-head">
+          <span class="caption">Raw <code>BatchConfig</code> — edit, paste, or upload. Saving syncs the Editor tab.</span>
+          <span class="velma-config-json-tools">
+            <button class="m__button-secondary-outline S" id="velma-cfg-upload-btn" type="button">Upload…</button>
+            <button class="m__button-secondary-outline S" id="velma-cfg-copy-btn" type="button">Copy</button>
+            <button class="m__button-secondary-outline S" id="velma-cfg-download-btn" type="button">Download</button>
+            <button class="m__button-primary S" id="velma-cfg-save-btn" type="button" disabled>Save changes</button>
+          </span>
+        </div>
+        <textarea class="velma-config-textarea" id="velma-config-textarea" spellcheck="false"></textarea>
+        <ul class="velma-cfg-problems" id="velma-cfg-problems"></ul>
+        <input type="file" id="velma-cfg-upload-input" accept=".json,application/json" hidden>
+      </div>
+
       <div class="velma-config-error" id="velma-config-error"></div>
       <div class="velma-config-actions">
         <button class="m__button-secondary-outline M" id="velma-config-reset-btn" type="button">Reset</button>
@@ -830,7 +834,7 @@
 <!-- Design-system tooltip -->
 <div class="m__tooltip" hidden></div>
 
-<script src="/app.js?v=7"></script>
+<script src="/app.js?v=8"></script>
 <script src="/assets/components/tooltip.js"></script>
 <script>
   // Skip the HubSpot embed on localhost — the preview sandbox blocks

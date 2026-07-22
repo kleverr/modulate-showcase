@@ -2,6 +2,43 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [5.4.0] - 2026-07-22
+
+### Changed
+- Velma config editor fully redesigned. Two tabs over one config: **Editor**
+  (friendly controls) and **JSON** (the raw BatchConfig) — always in sync.
+  - Editor: Signals + Outputs as checkboxes; then Detection packages; then the
+    "Detection set" — Conversation types, Participant roles and Behaviors as
+    uniform compact grids of on/off switch rows (click a name to read/edit the
+    definition in place). A filter box tames the ~150-preset catalog. Editing a
+    preset silently turns it into an editable copy ("preset · edited" badge,
+    one-click "Revert to preset") — the old "Expand to JSON" button is gone,
+    as are the Language field and the "Edit raw JSON" checkbox.
+  - JSON: edit, paste, upload (file picker or drag-drop), Copy, Download.
+    DT-style validator gates Save — auto-repairs pasted fragments, accepts a
+    full BatchConfig / {"behaviors": []} / bare array (the last two merge into
+    the current config), whitelists fields, flags unknown presets (422),
+    generates missing uuids. Saving jumps back to the Editor so the
+    transformation is visible.
+  - All explanatory copy moved to hover tooltips (ⓘ); inline warning remains
+    for the one real trap: behaviors are silently skipped by the API unless
+    the config defines at least one conversation type and one role (verified
+    against the live endpoint — both with empty and omitted lists).
+  - Custom configs persist across reloads (localStorage; the untouched default
+    is never persisted so it always follows the shipped seed; Reset clears).
+
+### Added
+- Detection packages: the six use-case bundles from
+  docs.modulate.ai/velma/detection-packages (Fraud Detection and Prevention,
+  Agentic AI Guardrails, Trust and Safety, Customer Retention, Human Agent
+  Welfare, Compliance and Risk Monitoring) vendored under /velma-packages/ and
+  offered as one-click cards. Picking one replaces types/roles/behaviors
+  (signals and outputs are kept); the matching card stays highlighted until
+  the config diverges.
+- The default Velma config is now the full **Fraud Detection and Prevention**
+  package (25 types · 14 roles · 18 preset behaviors, every signal and output
+  on) — an accurate out-of-the-box demo instead of the small starter set.
+
 ## [5.3.0] - 2026-07-22
 
 ### Changed

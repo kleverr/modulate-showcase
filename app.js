@@ -4629,45 +4629,6 @@
   const DEMO_VELMA_DATA_URL = '/velma-demo-data.json';
   let DEMO_VELMA_DATA = null;
 
-  // Velma has no built-in catalog of conversation types or participant roles —
-  // integrators author their own. These are a couple of *examples* a tester can
-  // opt into via "Load example"; they are NOT defaults and are not pre-selected.
-  const VELMA_EXAMPLE_CONV_TYPES = [
-    {
-      conversation_type_uuid: '11111111-1111-4111-8111-111111111001',
-      name: 'Customer Service Call',
-      short_description: 'A phone call between a customer and a service representative.',
-      detailed_description: 'An inbound or outbound voice call where one participant (the Customer Service Representative) is acting on behalf of a company to assist or resolve issues raised by another participant (the Customer). Typically includes greeting and identification, issue identification, troubleshooting or resolution attempt, and closure.',
-    },
-    {
-      conversation_type_uuid: '11111111-1111-4111-8111-111111111002',
-      name: 'Sales Call',
-      short_description: 'A sales conversation between a representative and a prospect.',
-      detailed_description: 'An outbound or inbound voice call where a sales representative presents, discusses, or attempts to close a transaction with a prospect or potential customer. Typically includes discovery, presentation, objection handling, and a call-to-action.',
-    },
-  ];
-
-  const VELMA_EXAMPLE_ROLES = [
-    {
-      participant_role_uuid: '22222222-2222-4222-8222-222222222001',
-      name: 'Customer',
-      short_description: 'The caller reaching out for assistance.',
-      detailed_description: 'The party seeking help. Customers describe an issue, ask questions, share account or order details on request, and seek resolution. They are not acting on behalf of a company or following a service script.',
-    },
-    {
-      participant_role_uuid: '22222222-2222-4222-8222-222222222002',
-      name: 'Customer Service Representative',
-      short_description: 'The company-side agent assisting the caller.',
-      detailed_description: 'The company representative handling the call. CSRs greet the caller, verify identity, gather details, follow scripts and processes, troubleshoot, and attempt to resolve the customer\'s issue.',
-    },
-    {
-      participant_role_uuid: '22222222-2222-4222-8222-222222222003',
-      name: 'Sales Representative',
-      short_description: 'The seller-side participant on a sales call.',
-      detailed_description: 'The participant attempting to advance or close a sale. Sales reps qualify, present features and benefits, handle objections, and ask for the close.',
-    },
-  ];
-
   // Behaviors are NOT preconfigured. The endpoint's only behavior catalog is the
   // server-defined presets (GET list-presets), referenced as "preset:<id>".
   // Testers pick presets or author their own custom behavior objects.
@@ -4681,8 +4642,9 @@
   // Documented BatchConfig / STTOptions defaults (straight from the spec). This
   // is the editor's starting state: nothing selected (empty conversation_types /
   // participant_roles / behaviors), STT + produce_* at their documented defaults.
-  // The tab's default configuration: the team's starter BatchConfig
-  // (2 conversation types, 3 roles, 17 behaviors) with every STT signal ON.
+  // The tab's default configuration: the "Fraud Detection and Prevention"
+  // detection package (25 types, 14 roles, 18 preset behaviors) with every
+  // STT signal and output ON — a package-accurate out-of-the-box demo.
   // Loaded from /velma-default-config.json (shared with the demo fixture
   // regeneration script); until it arrives we fall back to the literal
   // "default" contract.
@@ -4697,9 +4659,10 @@
       // active config so untouched runs carry all signals + behaviors.
       if (velmaConfig === 'default') {
         velmaConfig = structuredClone(velmaDefaultSeed);
+        rebuildLibraryFromConfig();
         updateVelmaConfigSummary();
-        renderVelmaEditorForm();
-        renderVelmaEditorJson();
+        renderVelmaEditor();
+        refreshConfigTextarea();
       }
     })
     .catch(() => {});
@@ -4770,23 +4733,31 @@
   const velmaConfigError     = document.getElementById('velma-config-error');
   const velmaConfigApplyBtn  = document.getElementById('velma-config-apply-btn');
   const velmaConfigResetBtn  = document.getElementById('velma-config-reset-btn');
-  const velmaCfgConvList     = document.getElementById('velma-cfg-conv-list');
-  const velmaCfgAddConvBtn   = document.getElementById('velma-cfg-add-conv-btn');
-  const velmaCfgConvExampleBtn = document.getElementById('velma-cfg-conv-example-btn');
-  const velmaCfgRolesList    = document.getElementById('velma-cfg-roles-list');
-  const velmaCfgRolesExampleBtn = document.getElementById('velma-cfg-roles-example-btn');
-  const velmaCfgBehaviorsList= document.getElementById('velma-cfg-behaviors-list');
+  const velmaCfgTabBehaviors = document.getElementById('velma-cfg-tab-behaviors');
+  const velmaCfgTabConfig    = document.getElementById('velma-cfg-tab-config');
+  const velmaCfgConfigDot    = document.getElementById('velma-cfg-config-dot');
+  const velmaCfgPanelBehaviors = document.getElementById('velma-cfg-panel-behaviors');
+  const velmaCfgPanelConfig  = document.getElementById('velma-cfg-panel-config');
+  const velmaCfgBehaviorsGrid = document.getElementById('velma-cfg-behaviors-grid');
+  const velmaCfgBehaviorFilter = document.getElementById('velma-cfg-behavior-filter');
+  const velmaCfgPackagesGrid = document.getElementById('velma-cfg-packages-grid');
+  const velmaCfgConvGrid     = document.getElementById('velma-cfg-conv-grid');
+  const velmaCfgRolesGrid    = document.getElementById('velma-cfg-roles-grid');
   const velmaCfgBehaviorsWarning = document.getElementById('velma-cfg-behaviors-warning');
-  const velmaCfgPresetsList  = document.getElementById('velma-cfg-presets-list');
+  const velmaCfgAddConvBtn   = document.getElementById('velma-cfg-add-conv-btn');
   const velmaCfgAddRoleBtn   = document.getElementById('velma-cfg-add-role-btn');
   const velmaCfgAddBehaviorBtn = document.getElementById('velma-cfg-add-behavior-btn');
-  const velmaCfgRawToggle    = document.getElementById('velma-config-raw-toggle');
+  const velmaCfgSaveBtn      = document.getElementById('velma-cfg-save-btn');
+  const velmaCfgCopyBtn      = document.getElementById('velma-cfg-copy-btn');
+  const velmaCfgDownloadBtn  = document.getElementById('velma-cfg-download-btn');
+  const velmaCfgUploadBtn    = document.getElementById('velma-cfg-upload-btn');
+  const velmaCfgUploadInput  = document.getElementById('velma-cfg-upload-input');
+  const velmaCfgProblems     = document.getElementById('velma-cfg-problems');
   const velmaCfgSttDiar      = document.getElementById('velma-cfg-stt-diar');
   const velmaCfgSttEmot      = document.getElementById('velma-cfg-stt-emot');
   const velmaCfgSttAcc       = document.getElementById('velma-cfg-stt-acc');
   const velmaCfgSttDeepfake  = document.getElementById('velma-cfg-stt-deepfake');
   const velmaCfgSttPii       = document.getElementById('velma-cfg-stt-pii');
-  const velmaCfgLanguage     = document.getElementById('velma-cfg-language');
   const velmaCfgProdTopics   = document.getElementById('velma-cfg-prod-topics');
   const velmaCfgProdSentiments = document.getElementById('velma-cfg-prod-sentiments');
   const velmaCfgProdSummary  = document.getElementById('velma-cfg-prod-summary');
@@ -5765,160 +5736,109 @@
     });
   }
 
-  function openVelmaConfigModal() {
-    velmaConfigError.textContent = '';
-    if (velmaCfgRawToggle) velmaCfgRawToggle.checked = false;
-    renderVelmaEditorForm();
-    renderVelmaEditorJson();
-    setRawJsonEditable(false);
-    velmaConfigModal.hidden = false;
-    // Presets load lazily (read-only, no usage cost) and re-render when ready.
-    renderVelmaPresetsList();
-    loadVelmaPresets().then(renderVelmaPresetsList);
-  }
-  function closeVelmaConfigModal() {
-    velmaConfigModal.hidden = true;
+  // ── Editor state: the library ──────────────────────────────────────────────
+  // The editor works on a "library": every definition it knows about (from the
+  // active config, the preset catalog, uploads) with an enabled flag. Enabled
+  // entries ARE velmaConfig's lists — syncConfigFromLibrary() rebuilds them
+  // after every UI mutation, so the switches and the raw JSON never drift.
+  //   behavior rows: { kind:'preset', id, catalog, def, enabled } — def is null
+  //                  while the preset is a plain "preset:<id>" ref and gets
+  //                  materialized on first edit ("Revert to preset" clears it);
+  //                  { kind:'custom', def, enabled }
+  //   type/role rows: { def, enabled }
+  let velmaLibrary = { types: [], roles: [], behaviors: [] };
+  const velmaOpenRows = new Set();   // accordion state, keyed by libraryRowKey
+  let velmaCfgDirty = false;         // Config tab has unsaved textarea edits
+  let velmaCfgLastValidation = { ok: true, config: null, problems: [] };
+
+  const VELMA_STORAGE_KEY = 'velma-config-v1';
+
+  function persistVelmaEditorState() {
+    try {
+      // An untouched (default) config is never persisted — it should always
+      // follow the shipped seed, not a stale snapshot of it.
+      if (isDefaultConfig()) { localStorage.removeItem(VELMA_STORAGE_KEY); return; }
+      localStorage.setItem(VELMA_STORAGE_KEY, JSON.stringify({
+        config: velmaConfig,
+        library: velmaLibrary,
+        expansions: Array.from(velmaPresetExpansions.entries()),
+      }));
+    } catch (e) { /* best-effort */ }
   }
 
-  // ── Form rendering (left pane) ─────────────────────────────────────────────
+  function restoreVelmaEditorState() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(VELMA_STORAGE_KEY) || 'null');
+      if (!stored || stored.config == null) return false;
+      velmaConfig = stored.config;
+      (stored.expansions || []).forEach(([uuid, id]) => velmaPresetExpansions.set(uuid, id));
+      if (stored.library && Array.isArray(stored.library.behaviors)) velmaLibrary = stored.library;
+      else rebuildLibraryFromConfig();
+      updateVelmaConfigSummary();
+      return true;
+    } catch (e) { return false; }
+  }
 
   function cfgKindMeta(kind) {
-    if (kind === 'conv') return { uuidField: 'conversation_type_uuid', listField: 'conversation_types' };
-    if (kind === 'role') return { uuidField: 'participant_role_uuid', listField: 'participant_roles' };
-    return { uuidField: 'behavior_uuid', listField: 'behaviors' };
+    if (kind === 'conv') return { uuidField: 'conversation_type_uuid', listField: 'conversation_types', libField: 'types' };
+    if (kind === 'role') return { uuidField: 'participant_role_uuid', listField: 'participant_roles', libField: 'roles' };
+    return { uuidField: 'behavior_uuid', listField: 'behaviors', libField: 'behaviors' };
   }
-
-  // Any edit replaces the literal "default" with an explicit BatchConfig.
-  function markCustom() {
-    ensureCustomConfig();
-  }
-
-  function renderVelmaEditorForm() {
-    renderVelmaConvList();
-    renderVelmaRolesList();
-    renderVelmaBehaviorsList();
-    renderVelmaPresetsList();
-    renderVelmaSttToggles();
-    renderVelmaOutputToggles();
-    updateBehaviorsWarning();
-  }
-
-  // The API only evaluates behaviors when the config ALSO defines at least one
-  // conversation type and participant roles — otherwise it silently returns an
-  // empty `behaviors` array. Warn so testers don't build a no-op config.
-  function updateBehaviorsWarning() {
-    if (!velmaCfgBehaviorsWarning) return;
-    const cfg = (typeof velmaConfig === 'object') ? velmaConfig : {};
-    const nBeh = (cfg.behaviors || []).length;
-    const nConv = (cfg.conversation_types || []).length;
-    const nRoles = (cfg.participant_roles || []).length;
-    if (nBeh > 0 && (nConv === 0 || nRoles === 0)) {
-      const missing = [];
-      if (nConv === 0) missing.push('a conversation type');
-      if (nRoles === 0) missing.push('participant roles');
-      velmaCfgBehaviorsWarning.innerHTML =
-        '⚠ Behaviors are only evaluated when the config also defines ' + missing.join(' and ') +
-        '. As-is the API returns <strong>no behavior results</strong> — add ' + missing.join(' and ') +
-        ' above (or use <strong>Load example</strong>).';
-      velmaCfgBehaviorsWarning.style.display = '';
-    } else {
-      velmaCfgBehaviorsWarning.style.display = 'none';
-    }
-  }
-
-  function renderVelmaConvList() {
-    if (!velmaCfgConvList) return;
-    velmaCfgConvList.innerHTML = '';
-    (velmaConfig.conversation_types || []).forEach(c => velmaCfgConvList.appendChild(buildCfgRow('conv', c)));
-  }
-
-  function renderVelmaRolesList() {
-    if (!velmaCfgRolesList) return;
-    velmaCfgRolesList.innerHTML = '';
-    (velmaConfig.participant_roles || []).forEach(r => velmaCfgRolesList.appendChild(buildCfgRow('role', r)));
-  }
-
-  function renderVelmaBehaviorsList() {
-    if (!velmaCfgBehaviorsList) return;
-    velmaCfgBehaviorsList.innerHTML = '';
-    // Hand-authored behaviors only. preset:<id> strings AND preset-expanded
-    // BehaviorDefs both live in the presets list above.
-    (velmaConfig.behaviors || []).forEach(b => {
-      if (typeof b === 'string') return;
-      if (b.behavior_uuid && velmaPresetExpansions.has(b.behavior_uuid)) return;
-      velmaCfgBehaviorsList.appendChild(buildCfgRow('behavior', b));
-    });
-  }
-
-  // ── Behavior presets (server-defined, referenced as "preset:<identifier>") ──
-  let velmaPresetsCache = null;
 
   function presetRef(identifier) { return 'preset:' + identifier; }
 
-  // The expanded BehaviorDef (if any) that originated from this preset.
-  function expandedPresetBehavior(identifier) {
-    let foundUuid = null;
-    velmaPresetExpansions.forEach((id, uuid) => { if (id === identifier) foundUuid = uuid; });
-    if (!foundUuid) return null;
-    return (velmaConfig.behaviors || []).find(b => typeof b === 'object' && b.behavior_uuid === foundUuid) || null;
+  function findPresetCatalog(id) {
+    return (velmaPresetsCache || []).find(p => p.identifier === id) || null;
   }
 
-  // 'off' | 'ref' | 'expanded'
-  function presetState(identifier) {
-    if ((velmaConfig.behaviors || []).some(b => b === presetRef(identifier))) return 'ref';
-    if (expandedPresetBehavior(identifier)) return 'expanded';
-    return 'off';
+  function libraryRowKey(kind, row) {
+    if (kind === 'behavior' && row.kind === 'preset') return 'preset:' + row.id;
+    const { uuidField } = cfgKindMeta(kind);
+    return (row.def && row.def[uuidField]) || '';
   }
 
-  function setPresetIncluded(identifier, included) {
-    markCustom();
-    velmaConfig.behaviors = velmaConfig.behaviors || [];
-    if (included && presetState(identifier) === 'off') {
-      velmaConfig.behaviors.push(presetRef(identifier));
-    } else if (!included) {
-      const ref = presetRef(identifier);
-      const exp = expandedPresetBehavior(identifier);
-      velmaConfig.behaviors = velmaConfig.behaviors.filter(b => b !== ref && b !== exp);
-      if (exp) velmaPresetExpansions.delete(exp.behavior_uuid);
-    }
-    renderVelmaEditorForm();
-    renderVelmaEditorJson();
+  function rebuildLibraryFromConfig() {
+    const cfg = (typeof velmaConfig === 'object' && velmaConfig) ? velmaConfig : {};
+    velmaLibrary.types = (cfg.conversation_types || []).map(def => ({ def, enabled: true }));
+    velmaLibrary.roles = (cfg.participant_roles || []).map(def => ({ def, enabled: true }));
+    velmaLibrary.behaviors = (cfg.behaviors || []).map(entry => {
+      if (typeof entry === 'string') {
+        const id = entry.replace(/^preset:/, '');
+        return { kind: 'preset', id, catalog: findPresetCatalog(id), def: null, enabled: true };
+      }
+      const fromPreset = entry.behavior_uuid && velmaPresetExpansions.get(entry.behavior_uuid);
+      if (fromPreset) return { kind: 'preset', id: fromPreset, catalog: findPresetCatalog(fromPreset), def: entry, enabled: true };
+      return { kind: 'custom', def: entry, enabled: true };
+    });
+    mergeCatalogIntoLibrary();
+  }
+
+  // Catalog presets not present in the config appear as switched-off rows.
+  function mergeCatalogIntoLibrary() {
+    (velmaPresetsCache || []).forEach(p => {
+      const row = velmaLibrary.behaviors.find(r => r.kind === 'preset' && r.id === p.identifier);
+      if (row) { row.catalog = p; return; }
+      velmaLibrary.behaviors.push({ kind: 'preset', id: p.identifier, catalog: p, def: null, enabled: false });
+    });
+  }
+
+  // Enabled library entries → velmaConfig lists. The single write path for
+  // every switch/edit on the Behaviors tab.
+  function syncConfigFromLibrary() {
+    ensureCustomConfig();
+    velmaConfig.conversation_types = velmaLibrary.types.filter(r => r.enabled).map(r => r.def);
+    velmaConfig.participant_roles = velmaLibrary.roles.filter(r => r.enabled).map(r => r.def);
+    velmaConfig.behaviors = velmaLibrary.behaviors.filter(r => r.enabled)
+      .map(r => (r.kind === 'preset' && !r.def) ? presetRef(r.id) : r.def);
     updateVelmaConfigSummary();
+    updateBehaviorsWarning();
+    renderPackagesGrid();
+    refreshConfigTextarea();
+    persistVelmaEditorState();
   }
 
-  // Turn a preset:<id> reference into a full, editable BehaviorDef (catalog text
-  // + a generated UUID). Reversible via collapsePreset.
-  function expandPreset(p) {
-    markCustom();
-    velmaConfig.behaviors = velmaConfig.behaviors || [];
-    const uuid = newUuid();
-    const def = {
-      behavior_uuid: uuid,
-      name: p.name || p.identifier,
-      short_description: p.short_description || '',
-      detailed_description: p.detailed_description || '',
-    };
-    const idx = velmaConfig.behaviors.indexOf(presetRef(p.identifier));
-    if (idx >= 0) velmaConfig.behaviors.splice(idx, 1, def);
-    else velmaConfig.behaviors.push(def);
-    velmaPresetExpansions.set(uuid, p.identifier);
-    renderVelmaEditorForm();
-    renderVelmaEditorJson();
-    updateVelmaConfigSummary();
-  }
-
-  function collapsePreset(identifier) {
-    markCustom();
-    const exp = expandedPresetBehavior(identifier);
-    if (exp) {
-      const i = velmaConfig.behaviors.indexOf(exp);
-      if (i >= 0) velmaConfig.behaviors.splice(i, 1, presetRef(identifier));
-      velmaPresetExpansions.delete(exp.behavior_uuid);
-    }
-    renderVelmaEditorForm();
-    renderVelmaEditorJson();
-    updateVelmaConfigSummary();
-  }
+  // ── Presets catalog ─────────────────────────────────────────────────────────
+  let velmaPresetsCache = null;
 
   async function loadVelmaPresets() {
     if (velmaPresetsCache) return velmaPresetsCache;
@@ -5934,149 +5854,310 @@
     return velmaPresetsCache;
   }
 
-  function renderVelmaPresetsList() {
-    if (!velmaCfgPresetsList) return;
-    const presets = velmaPresetsCache;
-    if (presets == null) {
-      velmaCfgPresetsList.innerHTML = '<div class="velma-cfg-defn">Loading presets…</div>';
-      return;
-    }
-    if (!presets.length) {
-      velmaCfgPresetsList.innerHTML = '<div class="velma-cfg-defn">No presets available.</div>';
-      return;
-    }
-    velmaCfgPresetsList.innerHTML = '';
-    presets.forEach(p => velmaCfgPresetsList.appendChild(buildPresetRow(p)));
+  // ── Detection packages (docs.modulate.ai/velma/detection-packages) ─────────
+  // Static copies live in /velma-packages/: index.json (manifest) + one full
+  // {conversation_types, participant_roles, behaviors} bundle per slug.
+  let velmaPackagesManifest = null;          // null = not loaded yet
+  const velmaPackageConfigs = new Map();     // slug → { bundle, snapshot }
+
+  function velmaListsSnapshot(cfg) {
+    if (typeof cfg !== 'object' || !cfg) return '';
+    return JSON.stringify({
+      t: cfg.conversation_types || [], r: cfg.participant_roles || [], b: cfg.behaviors || [],
+    });
   }
 
-  function buildPresetRow(p) {
-    const state = presetState(p.identifier);
-    const row = document.createElement('div');
-    row.className = 'velma-cfg-row' + (state === 'expanded' ? ' expanded-preset expanded' : '');
-
-    const head = document.createElement('div');
-    head.className = 'velma-cfg-row-head';
-
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.className = 'velma-cfg-row-checkbox';
-    cb.checked = state !== 'off';
-    cb.addEventListener('click', e => e.stopPropagation());
-    cb.addEventListener('change', () => setPresetIncluded(p.identifier, cb.checked));
-    head.appendChild(cb);
-
-    const title = document.createElement('div');
-    title.className = 'velma-cfg-row-title';
-    const name = document.createElement('span');
-    name.className = 'velma-cfg-row-name';
-    name.textContent = p.name || p.identifier;
-    title.appendChild(name);
-    const badge = document.createElement('span');
-    badge.className = 'velma-cfg-row-badge';
-    badge.textContent = state === 'expanded' ? 'expanded def' : ('preset:' + p.identifier);
-    title.appendChild(badge);
-    const short = document.createElement('span');
-    short.className = 'velma-cfg-row-short';
-    short.textContent = p.short_description || '';
-    title.appendChild(short);
-    head.appendChild(title);
-
-    // Expand ↔ collapse control (only when the preset is included).
-    if (state === 'ref') {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'velma-cfg-preset-toggle';
-      btn.textContent = 'Expand to JSON';
-      btn.addEventListener('click', (e) => { e.stopPropagation(); expandPreset(p); });
-      head.appendChild(btn);
-    } else if (state === 'expanded') {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'velma-cfg-preset-toggle';
-      btn.textContent = 'Collapse to ref';
-      btn.addEventListener('click', (e) => { e.stopPropagation(); collapsePreset(p.identifier); });
-      head.appendChild(btn);
+  async function loadVelmaPackages() {
+    if (velmaPackagesManifest) return velmaPackagesManifest;
+    try {
+      const res = await fetch('/velma-packages/index.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      velmaPackagesManifest = await res.json();
+    } catch (err) {
+      console.warn('Velma packages failed to load:', err);
+      velmaPackagesManifest = [];
     }
+    return velmaPackagesManifest;
+  }
 
-    if (p.detailed_description && state !== 'expanded') head.title = p.detailed_description;
-    row.appendChild(head);
+  async function fetchPackageBundle(slug) {
+    const cached = velmaPackageConfigs.get(slug);
+    if (cached) return cached;
+    const res = await fetch('/velma-packages/' + slug + '.json');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const bundle = await res.json();
+    const entry = { bundle, snapshot: velmaListsSnapshot(bundle) };
+    velmaPackageConfigs.set(slug, entry);
+    return entry;
+  }
 
-    // Expanded: editable BehaviorDef fields inline (the row carries .expanded).
-    if (state === 'expanded') {
-      const def = expandedPresetBehavior(p.identifier);
-      if (def) {
-        const uuid = def.behavior_uuid;
-        const body = document.createElement('div');
-        body.className = 'velma-cfg-row-body';
-        body.appendChild(buildField('Name', 'input', def.name || '', val => { updateCfgEntryField('behavior', uuid, 'name', val); name.textContent = val || '(unnamed)'; }));
-        body.appendChild(buildField('Short description', 'textarea', def.short_description || '', val => { updateCfgEntryField('behavior', uuid, 'short_description', val); short.textContent = val; }, '2.5rem'));
-        body.appendChild(buildField('Detailed description', 'textarea', def.detailed_description || '', val => updateCfgEntryField('behavior', uuid, 'detailed_description', val), '6rem'));
-        row.appendChild(body);
+  async function applyVelmaPackage(pkg) {
+    let entry;
+    try {
+      entry = await fetchPackageBundle(pkg.slug);
+    } catch (err) {
+      velmaConfigError.textContent = 'Could not load the "' + pkg.name + '" package.';
+      return;
+    }
+    velmaConfigError.textContent = '';
+    // The package replaces the three lists; signals and outputs are kept.
+    const cfg = structuredClone(typeof velmaConfig === 'object' && velmaConfig ? velmaConfig : buildCustomConfigSeed());
+    cfg.conversation_types = structuredClone(entry.bundle.conversation_types || []);
+    cfg.participant_roles = structuredClone(entry.bundle.participant_roles || []);
+    cfg.behaviors = structuredClone(entry.bundle.behaviors || []);
+    adoptVelmaConfig(cfg);
+    refreshConfigTextarea(true);
+    renderPackagesGrid();
+  }
+
+  function renderPackagesGrid() {
+    if (!velmaCfgPackagesGrid) return;
+    if (velmaPackagesManifest == null) {
+      velmaCfgPackagesGrid.innerHTML = '<div class="caption velma-cfg-defn">Loading packages…</div>';
+      return;
+    }
+    velmaCfgPackagesGrid.innerHTML = '';
+    if (!velmaPackagesManifest.length) {
+      velmaCfgPackagesGrid.innerHTML = '<div class="caption velma-cfg-defn">Packages unavailable.</div>';
+      return;
+    }
+    const current = velmaListsSnapshot(velmaConfig);
+    velmaPackagesManifest.forEach(pkg => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'velma-cfg-pkg';
+      const cached = velmaPackageConfigs.get(pkg.slug);
+      if (cached && cached.snapshot === current) card.classList.add('active');
+      card.title = pkg.description || '';
+      const name = document.createElement('span');
+      name.className = 'velma-cfg-pkg-name';
+      name.textContent = pkg.name;
+      card.appendChild(name);
+      const counts = document.createElement('span');
+      counts.className = 'velma-cfg-pkg-counts';
+      counts.textContent = pkg.behaviors + ' behaviors · ' + pkg.types + ' types · ' + pkg.roles + ' roles';
+      card.appendChild(counts);
+      card.addEventListener('click', () => applyVelmaPackage(pkg));
+      velmaCfgPackagesGrid.appendChild(card);
+    });
+  }
+
+  // ── Behaviors tab rendering ─────────────────────────────────────────────────
+
+  function renderVelmaEditor() {
+    renderVelmaSttToggles();
+    renderVelmaOutputToggles();
+    renderPackagesGrid();
+    renderLibraryGrid('behavior', velmaCfgBehaviorsGrid, velmaLibrary.behaviors);
+    renderLibraryGrid('conv', velmaCfgConvGrid, velmaLibrary.types);
+    renderLibraryGrid('role', velmaCfgRolesGrid, velmaLibrary.roles);
+    updateBehaviorsWarning();
+  }
+
+  let velmaBehaviorFilter = '';
+
+  function renderLibraryGrid(kind, gridEl, rows) {
+    if (!gridEl) return;
+    gridEl.innerHTML = '';
+    if (kind === 'behavior' && velmaPresetsCache == null && !rows.length) {
+      gridEl.innerHTML = '<div class="caption velma-cfg-defn">Loading presets…</div>';
+      return;
+    }
+    if (kind === 'behavior' && velmaBehaviorFilter) {
+      const q = velmaBehaviorFilter.toLowerCase();
+      const all = rows.length;
+      rows = rows.filter(r => {
+        const s = rowDisplaySource('behavior', r);
+        return String(s.name || '').toLowerCase().includes(q) ||
+          (r.kind === 'preset' && r.id.toLowerCase().includes(q));
+      });
+      if (!rows.length) {
+        gridEl.innerHTML = '<div class="caption velma-cfg-defn">No behaviors match “' +
+          escapeHtml(velmaBehaviorFilter) + '” (' + all + ' total).</div>';
+        return;
       }
     }
-
-    return row;
+    if (!rows.length) {
+      const empty = document.createElement('div');
+      empty.className = 'caption velma-cfg-defn';
+      empty.textContent = kind === 'behavior' ? 'No behaviors yet — add a custom one below.'
+        : 'None — Velma falls back to generic labels.';
+      gridEl.appendChild(empty);
+      return;
+    }
+    rows.forEach(row => gridEl.appendChild(buildLibraryRow(kind, row)));
   }
 
-  function buildCfgRow(kind, entry) {
-    // kind: 'conv' | 'role' | 'behavior'. Every row is a config member the tester
-    // authored, so it's always editable + removable (no library / checkbox).
-    const { uuidField } = cfgKindMeta(kind);
-    const uuid = entry[uuidField];
+  function rowDisplaySource(kind, row) {
+    if (kind === 'behavior' && row.kind === 'preset') return row.def || row.catalog || { name: row.id };
+    return row.def || {};
+  }
 
-    const row = document.createElement('div');
-    row.className = 'velma-cfg-row';
-    row.dataset.uuid = uuid;
-    row.dataset.kind = kind;
+  function behaviorBadgeText(row) {
+    if (row.kind !== 'preset') return 'custom';
+    return row.def ? 'preset · edited' : 'preset';
+  }
 
-    // Head: name + short + expand
+  // "3 types · 2 roles" chip for behaviors scoped via applies_to_* (uploaded
+  // configs only — the UI itself never writes these fields).
+  function scopeChipFor(def) {
+    if (!def) return null;
+    const t = Array.isArray(def.applies_to_conversation_type_uuids) ? def.applies_to_conversation_type_uuids : [];
+    const r = Array.isArray(def.applies_to_participant_role_uuids) ? def.applies_to_participant_role_uuids : [];
+    if (!t.length && !r.length) return null;
+    const nameOf = (rows, uuidField, uuid) => {
+      const hit = rows.find(x => x.def && x.def[uuidField] === uuid);
+      return hit ? (hit.def.name || uuid) : uuid;
+    };
+    const parts = [];
+    if (t.length) parts.push(t.length + ' type' + (t.length === 1 ? '' : 's'));
+    if (r.length) parts.push(r.length + ' role' + (r.length === 1 ? '' : 's'));
+    const chip = document.createElement('span');
+    chip.className = 'velma-cfg-scope-chip';
+    chip.textContent = parts.join(' · ');
+    chip.title = 'Applies to: ' +
+      t.map(u => nameOf(velmaLibrary.types, 'conversation_type_uuid', u))
+        .concat(r.map(u => nameOf(velmaLibrary.roles, 'participant_role_uuid', u))).join(', ') +
+      ' — edit scoping on the JSON tab';
+    return chip;
+  }
+
+  function buildLibraryRow(kind, row) {
+    const key = libraryRowKey(kind, row);
+    const src = rowDisplaySource(kind, row);
+
+    const item = document.createElement('div');
+    item.className = 'velma-cfg-item' + (row.enabled ? ' on' : '') + (velmaOpenRows.has(key) ? ' open' : '');
+
     const head = document.createElement('div');
-    head.className = 'velma-cfg-row-head';
+    head.className = 'velma-cfg-item-head';
 
-    const title = document.createElement('div');
-    title.className = 'velma-cfg-row-title';
+    const sw = document.createElement('label');
+    sw.className = 'm__toggle-secondary velma-cfg-item-switch';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = !!row.enabled;
+    cb.addEventListener('change', () => {
+      row.enabled = cb.checked;
+      item.classList.toggle('on', row.enabled);
+      syncConfigFromLibrary();
+    });
+    sw.appendChild(cb);
+    sw.addEventListener('click', e => e.stopPropagation());
+    head.appendChild(sw);
+
     const name = document.createElement('span');
-    name.className = 'velma-cfg-row-name';
-    name.textContent = entry.name || '(unnamed)';
-    title.appendChild(name);
-    const short = document.createElement('span');
-    short.className = 'velma-cfg-row-short';
-    short.textContent = entry.short_description || '';
-    title.appendChild(short);
-    head.appendChild(title);
+    name.className = 'velma-cfg-item-name';
+    name.textContent = src.name || '(unnamed)';
+    head.appendChild(name);
 
-    const exp = document.createElement('button');
-    exp.type = 'button';
-    exp.className = 'velma-cfg-row-expand';
-    exp.textContent = '▾';
-    head.appendChild(exp);
+    let badge = null;
+    if (kind === 'behavior') {
+      badge = document.createElement('span');
+      badge.className = 'velma-cfg-item-badge' + (row.kind === 'custom' ? ' custom' : '');
+      badge.textContent = behaviorBadgeText(row);
+      head.appendChild(badge);
+      const chip = scopeChipFor(row.def || row.catalog);
+      if (chip) head.appendChild(chip);
+    }
 
+    const caret = document.createElement('span');
+    caret.className = 'velma-cfg-item-caret';
+    caret.textContent = '▾';
+    head.appendChild(caret);
+
+    if (src.short_description) head.title = src.short_description;
     head.addEventListener('click', () => {
-      row.classList.toggle('expanded');
-      exp.textContent = row.classList.contains('expanded') ? '▴' : '▾';
+      const open = !velmaOpenRows.has(key);
+      if (open) velmaOpenRows.add(key); else velmaOpenRows.delete(key);
+      item.classList.toggle('open', open);
+      const existing = item.querySelector('.velma-cfg-item-body');
+      if (existing) existing.remove();
+      if (open) item.appendChild(buildRowDetail(kind, row, { name, badge }));
     });
 
-    row.appendChild(head);
+    item.appendChild(head);
+    if (velmaOpenRows.has(key)) item.appendChild(buildRowDetail(kind, row, { name, badge }));
+    return item;
+  }
 
-    // Body: editable fields
+  function buildRowDetail(kind, row, live) {
     const body = document.createElement('div');
-    body.className = 'velma-cfg-row-body';
-    body.appendChild(buildField('Name', 'input', entry.name || '', val => {
-      updateCfgEntryField(kind, uuid, 'name', val); name.textContent = val || '(unnamed)';
-    }));
-    body.appendChild(buildField('Short description', 'textarea', entry.short_description || '', val => {
-      updateCfgEntryField(kind, uuid, 'short_description', val); short.textContent = val;
-    }, '2.5rem'));
-    body.appendChild(buildField('Detailed description', 'textarea', entry.detailed_description || '', val => updateCfgEntryField(kind, uuid, 'detailed_description', val), '6rem'));
-    const remove = document.createElement('button');
-    remove.type = 'button';
-    remove.className = 'velma-cfg-row-remove';
-    remove.textContent = 'Remove';
-    remove.addEventListener('click', () => removeCustomCfgEntry(kind, uuid));
-    body.appendChild(remove);
-    row.appendChild(body);
+    body.className = 'velma-cfg-item-body';
+    const src = rowDisplaySource(kind, row);
+    const isPresetRow = kind === 'behavior' && row.kind === 'preset';
 
-    return row;
+    let note = null;
+    const renderPresetNote = () => {
+      if (!note) return;
+      note.innerHTML = '';
+      if (row.def) {
+        note.appendChild(document.createTextNode('Edited copy of the server preset — sent as a full definition. '));
+        const revert = document.createElement('a');
+        revert.href = '#';
+        revert.textContent = 'Revert to preset';
+        revert.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (row.def && row.def.behavior_uuid) velmaPresetExpansions.delete(row.def.behavior_uuid);
+          row.def = null;
+          syncConfigFromLibrary();
+          renderVelmaEditor();
+        });
+        note.appendChild(revert);
+      } else {
+        note.textContent = 'Server preset (sent as "' + presetRef(row.id) + '"). Editing any field turns it into your own copy.';
+      }
+    };
+    if (isPresetRow) {
+      note = document.createElement('div');
+      note.className = 'caption velma-cfg-item-note';
+      renderPresetNote();
+      body.appendChild(note);
+    }
+
+    // For preset rows the first edit materializes an editable BehaviorDef.
+    const ensureDef = () => {
+      if (!isPresetRow) return row.def;
+      if (!row.def) {
+        row.def = {
+          behavior_uuid: newUuid(),
+          name: (row.catalog && row.catalog.name) || row.id,
+          short_description: (row.catalog && row.catalog.short_description) || '',
+          detailed_description: (row.catalog && row.catalog.detailed_description) || '',
+        };
+        velmaPresetExpansions.set(row.def.behavior_uuid, row.id);
+        if (live.badge) live.badge.textContent = behaviorBadgeText(row);
+        renderPresetNote();
+      }
+      return row.def;
+    };
+
+    const onField = (field) => (val) => {
+      const def = ensureDef();
+      def[field] = val;
+      if (field === 'name' && live.name) live.name.textContent = val || '(unnamed)';
+      syncConfigFromLibrary();
+    };
+
+    body.appendChild(buildField('Name', 'input', src.name || '', onField('name')));
+    body.appendChild(buildField('Short description', 'textarea', src.short_description || '', onField('short_description'), '2.5rem'));
+    body.appendChild(buildField('Detailed description', 'textarea', src.detailed_description || '', onField('detailed_description'), '6rem'));
+
+    if (!isPresetRow) {
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'm__button-secondary-outline S velma-cfg-item-remove';
+      remove.textContent = 'Remove';
+      remove.addEventListener('click', () => {
+        const { libField } = cfgKindMeta(kind);
+        velmaLibrary[libField] = velmaLibrary[libField].filter(r => r !== row);
+        velmaOpenRows.delete(libraryRowKey(kind, row));
+        syncConfigFromLibrary();
+        renderVelmaEditor();
+      });
+      body.appendChild(remove);
+    }
+    return body;
   }
 
   function buildField(label, type, value, onChange, minHeight) {
@@ -6096,128 +6177,307 @@
     return wrap;
   }
 
+  function addLibraryEntry(kind) {
+    const uuid = newUuid();
+    let row;
+    if (kind === 'conv') {
+      row = { def: { conversation_type_uuid: uuid, name: 'New conversation type', short_description: '', detailed_description: '' }, enabled: true };
+      velmaLibrary.types.push(row);
+    } else if (kind === 'role') {
+      row = { def: { participant_role_uuid: uuid, name: 'New role', short_description: '', detailed_description: '' }, enabled: true };
+      velmaLibrary.roles.push(row);
+    } else {
+      row = { kind: 'custom', def: { behavior_uuid: uuid, name: 'New behavior', short_description: '', detailed_description: '' }, enabled: true };
+      velmaLibrary.behaviors.push(row);
+    }
+    velmaOpenRows.add(libraryRowKey(kind, row));
+    syncConfigFromLibrary();
+    renderVelmaEditor();
+    const gridEl = kind === 'conv' ? velmaCfgConvGrid : (kind === 'role' ? velmaCfgRolesGrid : velmaCfgBehaviorsGrid);
+    const newItem = gridEl && gridEl.lastElementChild;
+    if (newItem) {
+      newItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      const firstInput = newItem.querySelector('input[type="text"]');
+      if (firstInput) { firstInput.focus(); firstInput.select(); }
+    }
+  }
+
+  // The API only evaluates behaviors when the config also has at least one
+  // conversation type AND one participant role — otherwise it silently returns
+  // an empty `behaviors` array (verified against the live endpoint).
+  function updateBehaviorsWarning() {
+    if (!velmaCfgBehaviorsWarning) return;
+    const nBeh = velmaLibrary.behaviors.filter(r => r.enabled).length;
+    const nT = velmaLibrary.types.filter(r => r.enabled).length;
+    const nR = velmaLibrary.roles.filter(r => r.enabled).length;
+    if (nBeh > 0 && (nT === 0 || nR === 0)) {
+      velmaCfgBehaviorsWarning.innerHTML =
+        '⚠ Behaviors need at least one conversation type and one role to run — ' +
+        'as-is the API returns <strong>no behavior results</strong>. Enable or add them under ' +
+        '<strong>Conversation context</strong> above.';
+      velmaCfgBehaviorsWarning.style.display = '';
+    } else {
+      velmaCfgBehaviorsWarning.style.display = 'none';
+    }
+  }
+
   function renderVelmaSttToggles() {
-    // In the "default" state, preview the documented STTOptions defaults so the
-    // toggles aren't misleadingly all-off; they materialize on first change.
     const s = (typeof velmaConfig === 'object' && velmaConfig.stt) ? velmaConfig.stt : buildCustomConfigSeed().stt;
     if (velmaCfgSttDiar)     velmaCfgSttDiar.checked     = !!s.speaker_diarization;
     if (velmaCfgSttEmot)     velmaCfgSttEmot.checked     = !!s.emotion_signal;
     if (velmaCfgSttAcc)      velmaCfgSttAcc.checked      = !!s.accent_signal;
     if (velmaCfgSttDeepfake) velmaCfgSttDeepfake.checked = !!s.deepfake_signal;
     if (velmaCfgSttPii)      velmaCfgSttPii.checked      = !!s.pii_phi_tagging;
-    if (velmaCfgLanguage)    velmaCfgLanguage.value      = (s.language == null ? '' : s.language);
   }
 
   function renderVelmaOutputToggles() {
     const c = (typeof velmaConfig === 'object') ? velmaConfig : buildCustomConfigSeed();
-    // produce_* default to true per spec when unset.
     if (velmaCfgProdTopics)     velmaCfgProdTopics.checked     = c.produce_topics !== false;
     if (velmaCfgProdSentiments) velmaCfgProdSentiments.checked = c.produce_topic_sentiments !== false;
     if (velmaCfgProdSummary)    velmaCfgProdSummary.checked    = c.produce_summary !== false;
   }
 
-  // ── Form → velmaConfig mutations ───────────────────────────────────────────
+  // ── Config tab: raw BatchConfig with validation ─────────────────────────────
 
-  function updateCfgEntryField(kind, uuid, field, value) {
-    markCustom();
-    const { uuidField, listField } = cfgKindMeta(kind);
-    const entry = (velmaConfig[listField] || []).find(x => typeof x === 'object' && x[uuidField] === uuid);
-    if (entry) {
-      entry[field] = value;
-      updateVelmaConfigSummary();
-      renderVelmaEditorJson();
+  const VELMA_CONFIG_KEYS = ['conversation_types', 'participant_roles', 'behaviors', 'stt',
+    'produce_topics', 'produce_topic_sentiments', 'produce_summary'];
+  const VELMA_BEHAVIOR_FIELDS = ['behavior_uuid', 'name', 'short_description', 'detailed_description',
+    'applies_to_conversation_type_uuids', 'applies_to_participant_role_uuids'];
+
+  function canonicalConfigText() { return JSON.stringify(velmaConfig, null, 2); }
+
+  function refreshConfigTextarea(force) {
+    if (!velmaConfigTextarea) return;
+    if (velmaCfgDirty && !force) return;
+    velmaConfigTextarea.value = canonicalConfigText();
+    setCfgDirty(false);
+    renderCfgProblems([]);
+  }
+
+  function setCfgDirty(dirty) {
+    velmaCfgDirty = dirty;
+    if (velmaCfgConfigDot) velmaCfgConfigDot.hidden = !dirty;
+    updateSaveBtn();
+  }
+
+  function updateSaveBtn() {
+    if (velmaCfgSaveBtn) velmaCfgSaveBtn.disabled = !velmaCfgDirty || !velmaCfgLastValidation.ok;
+  }
+
+  function renderCfgProblems(problems) {
+    if (!velmaCfgProblems) return;
+    velmaCfgProblems.innerHTML = '';
+    (problems || []).forEach(p => {
+      const li = document.createElement('li');
+      li.className = p.level === 'error' ? 'err' : 'warn';
+      li.textContent = p.text;
+      velmaCfgProblems.appendChild(li);
+    });
+  }
+
+  function sanitizeCfgEntry(kind, entry, problems) {
+    const warn = t => problems.push({ level: 'warn', text: t });
+    const error = t => problems.push({ level: 'error', text: t });
+    const { uuidField } = cfgKindMeta(kind);
+    const kindLabel = kind === 'conv' ? 'Conversation type' : (kind === 'role' ? 'Role' : 'Behavior');
+
+    if (typeof entry === 'string') {
+      if (kind !== 'behavior') { error(kindLabel + ' entries must be objects.'); return null; }
+      const m = /^preset:([\w.-]+)$/.exec(entry);
+      if (!m) { error('"' + entry + '" — behavior strings must look like "preset:<identifier>".'); return null; }
+      if (velmaPresetsCache && velmaPresetsCache.length && !findPresetCatalog(m[1])) {
+        error('Unknown preset "' + m[1] + '" — the API would reject this config (422).');
+      }
+      return entry;
     }
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      error(kindLabel + ' entries must be objects' + (kind === 'behavior' ? ' or "preset:<id>" strings.' : '.'));
+      return null;
+    }
+    const allowed = kind === 'behavior' ? VELMA_BEHAVIOR_FIELDS
+      : [uuidField, 'name', 'short_description', 'detailed_description'].concat(
+          kind === 'role' ? ['applies_to_conversation_type_uuids'] : []);
+    const clean = {};
+    allowed.forEach(f => { if (entry[f] !== undefined) clean[f] = entry[f]; });
+    const dropped = Object.keys(entry).filter(k => !allowed.includes(k));
+    if (dropped.length) warn(kindLabel + ' "' + (entry.name || '?') + '": dropped non-schema field' + (dropped.length > 1 ? 's' : '') + ' ' + dropped.join(', ') + '.');
+    if (!clean.name) error(kindLabel + ' entry is missing "name".');
+    if (!clean[uuidField]) { clean[uuidField] = newUuid(); warn(kindLabel + ' "' + (clean.name || '?') + '": generated a missing ' + uuidField + '.'); }
+    if (kind === 'behavior' && !clean.short_description && !clean.detailed_description) {
+      warn('Behavior "' + (clean.name || '?') + '" has no description — detection quality will suffer.');
+    }
+    return clean;
   }
 
-  function removeCustomCfgEntry(kind, uuid) {
-    markCustom();
-    const { uuidField, listField } = cfgKindMeta(kind);
-    velmaConfig[listField] = (velmaConfig[listField] || [])
-      .filter(x => typeof x === 'string' || x[uuidField] !== uuid);
-    renderVelmaEditorForm();
-    renderVelmaEditorJson();
-    updateVelmaConfigSummary();
-  }
+  // Parses + validates the Config tab text. Accepts a full BatchConfig,
+  // {"behaviors": [...]}, a bare behavior array (both merge into the current
+  // config), or the literal "default". DT-style: auto-repairs pasted fragments,
+  // whitelists fields, and gates Save on error-level problems.
+  function validateVelmaConfigText(text) {
+    const problems = [];
+    const warn = t => problems.push({ level: 'warn', text: t });
+    const error = t => problems.push({ level: 'error', text: t });
+    const raw = String(text || '').trim();
+    if (!raw) {
+      error('Empty — paste a BatchConfig, a {"behaviors": […]} object, or a bare behavior array.');
+      return { ok: false, config: null, problems };
+    }
+    let parsed;
+    try { parsed = JSON.parse(raw); }
+    catch (e1) {
+      try { parsed = JSON.parse('{' + raw + '}'); warn('Auto-repaired a pasted fragment (wrapped in braces).'); }
+      catch (e2) {
+        try { parsed = JSON.parse('{' + raw); warn('Auto-repaired a pasted fragment.'); }
+        catch (e3) {
+          error('Invalid JSON: ' + e1.message);
+          return { ok: false, config: null, problems };
+        }
+      }
+    }
 
-  function addCustomCfgEntry(kind) {
-    markCustom();
-    const { listField } = cfgKindMeta(kind);
-    velmaConfig[listField] = velmaConfig[listField] || [];
-    const uuid = newUuid();
-    if (kind === 'conv') {
-      velmaConfig[listField].push({ conversation_type_uuid: uuid, name: 'New conversation type', short_description: '', detailed_description: '' });
-    } else if (kind === 'role') {
-      velmaConfig[listField].push({ participant_role_uuid: uuid, name: 'New role', short_description: '', detailed_description: '' });
+    if (parsed === 'default') return { ok: true, config: 'default', problems };
+
+    const base = () => structuredClone(typeof velmaConfig === 'object' && velmaConfig ? velmaConfig : buildCustomConfigSeed());
+    let cfg;
+
+    if (Array.isArray(parsed)) {
+      warn('Bare behavior list — merged into the current config (types, roles and settings kept).');
+      cfg = base();
+      cfg.behaviors = parsed.map(e => sanitizeCfgEntry('behavior', e, problems)).filter(x => x != null);
+    } else if (parsed && typeof parsed === 'object') {
+      const hasOtherConfigKeys = VELMA_CONFIG_KEYS.some(k => k !== 'behaviors' && parsed[k] !== undefined);
+      if (!hasOtherConfigKeys && Array.isArray(parsed.behaviors)) {
+        warn('Behavior list — merged into the current config (types, roles and settings kept).');
+        cfg = base();
+        cfg.behaviors = parsed.behaviors.map(e => sanitizeCfgEntry('behavior', e, problems)).filter(x => x != null);
+        Object.keys(parsed).filter(k => k !== 'behaviors').forEach(k => warn('Dropped unknown field "' + k + '".'));
+      } else {
+        cfg = {};
+        cfg.conversation_types = (Array.isArray(parsed.conversation_types) ? parsed.conversation_types : [])
+          .map(e => sanitizeCfgEntry('conv', e, problems)).filter(x => x != null);
+        cfg.participant_roles = (Array.isArray(parsed.participant_roles) ? parsed.participant_roles : [])
+          .map(e => sanitizeCfgEntry('role', e, problems)).filter(x => x != null);
+        cfg.behaviors = (Array.isArray(parsed.behaviors) ? parsed.behaviors : [])
+          .map(e => sanitizeCfgEntry('behavior', e, problems)).filter(x => x != null);
+        if (parsed.stt !== undefined) {
+          if (parsed.stt && typeof parsed.stt === 'object' && !Array.isArray(parsed.stt)) cfg.stt = parsed.stt;
+          else warn('Dropped "stt" — it must be an object.');
+        }
+        ['produce_topics', 'produce_topic_sentiments', 'produce_summary'].forEach(k => {
+          if (parsed[k] !== undefined) cfg[k] = !!parsed[k];
+        });
+        Object.keys(parsed).filter(k => !VELMA_CONFIG_KEYS.includes(k))
+          .forEach(k => warn('Dropped unknown top-level field "' + k + '".'));
+      }
     } else {
-      velmaConfig[listField].push({ behavior_uuid: uuid, name: 'New behavior', short_description: '', detailed_description: '' });
+      error('Config must be a JSON object, an array of behaviors, or the string "default".');
+      return { ok: false, config: null, problems };
     }
-    renderVelmaEditorForm();
-    renderVelmaEditorJson();
-    updateVelmaConfigSummary();
-    // Auto-expand the newly added row
-    const listEl = kind === 'conv' ? velmaCfgConvList : (kind === 'role' ? velmaCfgRolesList : velmaCfgBehaviorsList);
-    const newRow = listEl && listEl.lastElementChild;
-    if (newRow) {
-      newRow.classList.add('expanded');
-      const exp = newRow.querySelector('.velma-cfg-row-expand');
-      if (exp) exp.textContent = '▴';
-      newRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      const firstInput = newRow.querySelector('input[type="text"]');
-      if (firstInput) firstInput.focus();
+
+    if ((cfg.behaviors || []).length && (!(cfg.conversation_types || []).length || !(cfg.participant_roles || []).length)) {
+      warn('Behaviors are listed but conversation types / roles are empty — the API will skip behavior detection.');
     }
+
+    return { ok: !problems.some(p => p.level === 'error'), config: cfg, problems };
   }
 
-  // Opt-in example loader for conversation types / roles (NOT defaults).
-  function loadCfgExample(kind) {
-    markCustom();
-    const { uuidField, listField } = cfgKindMeta(kind);
-    const examples = kind === 'conv' ? VELMA_EXAMPLE_CONV_TYPES : VELMA_EXAMPLE_ROLES;
-    velmaConfig[listField] = velmaConfig[listField] || [];
-    examples.forEach(ex => {
-      if (!velmaConfig[listField].some(x => typeof x === 'object' && x[uuidField] === ex[uuidField])) {
-        velmaConfig[listField].push(JSON.parse(JSON.stringify(ex)));
+  // Adopt a config (from Save / Upload / seed) as the single source of truth.
+  function adoptVelmaConfig(cfg) {
+    velmaConfig = cfg;
+    if (typeof cfg === 'object' && cfg) {
+      const uuids = new Set((cfg.behaviors || []).filter(b => b && typeof b === 'object').map(b => b.behavior_uuid));
+      Array.from(velmaPresetExpansions.keys()).forEach(u => { if (!uuids.has(u)) velmaPresetExpansions.delete(u); });
+    } else {
+      velmaPresetExpansions.clear();
+    }
+    rebuildLibraryFromConfig();
+    renderVelmaEditor();
+    updateVelmaConfigSummary();
+    persistVelmaEditorState();
+  }
+
+  // Returns true when there is nothing left unsaved (saved or already clean).
+  function saveConfigEdits() {
+    if (!velmaCfgDirty) return true;
+    const v = validateVelmaConfigText(velmaConfigTextarea.value);
+    velmaCfgLastValidation = v;
+    if (!v.ok) { renderCfgProblems(v.problems); updateSaveBtn(); return false; }
+    adoptVelmaConfig(v.config);
+    refreshConfigTextarea(true);
+    renderCfgProblems(v.problems.filter(p => p.level === 'warn'));
+    return true;
+  }
+
+  // ── Tabs / modal shell ──────────────────────────────────────────────────────
+
+  function switchCfgTab(tab) {
+    const behaviors = tab === 'behaviors';
+    if (velmaCfgTabBehaviors) {
+      velmaCfgTabBehaviors.classList.toggle('active', behaviors);
+      velmaCfgTabBehaviors.setAttribute('aria-selected', String(behaviors));
+    }
+    if (velmaCfgTabConfig) {
+      velmaCfgTabConfig.classList.toggle('active', !behaviors);
+      velmaCfgTabConfig.setAttribute('aria-selected', String(!behaviors));
+    }
+    if (velmaCfgPanelBehaviors) velmaCfgPanelBehaviors.hidden = !behaviors;
+    if (velmaCfgPanelConfig) velmaCfgPanelConfig.hidden = behaviors;
+    if (!behaviors) refreshConfigTextarea();
+  }
+
+  function openVelmaConfigModal() {
+    velmaConfigError.textContent = '';
+    if (typeof velmaConfig === 'object' || velmaDefaultSeed) ensureCustomConfig();
+    if (!velmaLibrary.behaviors.length && !velmaLibrary.types.length && !velmaLibrary.roles.length) {
+      rebuildLibraryFromConfig();
+    }
+    renderVelmaEditor();
+    refreshConfigTextarea();
+    switchCfgTab('behaviors');
+    velmaConfigModal.hidden = false;
+    loadVelmaPackages().then((manifest) => {
+      renderPackagesGrid();
+      Promise.all(manifest.map(p => fetchPackageBundle(p.slug).catch(() => null)))
+        .then(renderPackagesGrid);
+    });
+    // Presets load lazily (read-only, no usage cost); off rows appear when ready.
+    loadVelmaPresets().then(() => {
+      mergeCatalogIntoLibrary();
+      renderVelmaEditor();
+      if (velmaCfgDirty) {
+        velmaCfgLastValidation = validateVelmaConfigText(velmaConfigTextarea.value);
+        renderCfgProblems(velmaCfgLastValidation.problems);
+        updateSaveBtn();
       }
     });
-    renderVelmaEditorForm();
-    renderVelmaEditorJson();
-    updateVelmaConfigSummary();
   }
 
-  // ── JSON pane (right) ──────────────────────────────────────────────────────
-
-  function renderVelmaEditorJson() {
-    if (!velmaConfigTextarea) return;
-    if (velmaCfgRawToggle && velmaCfgRawToggle.checked) return; // user is editing, don't clobber
-    // The pane always shows the exact `config` value that will be sent — the
-    // literal "default" string, or the explicit BatchConfig object.
-    velmaConfigTextarea.value = JSON.stringify(velmaConfig, null, 2);
+  function closeVelmaConfigModal() {
+    velmaConfigModal.hidden = true;
   }
 
-  function setRawJsonEditable(editable) {
-    if (!velmaConfigTextarea) return;
-    velmaConfigTextarea.readOnly = !editable;
-    // Disable form interactions when raw editing is on
-    const form = document.getElementById('velma-config-form');
-    if (form) form.style.opacity = editable ? '0.45' : '';
-    if (form) form.style.pointerEvents = editable ? 'none' : '';
-  }
-
-  // ── Wiring ────────────────────────────────────────────────────────────────
+  // ── Wiring ──────────────────────────────────────────────────────────────────
 
   if (velmaConfigBtn) velmaConfigBtn.addEventListener('click', openVelmaConfigModal);
   if (velmaSetupBtn) velmaSetupBtn.addEventListener('click', openVelmaConfigModal);
   if (velmaConfigModalClose) velmaConfigModalClose.addEventListener('click', closeVelmaConfigModal);
-  if (velmaConfigModal) {
-    closeOnBackdrop(velmaConfigModal, closeVelmaConfigModal);
+  if (velmaConfigModal) closeOnBackdrop(velmaConfigModal, closeVelmaConfigModal);
+
+  if (velmaCfgTabBehaviors) velmaCfgTabBehaviors.addEventListener('click', () => switchCfgTab('behaviors'));
+  if (velmaCfgTabConfig) velmaCfgTabConfig.addEventListener('click', () => switchCfgTab('config'));
+
+  if (velmaCfgBehaviorFilter) {
+    velmaCfgBehaviorFilter.addEventListener('input', () => {
+      velmaBehaviorFilter = velmaCfgBehaviorFilter.value.trim();
+      renderLibraryGrid('behavior', velmaCfgBehaviorsGrid, velmaLibrary.behaviors);
+    });
   }
 
-  if (velmaCfgAddConvBtn) velmaCfgAddConvBtn.addEventListener('click', () => addCustomCfgEntry('conv'));
-  if (velmaCfgAddRoleBtn) velmaCfgAddRoleBtn.addEventListener('click', () => addCustomCfgEntry('role'));
-  if (velmaCfgAddBehaviorBtn) velmaCfgAddBehaviorBtn.addEventListener('click', () => addCustomCfgEntry('behavior'));
-  if (velmaCfgConvExampleBtn) velmaCfgConvExampleBtn.addEventListener('click', () => loadCfgExample('conv'));
-  if (velmaCfgRolesExampleBtn) velmaCfgRolesExampleBtn.addEventListener('click', () => loadCfgExample('role'));
+  if (velmaCfgAddConvBtn) velmaCfgAddConvBtn.addEventListener('click', () => addLibraryEntry('conv'));
+  if (velmaCfgAddRoleBtn) velmaCfgAddRoleBtn.addEventListener('click', () => addLibraryEntry('role'));
+  if (velmaCfgAddBehaviorBtn) velmaCfgAddBehaviorBtn.addEventListener('click', () => addLibraryEntry('behavior'));
 
-  // STT signal toggles (5 booleans on stt).
+  // Signals (5 booleans on stt).
   [
     [velmaCfgSttDiar, 'speaker_diarization'],
     [velmaCfgSttEmot, 'emotion_signal'],
@@ -6227,26 +6487,15 @@
   ].forEach(([cb, field]) => {
     if (!cb) return;
     cb.addEventListener('change', () => {
-      markCustom();
+      ensureCustomConfig();
       velmaConfig.stt = velmaConfig.stt || {};
       velmaConfig.stt[field] = cb.checked;
-      renderVelmaEditorJson();
+      refreshConfigTextarea();
+      persistVelmaEditorState();
     });
   });
 
-  // Optional STT language (blank = auto-detect → omit).
-  if (velmaCfgLanguage) {
-    velmaCfgLanguage.addEventListener('input', () => {
-      markCustom();
-      velmaConfig.stt = velmaConfig.stt || {};
-      const v = velmaCfgLanguage.value.trim();
-      if (v) velmaConfig.stt.language = v;
-      else delete velmaConfig.stt.language;
-      renderVelmaEditorJson();
-    });
-  }
-
-  // Output toggles (produce_*).
+  // Outputs (produce_*).
   [
     [velmaCfgProdTopics, 'produce_topics'],
     [velmaCfgProdSentiments, 'produce_topic_sentiments'],
@@ -6254,80 +6503,118 @@
   ].forEach(([cb, field]) => {
     if (!cb) return;
     cb.addEventListener('change', () => {
-      markCustom();
+      ensureCustomConfig();
       velmaConfig[field] = cb.checked;
-      renderVelmaEditorJson();
+      refreshConfigTextarea();
+      persistVelmaEditorState();
     });
   });
 
-  if (velmaCfgRawToggle) {
-    velmaCfgRawToggle.addEventListener('change', () => {
-      setRawJsonEditable(velmaCfgRawToggle.checked);
-      if (velmaCfgRawToggle.checked) {
-        velmaConfigTextarea.value = JSON.stringify(velmaConfig, null, 2);
-        velmaConfigTextarea.focus();
-      } else {
-        // Try to parse current textarea; if valid, adopt it
-        try {
-          const parsed = JSON.parse(velmaConfigTextarea.value);
-          if (parsed === 'default' || (parsed && typeof parsed === 'object')) velmaConfig = parsed;
-          velmaConfigError.textContent = '';
-        } catch (e) {
-          velmaConfigError.textContent = 'JSON didn\'t parse — discarded raw edits.';
-        }
-        renderVelmaEditorForm();
-        renderVelmaEditorJson();
-        updateVelmaConfigSummary();
-      }
+  if (velmaConfigTextarea) {
+    velmaConfigTextarea.addEventListener('input', () => {
+      setCfgDirty(velmaConfigTextarea.value !== canonicalConfigText());
+      if (!velmaCfgDirty) { renderCfgProblems([]); return; }
+      velmaCfgLastValidation = validateVelmaConfigText(velmaConfigTextarea.value);
+      renderCfgProblems(velmaCfgLastValidation.problems);
+      updateSaveBtn();
     });
   }
 
-  if (velmaConfigTextarea) {
-    velmaConfigTextarea.addEventListener('input', () => {
-      if (!velmaCfgRawToggle || !velmaCfgRawToggle.checked) return;
+  if (velmaCfgSaveBtn) {
+    velmaCfgSaveBtn.addEventListener('click', () => {
+      if (saveConfigEdits()) switchCfgTab('behaviors');
+    });
+  }
+
+  if (velmaCfgCopyBtn) {
+    velmaCfgCopyBtn.addEventListener('click', async () => {
       try {
-        const parsed = JSON.parse(velmaConfigTextarea.value);
-        if (parsed === 'default' || (parsed && typeof parsed === 'object')) {
-          velmaConfig = parsed;
-          velmaConfigError.textContent = '';
-          updateVelmaConfigSummary();
-        }
-      } catch (err) {
-        velmaConfigError.textContent = 'Invalid JSON: ' + err.message;
-      }
+        await navigator.clipboard.writeText(velmaConfigTextarea.value);
+        const orig = velmaCfgCopyBtn.textContent;
+        velmaCfgCopyBtn.textContent = '✓ Copied';
+        setTimeout(() => { velmaCfgCopyBtn.textContent = orig; }, 1200);
+      } catch (e) { /* clipboard unavailable */ }
+    });
+  }
+
+  if (velmaCfgDownloadBtn) {
+    velmaCfgDownloadBtn.addEventListener('click', () => {
+      const blob = new Blob([velmaConfigTextarea.value], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'velma-config.json';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    });
+  }
+
+  function loadConfigTextFromFile(file) {
+    if (!file) return;
+    file.text().then(text => {
+      switchCfgTab('config');
+      velmaConfigTextarea.value = text;
+      setCfgDirty(true);
+      velmaCfgLastValidation = validateVelmaConfigText(text);
+      renderCfgProblems(velmaCfgLastValidation.problems);
+      updateSaveBtn();
+    }).catch(() => {
+      renderCfgProblems([{ level: 'error', text: 'Could not read the file.' }]);
+    });
+  }
+
+  if (velmaCfgUploadBtn && velmaCfgUploadInput) {
+    velmaCfgUploadBtn.addEventListener('click', () => velmaCfgUploadInput.click());
+    velmaCfgUploadInput.addEventListener('change', () => {
+      if (velmaCfgUploadInput.files.length > 0) loadConfigTextFromFile(velmaCfgUploadInput.files[0]);
+      velmaCfgUploadInput.value = '';
+    });
+  }
+
+  if (velmaCfgPanelConfig) {
+    velmaCfgPanelConfig.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      velmaCfgPanelConfig.classList.add('drag-over');
+    });
+    velmaCfgPanelConfig.addEventListener('dragleave', () => velmaCfgPanelConfig.classList.remove('drag-over'));
+    velmaCfgPanelConfig.addEventListener('drop', (e) => {
+      e.preventDefault();
+      velmaCfgPanelConfig.classList.remove('drag-over');
+      if (e.dataTransfer.files.length > 0) loadConfigTextFromFile(e.dataTransfer.files[0]);
     });
   }
 
   if (velmaConfigApplyBtn) {
     velmaConfigApplyBtn.addEventListener('click', () => {
-      // If user is in raw mode, parse once more; otherwise velmaConfig is already up to date.
-      if (velmaCfgRawToggle && velmaCfgRawToggle.checked) {
-        try {
-          const parsed = JSON.parse(velmaConfigTextarea.value);
-          if (parsed !== 'default' && (!parsed || typeof parsed !== 'object')) throw new Error('Config must be a JSON object or the string "default"');
-          velmaConfig = parsed;
-          velmaConfigError.textContent = '';
-        } catch (err) {
-          velmaConfigError.textContent = 'Invalid JSON: ' + err.message;
-          return;
-        }
+      if (velmaCfgDirty && !saveConfigEdits()) {
+        velmaConfigError.textContent = 'The Config tab has unsaved edits that don’t validate — fix them or Reset.';
+        switchCfgTab('config');
+        return;
       }
+      velmaConfigError.textContent = '';
       updateVelmaConfigSummary();
+      persistVelmaEditorState();
       closeVelmaConfigModal();
     });
   }
+
   if (velmaConfigResetBtn) {
     velmaConfigResetBtn.addEventListener('click', () => {
       velmaConfig = buildDefaultVelmaConfig();
       velmaPresetExpansions.clear();
+      velmaOpenRows.clear();
+      try { localStorage.removeItem(VELMA_STORAGE_KEY); } catch (e) {}
       velmaConfigError.textContent = '';
-      if (velmaCfgRawToggle) velmaCfgRawToggle.checked = false;
-      setRawJsonEditable(false);
-      renderVelmaEditorForm();
-      renderVelmaEditorJson();
+      setCfgDirty(false);
+      rebuildLibraryFromConfig();
+      renderVelmaEditor();
+      refreshConfigTextarea(true);
       updateVelmaConfigSummary();
     });
   }
+
+  // A config uploaded/customized for a demo must survive a reload.
+  restoreVelmaEditorState();
 
   function renderVelmaStats(data, meta) {
     const clips = data.clips || [];

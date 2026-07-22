@@ -1,0 +1,137 @@
+{
+  "conversation_types": [
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111004",
+      "name": "General Media Narration",
+      "short_description": "Any media style content with a single speaker that talks exclusively in the third person",
+      "detailed_description": "media"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111005",
+      "name": "Multiple Speakers Livestreamed Media",
+      "short_description": "Any improvised media content that features several speakers and explicitly exists for entertainment or social purposes",
+      "detailed_description": "mediasocial"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111006",
+      "name": "Media Interview or Talk Show",
+      "short_description": "Conversations in media formatted as one on one interviews, host with one or more guests, or podcasts formatted as question and answer shows.",
+      "detailed_description": "mediasocial"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111009",
+      "name": "General Media Dialogue",
+      "short_description": "Any conversation with multiple speaking participants that's scripted featuring other things like music or sound effects",
+      "detailed_description": "mediasocial"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111010",
+      "name": "Music",
+      "short_description": "Media content primarily featuring music",
+      "detailed_description": "mediasocial"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111011",
+      "name": "Audiobook",
+      "short_description": "A book narrated into audio",
+      "detailed_description": "mediasocial"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111012",
+      "name": "Social Media Content",
+      "short_description": "Any content with a narrator that's formatted in a way that's targeted for social media.",
+      "detailed_description": "mediasocial"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111013",
+      "name": "Single Speaker Livestreamed Media",
+      "short_description": "Any media content that features only one speaker that's improvised and explicitly exists for entertainment or social purposes",
+      "detailed_description": "mediasocial"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111014",
+      "name": "Online Game Chat",
+      "short_description": "Any social chat where the participants are brought together to play a game",
+      "detailed_description": "gamingsocial"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111015",
+      "name": "Online Chat Room",
+      "short_description": "Any conversation with several participants who appear to be strangers, in a large group, or have the ability to talk over each other.",
+      "detailed_description": "casualsocial"
+    },
+    {
+      "conversation_type_uuid": "11111111-1111-4111-8111-111111111016",
+      "name": "Social Phone or Video Call",
+      "short_description": "Any call with two to five participants that's explicitly for the purpose of socializing",
+      "detailed_description": "casualsocial"
+    }
+  ],
+  "participant_roles": [
+    {
+      "participant_role_uuid": "22222222-2222-4222-8222-222222222003",
+      "name": "Social Participant",
+      "short_description": "Participant in social conversation",
+      "detailed_description": ""
+    },
+    {
+      "participant_role_uuid": "22222222-2222-4222-8222-222222222007",
+      "name": "Media Participant",
+      "short_description": "A speaker in any media",
+      "detailed_description": ""
+    },
+    {
+      "participant_role_uuid": "22222222-2222-4222-8222-222222222008",
+      "name": "Narrator",
+      "short_description": "A media participant who speaks in the third person exclusively",
+      "detailed_description": ""
+    },
+    {
+      "participant_role_uuid": "22222222-2222-4222-8222-222222222009",
+      "name": "Social Participant",
+      "short_description": "A partipant in a social conversation",
+      "detailed_description": ""
+    },
+    {
+      "participant_role_uuid": "22222222-2222-4222-8222-222222222016",
+      "name": "Interviewer",
+      "short_description": "A person giving an interview",
+      "detailed_description": ""
+    }
+  ],
+  "behaviors": [
+    "preset:future_planning",
+    "preset:social_etiquette",
+    "preset:sexually_graphic_material",
+    "preset:storytelling",
+    "preset:social_boundary_setting",
+    "preset:material_potentially_unsuitable_for_children",
+    "preset:violent_graphic_material",
+    "preset:social_connection_building",
+    "preset:personal_vulnerability",
+    "preset:encouragement",
+    "preset:teaching_mentorship",
+    "preset:narration",
+    "preset:monologuing",
+    "preset:poetry",
+    "preset:rapport_building",
+    "preset:inclusive_practices",
+    "preset:unclear_speech",
+    "preset:unaddressed_question",
+    "preset:hateful_or_violent_ideology_propagation",
+    "preset:child_safety_violation",
+    "preset:sexual_harassment",
+    "preset:harassment",
+    "preset:suicidal_and_self_injurious_ideation",
+    "preset:hate",
+    "preset:self_harm_and_self_injury_glorification",
+    "preset:misogyny",
+    "preset:racism",
+    "preset:homophobia",
+    "preset:transphobia",
+    "preset:sizeism",
+    "preset:xenophobia",
+    "preset:ableism",
+    "preset:social_inclusion"
+  ]
+}

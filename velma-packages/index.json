@@ -1,0 +1,50 @@
+[
+  {
+    "slug": "fraud-detection-and-prevention",
+    "name": "Fraud Detection and Prevention",
+    "description": "Fetch the complete documentation index at: https://docs.modulate.ai/llms.txt",
+    "types": 25,
+    "roles": 14,
+    "behaviors": 18
+  },
+  {
+    "slug": "agentic-ai-guardrails",
+    "name": "Agentic AI Guardrails",
+    "description": "Fetch the complete documentation index at: https://docs.modulate.ai/llms.txt",
+    "types": 2,
+    "roles": 6,
+    "behaviors": 8
+  },
+  {
+    "slug": "trust-and-safety",
+    "name": "Trust and Safety",
+    "description": "Fetch the complete documentation index at: https://docs.modulate.ai/llms.txt",
+    "types": 11,
+    "roles": 5,
+    "behaviors": 33
+  },
+  {
+    "slug": "customer-retention",
+    "name": "Customer Retention",
+    "description": "Fetch the complete documentation index at: https://docs.modulate.ai/llms.txt",
+    "types": 6,
+    "roles": 5,
+    "behaviors": 23
+  },
+  {
+    "slug": "human-agent-welfare",
+    "name": "Human Agent Welfare",
+    "description": "Fetch the complete documentation index at: https://docs.modulate.ai/llms.txt",
+    "types": 21,
+    "roles": 8,
+    "behaviors": 40
+  },
+  {
+    "slug": "compliance-and-risk-monitoring",
+    "name": "Compliance and Risk Monitoring",
+    "description": "Fetch the complete documentation index at: https://docs.modulate.ai/llms.txt",
+    "types": 25,
+    "roles": 14,
+    "behaviors": 25
+  }
+]

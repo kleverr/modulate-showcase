@@ -256,15 +256,5 @@
     "preset:issue_resolved",
     "preset:threat_based_harassment",
     "preset:sexual_harassment"
-  ],
-  "stt": {
-    "speaker_diarization": true,
-    "emotion_signal": true,
-    "accent_signal": true,
-    "deepfake_signal": true,
-    "pii_phi_tagging": true
-  },
-  "produce_topics": true,
-  "produce_topic_sentiments": true,
-  "produce_summary": true
+  ]
 }
