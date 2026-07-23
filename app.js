@@ -1371,6 +1371,9 @@
     renderHistogram(liveFrames);
     renderTable(liveFrames);
     setupPlaybackTracking(liveFrames);
+    // The onclose route runs after demoCleanup already re-rendered the bottom
+    // panels with pre-stream meta — refresh them now that meta is final.
+    refreshBottomPanels();
   }
 
   function renderDeepfakeLiveResults() {
@@ -2824,6 +2827,9 @@
     lastAimusicMeta = { ...currentMeta };
     lastAimusicFilename = fname;
     renderAimusicResult(data);
+    // The onclose route runs after demoCleanup already re-rendered the bottom
+    // panels with pre-stream meta — refresh them now that meta is final.
+    refreshBottomPanels();
   }
 
   // Fallback clip-level summary when the stream is stopped before the `done`
@@ -3028,6 +3034,9 @@
         renderMusicHistogram(liveMusicFrames);
         renderMusicTable(liveMusicFrames);
         setupMusicPlaybackTracking(liveMusicFrames);
+        // demoCleanup already re-rendered the bottom panels with pre-stream
+        // meta — refresh them now that meta is final.
+        refreshBottomPanels();
       }
     };
   }
@@ -3261,6 +3270,7 @@
     sttPartial = null;
     sttData = null;
     currentData = null;
+    sttStreamSource = null;
 
     startRecordingCommon(sttStreamingPath() + '?' + sttStreamingQuery(), handleTranscriptionStreamMessage, () => {
       resultsFilename.textContent = 'Live Recording';
@@ -3275,6 +3285,10 @@
   // ── File/demo streaming (shared pipeline) ────────────────────────────────
   let demoChunkTimer = null;
   let isDemoStreaming = false;
+  // Source file backing the current STT stream ({size, type}), null when the
+  // source is the microphone — lets the report show the real file instead of
+  // pretending everything was a raw PCM capture.
+  let sttStreamSource = null;
 
   function startTranscriptionDemoStream() {
     return startTranscriptionStreamFromUrl(DEMO_STT_AUDIO_URL, 'Demo stream', false);
@@ -3307,6 +3321,7 @@
       const res = await fetch(url);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const arr = await res.arrayBuffer();
+      sttStreamSource = { size: arr.byteLength, type: res.headers.get('content-type') || '' };
       const actx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
       const audio = await actx.decodeAudioData(arr);
       const ch = audio.getChannelData(0);
@@ -3376,7 +3391,15 @@
     };
 
     recordingWs.onclose = () => {
+      const wasRecording = isRecording;
       demoCleanup();
+      // Server closed without a `done` message (timeout / upstream error) — if the
+      // stream produced utterances, finalize them so the report reflects the
+      // streaming session. (The normal path — `done` → stopRecording — already
+      // flipped isRecording off, so this is a no-op there.)
+      if (wasRecording && currentMode === 'transcription' && sttUtterances.length > 0) {
+        stopRecording();
+      }
     };
   }
 
@@ -3415,7 +3438,9 @@
 
   function updateSttData() {
     const durationMs = Date.now() - recordingStartTime;
-    sttData = { filename: 'Live Recording', utterances: clusterUtterances(sttUtterances), duration_ms: durationMs };
+    // The filename was set by whichever entry point started the stream —
+    // 'Live Recording' (mic), 'Demo stream', or the user's actual file name.
+    sttData = { filename: resultsFilename.textContent || 'Live Recording', utterances: clusterUtterances(sttUtterances), duration_ms: durationMs };
     currentData = sttData;
   }
 
@@ -3900,7 +3925,9 @@
     } else if (currentMode === 'transcription') {
       const durationMs = Date.now() - recordingStartTime;
       currentMeta = {
-        fileSize: 0, fileType: 'PCM 16kHz', httpStatus: 101, httpStatusText: 'Switching Protocols',
+        fileSize: sttStreamSource ? sttStreamSource.size : 0,
+        fileType: sttStreamSource ? (sttStreamSource.type || '') : 'PCM 16kHz',
+        httpStatus: 101, httpStatusText: 'Switching Protocols',
         responseSize: sttData ? JSON.stringify(sttData).length : 0, processingMs: durationMs,
       };
       // Keep sttPartial visible until finals arrive from the server.
@@ -3908,6 +3935,12 @@
       updateSttData();
       renderTranscript();
     }
+
+    // cleanupRecording → updateRecordButton re-rendered the bottom panels BEFORE
+    // the per-mode blocks above wrote the streaming meta, so the stats card still
+    // showed whatever was there before the stream (typically the canned batch demo
+    // meta — batch endpoint, 200 OK). Re-render now that meta reflects the stream.
+    refreshBottomPanels();
   }
 
   function cleanupRecording() {

@@ -2,6 +2,23 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [5.4.2] - 2026-07-23
+
+### Fixed
+- Streaming sessions no longer report stale batch metadata. Stopping a stream
+  re-rendered the stats card *before* the per-mode finalizer wrote the
+  streaming meta, so an STT stream-from-file session showed the pre-canned
+  demo numbers — `/api/velma-2-stt-batch`, `200 OK`, 1.87 MB, 2.66s — even
+  though the audio was streamed over the `/api/velma-2-stt-streaming`
+  WebSocket the whole time. The panels now refresh after finalization
+  (transcription, deepfake, music, AI-music; velma already did this right).
+- STT streamed reports now name the real source — the streamed file's name,
+  size and MIME type — instead of hardcoding "Live Recording" / "PCM 16kHz"
+  for file/demo streams. Mic captures still report as Live Recording.
+- STT file/demo streams that end without a server `done` (timeout/upstream
+  error) now finalize from the utterances received instead of leaving the
+  stale report on screen.
+
 ## [5.4.1] - 2026-07-22
 
 ### Changed
