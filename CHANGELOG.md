@@ -2,6 +2,22 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [5.5.0] - 2026-07-23
+
+### Added
+- Multilingual Fast transcription (`/api/velma-2-stt-batch-multilingual-vfast`,
+  batch-only). New "Fast (Multilingual)" toggle on the transcription tab next
+  to "Fast (English only)" — the two fast models and the enrichment options
+  are mutually exclusive. Optional language selector (Auto-detect default +
+  the model's full 99-language list, shown as "Name (code)"): declaring the
+  spoken language takes the fastest upstream path, otherwise the language is
+  detected automatically. A declared language is reflected on the transcript;
+  auto-detect runs stay untagged (the API response carries no language field).
+  Streaming controls gray out while the batch-only model is selected.
+  Upstream host per the published spec (platform.modulate.ai).
+- Transcription stats now report the exact endpoint used per run (e.g.
+  `-english-vfast`, `-multilingual-vfast`) instead of a batch/streaming guess.
+
 ## [5.4.2] - 2026-07-23
 
 ### Fixed

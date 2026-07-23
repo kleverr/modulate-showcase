@@ -479,6 +479,7 @@
     // Plate: actions
     if (streamSplit) streamSplit.style.display = cfg.streaming ? '' : 'none';
     if (velmaDemoBtn) velmaDemoBtn.style.display = cfg.demoButton ? '' : 'none';
+    syncSttFastUi(); // stream buttons re-enable outside transcription (batch-only Fast Multilingual)
 
     // Verdict slot: unhide only this mode's statement container
     [resultsVerdict, musicSidebar, aimusicSidebar, languageSidebar,
@@ -635,6 +636,7 @@
         httpStatusText: 'OK',
         responseSize: JSON.stringify(DEMO_STT_DATA).length,
         processingMs: 2660,
+        endpoint: '/api/velma-2-stt-batch',
       };
       resultsFilename.textContent = sData.filename || 'Irate_Caller_Final.mp3';
       resultsAudio.src = sAudio;
@@ -660,6 +662,9 @@
 
   // ── STT Options Helper ──────────────────────────────────────────────────────
   const optFast = document.getElementById('opt-fast');
+  const optFastMulti = document.getElementById('opt-fast-multi');
+  const optLanguage = document.getElementById('opt-language');
+  const optLanguageWrap = document.getElementById('opt-language-wrap');
   const optDiarization = document.getElementById('opt-diarization');
   const optDeepfake = document.getElementById('opt-deepfake');
   const optEmotion = document.getElementById('opt-emotion');
@@ -667,16 +672,79 @@
   const optPii = document.getElementById('opt-pii');
   const richOpts = [optDiarization, optDeepfake, optEmotion, optAccent, optPii];
 
+  // Fill the Multilingual Fast language selector ("Auto-detect" stays first).
+  // The full model-supported list, shown alphabetically as "Name (code)".
+  (function populateLanguageOptions() {
+    const LANGS = [
+      ['en', 'English'], ['zh', 'Chinese'], ['de', 'German'], ['es', 'Spanish'],
+      ['ru', 'Russian'], ['ko', 'Korean'], ['fr', 'French'], ['ja', 'Japanese'],
+      ['pt', 'Portuguese'], ['tr', 'Turkish'], ['pl', 'Polish'], ['ca', 'Catalan'],
+      ['nl', 'Dutch'], ['ar', 'Arabic'], ['sv', 'Swedish'], ['it', 'Italian'],
+      ['id', 'Indonesian'], ['hi', 'Hindi'], ['fi', 'Finnish'], ['vi', 'Vietnamese'],
+      ['he', 'Hebrew'], ['uk', 'Ukrainian'], ['el', 'Greek'], ['ms', 'Malay'],
+      ['cs', 'Czech'], ['ro', 'Romanian'], ['da', 'Danish'], ['hu', 'Hungarian'],
+      ['ta', 'Tamil'], ['no', 'Norwegian'], ['th', 'Thai'], ['ur', 'Urdu'],
+      ['hr', 'Croatian'], ['bg', 'Bulgarian'], ['lt', 'Lithuanian'], ['la', 'Latin'],
+      ['mi', 'Maori'], ['ml', 'Malayalam'], ['cy', 'Welsh'], ['sk', 'Slovak'],
+      ['te', 'Telugu'], ['fa', 'Persian'], ['lv', 'Latvian'], ['bn', 'Bengali'],
+      ['sr', 'Serbian'], ['az', 'Azerbaijani'], ['sl', 'Slovenian'], ['kn', 'Kannada'],
+      ['et', 'Estonian'], ['mk', 'Macedonian'], ['br', 'Breton'], ['eu', 'Basque'],
+      ['is', 'Icelandic'], ['hy', 'Armenian'], ['ne', 'Nepali'], ['mn', 'Mongolian'],
+      ['bs', 'Bosnian'], ['kk', 'Kazakh'], ['sq', 'Albanian'], ['sw', 'Swahili'],
+      ['gl', 'Galician'], ['mr', 'Marathi'], ['pa', 'Punjabi'], ['si', 'Sinhala'],
+      ['km', 'Khmer'], ['sn', 'Shona'], ['yo', 'Yoruba'], ['so', 'Somali'],
+      ['af', 'Afrikaans'], ['oc', 'Occitan'], ['ka', 'Georgian'], ['be', 'Belarusian'],
+      ['tg', 'Tajik'], ['sd', 'Sindhi'], ['gu', 'Gujarati'], ['am', 'Amharic'],
+      ['yi', 'Yiddish'], ['lo', 'Lao'], ['uz', 'Uzbek'], ['fo', 'Faroese'],
+      ['ht', 'Haitian Creole'], ['ps', 'Pashto'], ['tk', 'Turkmen'], ['nn', 'Nynorsk'],
+      ['mt', 'Maltese'], ['sa', 'Sanskrit'], ['lb', 'Luxembourgish'], ['my', 'Myanmar'],
+      ['bo', 'Tibetan'], ['tl', 'Tagalog'], ['mg', 'Malagasy'], ['as', 'Assamese'],
+      ['tt', 'Tatar'], ['haw', 'Hawaiian'], ['ln', 'Lingala'], ['ha', 'Hausa'],
+      ['ba', 'Bashkir'], ['jw', 'Javanese'], ['su', 'Sundanese'],
+    ];
+    LANGS.slice().sort((a, b) => a[1].localeCompare(b[1])).forEach(([code, name]) => {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = name + ' (' + code + ')';
+      optLanguage.appendChild(opt);
+    });
+  })();
+
+  // Multilingual Fast has no streaming endpoint — gray out the streaming
+  // controls while it's selected, and show/hide its language selector.
+  function syncSttFastUi() {
+    const batchOnly = optFastMulti.checked;
+    optLanguageWrap.hidden = !batchOnly;
+    if (recordAction) recordAction.disabled = batchOnly && currentMode === 'transcription';
+    if (streamSplit) {
+      const toggle = streamSplit.querySelector('.pg-upload-stream__toggle');
+      if (toggle) toggle.disabled = batchOnly && currentMode === 'transcription';
+      if (batchOnly && currentMode === 'transcription') {
+        streamSplit.dataset.tooltip = 'Fast (Multilingual) is batch-only — upload a file instead';
+      } else {
+        delete streamSplit.dataset.tooltip;
+      }
+    }
+  }
+
+  // The two fast models and the enrichment options are mutually exclusive.
   optFast.addEventListener('change', () => {
-    if (optFast.checked) richOpts.forEach(cb => { cb.checked = false; });
+    if (optFast.checked) { optFastMulti.checked = false; richOpts.forEach(cb => { cb.checked = false; }); }
+    syncSttFastUi();
+  });
+  optFastMulti.addEventListener('change', () => {
+    if (optFastMulti.checked) { optFast.checked = false; richOpts.forEach(cb => { cb.checked = false; }); }
+    syncSttFastUi();
   });
   richOpts.forEach(cb => {
     cb.addEventListener('change', () => {
-      if (cb.checked) optFast.checked = false;
+      if (cb.checked) { optFast.checked = false; optFastMulti.checked = false; }
+      syncSttFastUi();
     });
   });
 
   function isFastMode() { return optFast.checked; }
+  function isMultiFastMode() { return optFastMulti.checked; }
 
   function getSttOptions() {
     // In Velma mode, the STT options come from velmaConfig.stt (set via the Velma editor),
@@ -701,7 +769,7 @@
 
   // Speed factor for transcription: all 4 checked = 8x, just diarization = 20x, any 3 = 15x
   function getSttSpeedFactor() {
-    if (isFastMode()) return 60; // vfast model is ~60x realtime
+    if (isFastMode() || isMultiFastMode()) return 60; // vfast models are ~60x realtime
     const opts = getSttOptions();
     const count = [opts.emotion_signal, opts.accent_signal, opts.pii_phi_tagging].filter(Boolean).length;
     if (count >= 3) return 8;
@@ -1626,8 +1694,19 @@
     try {
       const startedAt = Date.now();
       const fast = isFastMode();
-      const endpoint = fast ? '/api/velma-2-stt-batch-english-vfast' : '/api/velma-2-stt-batch';
-      const opts = fast ? {} : getSttOptions();
+      const multiFast = isMultiFastMode();
+      let endpoint, opts;
+      if (multiFast) {
+        endpoint = '/api/velma-2-stt-batch-multilingual-vfast';
+        // Declaring the language takes the fastest path; omitted = auto-detect.
+        opts = optLanguage.value ? { language: optLanguage.value } : {};
+      } else if (fast) {
+        endpoint = '/api/velma-2-stt-batch-english-vfast';
+        opts = {};
+      } else {
+        endpoint = '/api/velma-2-stt-batch';
+        opts = getSttOptions();
+      }
       const { data, meta } = await uploadAndAnalyze(file, endpoint, opts);
       const processingMs = Date.now() - startedAt;
       await finishProgress();
@@ -1643,12 +1722,17 @@
         httpStatusText: meta.httpStatusText,
         responseSize: meta.responseSize,
         processingMs: processingMs,
+        endpoint: endpoint,
       };
 
       // vfast returns { text, duration_ms } — wrap into utterance format
-      if (fast && !data.utterances && data.text) {
+      if ((fast || multiFast) && !data.utterances && data.text) {
         data.utterances = [{ text: data.text, start_ms: 0, duration_ms: data.duration_ms || 0 }];
+        // The response carries no language field; when one was declared,
+        // reflect it in the transcript (auto-detect runs stay untagged).
+        if (multiFast && opts.language) data.utterances[0].language = opts.language;
       }
+      if (!data.filename) data.filename = file.name; // vfast responses carry no filename
       sttData = data;
       currentData = data;
       sttUtterances = data.utterances || [];
@@ -3266,6 +3350,7 @@
   }
 
   function startTranscriptionRecording() {
+    if (isMultiFastMode()) { showError('Fast (Multilingual) is batch-only — upload a file instead.'); return; }
     sttUtterances = [];
     sttPartial = null;
     sttData = null;
@@ -3302,6 +3387,7 @@
   async function startTranscriptionStreamFromUrl(url, filename, isUserFile) {
     if (isRecording) return;
     if (currentMode !== 'transcription') return;
+    if (isMultiFastMode()) { showError('Fast (Multilingual) is batch-only — upload a file instead.'); return; }
 
     sttUtterances = [];
     sttPartial = null;
@@ -3929,6 +4015,7 @@
         fileType: sttStreamSource ? (sttStreamSource.type || '') : 'PCM 16kHz',
         httpStatus: 101, httpStatusText: 'Switching Protocols',
         responseSize: sttData ? JSON.stringify(sttData).length : 0, processingMs: durationMs,
+        endpoint: sttStreamingPath(),
       };
       // Keep sttPartial visible until finals arrive from the server.
       // The 'done' handler will promote any lingering partial to a final utterance.
@@ -4316,7 +4403,7 @@
         ]},
         { group: 'Request', rows: [
           ['HTTP', httpStr],
-          ['Endpoint', m.httpStatus === 101 ? '/api/velma-2-stt-streaming' : '/api/velma-2-stt-batch'],
+          ['Endpoint', m.endpoint || (m.httpStatus === 101 ? '/api/velma-2-stt-streaming' : '/api/velma-2-stt-batch')],
           ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
         ]},
       ];

@@ -343,6 +343,16 @@
                 <input type="checkbox" id="opt-fast" />
                 Fast (English only)
               </label>
+              <label class="m__toggle-secondary pg-stt-option" data-tooltip="Fast transcription in any supported language — batch only">
+                <input type="checkbox" id="opt-fast-multi" />
+                Fast (Multilingual)
+              </label>
+              <span class="pg-stt-option pg-lang-field" id="opt-language-wrap" hidden data-tooltip="Declare the spoken language for the fastest path, or let the model detect it automatically">
+                <label for="opt-language">Language</label>
+                <select id="opt-language">
+                  <option value="" selected>Auto-detect</option>
+                </select>
+              </span>
               <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Identify different speakers in the audio">
                 <input type="checkbox" id="opt-diarization" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Diarization
               </label>
@@ -709,7 +719,7 @@
 
 <footer class="footer">
   <div class="footer-nav">
-    <div class="footer-nav-item caption" id="app-version">v5.4.2 · Jul 23, 2026</div>
+    <div class="footer-nav-item caption" id="app-version">v5.5.0 · Jul 23, 2026</div>
   </div>
 </footer>
 

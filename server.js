@@ -61,6 +61,7 @@ function sanitizeFilename(name) {
 const ALLOWED_ENDPOINTS = new Set([
   '/api/velma-2-stt-batch',
   '/api/velma-2-stt-batch-english-vfast',
+  '/api/velma-2-stt-batch-multilingual-vfast',
   '/api/velma-2-synthetic-voice-detection-batch',
   '/api/velma-2-pii-phi-redaction-batch',
   '/api/velma-2-music-detection-batch',
@@ -89,6 +90,8 @@ const ENDPOINT_BASE_URL = {
   // documented one (it's also measurably faster).
   '/api/velma-2-emotion-batch': 'https://platform.modulate.ai',
   '/api/velma-2-accent-batch': 'https://platform.modulate.ai',
+  // Multilingual Fast batch spec also gives platform.modulate.ai as the server.
+  '/api/velma-2-stt-batch-multilingual-vfast': 'https://platform.modulate.ai',
 };
 
 // Per-endpoint upstream path overrides — preview models live behind /api/preview/.

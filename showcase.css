@@ -59,6 +59,37 @@
     font-weight: var(--m__font-weight-medium);
   }
 
+  /* Multilingual Fast language selector (transcription options row) ────── */
+  .pg-lang-field {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--m__gap-xxxs);
+  }
+  .pg-lang-field[hidden] {
+    display: none;
+  }
+  .pg-lang-field > label {
+    margin: 0;
+    white-space: nowrap;
+  }
+  .pg-lang-field select {
+    font: inherit;
+    line-height: 1.6;
+    padding: 0 var(--m__spacer-xxs);
+    background-color: transparent;
+    border: var(--m__border-width-m) solid var(--m__bg-accent);
+    transition: border-color var(--m__duration-base) var(--m__easing-base);
+  }
+  .pg-lang-field select:hover {
+    border-color: var(--m__text-link-hover);
+    transition-duration: var(--m__duration-instant);
+  }
+  /* Streaming is unavailable while a batch-only model is selected */
+  .pg-upload-stream button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
   /* Redaction timeline inside the player visualization ────────────────── */
   /* scoped: was a per-page global in the design prototype */
   body[data-mode="redaction"] .media-container {
