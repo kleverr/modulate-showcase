@@ -464,6 +464,8 @@
 
     // CSS scope hook (per-mode player strip sizing, language dataviz hiding)
     document.body.dataset.mode = mode;
+    // The Design 1/2 toggle lives in the shared header — resync per mode.
+    updateVelmaDesignToggle();
 
     // Sidebar active state
     navLinks.forEach(a => a.classList.toggle('active', a.dataset.mode === mode));
@@ -4884,8 +4886,9 @@
 
   // Velma state
   let velmaData = null;
-  // What the most recent run asked for — used to flag "behaviors requested but
-  // none came back" (the API drops behaviors when no conversation types/roles).
+  // What the most recent run asked for — used to explain "behaviors requested
+  // but none came back" (no detections, or everything scoped away; with no
+  // types/roles the server classifies against its built-in default catalog).
   let velmaLastRequest = null;
   function captureVelmaRequest() {
     if (typeof velmaConfig !== 'object') { velmaLastRequest = { behaviorsRequested: false }; return; }
@@ -4904,13 +4907,104 @@
   // Set when rendering Velma results; consumed by patchVelmaTranscriptBubbles to overlay chips.
   let velmaClipBehaviorsByUuid = {};
 
+  // ── Design 1/2 view switch — Design 2 is the dt "Call report" renderer
+  // (velma-report.js), fed the same batch data + audio. Batch runs only; a
+  // streaming run disables the Design 2 option and falls back to Design 1.
+  const velmaDesignToggle = document.getElementById('velma-design-toggle');
+  const velmaDesign1Btn = document.getElementById('velma-design-1-btn');
+  const velmaDesign2Btn = document.getElementById('velma-design-2-btn');
+  let velmaLastTransport = 'batch';   // what produced the current results: 'batch' | 'stream'
+  let velmaDesign = localStorage.getItem('velmaDesignChoice') === '2' ? '2' : '1';
+  let velmaReportRenderedData = null; // last data object handed to VelmaReport (reset lanes on change)
+
+  function velmaHasResults() { return !!(velmaData || velmaStreamData); }
+  function effectiveVelmaDesign() {
+    return (velmaDesign === '2' && velmaLastTransport === 'batch') ? '2' : '1';
+  }
+
+  // Configured behavior names for the report's "also checked" line.
+  function velmaCheckedBehaviorNames() {
+    if (typeof velmaConfig !== 'object' || !velmaConfig) return [];
+    return (velmaConfig.behaviors || []).map(e => {
+      if (typeof e === 'string') {
+        const id = e.replace(/^preset:/, '');
+        const cat = findPresetCatalog(id);
+        return (cat && cat.name) || id.replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      }
+      return e && e.name;
+    }).filter(Boolean);
+  }
+
+  function renderVelmaReportView(data, isFinal) {
+    if (!window.VelmaReport || !data) return;
+    if (velmaReportRenderedData !== data) VelmaReport.reset();
+    velmaReportRenderedData = data;
+    VelmaReport.setSource(resultsAudio.src || '', resultsFilename.textContent || lastVelmaFilename || '');
+    VelmaReport.render(data, { isFinal: isFinal !== false, checkedNames: velmaCheckedBehaviorNames() });
+    // The "also checked" line needs catalog display names for preset refs — if
+    // the catalog isn't in yet, fetch it and re-render once (cache makes this
+    // a single retry; on failure the title-cased ids stand).
+    if (velmaPresetsCache == null) {
+      loadVelmaPresets().then(() => {
+        if (velmaReportRenderedData === data && document.body.classList.contains('velma-design2')) {
+          VelmaReport.render(data, { isFinal: isFinal !== false, checkedNames: velmaCheckedBehaviorNames() });
+        }
+      });
+    }
+  }
+
+  // The body class drives which design's surfaces are displayed (CSS rules are
+  // scoped to body[data-mode="velma"], so other modes are unaffected).
+  function syncVelmaDesign(isFinal, dataOverride) {
+    const design2 = currentMode === 'velma' && velmaHasResults() && effectiveVelmaDesign() === '2';
+    document.body.classList.toggle('velma-design2', design2);
+    if (design2) {
+      renderVelmaReportView(dataOverride || velmaData || velmaStreamData, isFinal);
+      resultsAudio.pause();
+    } else if (window.VelmaReport) {
+      VelmaReport.pause();
+    }
+    updateVelmaDesignToggle();
+  }
+
+  function updateVelmaDesignToggle() {
+    if (!velmaDesignToggle) return;
+    velmaDesignToggle.hidden = currentMode !== 'velma' || !velmaHasResults();
+    const eff = effectiveVelmaDesign();
+    if (velmaDesign1Btn) velmaDesign1Btn.classList.toggle('active', eff === '1');
+    if (velmaDesign2Btn) {
+      velmaDesign2Btn.classList.toggle('active', eff === '2');
+      const streamRun = velmaLastTransport !== 'batch';
+      velmaDesign2Btn.disabled = streamRun;
+      velmaDesign2Btn.title = streamRun ? 'The Deeptalk design supports batch runs only' : '';
+    }
+  }
+
+  if (velmaDesign1Btn) velmaDesign1Btn.addEventListener('click', () => {
+    velmaDesign = '1';
+    localStorage.setItem('velmaDesignChoice', '1');
+    syncVelmaDesign();
+  });
+  if (velmaDesign2Btn) velmaDesign2Btn.addEventListener('click', () => {
+    if (velmaDesign2Btn.disabled) return;
+    velmaDesign = '2';
+    localStorage.setItem('velmaDesignChoice', '2');
+    syncVelmaDesign();
+  });
+
   function updateVelmaConfigSummary() {
     if (!velmaConfigSummary) return;
     if (velmaConfig === 'default') {
       velmaConfigSummary.textContent = 'Endpoint default configuration';
       return;
     }
-    const prefix = isDefaultConfig() ? 'Default' : 'Custom';
+    // Name the detection package when the current lists match one exactly —
+    // same snapshot matching the package cards use for their active state.
+    // The shipped default seed is the fraud package, so it reads
+    // "<package> (default)" rather than an anonymous "Default".
+    const pkg = activeVelmaPackage();
+    const prefix = pkg ? pkg.name + (isDefaultConfig() ? ' (default)' : '')
+      : (isDefaultConfig() ? 'Default' : 'Custom');
     const c = velmaConfig;
     const nT = (c.conversation_types || []).length;
     const nR = (c.participant_roles || []).length;
@@ -4927,6 +5021,8 @@
     if (!velmaContent) return;
     velmaData = null;
     velmaClipBehaviorsByUuid = {};
+    velmaReportRenderedData = null;
+    syncVelmaDesign(); // no results → toggle hides, Design-1 surfaces return
     // The transcript, emotion strip and bottom columns are shared surfaces —
     // clear them too, or a new stream plays over the previous run's report.
     sttUtterances = [];
@@ -4962,6 +5058,7 @@
 
   function renderVelmaDemo() {
     if (!DEMO_VELMA_DATA) return;
+    velmaLastTransport = 'batch'; // the demo fixture is a batch response
     velmaData = DEMO_VELMA_DATA;
     currentData = DEMO_VELMA_DATA;
     currentMeta = {
@@ -5010,6 +5107,7 @@
       const startedAt = Date.now();
       // The `config` form field is either the literal string `default` or a JSON BatchConfig.
       captureVelmaRequest();
+      velmaLastTransport = 'batch';
       const configField = (typeof velmaConfig === 'object') ? JSON.stringify(velmaConfig) : 'default';
       const { data, meta } = await uploadAndAnalyze(file, '/api/velma-2-batch', { config: configField });
       const processingMs = Date.now() - startedAt;
@@ -5071,6 +5169,9 @@
   let velmaStreamRenderPending = false;
 
   function newVelmaStreamData() {
+    // A stream is starting — Design 2 is batch-only, so the toggle disables
+    // and the effective design falls back to 1 until the next batch run.
+    velmaLastTransport = 'stream';
     return {
       clips: [],
       behaviors: [],
@@ -5330,6 +5431,9 @@
   function renderVelmaResults(data, isFinal = true) {
     if (!data) { clearVelmaResults(); return; }
 
+    // Design 2 (dt Call report) mirrors every velma render — no-op in Design 1.
+    syncVelmaDesign(isFinal, data);
+
     // ── Summary. The model tags PII/PHI inline; always blur when present (they're
     //    sensitive regardless of whether the user explicitly requested STT pii tagging).
     if (data.summary) {
@@ -5370,9 +5474,11 @@
     // ── Behaviors table
     velmaBehaviorsTbody.innerHTML = '';
     const behaviors = data.behaviors || [];
-    // Did this run request behaviors but get none back? The API drops behaviors
-    // when the config has no conversation types / participant roles — flag it
-    // (only on the final render, so streaming-in-progress doesn't false-alarm).
+    // Did this run request behaviors but get none back? The response only ever
+    // carries detected:true rows (verified 2026-07-24), so "none" means either
+    // nothing was detected or every behavior was scoped away from the call's
+    // classified type/roles — flag it (only on the final render, so
+    // streaming-in-progress doesn't false-alarm).
     const behaviorsEmptyButRequested = isFinal && behaviors.length === 0 &&
       velmaLastRequest && velmaLastRequest.behaviorsRequested;
     if (behaviors.length || behaviorsEmptyButRequested) {
@@ -5381,12 +5487,15 @@
         if (velmaBehaviorsTable) velmaBehaviorsTable.style.display = 'none';
         if (velmaResultsBehaviorsNote) {
           const missing = [];
-          if (!velmaLastRequest.hasConvTypes) missing.push('a conversation type');
+          if (!velmaLastRequest.hasConvTypes) missing.push('conversation types');
           if (!velmaLastRequest.hasRoles) missing.push('participant roles');
           velmaResultsBehaviorsNote.innerHTML = missing.length
-            ? '⚠ You requested behaviors but the API returned none. Behaviors are only evaluated when the config also defines ' +
-              missing.join(' and ') + '. Add ' + missing.join(' and ') + ' in the config (or use <strong>Load example</strong>) and re-run.'
-            : '⚠ You requested behaviors but the API returned none for this audio.';
+            ? 'ℹ You requested behaviors but none were detected. This config has no ' + missing.join(' or ') +
+              ', so Velma classified the call against its <strong>built-in default catalog</strong> — behaviors scoped to ' +
+              'entries from this config can never match in that mode; unscoped behaviors simply didn’t occur in this audio.'
+            : 'ℹ You requested behaviors but none were detected in this audio. Behaviors scoped via <em>applies to</em> are ' +
+              'evaluated only when the call classifies as a scoped conversation type (and the speaker matches a scoped role) — ' +
+              'scoped-out behaviors are skipped silently.';
           velmaResultsBehaviorsNote.style.display = '';
         }
       } else {
@@ -6011,6 +6120,26 @@
     return entry;
   }
 
+  // The package whose detection set byte-matches the current config, if any.
+  // Only sees fetched bundles — callers that need it early must prefetch.
+  function activeVelmaPackage() {
+    if (typeof velmaConfig !== 'object' || !velmaConfig) return null;
+    const current = velmaListsSnapshot(velmaConfig);
+    return (velmaPackagesManifest || []).find(pkg => {
+      const cached = velmaPackageConfigs.get(pkg.slug);
+      return cached && cached.snapshot === current;
+    }) || null;
+  }
+
+  // Prefetch all bundles so the summary can name the active package (the
+  // plate summary renders before the modal is ever opened).
+  function prefetchVelmaPackages() {
+    loadVelmaPackages().then(manifest =>
+      Promise.all(manifest.map(p => fetchPackageBundle(p.slug).catch(() => null)))
+        .then(() => updateVelmaConfigSummary()));
+  }
+  prefetchVelmaPackages();
+
   async function applyVelmaPackage(pkg) {
     let entry;
     try {
@@ -6118,28 +6247,74 @@
     return row.def ? 'preset · edited' : 'preset';
   }
 
-  // "3 types · 2 roles" chip for behaviors scoped via applies_to_* (uploaded
-  // configs only — the UI itself never writes these fields).
-  function scopeChipFor(def) {
+  // ── applies_to scoping ──────────────────────────────────────────────────────
+  // Roles can be scoped to conversation types; behaviors to types AND roles.
+  // Verified against the live endpoint (2026-07-24): scoping gates detection at
+  // runtime — a behavior scoped to a type the call doesn't classify as is
+  // silently skipped (the response carries no detected:false rows), so the
+  // editor has to predict inertness itself. Absent/null field = applies to all.
+
+  function scopeNameOf(rows, uuidField, uuid) {
+    const hit = rows.find(x => x.def && x.def[uuidField] === uuid);
+    return hit ? (hit.def.name || uuid) : uuid + ' (not in this config)';
+  }
+
+  // A scope that can never match the run's picks: refs exist but none of them
+  // is an enabled entry — while the config *does* define entries of that kind.
+  // (With none defined, Velma classifies against its built-in default catalog,
+  // so foreign UUIDs may still match — no inertness claim in that case.)
+  function scopeInertReason(kind, def) {
+    if (!def) return null;
+    const enabledT = velmaLibrary.types.filter(x => x.enabled).map(x => x.def.conversation_type_uuid);
+    const t = Array.isArray(def.applies_to_conversation_type_uuids) ? def.applies_to_conversation_type_uuids : null;
+    if (t && t.length && enabledT.length && !t.some(u => enabledT.includes(u))) {
+      return kind === 'role'
+        ? 'Scoped only to conversation types that aren’t enabled — this role can never be assigned.'
+        : 'Scoped only to conversation types that aren’t enabled — this behavior can never fire.';
+    }
+    if (kind === 'behavior') {
+      const enabledR = velmaLibrary.roles.filter(x => x.enabled).map(x => x.def.participant_role_uuid);
+      const r = Array.isArray(def.applies_to_participant_role_uuids) ? def.applies_to_participant_role_uuids : null;
+      if (r && r.length && enabledR.length && !r.some(u => enabledR.includes(u))) {
+        return 'Scoped only to roles that aren’t enabled — this behavior can never fire for any speaker.';
+      }
+    }
+    return null;
+  }
+
+  // "3 types · 2 roles" head chip for scoped entries (roles + behaviors).
+  function scopeChipFor(kind, def) {
     if (!def) return null;
     const t = Array.isArray(def.applies_to_conversation_type_uuids) ? def.applies_to_conversation_type_uuids : [];
-    const r = Array.isArray(def.applies_to_participant_role_uuids) ? def.applies_to_participant_role_uuids : [];
+    const r = (kind === 'behavior' && Array.isArray(def.applies_to_participant_role_uuids))
+      ? def.applies_to_participant_role_uuids : [];
     if (!t.length && !r.length) return null;
-    const nameOf = (rows, uuidField, uuid) => {
-      const hit = rows.find(x => x.def && x.def[uuidField] === uuid);
-      return hit ? (hit.def.name || uuid) : uuid;
-    };
     const parts = [];
     if (t.length) parts.push(t.length + ' type' + (t.length === 1 ? '' : 's'));
     if (r.length) parts.push(r.length + ' role' + (r.length === 1 ? '' : 's'));
     const chip = document.createElement('span');
     chip.className = 'velma-cfg-scope-chip';
-    chip.textContent = parts.join(' · ');
-    chip.title = 'Applies to: ' +
-      t.map(u => nameOf(velmaLibrary.types, 'conversation_type_uuid', u))
-        .concat(r.map(u => nameOf(velmaLibrary.roles, 'participant_role_uuid', u))).join(', ') +
-      ' — edit scoping on the JSON tab';
+    const inert = scopeInertReason(kind, def);
+    if (inert) {
+      chip.classList.add('dead');
+      chip.textContent = parts.join(' · ') + ' · never fires';
+      chip.title = inert;
+    } else {
+      chip.textContent = parts.join(' · ');
+      chip.title = 'Applies to: ' +
+        t.map(u => scopeNameOf(velmaLibrary.types, 'conversation_type_uuid', u))
+          .concat(r.map(u => scopeNameOf(velmaLibrary.roles, 'participant_role_uuid', u))).join(', ') +
+        ' — open to edit';
+    }
     return chip;
+  }
+
+  // Swap the head chip in place after a scope edit (no full rerender).
+  function refreshHeadScopeChip(head, kind, def) {
+    const old = head.querySelector('.velma-cfg-scope-chip');
+    if (old) old.remove();
+    const chip = scopeChipFor(kind, def);
+    if (chip) head.insertBefore(chip, head.querySelector('.velma-cfg-item-caret'));
   }
 
   function buildLibraryRow(kind, row) {
@@ -6161,6 +6336,9 @@
       row.enabled = cb.checked;
       item.classList.toggle('on', row.enabled);
       syncConfigFromLibrary();
+      // Types/roles feed every scope picker and inert state — rerender so
+      // chips and "never fires" flags elsewhere stay truthful.
+      if (kind !== 'behavior') renderVelmaEditor();
     });
     sw.appendChild(cb);
     sw.addEventListener('click', e => e.stopPropagation());
@@ -6177,7 +6355,9 @@
       badge.className = 'velma-cfg-item-badge' + (row.kind === 'custom' ? ' custom' : '');
       badge.textContent = behaviorBadgeText(row);
       head.appendChild(badge);
-      const chip = scopeChipFor(row.def || row.catalog);
+    }
+    if (kind !== 'conv') {
+      const chip = scopeChipFor(kind, row.def || row.catalog);
       if (chip) head.appendChild(chip);
     }
 
@@ -6193,11 +6373,11 @@
       item.classList.toggle('open', open);
       const existing = item.querySelector('.velma-cfg-item-body');
       if (existing) existing.remove();
-      if (open) item.appendChild(buildRowDetail(kind, row, { name, badge }));
+      if (open) item.appendChild(buildRowDetail(kind, row, { name, badge, head }));
     });
 
     item.appendChild(head);
-    if (velmaOpenRows.has(key)) item.appendChild(buildRowDetail(kind, row, { name, badge }));
+    if (velmaOpenRows.has(key)) item.appendChild(buildRowDetail(kind, row, { name, badge, head }));
     return item;
   }
 
@@ -6263,6 +6443,31 @@
     body.appendChild(buildField('Short description', 'textarea', src.short_description || '', onField('short_description'), '2.5rem'));
     body.appendChild(buildField('Detailed description', 'textarea', src.detailed_description || '', onField('detailed_description'), '6rem'));
 
+    // "Applies to" scope pickers — behaviors scope to types + roles, roles to
+    // types. Editing the scope of a preset materializes it (same as any edit).
+    const afterScopeEdit = (def) => {
+      refreshHeadScopeChip(live.head, kind, def);
+      syncConfigFromLibrary();
+    };
+    if (kind === 'behavior') {
+      body.appendChild(buildScopePicker({
+        label: 'Applies to conversation types', field: 'applies_to_conversation_type_uuids',
+        items: velmaLibrary.types, uuidField: 'conversation_type_uuid',
+        getDef: () => row.def, ensureDef, onEdit: afterScopeEdit,
+      }));
+      body.appendChild(buildScopePicker({
+        label: 'Applies to roles', field: 'applies_to_participant_role_uuids',
+        items: velmaLibrary.roles, uuidField: 'participant_role_uuid',
+        getDef: () => row.def, ensureDef, onEdit: afterScopeEdit,
+      }));
+    } else if (kind === 'role') {
+      body.appendChild(buildScopePicker({
+        label: 'Applies to conversation types', field: 'applies_to_conversation_type_uuids',
+        items: velmaLibrary.types, uuidField: 'conversation_type_uuid',
+        getDef: () => row.def, ensureDef, onEdit: afterScopeEdit,
+      }));
+    }
+
     if (!isPresetRow) {
       const remove = document.createElement('button');
       remove.type = 'button';
@@ -6294,6 +6499,75 @@
     el.value = value;
     el.addEventListener('input', () => onChange(el.value));
     wrap.appendChild(el);
+    return wrap;
+  }
+
+  // Chip multi-select for one applies_to_* field. "All" = field absent — the
+  // API treats absent/null as unrestricted (verified 2026-07-24). Deselecting
+  // the last chip returns to All; we never emit [] (server semantics of an
+  // empty array are unverified).
+  function buildScopePicker({ label, field, items, uuidField, getDef, ensureDef, onEdit }) {
+    const wrap = document.createElement('div');
+    wrap.className = 'velma-cfg-scope-picker';
+    const lab = document.createElement('span');
+    lab.className = 'velma-cfg-field-label';
+    lab.textContent = label;
+    wrap.appendChild(lab);
+    const chips = document.createElement('div');
+    chips.className = 'velma-cfg-scope-opts';
+    wrap.appendChild(chips);
+
+    const current = () => {
+      const def = getDef();
+      return (def && Array.isArray(def[field])) ? def[field] : null; // null = All
+    };
+
+    const write = (uuids) => {
+      const def = ensureDef();
+      if (!uuids || !uuids.length) delete def[field];
+      else def[field] = uuids;
+      render();
+      onEdit(def);
+    };
+
+    const chip = (text, cls, title, onClick) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'velma-cfg-scope-opt' + (cls ? ' ' + cls : '');
+      b.textContent = text;
+      if (title) b.title = title;
+      b.addEventListener('click', onClick);
+      return b;
+    };
+
+    function render() {
+      chips.innerHTML = '';
+      const sel = current();
+      chips.appendChild(chip('All', sel === null ? 'sel' : '',
+        'No restriction — evaluated regardless of ' +
+          (field === 'applies_to_participant_role_uuids' ? 'the speaker’s role' : 'the conversation type'),
+        () => { if (current() !== null) write(null); }));
+      items.forEach(it => {
+        const uuid = it.def && it.def[uuidField];
+        if (!uuid) return;
+        const on = sel !== null && sel.includes(uuid);
+        const cls = ((on ? 'sel' : '') + (it.enabled ? '' : ' off')).trim();
+        const title = it.enabled ? '' : 'Currently switched off — a scope pointing only at disabled entries never fires.';
+        chips.appendChild(chip(it.def.name || '(unnamed)', cls, title, () => {
+          const cur = current();
+          if (cur === null) write([uuid]); // leave All → start a specific scope
+          else if (cur.includes(uuid)) write(cur.filter(u => u !== uuid));
+          else write(cur.concat(uuid));
+        }));
+      });
+      // Refs to UUIDs that aren't in this config (uploaded / master configs).
+      (sel || []).filter(u => !items.some(it => it.def && it.def[uuidField] === u)).forEach(u => {
+        chips.appendChild(chip(u.slice(0, 8) + '…', 'sel unknown',
+          'Not in this config (' + u + ') — can only match when Velma falls back to its built-in defaults. Click to remove.',
+          () => write(current().filter(x => x !== u))));
+      });
+    }
+    render();
     return wrap;
   }
 
@@ -6330,11 +6604,23 @@
     const nBeh = velmaLibrary.behaviors.filter(r => r.enabled).length;
     const nT = velmaLibrary.types.filter(r => r.enabled).length;
     const nR = velmaLibrary.roles.filter(r => r.enabled).length;
+    const nInert = velmaLibrary.behaviors
+      .filter(r => r.enabled && scopeInertReason('behavior', r.def)).length;
+    const notes = [];
+    // Verified 2026-07-24: with no types/roles the API does NOT drop behaviors —
+    // it classifies against its built-in default catalog and behaviors still run.
     if (nBeh > 0 && (nT === 0 || nR === 0)) {
-      velmaCfgBehaviorsWarning.innerHTML =
-        '⚠ Behaviors need at least one conversation type and one role to run — ' +
-        'as-is the API returns <strong>no behavior results</strong>. Enable or add them under ' +
-        '<strong>Conversation context</strong> above.';
+      notes.push('ℹ No ' + (nT === 0 && nR === 0 ? 'conversation types or roles' : (nT === 0 ? 'conversation types' : 'roles')) +
+        ' enabled — Velma classifies against its <strong>built-in default catalog</strong> instead. ' +
+        'Unscoped behaviors still run; behaviors scoped to entries from this config can never match those built-in picks.');
+    }
+    if (nInert > 0) {
+      notes.push('⚠ <strong>' + nInert + ' enabled behavior' + (nInert === 1 ? ' is' : 's are') +
+        '</strong> scoped only to types/roles that aren’t enabled and can <strong>never fire</strong> — look for the “never fires” chip below.');
+    }
+    if (notes.length) {
+      velmaCfgBehaviorsWarning.innerHTML = notes.join('<br>');
+      velmaCfgBehaviorsWarning.classList.toggle('info', nInert === 0);
       velmaCfgBehaviorsWarning.style.display = '';
     } else {
       velmaCfgBehaviorsWarning.style.display = 'none';
@@ -6413,6 +6699,14 @@
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
       error(kindLabel + ' entries must be objects' + (kind === 'behavior' ? ' or "preset:<id>" strings.' : '.'));
       return null;
+    }
+    // Server exports (e.g. the built-in default config) key roles by
+    // "participant_uuid" — normalize to the POST schema's field, keeping the
+    // UUID so behaviors' applies_to_participant_role_uuids refs stay intact.
+    if (kind === 'role' && entry.participant_uuid && !entry.participant_role_uuid) {
+      entry = Object.assign({}, entry, { participant_role_uuid: entry.participant_uuid });
+      delete entry.participant_uuid;
+      warn('Role "' + (entry.name || '?') + '": renamed participant_uuid → participant_role_uuid (server-export field name).');
     }
     const allowed = kind === 'behavior' ? VELMA_BEHAVIOR_FIELDS
       : [uuidField, 'name', 'short_description', 'detailed_description'].concat(
@@ -6558,7 +6852,7 @@
     loadVelmaPackages().then((manifest) => {
       renderPackagesGrid();
       Promise.all(manifest.map(p => fetchPackageBundle(p.slug).catch(() => null)))
-        .then(renderPackagesGrid);
+        .then(() => { renderPackagesGrid(); updateVelmaConfigSummary(); });
     });
     // Presets load lazily (read-only, no usage cost); off rows appear when ready.
     loadVelmaPresets().then(() => {

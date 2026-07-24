@@ -366,6 +366,26 @@
   color: var(--m__text);
 }
 
+/* ── Velma Design 1/2 toggle (page header) ── */
+.pg-design-toggle {
+  margin-left: auto;
+}
+.pg-design-toggle button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  color: var(--m__text-caption);
+  border-color: var(--m__border);
+}
+/* Design 2 replaces the Design-1 results surfaces (each view has its own player,
+   and the raw-JSON/stats developer tail has no place in a call report). */
+body[data-mode="velma"].velma-design2 #pg-player-output,
+body[data-mode="velma"].velma-design2 #pg-verdict-slot,
+body[data-mode="velma"].velma-design2 #velma-content,
+body[data-mode="velma"].velma-design2 #transcript-container,
+body[data-mode="velma"].velma-design2 #pg-bottom-columns {
+  display: none;
+}
+
 /* ── error toast on design tokens ── */
 .pg-error-toast {
   position: fixed;
@@ -644,6 +664,50 @@
   padding: 0 0.5em;
   white-space: nowrap;
 }
+.velma-cfg-scope-chip.dead {
+  color: var(--m__error);
+  background: color-mix(in srgb, var(--m__error) 10%, transparent);
+}
+
+/* ── Applies-to scope pickers (expanded rows) ── */
+.velma-cfg-scope-picker {
+  display: block;
+}
+.velma-cfg-scope-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--m__gap-s) / 2);
+  margin-top: 0.25rem;
+}
+.velma-cfg-scope-opt {
+  font: inherit;
+  font-size: var(--m__font-size-xs);
+  color: var(--m__text-caption);
+  background: none;
+  border: var(--m__border-width-s) solid var(--m__border);
+  border-radius: var(--m__radius-pill);
+  padding: 0.05em 0.6em;
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.velma-cfg-scope-opt:hover {
+  border-color: color-mix(in srgb, var(--m__text) 35%, transparent);
+}
+.velma-cfg-scope-opt.sel {
+  color: var(--m__text);
+  border-color: color-mix(in srgb, var(--m__text) 55%, transparent);
+  background: color-mix(in srgb, var(--m__text) 8%, transparent);
+}
+.velma-cfg-scope-opt.off {
+  opacity: 0.5;
+}
+.velma-cfg-scope-opt.unknown {
+  border-style: dashed;
+  font-family: var(--m__font-family-semi-mono);
+}
 .velma-cfg-item-caret {
   margin-left: auto;
   flex: none;
@@ -705,6 +769,10 @@
   padding: var(--m__spacer-xs);
   font-size: var(--m__font-size-s);
   margin-bottom: var(--m__spacer-xs);
+}
+.velma-cfg-warning.info {
+  border-color: var(--m__border);
+  background: color-mix(in srgb, var(--m__text) 4%, transparent);
 }
 
 .velma-cfg-optional {

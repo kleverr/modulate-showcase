@@ -7,7 +7,8 @@
   <meta name="description" content="Try voice intelligence models on your own audio" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%23430f92'/%3E%3Cstop offset='.5' stop-color='%23fb3958'/%3E%3Cstop offset='1' stop-color='%23fc7856'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='%23120021'/%3E%3Cg stroke='url(%23g)' stroke-width='2.5' stroke-linecap='round' fill='none'%3E%3Cline x1='6' y1='13' x2='6' y2='19'/%3E%3Cline x1='10.5' y1='9' x2='10.5' y2='23'/%3E%3Cline x1='15' y1='5' x2='15' y2='27'/%3E%3Cline x1='19.5' y1='10' x2='19.5' y2='22'/%3E%3Cline x1='24' y1='7' x2='24' y2='25'/%3E%3Cline x1='28.5' y1='12' x2='28.5' y2='20'/%3E%3C/g%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/styles.css?v=1" />
-  <link rel="stylesheet" href="/showcase.css?v=4" />
+  <link rel="stylesheet" href="/showcase.css?v=5" />
+  <link rel="stylesheet" href="/velma-report.css?v=1" />
 </head>
 <body data-theme-storage-key="prototype-theme">
 <script>
@@ -324,6 +325,10 @@
       <div class="pg-page-header">
         <h1 class="pg-page-title" id="pg-page-title">Velma Triage</h1>
         <span id="results-filename" hidden></span>
+        <span class="pg-ab-toggle pg-design-toggle" id="velma-design-toggle" hidden>
+          <button type="button" class="active" id="velma-design-1-btn">Modulate Design</button>
+          <button type="button" id="velma-design-2-btn">Deeptalk Design</button>
+        </span>
       </div>
 
       <div class="pg-upload-section">
@@ -332,7 +337,7 @@
           <!-- Velma options row -->
           <div class="pg-options-row pg-velma-setup" id="velma-options">
             <a href="#" class="pg-velma-setup-link" id="velma-config-btn">
-              <svg width="18" height="18" aria-hidden="true"><use href="#behaviors" /></svg>Set up behaviors</a>
+              <svg width="18" height="18" aria-hidden="true"><use href="#behaviors" /></svg>Configuration</a>
             <span class="pg-velma-setup-summary" id="velma-config-summary"></span>
           </div>
 
@@ -555,6 +560,106 @@
         </div>
       </div>
 
+      <!-- Velma Design 2 — the dt Call report view (batch runs only). Rendered by
+           velma-report.js; visible only under body[data-mode=velma].velma-design2 -->
+      <section class="velma-report-view" id="velma-report-view">
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+          <defs>
+            <symbol id="vr-icon-star" viewBox="0 0 32 32">
+              <polygon fill="currentColor" points="2.417 12.346 11.122 11.282 7.036 2.79 17.883 9.911 27.52 2.564 22.981 16.1 29.596 19.188 21.637 21.53 21.064 29.436 16.033 20.718 2.404 27.639 9.525 16.1 2.417 12.346"/>
+            </symbol>
+            <symbol id="vr-icon-play" viewBox="0 0 24 24"><path fill="currentColor" d="M7 4.5v15l13-7.5z"/></symbol>
+            <symbol id="vr-icon-pause" viewBox="0 0 24 24"><path fill="currentColor" d="M6.5 4.5h4v15h-4zM13.5 4.5h4v15h-4z"/></symbol>
+          </defs>
+        </svg>
+        <div class="vr-report-flow">
+          <section class="vr-player-port" id="vr-player-port">
+            <div class="vr-media-container">
+              <div class="vr-media-box">
+                <div class="vr-player-visualization" id="vr-player-viz"></div>
+                <div class="vr-speaker-labels" id="vr-speaker-labels"></div>
+                <div class="vr-behaviour-indicators" id="vr-behaviour-indicators"></div>
+                <div class="vr-player-line" id="vr-player-line" hidden></div>
+                <div class="vr-player-hover-line" id="vr-player-hover-line" hidden></div>
+                <div class="vr-player-hover-caption" id="vr-player-hover-caption" hidden>0:00</div>
+                <div class="vr-player-controls">
+                  <span class="vr-player-time vr-player-time-current" id="vr-time-current">0:00</span>
+                  <button type="button" class="vr-player-control-center" id="vr-btn-play" aria-label="Play" disabled>
+                    <span class="vr-player-icon">
+                      <svg><use id="vr-play-icon-use" href="#vr-icon-play"/></svg>
+                    </span>
+                  </button>
+                  <span class="vr-player-time vr-player-time-total" id="vr-time-total">0:00</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <nav class="vr-report-nav">
+            <a href="#vr-summary">Summary</a>
+            <a href="#vr-speakers">Speakers</a>
+            <a href="#vr-behaviors">Behaviors</a>
+            <a href="#vr-transcript">Transcript</a>
+          </nav>
+
+          <section class="vr-report-section" id="vr-summary">
+            <div class="vr-section-heading"><h2 class="vr-h2">Summary</h2></div>
+            <p class="vr-summary-text" id="vr-summary-text"></p>
+            <div class="vr-conversation-meta" id="vr-conversation-meta"></div>
+          </section>
+
+          <section class="vr-report-card" id="vr-speakers">
+            <div class="vr-section-heading"><h2 class="vr-h2">Speakers</h2></div>
+            <div class="vr-table-scroll">
+              <table class="vr-speakers-table">
+                <colgroup>
+                  <col class="vr-col-speaker"><col class="vr-col-pattern"><col class="vr-col-time">
+                </colgroup>
+                <thead>
+                  <tr><th>Speaker</th><th>Speech pattern</th><th class="vr-num">Speaking time</th></tr>
+                </thead>
+                <tbody id="vr-speakers-tbody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="vr-report-card" id="vr-behaviors">
+            <div class="vr-section-heading"><h2 class="vr-h2">Behaviors</h2></div>
+            <div class="vr-signal-module-stack">
+              <article class="vr-signal-module-card">
+                <header class="vr-signal-module-head">
+                  <span class="vr-signal-module-icon">
+                    <svg width="26" height="26" aria-hidden="true"><use href="#vr-icon-star"/></svg>
+                  </span>
+                  <div class="vr-signal-module-copy">
+                    <h3>Behavior detections</h3>
+                    <p>Behaviors Velma was configured to listen for on this call, with reasoning and evidence</p>
+                  </div>
+                </header>
+                <div class="vr-table-scroll">
+                  <table class="vr-module-signals-table">
+                    <colgroup>
+                      <col class="vr-speaker-column"><col class="vr-signal-column"><col class="vr-reasoning-column"><col class="vr-confidence-column">
+                    </colgroup>
+                    <thead>
+                      <tr><th>Speaker</th><th>Behavior</th><th>Reasoning and evidence</th><th class="vr-num">Confidence</th></tr>
+                    </thead>
+                    <tbody id="vr-behaviors-tbody"></tbody>
+                  </table>
+                </div>
+                <p class="vr-behaviors-checked" id="vr-behaviors-checked" hidden></p>
+              </article>
+            </div>
+          </section>
+
+          <section class="vr-report-section" id="vr-transcript">
+            <div class="vr-section-heading"><h2 class="vr-h2">Transcript</h2></div>
+            <ul class="vr-transcript-chat" id="vr-transcript-list"></ul>
+          </section>
+        </div>
+        <audio id="vr-audio" preload="auto"></audio>
+      </section>
+
       <div class="m__space M"></div>
 
       <div class="pg-output-panel" id="pg-output-panel">
@@ -768,7 +873,7 @@
         <div class="velma-cfg-divider"><span data-tooltip="Everything below is the exact detection set this config sends: the conversation types and roles Velma matches the call against, and the behaviors it listens for. A package fills it in; hand-tune anything here.">Detection set</span></div>
 
         <section class="velma-cfg-section">
-          <h4 class="velma-cfg-h">Conversation types <span class="velma-cfg-optional">optional</span> <span class="velma-cfg-info" data-tooltip="Velma classifies each call against these types. With none enabled it falls back to a generic label — and skips behavior detection: behaviors need at least one type and one role (verified against the live endpoint).">ⓘ</span></h4>
+          <h4 class="velma-cfg-h">Conversation types <span class="velma-cfg-optional">optional</span> <span class="velma-cfg-info" data-tooltip="Velma classifies each call against these types. With none enabled it classifies against its built-in default catalog instead — behaviors still run (verified against the live endpoint). Roles and behaviors can be scoped to specific types via their Applies-to pickers.">ⓘ</span></h4>
           <div class="velma-cfg-grid" id="velma-cfg-conv-grid"></div>
           <div class="velma-cfg-add-row">
             <button class="m__button-secondary-outline S" id="velma-cfg-add-conv-btn" type="button">+ Add conversation type</button>
@@ -776,7 +881,7 @@
         </section>
 
         <section class="velma-cfg-section">
-          <h4 class="velma-cfg-h">Participant roles <span class="velma-cfg-optional">optional</span> <span class="velma-cfg-info" data-tooltip="Velma assigns each speaker one of these roles. With none enabled it falls back to generic labels — and skips behavior detection: behaviors need at least one type and one role (verified against the live endpoint).">ⓘ</span></h4>
+          <h4 class="velma-cfg-h">Participant roles <span class="velma-cfg-optional">optional</span> <span class="velma-cfg-info" data-tooltip="Velma assigns each speaker one of these roles. With none enabled it assigns roles from its built-in default catalog instead — behaviors still run (verified against the live endpoint). A role can be scoped to specific conversation types via its Applies-to picker.">ⓘ</span></h4>
           <div class="velma-cfg-grid" id="velma-cfg-roles-grid"></div>
           <div class="velma-cfg-add-row">
             <button class="m__button-secondary-outline S" id="velma-cfg-add-role-btn" type="button">+ Add role</button>
@@ -784,7 +889,7 @@
         </section>
 
         <section class="velma-cfg-section">
-          <h4 class="velma-cfg-h">Behaviors <span class="velma-cfg-info" data-tooltip="What Velma listens for. Switch a behavior on to include it; click its name to read or edit the definition. Enabled behaviors apply to every speaker and conversation type.">ⓘ</span></h4>
+          <h4 class="velma-cfg-h">Behaviors <span class="velma-cfg-info" data-tooltip="What Velma listens for. Switch a behavior on to include it; click its name to read or edit the definition and its Applies-to scoping. Unscoped behaviors apply to every speaker and conversation type; a scoped behavior is evaluated only when the call classifies as one of its types and the speaker holds one of its roles.">ⓘ</span></h4>
           <div class="velma-cfg-warning" id="velma-cfg-behaviors-warning" style="display:none"></div>
           <input type="text" class="velma-cfg-input velma-cfg-filter" id="velma-cfg-behavior-filter" placeholder="Filter behaviors…" autocomplete="off">
           <div class="velma-cfg-grid" id="velma-cfg-behaviors-grid"></div>
@@ -844,7 +949,8 @@
 <!-- Design-system tooltip -->
 <div class="m__tooltip" hidden></div>
 
-<script src="/app.js?v=8"></script>
+<script src="/velma-report.js?v=1"></script>
+<script src="/app.js?v=9"></script>
 <script src="/assets/components/tooltip.js"></script>
 <script>
   // Skip the HubSpot embed on localhost — the preview sandbox blocks

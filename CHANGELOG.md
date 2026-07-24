@@ -2,6 +2,56 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.0.0] - 2026-07-24
+
+### Added
+- **Behavior scoping (`applies_to`) is now first-class in the Velma config
+  editor.** Expanding a behavior shows two "Applies to" chip pickers
+  (conversation types + roles); roles get one for types. "All" = field omitted;
+  deselecting the last chip returns to All (`[]` is never emitted — its server
+  semantics are unverified). Scoping a preset materializes it into an editable
+  copy, same as any other edit. Head chips ("2 types · 3 roles") render for
+  roles too and update live; scope references to UUIDs outside the config show
+  as dashed unknown-chips with an explanation.
+- **"Never fires" prediction.** Verified against the live endpoint (2026-07-24):
+  `applies_to` gates detection at runtime, and responses only carry
+  `detected: true` rows — so a mis-scoped behavior fails silently. The editor
+  now predicts inertness: a behavior (or role) scoped only to disabled entries
+  gets a red "never fires" chip and a section-level count warning.
+- **Deeptalk Design.** The hidden `/dt` Call report is consolidated into the
+  main Velma tab as a second output design. A "Modulate Design / Deeptalk
+  Design" switch in the page header (visible with results, persisted) swaps the
+  analysis view for the dt report — its own sticky player with emotion-colored
+  speaker lanes and behavior star-markers, Summary with type/role confidence,
+  Speakers table, Behaviors card with reasoning + clickable evidence quotes,
+  chat transcript. Same config, same upload, same run data; batch runs only
+  (the toggle disables during streaming). PII/PHI renders with the same blur
+  treatment as the Modulate design; the raw-JSON/stats tail is hidden in
+  report view. Ported render-only into `velma-report.js`/`velma-report.css`
+  (all ids/classes `vr-`-prefixed; dt's tokens reuse the showcase's `--m__*`
+  names, so they're scoped to the view container). `/dt` itself is unchanged.
+- Config summary now names the active detection package (matched by the same
+  snapshot the package cards use): "Fraud Detection and Prevention (default)"
+  instead of an anonymous "Default", package name after picking one, "Custom"
+  only when the detection set really differs. Package bundles prefetch at boot
+  so the plate summary is correct before the modal ever opens.
+
+### Changed
+- Corrected a disproven claim baked into the editor (tooltips, section warning,
+  results note): behaviors do NOT require conversation types/roles. Verified
+  live: with none sent, Velma classifies against its **built-in default
+  catalog** (7 types / 13 roles) and behaviors still run. The warning is now an
+  informational note about the fallback; the "requested behaviors but none came
+  back" results note explains silent scope-outs instead.
+- "Set up behaviors" on the upload plate is now "Configuration" (the modal
+  configures signals and outputs too).
+
+### Fixed
+- JSON tab: server config exports key roles by `participant_uuid`, while the
+  POST schema uses `participant_role_uuid` — imports now rename the field in
+  place (keeping the UUID), so `applies_to_participant_role_uuids` references
+  survive instead of orphaning into regenerated UUIDs.
+
 ## [5.5.0] - 2026-07-23
 
 ### Added
