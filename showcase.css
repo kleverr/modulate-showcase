@@ -366,6 +366,76 @@
   color: var(--m__text);
 }
 
+/* ── Topics & Sentiment pivot chips (5-step, worded) ── */
+/* The pivot (Topic + one column per speaker) replaced the old Speaker|Topics
+   two-column table — undo styles.css's fixed 22%/78% column sizing, which
+   crushed every column past the second off the viewport. */
+.pg-topics-table {
+  table-layout: auto;
+}
+.pg-topics-table th:nth-child(1),
+.pg-topics-table th:nth-child(2) {
+  width: auto;
+}
+/* Two-row header: group label over the speaker columns, names beneath it. */
+.pg-topics-table .pg-topics-th-topic {
+  width: 26%;
+  vertical-align: bottom;
+}
+.pg-topics-table .pg-topics-group-th {
+  width: auto;
+  font-weight: var(--m__font-weight-regular);
+  color: var(--m__text-caption);
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.pg-topics-table .pg-topics-th-speaker {
+  width: auto;
+}
+.pg-topics-caption {
+  margin: 0 0 var(--m__spacer-xs);
+}
+.pg-sent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  white-space: nowrap;
+}
+.pg-sent-dot {
+  width: 0.55em;
+  height: 0.55em;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.pg-sent--vneg {
+  color: var(--m__error-hover);
+  background: color-mix(in srgb, var(--m__error) 22%, transparent);
+  border-color: color-mix(in srgb, var(--m__error) 50%, transparent);
+}
+.pg-sent--neg {
+  color: var(--m__error);
+  background: color-mix(in srgb, var(--m__error) 8%, transparent);
+  border-color: color-mix(in srgb, var(--m__error) 30%, transparent);
+}
+.pg-sent--neu {
+  color: var(--m__text-caption);
+  background: color-mix(in srgb, var(--m__text) 6%, transparent);
+}
+.pg-sent--pos {
+  color: var(--m__success);
+  background: color-mix(in srgb, var(--m__success) 10%, transparent);
+  border-color: color-mix(in srgb, var(--m__success) 30%, transparent);
+}
+.pg-sent--vpos {
+  color: var(--m__success-hover);
+  background: color-mix(in srgb, var(--m__success) 22%, transparent);
+  border-color: color-mix(in srgb, var(--m__success) 50%, transparent);
+}
+.pg-sent-none {
+  color: var(--m__text-caption);
+}
+
 /* ── Velma Design 1/2 toggle (page header) ── */
 .pg-design-toggle {
   margin-left: auto;

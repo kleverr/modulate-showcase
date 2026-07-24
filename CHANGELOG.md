@@ -2,6 +2,35 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.1.0] - 2026-07-24
+
+### Added
+- **Tone-Based Detection package.** Seven paralinguistic behaviors where the
+  voice contradicts the words — Sarcasm, Smile in the Voice, Unvoiced
+  Disagreement, Reluctance, Tone Mismatch, Accusatory Question, Request or
+  order — with the Customer Service / Sales context (2 types, 3 roles).
+  Behaviors ship unscoped (tone signals are universal). Source defs from the
+  team's authoring tool, non-schema export fields stripped; "Tone Missmatch"
+  typo fixed in the display name.
+
+### Changed
+- **Topics & Sentiment redesigned around the per-speaker comparison.** The
+  table pivots to topics-as-rows with one column per speaker under a group
+  header ("How each speaker feels about the topic"). Chips now lead with the
+  API's own worded labels on a five-step color scale (very negative → very
+  positive, built from design-system error/success tokens); the raw score
+  moved to the tooltip ("Very negative (−0.85 on a −1…+1 scale)"). A caption
+  states the semantic: expressed attitude in tone and wording whenever the
+  topic comes up — not the topic's own polarity. Sentiments-off runs degrade
+  to plain topic chips; missing (topic × speaker) cells render as an em dash.
+  The label taxonomy is undocumented upstream — reconstructed from live
+  responses, with score-threshold fallback if `sentiment_label` is absent.
+
+### Fixed
+- The topics table no longer clips columns past the second off the viewport —
+  the old two-column Speaker|Topics sizing (fixed 22%/78%) still applied to
+  the new pivot layout.
+
 ## [6.0.0] - 2026-07-24
 
 ### Added

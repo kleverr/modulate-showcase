@@ -46,5 +46,13 @@
     "types": 25,
     "roles": 14,
     "behaviors": 25
+  },
+  {
+    "slug": "tone-based",
+    "name": "Tone-Based Detection",
+    "description": "Paralinguistic signals where the voice contradicts the words: sarcasm, smile in the voice, unvoiced disagreement, reluctance, tone mismatch, accusatory questions, and disguised orders.",
+    "types": 2,
+    "roles": 3,
+    "behaviors": 7
   }
 ]

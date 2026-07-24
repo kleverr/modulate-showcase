@@ -5758,61 +5758,110 @@
       velmaTopicsBySpeaker.appendChild(type);
     }
 
-    const bySpeaker = new Map();
-    topicSentiments.forEach(s => {
-      const k = s.speaker_label;
-      if (!bySpeaker.has(k)) bySpeaker.set(k, []);
-      bySpeaker.get(k).push(s);
-    });
-    if (bySpeaker.size === 0 && !topics.length) return;
+    if (!topicSentiments.length && !topics.length) return;
 
     const section = document.createElement('div');
     section.className = 'pg-results-table-section';
     const table = document.createElement('table');
     table.className = 'pg-topics-table';
-    table.innerHTML = '<thead><tr><th>Speaker</th><th>Topics</th></tr></thead>';
     const tbody = document.createElement('tbody');
 
-    const appendRow = (label, chips) => {
+    if (!topicSentiments.length) {
+      // Topics only (sentiments off or not in yet) — a single row of plain chips.
+      table.innerHTML = '<thead><tr><th>Topics</th></tr></thead>';
       const tr = document.createElement('tr');
-      const tdSpeaker = document.createElement('td');
-      tdSpeaker.innerHTML = '<span class="pg-speaker-cell-name">' + escapeHtml(label) + '</span>';
-      tr.appendChild(tdSpeaker);
-      const tdTopics = document.createElement('td');
+      const td = document.createElement('td');
       const group = document.createElement('div');
       group.className = 'm__tag-group';
-      chips.forEach(c => group.appendChild(c));
-      tdTopics.appendChild(group);
-      tr.appendChild(tdTopics);
+      topics.forEach(t => group.appendChild(buildTopicChip(t)));
+      td.appendChild(group);
+      tr.appendChild(td);
       tbody.appendChild(tr);
-    };
-
-    if (bySpeaker.size === 0) {
-      appendRow('All speakers', topics.map(t => buildTopicChip(t, null)));
     } else {
-      bySpeaker.forEach((sents, speakerLabel) => {
-        const roleName = speakerToRole[speakerLabel];
-        appendRow(roleName || speakerLabel, sents.map(s => buildTopicChip(s.topic, s)));
+      // Pivot: topics as rows, one column per speaker — the per-speaker
+      // contrast is the point of the feature, so make it the layout.
+      const cap = document.createElement('p');
+      cap.className = 'caption pg-topics-caption';
+      cap.textContent = 'Expressed attitude in tone and wording whenever the topic comes up — not the topic’s own polarity. Hover a chip for the exact score.';
+      velmaTopicsBySpeaker.appendChild(cap);
+
+      const speakers = [...new Set(topicSentiments.map(s => String(s.speaker_label)))]
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+      const byTopic = new Map();
+      topicSentiments.forEach(s => {
+        if (!byTopic.has(s.topic)) byTopic.set(s.topic, new Map());
+        byTopic.get(s.topic).set(String(s.speaker_label), s);
+      });
+      const rowTopics = [...topics];
+      byTopic.forEach((_, t) => { if (!rowTopics.includes(t)) rowTopics.push(t); });
+
+      // Two-row header: a group label explains what every speaker column is,
+      // so speaker names stay short and the semantic is on the table itself.
+      table.innerHTML = '<thead>' +
+        '<tr><th rowspan="2" class="pg-topics-th-topic">Topic</th>' +
+        '<th colspan="' + speakers.length + '" class="pg-topics-group-th">How each speaker feels about the topic</th></tr>' +
+        '<tr>' + speakers.map(sp =>
+          '<th class="pg-topics-th-speaker">' + escapeHtml(speakerToRole[sp] || ('Speaker ' + sp)) + '</th>').join('') + '</tr>' +
+        '</thead>';
+
+      rowTopics.forEach(topic => {
+        const tr = document.createElement('tr');
+        const tdName = document.createElement('td');
+        tdName.innerHTML = '<span class="pg-speaker-cell-name">' + escapeHtml(topic) + '</span>';
+        tr.appendChild(tdName);
+        speakers.forEach(sp => {
+          const td = document.createElement('td');
+          const s = byTopic.has(topic) ? byTopic.get(topic).get(sp) : null;
+          if (s) td.appendChild(buildSentimentChip(s));
+          else td.innerHTML = '<span class="pg-sent-none">—</span>';
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
       });
     }
+
     table.appendChild(tbody);
     section.appendChild(table);
     velmaTopicsBySpeaker.appendChild(section);
   }
 
-  function buildTopicChip(topic, sentiment) {
+  function buildTopicChip(topic) {
     const chip = document.createElement('span');
     chip.className = 'm__tag';
-    if (sentiment && sentiment.sentiment_score < -0.1) chip.classList.add('m__tag--error');
-    chip.appendChild(document.createTextNode(topic + ' '));
-    if (sentiment) {
-      const score = document.createElement('span');
-      score.className = 'pg-num muted';
-      const s = Number(sentiment.sentiment_score || 0).toFixed(2);
-      score.textContent = (sentiment.sentiment_score > 0 ? '+' : '') + s;
-      chip.appendChild(score);
-      if (sentiment.sentiment_label) chip.dataset.tooltip = sentiment.sentiment_label + ' (' + s + ')';
-    }
+    chip.textContent = topic;
+    return chip;
+  }
+
+  // The API's own five-step taxonomy (observed live: very_negative … positive;
+  // very_positive assumed symmetric). Words lead; the raw score is tooltip-only.
+  const VELMA_SENTIMENT_STEPS = ['very_negative', 'negative', 'neutral', 'positive', 'very_positive'];
+  const VELMA_SENTIMENT_CLASS = {
+    very_negative: 'vneg', negative: 'neg', neutral: 'neu', positive: 'pos', very_positive: 'vpos',
+  };
+
+  function velmaSentimentStep(s) {
+    const label = String((s && s.sentiment_label) || '').toLowerCase();
+    if (VELMA_SENTIMENT_STEPS.includes(label)) return label;
+    // Fallback thresholds fitted to observed score→label pairs.
+    const v = Number((s && s.sentiment_score) || 0);
+    if (v <= -0.5) return 'very_negative';
+    if (v < -0.05) return 'negative';
+    if (v <= 0.05) return 'neutral';
+    if (v < 0.5) return 'positive';
+    return 'very_positive';
+  }
+
+  function buildSentimentChip(s) {
+    const step = velmaSentimentStep(s);
+    const word = (step.charAt(0).toUpperCase() + step.slice(1)).replace(/_/g, ' ');
+    const chip = document.createElement('span');
+    chip.className = 'm__tag pg-sent pg-sent--' + VELMA_SENTIMENT_CLASS[step];
+    const dot = document.createElement('span');
+    dot.className = 'pg-sent-dot';
+    chip.appendChild(dot);
+    chip.appendChild(document.createTextNode(word));
+    const v = Number(s.sentiment_score || 0);
+    chip.dataset.tooltip = word + ' (' + (v > 0 ? '+' : '') + v.toFixed(2) + ' on a −1…+1 scale)';
     return chip;
   }
 
