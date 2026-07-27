@@ -189,8 +189,11 @@
       speakerLabels.appendChild(lab);
     });
 
-    // Behavior stars: one indicator per (detected behavior × evidence clip).
+    // Behavior stars: ONE indicator per (speaker lane × evidence clip) — when
+    // several behaviors share a clip they'd otherwise paint identical stars on
+    // top of each other; instead the hover label lists all their names.
     const clipByUuid = new Map(clips.map(c => [c.clip_uuid, c]));
+    const starsByClip = new Map(); // "lane:uuid" → {clip, idx, uuid, names[]}
     (data.behaviors || []).forEach(b => {
       if (!b || !b.detected) return;
       const uuids = new Set(b.evidence_clip_uuids || []);
@@ -200,17 +203,23 @@
         if (!c) return;
         const idx = laneIdx(b.speaker_label != null ? b.speaker_label : c.speaker_label);
         if (idx < 0) return;
-        const ind = el('div', 'vr-behaviour-indicator');
-        ind.style.left = ((c.start_ms || 0) / durationMs * 100) + '%';
-        ind.style.setProperty('--row-top', rowTop(idx) + '%');
-        ind.style.setProperty('--row-height', (rowH - rowPad * 2) + '%');
-        const icon = el('span', 'vr-behaviour-icon');
-        icon.appendChild(svgUse('#vr-icon-star'));
-        ind.appendChild(icon);
-        ind.appendChild(el('span', 'vr-behaviour-label-text', b.behavior_name || ''));
-        ind.addEventListener('click', () => jumpToClip(uuid));
-        behaviourIndicators.appendChild(ind);
+        const key = idx + ':' + uuid;
+        if (!starsByClip.has(key)) starsByClip.set(key, { clip: c, idx, uuid, names: [] });
+        const name = b.behavior_name || '';
+        if (name && !starsByClip.get(key).names.includes(name)) starsByClip.get(key).names.push(name);
       });
+    });
+    starsByClip.forEach(({ clip, idx, uuid, names }) => {
+      const ind = el('div', 'vr-behaviour-indicator');
+      ind.style.left = ((clip.start_ms || 0) / durationMs * 100) + '%';
+      ind.style.setProperty('--row-top', rowTop(idx) + '%');
+      ind.style.setProperty('--row-height', (rowH - rowPad * 2) + '%');
+      const icon = el('span', 'vr-behaviour-icon');
+      icon.appendChild(svgUse('#vr-icon-star'));
+      ind.appendChild(icon);
+      ind.appendChild(el('span', 'vr-behaviour-label-text', names.join(' · ')));
+      ind.addEventListener('click', () => jumpToClip(uuid));
+      behaviourIndicators.appendChild(ind);
     });
   }
 
@@ -413,11 +422,20 @@
   function renderTranscript(data) {
     const clips = data.clips || [];
 
-    const starredClips = new Map(); // uuid → [behavior names]
+    // uuid → [{name, definitive}] — every evidence clip carries its behavior
+    // names (same logic as the Modulate design), not just the definitive one.
+    const starredClips = new Map();
     (data.behaviors || []).forEach(b => {
-      if (!b || !b.detected || !b.definitive_clip_uuid) return;
-      if (!starredClips.has(b.definitive_clip_uuid)) starredClips.set(b.definitive_clip_uuid, []);
-      starredClips.get(b.definitive_clip_uuid).push(b.behavior_name);
+      if (!b || !b.detected) return;
+      const uuids = new Set(b.evidence_clip_uuids || []);
+      if (b.definitive_clip_uuid) uuids.add(b.definitive_clip_uuid);
+      uuids.forEach(uuid => {
+        if (!starredClips.has(uuid)) starredClips.set(uuid, []);
+        starredClips.get(uuid).push({
+          name: b.behavior_name || 'Behavior',
+          definitive: b.definitive_clip_uuid === uuid,
+        });
+      });
     });
 
     transcriptList.textContent = '';
@@ -444,10 +462,15 @@
         meta.appendChild(pill);
       }
       if (c.clip_uuid && starredClips.has(c.clip_uuid)) {
-        const star = el('span', 'vr-transcript-star');
-        star.appendChild(svgUse('#vr-icon-star'));
-        star.title = starredClips.get(c.clip_uuid).join(', ');
-        meta.appendChild(star);
+        starredClips.get(c.clip_uuid).forEach(sb => {
+          const chip = el('span', 'vr-transcript-behavior' + (sb.definitive ? ' definitive' : ''));
+          const star = el('span', 'vr-transcript-star');
+          star.appendChild(svgUse('#vr-icon-star'));
+          chip.appendChild(star);
+          chip.appendChild(el('span', null, sb.name));
+          if (sb.definitive) chip.title = 'Definitive evidence';
+          meta.appendChild(chip);
+        });
       }
       body.appendChild(meta);
       const textEl = el('span', 'vr-report-transcript-text');

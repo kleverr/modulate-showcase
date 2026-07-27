@@ -1576,6 +1576,9 @@
   // Remove any mode-specific strip overlays from the player visualization
   // (each mode's renderer draws its own; #stt-chart is cleared separately).
   function clearPlayerStrips() {
+    // Behavior sparks live alongside the strips — clear them together so a
+    // mode switch never carries another run's indicators.
+    clearVelmaPlayerBehaviours();
     const viz = document.getElementById('player-visualization');
     if (!viz) return;
     viz.querySelectorAll('.df-player-clips, .mx-player-heat, .aim-player-heat, .pg-redaction-player-track')
@@ -3534,6 +3537,9 @@
 
   function renderTranscript() {
     transcriptList.innerHTML = '';
+    // Sparks are repopulated by the Velma render after this returns; every
+    // other path through here must not keep a previous run's indicators.
+    clearVelmaPlayerBehaviours();
 
     if (sttUtterances.length === 0 && !sttPartial) {
       const empty = document.createElement('div');
@@ -3607,11 +3613,9 @@
       for (let i = sttUtterances.length - 1; i >= 0; i--) {
         if (currentMs >= sttUtterances[i].start_ms) { activeIdx = i; break; }
       }
+      // Highlight only — playback must never scroll the page to the transcript.
       transcriptList.querySelectorAll('.pg-transcript-utterance').forEach((el, i) => {
-        const wasActive = el.classList.contains('active');
-        const nowActive = i === activeIdx;
-        el.classList.toggle('active', nowActive);
-        if (nowActive && !wasActive) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        el.classList.toggle('active', i === activeIdx);
       });
       sttPlaybackTracker = requestAnimationFrame(tick);
     }
@@ -3635,25 +3639,41 @@
     }
   }
 
+  // Median of a speaker's scored clips \u2014 the speaker-level deepfake leaning.
+  function speakerDeepfakeMedian(speaker) {
+    const scores = sttUtterances
+      .filter(u => u.deepfake_score != null && (u.speaker != null ? u.speaker : 0) === speaker)
+      .map(u => u.deepfake_score)
+      .sort((a, b) => a - b);
+    if (!scores.length) return null;
+    const mid = Math.floor(scores.length / 2);
+    return scores.length % 2 ? scores[mid] : (scores[mid - 1] + scores[mid]) / 2;
+  }
+
   // Per-utterance authenticity from the model's deepfake score (0 = authentic,
-  // 1 = deepfake). The verdict is always the leaning \u2014 "Likely" marks the low-
-  // confidence middle band \u2014 and pct is the probability of the named class.
-  function utteranceAuthenticity(score) {
-    const deepfake = score > 0.7;
+  // 1 = deepfake). Only confident calls surface in the UI (`confident`): the
+  // uncertain middle band is omitted entirely rather than hedged on screen.
+  // The "Deepfake" verdict additionally requires the speaker's overall pattern
+  // to lean synthetic (median scored clip \u2265 0.5): an isolated spike on an
+  // otherwise-authentic speaker is not confident and shows nothing.
+  function utteranceAuthenticity(score, speaker) {
+    const median = speakerDeepfakeMedian(speaker);
+    const speakerLeans = median == null || median >= 0.5;
+    const deepfake = score > 0.7 && speakerLeans;
     const label = deepfake ? 'Deepfake'
       : score >= 0.5 ? 'Likely deepfake'
       : score > 0.3 ? 'Likely authentic'
       : 'Authentic';
     const pct = Math.round((score >= 0.5 ? score : 1 - score) * 100);
-    return { label, pct, deepfake };
+    return { label, pct, deepfake, confident: deepfake || score <= 0.3 };
   }
 
   function clipTooltipText(u) {
     const endTimeMs = u.start_ms + (u.duration_ms || 2000);
     let dfTooltip = '';
     if (u.deepfake_score != null) {
-      const v = utteranceAuthenticity(u.deepfake_score);
-      dfTooltip = ' \u00b7 ' + v.label + ' ' + v.pct + '%';
+      const v = utteranceAuthenticity(u.deepfake_score, u.speaker != null ? u.speaker : 0);
+      if (v.confident) dfTooltip = ' \u00b7 ' + v.label + ' ' + v.pct + '%';
     }
     return formatMs(u.start_ms) + ' \u2013 ' + formatMs(endTimeMs) +
       ' \u00b7 ' + (u.speaker_label || ('Speaker ' + (u.speaker || 0))) +
@@ -3702,7 +3722,8 @@
       viz.className = 'clip-visualization';
       clip.appendChild(viz);
 
-      // Click to seek and highlight transcript row
+      // Click to seek and highlight transcript row (no scroll — matches the
+      // Deeptalk player: seeking from the strip must not yank the page down).
       clip.addEventListener('click', () => {
         if (resultsAudio) {
           resultsAudio.currentTime = u.start_ms / 1000;
@@ -3710,7 +3731,6 @@
         }
         const bubbles = transcriptList.querySelectorAll('.pg-transcript-utterance');
         bubbles.forEach((el, j) => el.classList.toggle('active', j === i));
-        if (bubbles[i]) bubbles[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
 
       sttChart.appendChild(clip);
@@ -3838,15 +3858,18 @@
       header.appendChild(la);
     }
 
-    // Deepfake verdict
+    // Deepfake verdict — confident calls only; the "Likely …" middle band
+    // (including spikes on otherwise-authentic speakers) shows no chip.
     if (opts.deepfake_signal && u.deepfake_score != null) {
-      const df = document.createElement('span');
-      df.className = 'pg-transcript-verdict';
-      const v = utteranceAuthenticity(u.deepfake_score);
-      if (v.deepfake) df.classList.add('deepfake');
-      df.textContent = v.label;
-      df.dataset.tooltip = 'Model deepfake score ' + u.deepfake_score.toFixed(2) + ' (0 = authentic, 1 = deepfake)';
-      header.appendChild(df);
+      const v = utteranceAuthenticity(u.deepfake_score, u.speaker != null ? u.speaker : 0);
+      if (v.confident) {
+        const df = document.createElement('span');
+        df.className = 'pg-transcript-verdict';
+        if (v.deepfake) df.classList.add('deepfake');
+        df.textContent = v.label;
+        df.dataset.tooltip = 'Model deepfake score ' + u.deepfake_score.toFixed(2) + ' (0 = authentic, 1 = deepfake)';
+        header.appendChild(df);
+      }
     }
 
     el.appendChild(header);
@@ -4840,6 +4863,7 @@
   const velmaConfigSummary = document.getElementById('velma-config-summary');
   const velmaSetupBtn      = document.getElementById('velma-setup-btn');
   const velmaSummaryText   = document.getElementById('velma-summary-text');
+  const velmaConvType      = document.getElementById('velma-conv-type');
   const velmaSpeakersTbody = document.getElementById('velma-speakers-tbody');
   const velmaBehaviorsTbody= document.getElementById('velma-behaviors-tbody');
   const velmaBehaviorsTable = document.querySelector('.velma-behaviors-table');
@@ -5032,6 +5056,7 @@
     syncSpeakerLanes([]);
     if (bottomColumns) bottomColumns.classList.remove('visible');
     velmaSummaryText.textContent = '';
+    if (velmaConvType) velmaConvType.innerHTML = '';
     velmaSpeakersTbody.innerHTML = '';
     velmaBehaviorsTbody.innerHTML = '';
     velmaTopicsBySpeaker.innerHTML = '';
@@ -5442,10 +5467,13 @@
       } else {
         velmaSummaryText.textContent = data.summary;
       }
-      velmaSummarySection.style.display = '';
     } else {
-      velmaSummarySection.style.display = 'none';
+      velmaSummaryText.textContent = '';
     }
+    // The inferred conversation type renders under the summary (it used to
+    // lead the Topics & Sentiment section, which this design no longer shows).
+    renderVelmaConversationType(data.conversation_type_pick);
+    velmaSummarySection.style.display = (data.summary || data.conversation_type_pick) ? '' : 'none';
 
     // ── Role picks feed the Speakers table (design: role name + reasoning +
     //    "Inferred, N%" tag live inside the speaker cell). The conversation-type
@@ -5507,16 +5535,11 @@
       velmaBehaviorsSection.style.display = 'none';
     }
 
-    // ── Topics, grouped by speaker, with per-topic sentiment chips
+    // ── Topics & Sentiment: hidden from this design (the data is still
+    //    requested and visible in the raw JSON pane). The conversation-type
+    //    pick renders in the Summary section above instead.
     velmaTopicsBySpeaker.innerHTML = '';
-    const topics = data.topics || [];
-    const ts = data.topic_sentiments || [];
-    if (topics.length || ts.length || data.conversation_type_pick) {
-      velmaTopicsSection.style.display = '';
-      renderVelmaTopicsBySpeaker(topics, ts, speakerToRole, data.conversation_type_pick);
-    } else {
-      velmaTopicsSection.style.display = 'none';
-    }
+    velmaTopicsSection.style.display = 'none';
 
     // ── Transcript: reuse the existing transcription pipeline (stt-chart + bubble list)
     // 1. Build clip_uuid → [{name, definitive}] map for behavior chip overlay (detected only)
@@ -5585,6 +5608,72 @@
 
     // 5. Patch the rendered rows: replace "Speaker N" with role name; add behavior links.
     patchVelmaTranscriptBubbles();
+
+    // 6. Spark indicators for detected behaviors on the player strip.
+    renderVelmaPlayerBehaviours(data, speakerOrder);
+  }
+
+  // ── Behavior sparks on the player strip ─────────────────────────────────────
+  // ONE indicator per (speaker lane × evidence clip), mirroring the Deeptalk
+  // player's collapsed look: when several behaviors share an evidence clip the
+  // hover label lists them all. Spark sits on the speaker's lane at the clip
+  // position; click jumps to the evidence bubble. Uses the design's existing
+  // .behaviour-indicator structure from styles.css.
+  const behaviourIndicatorsEl = document.getElementById('behaviour-indicators');
+
+  function clearVelmaPlayerBehaviours() {
+    if (behaviourIndicatorsEl) behaviourIndicatorsEl.innerHTML = '';
+  }
+
+  function renderVelmaPlayerBehaviours(data, speakerOrder) {
+    if (!behaviourIndicatorsEl) return;
+    behaviourIndicatorsEl.innerHTML = '';
+    const clips = data.clips || [];
+    const behaviors = (data.behaviors || []).filter(b => b && b.detected);
+    if (!clips.length || !behaviors.length) return;
+    const lastClip = clips[clips.length - 1];
+    const totalMs = data.duration_ms || ((lastClip.start_ms || 0) + (lastClip.duration_ms || 4000));
+    if (totalMs <= 0) return;
+    const clipByUuid = new Map(clips.map(c => [c.clip_uuid, c]));
+    const byClip = new Map(); // "lane:uuid" → {clip, lane, uuid, names[]}
+    behaviors.forEach(b => {
+      const uuids = new Set(b.evidence_clip_uuids || []);
+      if (b.definitive_clip_uuid) uuids.add(b.definitive_clip_uuid);
+      uuids.forEach(uuid => {
+        const c = clipByUuid.get(uuid);
+        if (!c) return;
+        const label = b.speaker_label != null ? b.speaker_label : c.speaker_label;
+        const lane = speakerOrder[label];
+        if (!lane) return;
+        const key = lane + ':' + uuid;
+        if (!byClip.has(key)) byClip.set(key, { clip: c, lane, uuid, names: [] });
+        const name = b.behavior_name || 'Behavior';
+        if (!byClip.get(key).names.includes(name)) byClip.get(key).names.push(name);
+      });
+    });
+    byClip.forEach(({ clip, lane, uuid, names }) => {
+      const ind = document.createElement('div');
+      ind.className = 'behaviour-indicator';
+      ind.setAttribute('data-speaker-index', Math.min(lane, 5));
+      ind.setAttribute('data-behaviour-index', 1);
+      ind.setAttribute('data-emotion', emotionSlug(clip.emotion));
+      ind.style.left = ((clip.start_ms || 0) / totalMs * 100).toFixed(3) + '%';
+      // Plates on the right half open leftward so they never clip at the edge.
+      if ((clip.start_ms || 0) / totalMs > 0.55) ind.classList.add('flip-label');
+      const icon = document.createElement('span');
+      icon.className = 'behaviour-icon';
+      icon.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true"><use href="#vr-icon-star"/></svg>';
+      icon.addEventListener('click', () => jumpToClip(uuid));
+      // Deeptalk-style name plate: solid-background label to the right of the
+      // spark, revealed on hover (readable over the colored clips).
+      const lbl = document.createElement('span');
+      lbl.className = 'behaviour-label-text';
+      lbl.textContent = names.join(' · ');
+      lbl.addEventListener('click', () => jumpToClip(uuid));
+      ind.appendChild(icon);
+      ind.appendChild(lbl);
+      behaviourIndicatorsEl.appendChild(ind);
+    });
   }
 
   function patchVelmaTranscriptBubbles() {
@@ -5741,9 +5830,27 @@
     return tr;
   }
 
+  // The conversation-type pick as a paragraph with an "Inferred, N%" tag —
+  // shown under the Speech Summary (reuses the former topics lead-in styling).
+  function renderVelmaConversationType(convPick) {
+    if (!velmaConvType) return;
+    velmaConvType.innerHTML = '';
+    if (!convPick) return;
+    const type = document.createElement('div');
+    type.className = 'pg-topics-type';
+    let html = '<strong>' + escapeHtml(convPick.name || '') + '.</strong> ' +
+      escapeHtml(convPick.reasoning || convPick.detail || '');
+    if (convPick.confidence != null) {
+      html += '<span class="m__tag-flat">' + escapeHtml(prettySelectionSource(convPick.selection_source)) + ', ' + Math.round(convPick.confidence * 100) + '%</span>';
+    }
+    type.innerHTML = html;
+    velmaConvType.appendChild(type);
+  }
+
   // Topics grouped by speaker — each speaker row shows their topics as
   // sentiment-colored chips. Fall back to a single "All speakers" row if
-  // topic_sentiments is empty.
+  // topic_sentiments is empty. (No longer rendered in this design — kept for
+  // easy re-enable; the raw JSON pane still carries topics/sentiments.)
   function renderVelmaTopicsBySpeaker(topics, topicSentiments, speakerToRole, convPick) {
     // Lead-in: the conversation-type pick as a paragraph with an "Inferred, N%" tag
     if (convPick) {

@@ -954,6 +954,54 @@ body[data-mode="velma"].velma-design2 #pg-bottom-columns {
 .pg-behavior-link.definitive {
   font-weight: var(--m__font-weight-bold);
 }
+
+/* Behavior sparks on the player strip (renderVelmaPlayerBehaviours) — the
+   .behaviour-indicator base structure lives in styles.css; these rules add
+   the interaction affordances it never wired up: clickable spark, hover
+   raise, and the name plate reveal (borrowed from the Deeptalk player: solid
+   background behind the names so they read over the colored clips). Colors
+   follow the theme: black spark on the light strip, white on dark. */
+.pg-player-dataviz .behaviour-indicator {
+  color: rgba(var(--ids__text-RGB), 1);
+}
+.pg-player-dataviz .behaviour-indicator .behaviour-icon {
+  pointer-events: auto;
+  cursor: pointer;
+  filter: drop-shadow(0 0 2px rgba(var(--ids__background-RGB), 0.8));
+}
+.pg-player-dataviz .behaviour-indicator:hover {
+  z-index: 20;
+}
+.pg-player-dataviz .behaviour-indicator:hover .behaviour-icon {
+  filter: drop-shadow(0 0 3px rgba(var(--ids__text-hover-RGB), 0.9));
+}
+.pg-player-dataviz .behaviour-indicator .behaviour-label-text {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  left: calc(100% + 0.2em); /* right of the spark, like the Deeptalk player */
+  bottom: 0;
+  width: max-content;
+  max-width: min(20em, 38vw); /* long name lists wrap instead of clipping */
+  line-height: 1.25;
+  padding: 0.05em 0.4em;
+  background: rgba(var(--ids__background-RGB), 1);
+  color: rgba(var(--ids__text-RGB), 1);
+  font-weight: var(--m__font-weight-bold);
+  border-radius: var(--m__radius-s, 0.25em);
+  z-index: 2;
+  pointer-events: auto;
+  cursor: pointer;
+}
+/* Sparks near the strip's right edge open their plate leftward instead. */
+.pg-player-dataviz .behaviour-indicator.flip-label .behaviour-label-text {
+  left: auto;
+  right: calc(100% + 0.2em);
+}
+.pg-player-dataviz .behaviour-indicator:hover .behaviour-label-text {
+  visibility: visible;
+  opacity: 1;
+}
 .velma-clip-models {
   display: flex;
   flex-wrap: wrap;

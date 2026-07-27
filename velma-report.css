@@ -587,6 +587,20 @@ body[data-mode="velma"].velma-design2 #velma-report-view { display: block; }
   color: var(--m__text-accent);
 }
 .vr-transcript-star svg { width: 100%; height: 100%; fill: currentColor; }
+/* Behavior name chips in the transcript meta row — spark + name per evidence
+   clip; the definitive clip's chip reads bolder. */
+.vr-transcript-behavior {
+  display: inline-flex;
+  align-items: center;
+  gap: .3em;
+  color: var(--m__text-accent);
+  font-size: .75em;
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.vr-transcript-behavior .vr-transcript-star { width: .9em; height: .9em; }
+.vr-transcript-behavior.definitive { font-weight: 700; }
 
 /* ── Small screens ── */
 @media (max-width: 700px) {

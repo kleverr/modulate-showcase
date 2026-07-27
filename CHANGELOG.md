@@ -2,6 +2,41 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.2.0] - 2026-07-27
+
+### Added
+- **Behavior sparks on the Modulate-design player.** Detected behaviors now
+  mark their evidence clips on the player strip — one spark per clip on the
+  speaker's lane, with a Deeptalk-style name plate on hover (solid themed
+  background, wraps long name lists, opens leftward near the strip's right
+  edge; black spark in the light theme, white in dark). Clicking a spark or
+  its plate jumps to the evidence bubble.
+- **Behavior chips in the Deeptalk transcript.** Rows now carry spark + name
+  chips for every evidence clip (same mapping as the Modulate design) instead
+  of a bare tooltip star on the definitive clip only; the definitive chip
+  reads bold.
+
+### Changed
+- **One spark per clip in both players.** The Deeptalk player used to draw
+  one star per behavior stacked at identical coordinates (shared clips looked
+  like a single star); the designs now collapse to one indicator per evidence
+  clip whose label lists every behavior on it — identical counts and
+  positions in both designs.
+- **Per-clip deepfake verdicts are calmer.** A chip only renders on a
+  confident call: red "Deepfake" additionally requires the speaker's median
+  scored clip ≥ 0.5, so an isolated spike on an otherwise-authentic speaker
+  (the demo customer's 97.6% / 91% clips) no longer flags. The uncertain
+  "Likely …" middle band is omitted entirely (chips and clip tooltips). The
+  Transcription demo's synthetic IVR agent keeps all its red flags.
+- **Playback no longer scrolls the page to the transcript.** The auto-follow
+  during playback is gone in the Modulate design, and clicking a clip on the
+  player strip seeks without jumping down (matching Deeptalk clips). Explicit
+  evidence navigation — sparks, behavior links, evidence quotes — still
+  scrolls; live streams still follow incoming utterances.
+- **Topics & Sentiment hidden from the Modulate results view.** The data is
+  still requested and visible in the raw JSON pane; the inferred
+  conversation-type line moved under the Speech Summary.
+
 ## [6.1.0] - 2026-07-24
 
 ### Added
