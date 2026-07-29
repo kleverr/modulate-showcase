@@ -2,6 +2,18 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.3.0] - 2026-07-29
+
+### Added
+- **Ensemble toggle on Accent Detection.** The accent page's options row now
+  carries an "Ensemble" toggle wired to the batch API's `use_ensemble` flag.
+  It's on by default so demo runs get the strongest pass (the API itself
+  defaults to false — the flag is only sent while the toggle is on). Per the
+  published spec it runs a more thorough analysis that may change the
+  returned labels and takes longer — the progress pacing stretches
+  accordingly, and the stats modal's Detection card reports whether the run
+  used it.
+
 ## [6.2.0] - 2026-07-27
 
 ### Added

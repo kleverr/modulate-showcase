@@ -347,6 +347,8 @@
   const plateHeader     = document.getElementById('plate-header');
   const plateHeaderTitle = document.getElementById('plate-header-title');
   const sttOptionsRow   = document.getElementById('stt-options-row');
+  const accentOptions   = document.getElementById('accent-options');
+  const optEnsemble     = document.getElementById('opt-ensemble');
   const plateStages     = document.getElementById('plate-stages');
   const plateUploadingLabel = document.getElementById('plate-uploading-label');
   const plateStreamingLabel = document.getElementById('plate-streaming-label');
@@ -427,7 +429,7 @@
     },
     accent: {
       path: '/accent', title: 'Accent Detection', plateTitle: 'Detect speaker accent',
-      optionsRow: () => plateHeader,
+      optionsRow: () => accentOptions,
       verdict: () => document.getElementById('results-accent-verdict'),
       panels: () => [document.getElementById('accent-content')],
       streaming: false,
@@ -471,7 +473,7 @@
     navLinks.forEach(a => a.classList.toggle('active', a.dataset.mode === mode));
 
     // Plate: option rows (exactly one visible), generic header title
-    [velmaOptions, sttOptionsRow, redactionOptions, plateHeader].forEach(row => {
+    [velmaOptions, sttOptionsRow, redactionOptions, accentOptions, plateHeader].forEach(row => {
       if (row) row.classList.remove('visible');
     });
     const activeRow = cfg.optionsRow && cfg.optionsRow();
@@ -2263,6 +2265,10 @@
       demoFilename: DEMO_ACCENT_FILENAME,
       demoFileSize: DEMO_ACCENT_FILESIZE,
       demoProcessingMs: 4110,
+      // Accent batch accepts use_ensemble (a more thorough analysis that may
+      // change the returned labels and takes longer). Omitted when off — the
+      // API defaults to false.
+      extraFields: () => (optEnsemble.checked ? { use_ensemble: true } : null),
     },
   };
 
@@ -2277,14 +2283,17 @@
   async function startEaDetection(kind, file) {
     if (isAnalyzing) return;
     const cfg = EA_KINDS[kind];
+    const extra = cfg.extraFields ? cfg.extraFields() : null;
     isAnalyzing = true;
     showOverlay(file.name, cfg.overlayMsg);
     // Roughly linear in audio length (~4 s for a 4-minute file); pace by size.
-    startProgress(Math.max(3000, Math.min(10000, file.size / 600)));
+    // The ensemble pass is slower, so stretch the estimate.
+    const paceMs = Math.max(3000, Math.min(10000, file.size / 600));
+    startProgress(extra && extra.use_ensemble ? paceMs * 2 : paceMs);
 
     try {
       const startedAt = Date.now();
-      const { data, meta } = await uploadAndAnalyze(file, cfg.endpoint);
+      const { data, meta } = await uploadAndAnalyze(file, cfg.endpoint, extra);
       const processingMs = Date.now() - startedAt;
       await finishProgress();
 
@@ -2300,6 +2309,7 @@
         httpStatusText: meta.httpStatusText,
         responseSize: meta.responseSize,
         processingMs,
+        useEnsemble: !!(extra && extra.use_ensemble),
       };
 
       // The API doesn't echo the filename, so we keep it ourselves.
@@ -4330,6 +4340,8 @@
       groups = [
         { group: 'Detection', rows: [
           ['Model', cfg.model],
+          // use_ensemble is an accent-batch-only request flag.
+          ...(currentMode === 'accent' ? [['Ensemble', m.useEnsemble ? 'On' : 'Off']] : []),
           ['Whole-file ' + cfg.field, currentData[cfg.field] || 'N/A'],
           ['Windows analyzed', String(windows.length)],
           ['Window length', '15 s'],

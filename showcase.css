@@ -1098,3 +1098,8 @@ body[data-mode="velma"].velma-design2 #pg-bottom-columns {
   color: var(--m__error);
   font-weight: var(--m__font-weight-medium);
 }
+
+/* ── accent: ensemble toggle next to the plate-header title ── */
+.pg-accent-options {
+  gap: var(--m__gap-l);
+}
