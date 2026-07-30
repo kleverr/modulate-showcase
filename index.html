@@ -763,12 +763,13 @@
         <div id="aimusic-content" class="pg-tab-panel">
           
           <p class="caption" id="aimusic-caveat">
-            Best at AI vocal music and Suno-style instrumentals. Can miss AI techno/metal and hip-hop beats;
-            can false-positive on minimalist piano and heavily compressed rap vocals.
+            Every window is checked independently for AI vocals and AI instrumentals — a track can flag on both
+            at once. A dash means that detector had nothing to score in the window; a low score means it checked
+            and the content looks real. Heavily processed or high-production songs may still false-positive.
           </p>
           <div class="pg-results-table-section">
             <table class="pg-segments-table aim-detailed">
-              <thead><tr><th>Window</th><th>Type</th><th>Verdict</th><th>AI confidence</th></tr></thead>
+              <thead><tr><th>Window</th><th>Verdict</th><th>Vocal AI</th><th>Instrumental AI</th></tr></thead>
               <tbody id="aimusic-tbody"></tbody>
             </table>
           </div>
@@ -834,7 +835,7 @@
 
 <footer class="footer">
   <div class="footer-nav">
-    <div class="footer-nav-item caption" id="app-version">v6.3.0 · Jul 29, 2026</div>
+    <div class="footer-nav-item caption" id="app-version">v6.4.0 · Jul 30, 2026</div>
   </div>
 </footer>
 

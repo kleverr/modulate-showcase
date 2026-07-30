@@ -2,6 +2,29 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.4.0] - 2026-07-30
+
+### Changed
+- **AI Music Detection goes dual-lane.** The updated model scores every
+  window independently for AI vocals AND AI instrumentals instead of routing
+  each window to a single detector. The player strip now shows two labeled
+  lanes (Vocals / Instrumental) and the per-window table replaces the
+  Type/Confidence columns with separate Vocal AI and Instrumental AI score
+  columns. Null scores (the detector had nothing to evaluate) render as a
+  hatched cell / "—", deliberately distinct from a low score ("checked,
+  looks real").
+- **Shape-tolerant window parsing.** The renamed per-window fields
+  (`vocal_ai_percentage` 0-100 → `vocal_ai_probability` 0-1 | null, same for
+  instrumental) are normalized alongside the previous shape, so the page
+  works against prod's current model today and the updated model at release
+  without a coordinated deploy. Streaming windows go through the same
+  normalizer; the early-stop fallback summary now aggregates both lanes the
+  way the batch spec does.
+- **Demo fixture regenerated** from the updated model (test box) for
+  big-mac-papelao.mp3; page caveat rewritten for the new failure profile.
+- **Local testing hook:** `AIMUSIC_BATCH_UPSTREAM` env var (unset in prod)
+  points the batch proxy at the eng test box serving the updated model.
+
 ## [6.3.0] - 2026-07-29
 
 ### Added

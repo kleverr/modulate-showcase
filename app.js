@@ -74,47 +74,47 @@
   })();
 
   // Pre-recorded AI Music Detection response so the demo page renders instantly.
-  // Captured live from the preview endpoint on the Big Mac Papelão sample.
+  // Captured live from the updated (dual-detector) batch model on the Big Mac
+  // Papelão sample. Per-window scores are probabilities (0-1) and nullable:
+  // null = the detector had nothing to evaluate in that window, which is
+  // deliberately distinct from a low score ("checked, looks real").
   const DEMO_AIMUSIC_AUDIO_URL = '/ai-music/big-mac-papelao.mp3';
-  // Pre-recorded AI Music Detection response (captured live from the preview
-  // batch endpoint for big-mac-papelao.mp3). New schema: clip-level content +
-  // dual AI scores/confidence, plus a per-4s-window breakdown.
   const DEMO_AIMUSIC_DATA = {
     filename: 'big-mac-papelao.mp3',
     duration_s: 89.28,
     primary_verdict: 'ai-vocal-music',
     vocal_percentage: 91.45,
-    vocal_ai_percentage: 62.72,
-    vocal_ai_confidence: 0.9701,
+    vocal_ai_percentage: 72.54,
+    vocal_ai_confidence: 0.8996,
     instrumental_percentage: 86.74,
     instrumental_ai_percentage: 1.1,
     instrumental_ai_confidence: 0.978,
     silence_percentage: 3.99,
-    latency_ms: 1526.3,
+    latency_ms: 3884.6,
     windows: [
-      { start_time_ms: 0,     end_time_ms: 4000,  vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9743, instrumental_percentage: 30,  instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 4000,  end_time_ms: 8000,  vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.977,  instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 8000,  end_time_ms: 12000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9734, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 12000, end_time_ms: 16000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.974,  instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 16000, end_time_ms: 20000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9659, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 20000, end_time_ms: 24000, vocal_percentage: 100, vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 24000, end_time_ms: 28000, vocal_percentage: 100, vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 28000, end_time_ms: 32000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9785, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 32000, end_time_ms: 36000, vocal_percentage: 60,  vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 36000, end_time_ms: 40000, vocal_percentage: 75,  vocal_ai_percentage: 100, vocal_ai_confidence: 0.9768, instrumental_percentage: 70,  instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 40000, end_time_ms: 44000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.974,  instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 44000, end_time_ms: 48000, vocal_percentage: 100, vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 48000, end_time_ms: 52000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9755, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 52000, end_time_ms: 56000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9682, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 56000, end_time_ms: 60000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9348, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 60000, end_time_ms: 64000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9706, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 64000, end_time_ms: 68000, vocal_percentage: 100, vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 68000, end_time_ms: 72000, vocal_percentage: 100, vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 72000, end_time_ms: 76000, vocal_percentage: 100, vocal_ai_percentage: 100, vocal_ai_confidence: 0.9663, instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 76000, end_time_ms: 80000, vocal_percentage: 100, vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 100, instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 0 },
-      { start_time_ms: 80000, end_time_ms: 84000, vocal_percentage: 55,  vocal_ai_percentage: 0,   vocal_ai_confidence: 0,      instrumental_percentage: 95,  instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 5 },
-      { start_time_ms: 84000, end_time_ms: 88000, vocal_percentage: 80,  vocal_ai_percentage: 100, vocal_ai_confidence: 0.9718, instrumental_percentage: 0,   instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 20 },
-      { start_time_ms: 88000, end_time_ms: 89280, vocal_percentage: 33.33, vocal_ai_percentage: 0, vocal_ai_confidence: 0,      instrumental_percentage: 0,   instrumental_ai_percentage: 0, instrumental_ai_confidence: 0, silence_percentage: 66.67 },
+      { start_time_ms: 0,     end_time_ms: 4000,  vocal_percentage: 100,   vocal_ai_probability: 0.9718, vocal_ai_confidence: 0.9718, instrumental_percentage: 30,   instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 4000,  end_time_ms: 8000,  vocal_percentage: 100,   vocal_ai_probability: 0.9728, vocal_ai_confidence: 0.9728, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 8000,  end_time_ms: 12000, vocal_percentage: 100,   vocal_ai_probability: 0.9739, vocal_ai_confidence: 0.9739, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 12000, end_time_ms: 16000, vocal_percentage: 100,   vocal_ai_probability: 0.968,  vocal_ai_confidence: 0.968,  instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 16000, end_time_ms: 20000, vocal_percentage: 100,   vocal_ai_probability: 0.9618, vocal_ai_confidence: 0.9618, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 20000, end_time_ms: 24000, vocal_percentage: 100,   vocal_ai_probability: null,   vocal_ai_confidence: null,   instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 24000, end_time_ms: 28000, vocal_percentage: 100,   vocal_ai_probability: 0.5408, vocal_ai_confidence: 0.5408, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 28000, end_time_ms: 32000, vocal_percentage: 100,   vocal_ai_probability: 0.9719, vocal_ai_confidence: 0.9719, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 32000, end_time_ms: 36000, vocal_percentage: 60,    vocal_ai_probability: null,   vocal_ai_confidence: null,   instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 36000, end_time_ms: 40000, vocal_percentage: 75,    vocal_ai_probability: 0.978,  vocal_ai_confidence: 0.978,  instrumental_percentage: 70,   instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 40000, end_time_ms: 44000, vocal_percentage: 100,   vocal_ai_probability: 0.9611, vocal_ai_confidence: 0.9611, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 44000, end_time_ms: 48000, vocal_percentage: 100,   vocal_ai_probability: 0.563,  vocal_ai_confidence: 0.563,  instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 48000, end_time_ms: 52000, vocal_percentage: 100,   vocal_ai_probability: 0.9716, vocal_ai_confidence: 0.9716, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 52000, end_time_ms: 56000, vocal_percentage: 100,   vocal_ai_probability: 0.9714, vocal_ai_confidence: 0.9714, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 56000, end_time_ms: 60000, vocal_percentage: 100,   vocal_ai_probability: 0.9678, vocal_ai_confidence: 0.9678, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 60000, end_time_ms: 64000, vocal_percentage: 100,   vocal_ai_probability: 0.9724, vocal_ai_confidence: 0.9724, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 64000, end_time_ms: 68000, vocal_percentage: 100,   vocal_ai_probability: 0.5828, vocal_ai_confidence: 0.5828, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 68000, end_time_ms: 72000, vocal_percentage: 100,   vocal_ai_probability: 0.9185, vocal_ai_confidence: 0.9185, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 72000, end_time_ms: 76000, vocal_percentage: 100,   vocal_ai_probability: 0.973,  vocal_ai_confidence: 0.973,  instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 76000, end_time_ms: 80000, vocal_percentage: 100,   vocal_ai_probability: null,   vocal_ai_confidence: null,   instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 80000, end_time_ms: 84000, vocal_percentage: 55,    vocal_ai_probability: null,   vocal_ai_confidence: null,   instrumental_percentage: 95,   instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 5 },
+      { start_time_ms: 84000, end_time_ms: 88000, vocal_percentage: 80,    vocal_ai_probability: 0.9713, vocal_ai_confidence: 0.9713, instrumental_percentage: 0,    instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 20 },
+      { start_time_ms: 88000, end_time_ms: 89280, vocal_percentage: 33.33, vocal_ai_probability: null,   vocal_ai_confidence: null,   instrumental_percentage: 0,    instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 66.67 },
     ],
   };
 
@@ -2557,33 +2557,52 @@
     return Math.max(0, (w.end_time_ms || 0) - (w.start_time_ms || 0));
   }
 
-  // The headline question is "AI or not?", so the strip + chips collapse to
-  // three states: `ai` (synthetic vocals OR AI instrumental), `human` (real
-  // content, not flagged), `silence`. The vocal/instrumental nuance lives in
-  // the table's Type column instead.
+  // The updated model scores every window independently for AI vocals and AI
+  // instrumentals \u2014 a window can carry both, one, or neither. Normalize the
+  // shapes we can receive into 0-1 | null probabilities (null = the detector
+  // had nothing to evaluate, deliberately distinct from a low score, which
+  // means "checked, looks real"):
+  //  - updated API: vocal_ai_probability / instrumental_ai_probability, nullable
+  //  - previous API (prod until the release lands): vocal_ai_percentage 0-100,
+  //    instrumental_ai_percentage 0-1, no nulls \u2014 one detector per window
+  //    picked by content mix, so the un-routed lane maps to null
+  //  - previous streaming windows: no instrumental fields at all
+  // Idempotent: already-normalized windows pass through unchanged.
+  function normalizeAimusicWindow(w) {
+    if (w.aimNorm) return w;
+    const num = (x) => (typeof x === 'number' && isFinite(x)) ? x : null;
+    let vocalProb, vocalConf, instrProb, instrConf;
+    if ('vocal_ai_probability' in w || 'instrumental_ai_probability' in w) {
+      vocalProb = num(w.vocal_ai_probability);
+      vocalConf = num(w.vocal_ai_confidence);
+      instrProb = num(w.instrumental_ai_probability);
+      instrConf = num(w.instrumental_ai_confidence);
+    } else {
+      const routedVocal = (w.vocal_percentage || 0) >= 50;
+      const routedInstr = !routedVocal && (w.instrumental_percentage || 0) >= 50;
+      vocalProb = routedVocal ? (num(w.vocal_ai_percentage) || 0) / 100 : null;
+      vocalConf = routedVocal ? (num(w.vocal_ai_confidence) || 0) : null;
+      instrProb = (routedInstr && 'instrumental_ai_percentage' in w) ? (num(w.instrumental_ai_percentage) || 0) : null;
+      instrConf = (routedInstr && 'instrumental_ai_confidence' in w) ? (num(w.instrumental_ai_confidence) || 0) : null;
+    }
+    return { ...w, aimNorm: true, vocalProb, vocalConf, instrProb, instrConf };
+  }
+
+  // Collapsed per-window state for the combined chip: `ai` if either lane
+  // fires, `human` if at least one lane was scored and none fired, `none`
+  // if neither lane had anything to evaluate.
   function aimusicVerdict(w) {
     const vC = w.vocal_percentage || 0, iC = w.instrumental_percentage || 0, sil = w.silence_percentage || 0;
     if (sil >= 60 && vC < 50 && iC < 50) return 'silence';
-    const iAi = w.instrumental_ai_percentage;   // batch: 0-1 probability; absent on streaming windows
-    if ((w.vocal_ai_percentage || 0) >= 50 || (typeof iAi === 'number' && iAi >= 0.5)) return 'ai';
+    if ((w.vocalProb || 0) >= 0.5 || (w.instrProb || 0) >= 0.5) return 'ai';
+    if (w.vocalProb === null && w.instrProb === null) return 'none';
     return 'human';
   }
 
-  // Which detection path the window was routed to, from its content mix.
-  function aimusicType(w) {
-    const vC = w.vocal_percentage || 0, iC = w.instrumental_percentage || 0, sil = w.silence_percentage || 0;
-    if (sil >= 60 && vC < 50 && iC < 50) return 'silence';
-    if (vC >= 50) return 'vocal';
-    if (iC >= 50) return 'instrumental';
-    return 'silence';
-  }
-
-  // The window's AI-detection confidence (only meaningful when verdict is `ai`).
-  function aimusicWindowConfidence(w) {
-    const t = aimusicType(w);
-    if (t === 'vocal') return w.vocal_ai_confidence || 0;
-    if (t === 'instrumental') return w.instrumental_ai_confidence || 0;
-    return 0;
+  // Per-lane cell state for the strip.
+  function aimusicLaneState(prob) {
+    if (prob === null || prob === undefined) return 'none';
+    return prob >= 0.5 ? 'ai' : 'not-ai';
   }
 
   function aimusicClock(ms) {
@@ -2592,68 +2611,103 @@
     return m + ':' + String(total % 60).padStart(2, '0');
   }
 
-  const AIMUSIC_VERDICT_TEXT = { ai: 'AI', human: 'Not AI', silence: 'Silence' };
-  const AIMUSIC_TYPE_TEXT    = { vocal: 'Vocal', instrumental: 'Instrumental', silence: 'Silence' };
-  const AIMUSIC_CELL_VERDICT = { ai: 'ai', human: 'not-ai', silence: 'silence' };
-  const AIMUSIC_CHIP_CLASS   = { ai: 'aim-verdict-ai', human: 'aim-verdict-not-ai', silence: '' };
+  const AIMUSIC_VERDICT_TEXT = { ai: 'AI', human: 'Not AI', silence: 'Silence', none: 'Not scored' };
+  const AIMUSIC_CHIP_CLASS   = { ai: 'aim-verdict-ai', human: 'aim-verdict-not-ai', silence: '', none: '' };
 
-  function aimusicTooltipText(w) {
-    const v = aimusicVerdict(w), t = aimusicType(w);
+  function aimusicLaneTooltip(w, lane) {
+    const label = lane === 'vocal' ? 'Vocals' : 'Instrumental';
+    const prob = lane === 'vocal' ? w.vocalProb : w.instrProb;
+    const conf = lane === 'vocal' ? w.vocalConf : w.instrConf;
     const time = aimusicClock(w.start_time_ms) + ' \u2013 ' + aimusicClock(w.end_time_ms);
-    if (t === 'silence') return time + ' \u00b7 Silence';
-    const c = aimusicWindowConfidence(w);
-    const confStr = (v === 'ai' && c > 0) ? ' \u00b7 ' + (c * 100).toFixed(0) + '%' : '';
-    return time + ' \u00b7 ' + AIMUSIC_TYPE_TEXT[t] + ' \u00b7 ' + AIMUSIC_VERDICT_TEXT[v] + confStr;
+    if (prob === null || prob === undefined) return time + ' \u00b7 ' + label + ' \u00b7 Not scored';
+    const confStr = (typeof conf === 'number' && conf > 0 && conf !== prob)
+      ? ' \u00b7 conf ' + (conf * 100).toFixed(0) + '%' : '';
+    return time + ' \u00b7 ' + label + ' \u00b7 AI ' + (prob * 100).toFixed(0) + '%' + confStr;
   }
 
-  // Strip inside the player visualization, one cell per window, width \u221d duration.
+  // Strip inside the player visualization: two lanes (Vocals / Instrumental),
+  // one cell per window, width \u221d duration. Red = flagged AI (opacity by
+  // confidence), green = scored and looks real, hatched = nothing to score.
   function renderAimusicTimeline(windows) {
-    windows = windows || [];
+    windows = (windows || []).map(normalizeAimusicWindow);
     aimusicWindows = windows;
     const viz = document.getElementById('player-visualization');
     clearPlayerStrips();
     sttChart.innerHTML = '';
-    syncSpeakerLanes([]);
+    syncSpeakerLanes(windows.length ? ['Vocals', 'Instrumental'] : []);
     if (aimusicTbody) aimusicTbody.innerHTML = '';
     if (!windows.length || !viz) return;
 
     const heat = document.createElement('div');
     heat.className = 'aim-player-heat';
-    windows.forEach((w, i) => {
-      const v = aimusicVerdict(w);
-      const cell = document.createElement('div');
-      cell.className = 'aim-player-heat-cell';
-      cell.dataset.verdict = AIMUSIC_CELL_VERDICT[v];
-      cell.dataset.index = i;
-      cell.style.flexGrow = String(Math.max(1, aimusicWinDurMs(w)));
-      cell.style.flexBasis = '0';
-      if (v === 'ai') {
-        cell.style.opacity = confidenceToOpacity(aimusicWindowConfidence(w));
-      } else if (v === 'human') {
-        cell.style.opacity = '0.85';
-      }
-      cell.dataset.tooltip = aimusicTooltipText(w);
-      cell.addEventListener('click', () => seekAimusic(w.start_time_ms, i));
-      heat.appendChild(cell);
+    ['vocal', 'instrumental'].forEach(lane => {
+      const row = document.createElement('div');
+      row.className = 'aim-player-heat-row';
+      row.dataset.row = lane;
+      windows.forEach((w, i) => {
+        const prob = lane === 'vocal' ? w.vocalProb : w.instrProb;
+        const conf = lane === 'vocal' ? w.vocalConf : w.instrConf;
+        const state = aimusicLaneState(prob);
+        const cell = document.createElement('div');
+        cell.className = 'aim-player-heat-cell';
+        cell.dataset.verdict = state;
+        cell.dataset.index = i;
+        cell.style.flexGrow = String(Math.max(1, aimusicWinDurMs(w)));
+        cell.style.flexBasis = '0';
+        if (state === 'ai') {
+          cell.style.opacity = confidenceToOpacity(typeof conf === 'number' ? conf : prob);
+        } else if (state === 'not-ai') {
+          cell.style.opacity = '0.85';
+        }
+        cell.dataset.tooltip = aimusicLaneTooltip(w, lane);
+        cell.addEventListener('click', () => seekAimusic(w.start_time_ms, i));
+        row.appendChild(cell);
+      });
+      heat.appendChild(row);
     });
     viz.appendChild(heat);
 
     renderAimusicTable(windows);
   }
 
+  // Score cell for one lane: "\u2014" when the detector had nothing to score,
+  // otherwise the AI probability as a bar (red when flagged, green when not).
+  function aimusicScoreCell(prob, conf) {
+    const td = document.createElement('td');
+    if (prob === null || prob === undefined) {
+      td.textContent = '\u2014';
+      td.className = 'aim-empty';
+      td.title = 'Nothing to score in this window';
+      return td;
+    }
+    const wrap = document.createElement('div');
+    wrap.className = 'aim-cell';
+    const track = document.createElement('div');
+    track.className = 'aim-bar';
+    const fill = document.createElement('div');
+    fill.className = 'aim-bar-fill' + (prob >= 0.5 ? '' : ' aim-bar-fill-low');
+    fill.style.width = (prob * 100) + '%';
+    track.appendChild(fill);
+    const txt = document.createElement('span');
+    txt.className = 'aim-pct';
+    txt.textContent = (prob * 100).toFixed(1) + '%';
+    wrap.appendChild(track);
+    wrap.appendChild(txt);
+    if (typeof conf === 'number' && conf > 0) td.title = 'Confidence ' + (conf * 100).toFixed(0) + '%';
+    td.appendChild(wrap);
+    return td;
+  }
+
   function renderAimusicTable(windows) {
     if (!aimusicTbody) return;
     aimusicTbody.innerHTML = '';
     windows.forEach((w, i) => {
-      const v = aimusicVerdict(w), t = aimusicType(w);
+      const v = aimusicVerdict(w);
       const tr = document.createElement('tr');
       tr.dataset.index = i;
 
       const tdTime = document.createElement('td');
       tdTime.textContent = aimusicClock(w.start_time_ms) + ' \u2013 ' + aimusicClock(w.end_time_ms);
-
-      const tdType = document.createElement('td');
-      tdType.textContent = AIMUSIC_TYPE_TEXT[t];
 
       const tdVerdict = document.createElement('td');
       const pill = document.createElement('span');
@@ -2661,32 +2715,10 @@
       pill.textContent = AIMUSIC_VERDICT_TEXT[v];
       tdVerdict.appendChild(pill);
 
-      const tdConf = document.createElement('td');
-      const c = aimusicWindowConfidence(w);
-      if (v === 'ai' && c > 0) {
-        const wrap = document.createElement('div');
-        wrap.className = 'aim-cell';
-        const track = document.createElement('div');
-        track.className = 'aim-bar';
-        const fill = document.createElement('div');
-        fill.className = 'aim-bar-fill';
-        fill.style.width = (c * 100) + '%';
-        track.appendChild(fill);
-        const txt = document.createElement('span');
-        txt.className = 'aim-pct';
-        txt.textContent = (c * 100).toFixed(1) + '%';
-        wrap.appendChild(track);
-        wrap.appendChild(txt);
-        tdConf.appendChild(wrap);
-      } else {
-        tdConf.textContent = '\u2014';
-        tdConf.className = 'aim-empty';
-      }
-
       tr.appendChild(tdTime);
-      tr.appendChild(tdType);
       tr.appendChild(tdVerdict);
-      tr.appendChild(tdConf);
+      tr.appendChild(aimusicScoreCell(w.vocalProb, w.vocalConf));
+      tr.appendChild(aimusicScoreCell(w.instrProb, w.instrConf));
       tr.addEventListener('click', () => seekAimusic(w.start_time_ms, i));
       aimusicTbody.appendChild(tr);
     });
@@ -2695,7 +2727,8 @@
   function aimusicSetActive(index) {
     const viz = document.getElementById('player-visualization');
     const heat = viz ? viz.querySelector('.aim-player-heat') : null;
-    if (heat) heat.querySelectorAll('.aim-player-heat-cell').forEach((c, i) => c.classList.toggle('active', i === index));
+    // Two lanes share window indices — match on data-index, not DOM order.
+    if (heat) heat.querySelectorAll('.aim-player-heat-cell').forEach((c) => c.classList.toggle('active', Number(c.dataset.index) === index));
     if (aimusicTbody) aimusicTbody.querySelectorAll('tr').forEach((r, i) => r.classList.toggle('active', i === index));
   }
 
@@ -2743,7 +2776,7 @@
 
   function handleAimusicStreamMessage(msg) {
     if (msg?.type === 'window' && msg.window) {
-      liveAimusicWindows.push(msg.window);
+      liveAimusicWindows.push(normalizeAimusicWindow(msg.window));
       renderAimusicLive();
     } else if (msg?.type === 'done') {
       aimusicDoneData = msg;
@@ -2932,29 +2965,42 @@
   }
 
   // Fallback clip-level summary when the stream is stopped before the `done`
-  // message arrives (so instrumental AI — which runs only at clip end — is 0).
+  // message arrives. Mirrors the batch aggregation: vocal AI = probability-
+  // weighted duration over the FULL clip (unscored windows count in the
+  // denominator); instrumental AI = duration-weighted average over scored
+  // windows only. Old-shape streams carry no per-window instrumental scores,
+  // so that lane simply stays 0 here.
   function computeAimusicSummaryFromWindows(windows, filename, durationMs) {
+    windows = windows.map(normalizeAimusicWindow);
     const cnt = windows.length || 1;
     const avg = (key) => windows.reduce((a, w) => a + (w[key] || 0), 0) / cnt;
-    let aiMs = 0, totMs = 0;
+    let totMs = 0, vAiMs = 0, iAiMs = 0, iScoredMs = 0;
+    let vConfSum = 0, vConfN = 0, iConfSum = 0, iConfN = 0;
     for (const w of windows) {
       const d = aimusicWinDurMs(w);
       totMs += d;
-      if ((w.vocal_ai_percentage || 0) >= 50) aiMs += d;
+      if (w.vocalProb !== null) {
+        vAiMs += w.vocalProb * d;
+        if (typeof w.vocalConf === 'number') { vConfSum += w.vocalConf; vConfN++; }
+      }
+      if (w.instrProb !== null) {
+        iAiMs += w.instrProb * d;
+        iScoredMs += d;
+        if (typeof w.instrConf === 'number') { iConfSum += w.instrConf; iConfN++; }
+      }
     }
-    const vAiPct = totMs ? (aiMs / totMs) * 100 : 0;
-    const vConfWins = windows.filter(w => (w.vocal_percentage || 0) >= 50 && (w.vocal_ai_confidence || 0) > 0);
-    const vConf = vConfWins.length ? vConfWins.reduce((a, w) => a + w.vocal_ai_confidence, 0) / vConfWins.length : 0;
+    const vAiPct = totMs ? (vAiMs / totMs) * 100 : 0;
+    const iAiPct = iScoredMs ? (iAiMs / iScoredMs) * 100 : 0;
     return {
       filename: filename || 'Live stream',
       duration_s: durationMs / 1000,
-      primary_verdict: vAiPct >= 30 ? 'ai-vocal-music' : 'not-ai-music',
+      primary_verdict: vAiPct >= 30 ? 'ai-vocal-music' : (iAiPct >= 50 ? 'ai-instrumental' : 'not-ai-music'),
       vocal_percentage: avg('vocal_percentage'),
       vocal_ai_percentage: vAiPct,
-      vocal_ai_confidence: vConf,
+      vocal_ai_confidence: vConfN ? vConfSum / vConfN : 0,
       instrumental_percentage: avg('instrumental_percentage'),
-      instrumental_ai_percentage: 0,
-      instrumental_ai_confidence: 0,
+      instrumental_ai_percentage: iAiPct,
+      instrumental_ai_confidence: iConfN ? iConfSum / iConfN : 0,
       silence_percentage: avg('silence_percentage'),
       window_count: windows.length,
       windows: windows.slice(),

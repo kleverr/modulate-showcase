@@ -92,6 +92,12 @@ const ENDPOINT_BASE_URL = {
   '/api/velma-2-accent-batch': 'https://platform.modulate.ai',
   // Multilingual Fast batch spec also gives platform.modulate.ai as the server.
   '/api/velma-2-stt-batch-multilingual-vfast': 'https://platform.modulate.ai',
+  // The updated AI Music model (independent vocal + instrumental scoring per
+  // window) runs on an eng test box until release. Set AIMUSIC_BATCH_UPSTREAM
+  // in .env to test locally against it; unset (prod) → normal gateway.
+  ...(process.env.AIMUSIC_BATCH_UPSTREAM
+    ? { '/api/velma-2-ai-music-detection-batch': process.env.AIMUSIC_BATCH_UPSTREAM }
+    : {}),
 };
 
 // Per-endpoint upstream path overrides — preview models live behind /api/preview/.
