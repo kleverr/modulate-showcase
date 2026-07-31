@@ -2,6 +2,22 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.5.0] - 2026-07-31
+
+### Added
+- **Verifiable endpoint routing in stats.** The batch proxy now returns an
+  `X-Upstream-Url` header carrying the exact upstream URL it forwarded the
+  request to (prod gateway or per-endpoint override like
+  `AIMUSIC_BATCH_UPSTREAM`). The AI Music stats "Endpoint" row displays it,
+  so which box served a run is checkable straight from the browser instead
+  of trusting a hardcoded label.
+- **Live demo refresh on AI Music.** The canned demo still renders instantly
+  on page load, but the same demo file is re-analyzed through the real batch
+  endpoint once per session in the background, and the live numbers (and
+  real endpoint in stats) swap in when they land. A user-initiated run
+  always wins over the background refresh, and the canned result simply
+  stays if the upstream is unreachable.
+
 ## [6.4.0] - 2026-07-30
 
 ### Changed

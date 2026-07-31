@@ -599,6 +599,7 @@
       resultsFilename.textContent = lastAimusicFilename || aData.filename || 'big-mac-papelao.mp3';
       resultsAudio.src = aAudio;
       renderAimusicResult(aData);
+      refreshAimusicDemoLive();
     } else if (isLanguage) {
       const lData = lastLanguageData || DEMO_LANGUAGE_DATA;
       currentData = lData;
@@ -2465,6 +2466,46 @@
   }
 
   // ── AI Music Detection ─────────────────────────────────────────────────────
+  // The canned demo renders instantly on load; behind it, the same demo file is
+  // re-analyzed live once per session so the numbers — and the upstream endpoint
+  // in stats — reflect a real request. A user-initiated run always wins.
+  let aimusicDemoRefreshStarted = false;
+  async function refreshAimusicDemoLive() {
+    if (aimusicDemoRefreshStarted) return;
+    aimusicDemoRefreshStarted = true;
+    try {
+      const resp = await fetch(DEMO_AIMUSIC_AUDIO_URL);
+      if (!resp.ok) return;
+      const blob = await resp.blob();
+      const name = DEMO_AIMUSIC_AUDIO_URL.split('/').pop();
+      const file = new File([blob], name, { type: 'audio/mpeg' });
+      const startedAt = Date.now();
+      const { data, meta } = await uploadAndAnalyze(file, '/api/velma-2-ai-music-detection-batch', null, true);
+      if (lastAimusicData) return; // a real user run landed first
+      lastAimusicData = data;
+      lastAimusicAudioUrl = DEMO_AIMUSIC_AUDIO_URL;
+      lastAimusicFilename = name;
+      lastAimusicMeta = {
+        fileSize: file.size,
+        fileType: 'audio/mpeg',
+        httpStatus: meta.httpStatus,
+        httpStatusText: meta.httpStatusText,
+        responseSize: meta.responseSize,
+        upstreamUrl: meta.upstreamUrl,
+        processingMs: Date.now() - startedAt,
+      };
+      if (currentMode === 'aimusic' && !isAnalyzing) {
+        currentData = data;
+        currentMeta = { ...lastAimusicMeta };
+        renderAimusicResult(data);
+        refreshBottomPanels();
+      }
+      updateRateLimit();
+    } catch {
+      // Keep the canned demo if the live refresh fails (offline, upstream down).
+    }
+  }
+
   async function startAimusicAnalysis(file) {
     if (isAnalyzing) return;
     isAnalyzing = true;
@@ -2492,6 +2533,7 @@
         httpStatus: meta.httpStatus,
         httpStatusText: meta.httpStatusText,
         responseSize: meta.responseSize,
+        upstreamUrl: meta.upstreamUrl,
         processingMs,
       };
 
@@ -4332,7 +4374,7 @@
         ]},
         { group: 'Request', rows: [
           ['HTTP', httpStr],
-          ['Endpoint', isStream ? '/api/velma-2-ai-music-detection-streaming' : '/api/velma-2-ai-music-detection-batch'],
+          ['Endpoint', m.upstreamUrl || (isStream ? '/api/velma-2-ai-music-detection-streaming' : '/api/velma-2-ai-music-detection-batch')],
           ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
         ]},
       ];
@@ -4525,7 +4567,9 @@
   // ── SHARED UTILITIES ──────────────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════════════════
 
-  async function uploadAndAnalyze(file, endpoint, extraFields) {
+  // quiet: skip the analysisStatus progress text \u2014 for background requests
+  // that run while no overlay is up (e.g. the live demo refresh).
+  async function uploadAndAnalyze(file, endpoint, extraFields, quiet) {
     const formData = new FormData();
     formData.append('upload_file', file);
     if (extraFields) {
@@ -4538,7 +4582,7 @@
       const xhr = new XMLHttpRequest();
 
       xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable && analysisStatus) {
+        if (!quiet && e.lengthComputable && analysisStatus) {
           const pct = Math.round(e.loaded / e.total * 100);
           analysisStatus.textContent = pct < 100
             ? 'Uploading\u2026 ' + pct + '%'
@@ -4547,7 +4591,7 @@
       });
 
       xhr.upload.addEventListener('load', () => {
-        if (analysisStatus) analysisStatus.textContent = 'Processing on server\u2026';
+        if (!quiet && analysisStatus) analysisStatus.textContent = 'Processing on server\u2026';
       });
 
       xhr.addEventListener('load', () => {
@@ -4572,7 +4616,12 @@
         }
         resolve({
           data,
-          meta: { httpStatus: xhr.status, httpStatusText: xhr.statusText, responseSize: responseText.length },
+          meta: {
+            httpStatus: xhr.status,
+            httpStatusText: xhr.statusText,
+            responseSize: responseText.length,
+            upstreamUrl: xhr.getResponseHeader('X-Upstream-Url') || null,
+          },
         });
       });
 

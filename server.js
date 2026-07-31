@@ -238,6 +238,9 @@ app.post('/api/:path(*)', handleUpload, async (req, res) => {
     res.status(upstreamRes.status);
     const contentType = upstreamRes.headers.get('content-type');
     if (contentType) res.set('Content-Type', contentType);
+    // Real upstream target of this request — shown in the stats panel so
+    // per-endpoint routing overrides are verifiable from the browser.
+    res.set('X-Upstream-Url', `${baseUrl}${upstreamPath}`);
 
     const remaining = Math.max(0, RATE_LIMIT_MAX - recentCount - 1);
     res.set('X-Rate-Limit-Remaining', String(remaining));
