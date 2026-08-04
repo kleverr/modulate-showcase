@@ -2,6 +2,21 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.6.0] - 2026-08-04
+
+### Changed
+- **AI Music Detection routes to the released endpoint.** Batch and streaming
+  now go to `https://platform.modulate.ai` — the server given by the published
+  GA specs — matching the Emotion/Accent/Multilingual-Fast routing. The
+  `AIMUSIC_BATCH_UPSTREAM` eng-test-box override (100.56.104.180) is retired
+  from `server.js`, `.env`, and the Fly secrets. Both endpoints verified
+  against the released host with the demo file (dual-lane windows + clip
+  verdict on batch; window/done messages and clean close on streaming).
+- **Spec refresh (2026-08-04 YAMLs).** The updated batch + streaming specs
+  only expand documentation — new 401/413 response examples, WS close codes
+  4001/4004/4030/4031, reworded error strings and null-condition notes. No
+  schema or field changes, so parsing and page copy needed no updates.
+
 ## [6.5.0] - 2026-07-31
 
 ### Added

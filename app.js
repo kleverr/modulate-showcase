@@ -2510,7 +2510,7 @@
     if (isAnalyzing) return;
     isAnalyzing = true;
     showOverlay(file.name, 'Detecting AI-generated music');
-    // The preview model takes ~0.5-2.5s depending on the file; pace progress
+    // The model takes ~0.5-2.5s depending on the file; pace progress
     // bar to a reasonable middle estimate.
     startProgress(Math.max(2500, Math.min(8000, file.size / 50000)));
 
