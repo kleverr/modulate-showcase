@@ -78,43 +78,50 @@
   // Papelão sample. Per-window scores are probabilities (0-1) and nullable:
   // null = the detector had nothing to evaluate in that window, which is
   // deliberately distinct from a low score ("checked, looks real").
-  const DEMO_AIMUSIC_AUDIO_URL = '/ai-music/big-mac-papelao.mp3';
+  const DEMO_AIMUSIC_AUDIO_URL = '/ai-music/ashes-in-my-mouth.mp3';
   const DEMO_AIMUSIC_DATA = {
-    filename: 'big-mac-papelao.mp3',
-    duration_s: 89.28,
+    filename: 'ashes-in-my-mouth.mp3',
+    duration_s: 120,
     primary_verdict: 'ai-vocal-music',
-    vocal_percentage: 91.45,
-    vocal_ai_percentage: 72.54,
-    vocal_ai_confidence: 0.8996,
-    instrumental_percentage: 86.74,
-    instrumental_ai_percentage: 1.1,
-    instrumental_ai_confidence: 0.978,
-    silence_percentage: 3.99,
-    latency_ms: 3884.6,
+    vocal_percentage: 88.33,
+    vocal_ai_percentage: 46.73,
+    vocal_ai_confidence: 0.8246,
+    instrumental_percentage: 100,
+    instrumental_ai_percentage: 30.77,
+    instrumental_ai_confidence: 0.9712,
+    silence_percentage: 0,
+    latency_ms: 3968.1,
     windows: [
-      { start_time_ms: 0,     end_time_ms: 4000,  vocal_percentage: 100,   vocal_ai_probability: 0.9718, vocal_ai_confidence: 0.9718, instrumental_percentage: 30,   instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 4000,  end_time_ms: 8000,  vocal_percentage: 100,   vocal_ai_probability: 0.9728, vocal_ai_confidence: 0.9728, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 8000,  end_time_ms: 12000, vocal_percentage: 100,   vocal_ai_probability: 0.9739, vocal_ai_confidence: 0.9739, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 12000, end_time_ms: 16000, vocal_percentage: 100,   vocal_ai_probability: 0.968,  vocal_ai_confidence: 0.968,  instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 16000, end_time_ms: 20000, vocal_percentage: 100,   vocal_ai_probability: 0.9618, vocal_ai_confidence: 0.9618, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 20000, end_time_ms: 24000, vocal_percentage: 100,   vocal_ai_probability: null,   vocal_ai_confidence: null,   instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 24000, end_time_ms: 28000, vocal_percentage: 100,   vocal_ai_probability: 0.5408, vocal_ai_confidence: 0.5408, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 28000, end_time_ms: 32000, vocal_percentage: 100,   vocal_ai_probability: 0.9719, vocal_ai_confidence: 0.9719, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 32000, end_time_ms: 36000, vocal_percentage: 60,    vocal_ai_probability: null,   vocal_ai_confidence: null,   instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 36000, end_time_ms: 40000, vocal_percentage: 75,    vocal_ai_probability: 0.978,  vocal_ai_confidence: 0.978,  instrumental_percentage: 70,   instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 40000, end_time_ms: 44000, vocal_percentage: 100,   vocal_ai_probability: 0.9611, vocal_ai_confidence: 0.9611, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 44000, end_time_ms: 48000, vocal_percentage: 100,   vocal_ai_probability: 0.563,  vocal_ai_confidence: 0.563,  instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 48000, end_time_ms: 52000, vocal_percentage: 100,   vocal_ai_probability: 0.9716, vocal_ai_confidence: 0.9716, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 52000, end_time_ms: 56000, vocal_percentage: 100,   vocal_ai_probability: 0.9714, vocal_ai_confidence: 0.9714, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 56000, end_time_ms: 60000, vocal_percentage: 100,   vocal_ai_probability: 0.9678, vocal_ai_confidence: 0.9678, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 60000, end_time_ms: 64000, vocal_percentage: 100,   vocal_ai_probability: 0.9724, vocal_ai_confidence: 0.9724, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 64000, end_time_ms: 68000, vocal_percentage: 100,   vocal_ai_probability: 0.5828, vocal_ai_confidence: 0.5828, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 68000, end_time_ms: 72000, vocal_percentage: 100,   vocal_ai_probability: 0.9185, vocal_ai_confidence: 0.9185, instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 72000, end_time_ms: 76000, vocal_percentage: 100,   vocal_ai_probability: 0.973,  vocal_ai_confidence: 0.973,  instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 76000, end_time_ms: 80000, vocal_percentage: 100,   vocal_ai_probability: null,   vocal_ai_confidence: null,   instrumental_percentage: 100,  instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
-      { start_time_ms: 80000, end_time_ms: 84000, vocal_percentage: 55,    vocal_ai_probability: null,   vocal_ai_confidence: null,   instrumental_percentage: 95,   instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 5 },
-      { start_time_ms: 84000, end_time_ms: 88000, vocal_percentage: 80,    vocal_ai_probability: 0.9713, vocal_ai_confidence: 0.9713, instrumental_percentage: 0,    instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 20 },
-      { start_time_ms: 88000, end_time_ms: 89280, vocal_percentage: 33.33, vocal_ai_probability: null,   vocal_ai_confidence: null,   instrumental_percentage: 0,    instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 66.67 },
+      { start_time_ms: 0, end_time_ms: 4000, vocal_percentage: 60, vocal_ai_probability: null, vocal_ai_confidence: null, instrumental_percentage: 100, instrumental_ai_probability: 0.9888, instrumental_ai_confidence: 0.9775, silence_percentage: 0 },
+      { start_time_ms: 4000, end_time_ms: 8000, vocal_percentage: 15, vocal_ai_probability: null, vocal_ai_confidence: null, instrumental_percentage: 100, instrumental_ai_probability: 0.9888, instrumental_ai_confidence: 0.9775, silence_percentage: 0 },
+      { start_time_ms: 8000, end_time_ms: 12000, vocal_percentage: 0, vocal_ai_probability: null, vocal_ai_confidence: null, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 12000, end_time_ms: 16000, vocal_percentage: 0, vocal_ai_probability: null, vocal_ai_confidence: null, instrumental_percentage: 100, instrumental_ai_probability: 0.9888, instrumental_ai_confidence: 0.9775, silence_percentage: 0 },
+      { start_time_ms: 16000, end_time_ms: 20000, vocal_percentage: 75, vocal_ai_probability: 0.5789, vocal_ai_confidence: 0.5789, instrumental_percentage: 100, instrumental_ai_probability: 0.1105, instrumental_ai_confidence: 0.7791, silence_percentage: 0 },
+      { start_time_ms: 20000, end_time_ms: 24000, vocal_percentage: 100, vocal_ai_probability: 0.6361, vocal_ai_confidence: 0.6361, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 24000, end_time_ms: 28000, vocal_percentage: 100, vocal_ai_probability: 0.9419, vocal_ai_confidence: 0.9419, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 28000, end_time_ms: 32000, vocal_percentage: 100, vocal_ai_probability: 0.8114, vocal_ai_confidence: 0.8114, instrumental_percentage: 100, instrumental_ai_probability: 0.9888, instrumental_ai_confidence: 0.9775, silence_percentage: 0 },
+      { start_time_ms: 32000, end_time_ms: 36000, vocal_percentage: 100, vocal_ai_probability: null, vocal_ai_confidence: null, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 36000, end_time_ms: 40000, vocal_percentage: 100, vocal_ai_probability: null, vocal_ai_confidence: null, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 40000, end_time_ms: 44000, vocal_percentage: 100, vocal_ai_probability: 0.7024, vocal_ai_confidence: 0.7024, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 44000, end_time_ms: 48000, vocal_percentage: 100, vocal_ai_probability: 0.9725, vocal_ai_confidence: 0.9725, instrumental_percentage: 100, instrumental_ai_probability: 0.9888, instrumental_ai_confidence: 0.9775, silence_percentage: 0 },
+      { start_time_ms: 48000, end_time_ms: 52000, vocal_percentage: 100, vocal_ai_probability: null, vocal_ai_confidence: null, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 52000, end_time_ms: 56000, vocal_percentage: 100, vocal_ai_probability: null, vocal_ai_confidence: null, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 56000, end_time_ms: 60000, vocal_percentage: 100, vocal_ai_probability: 0.9488, vocal_ai_confidence: 0.9488, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 60000, end_time_ms: 64000, vocal_percentage: 100, vocal_ai_probability: null, vocal_ai_confidence: null, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 64000, end_time_ms: 68000, vocal_percentage: 100, vocal_ai_probability: null, vocal_ai_confidence: null, instrumental_percentage: 100, instrumental_ai_probability: 0.9888, instrumental_ai_confidence: 0.9775, silence_percentage: 0 },
+      { start_time_ms: 68000, end_time_ms: 72000, vocal_percentage: 100, vocal_ai_probability: 0.7755, vocal_ai_confidence: 0.7755, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 72000, end_time_ms: 76000, vocal_percentage: 100, vocal_ai_probability: 0.5806, vocal_ai_confidence: 0.5806, instrumental_percentage: 100, instrumental_ai_probability: 0.9888, instrumental_ai_confidence: 0.9775, silence_percentage: 0 },
+      { start_time_ms: 76000, end_time_ms: 80000, vocal_percentage: 100, vocal_ai_probability: 0.9568, vocal_ai_confidence: 0.9568, instrumental_percentage: 100, instrumental_ai_probability: 0.9888, instrumental_ai_confidence: 0.9775, silence_percentage: 0 },
+      { start_time_ms: 80000, end_time_ms: 84000, vocal_percentage: 100, vocal_ai_probability: 0.9592, vocal_ai_confidence: 0.9592, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 84000, end_time_ms: 88000, vocal_percentage: 100, vocal_ai_probability: 0.9071, vocal_ai_confidence: 0.9071, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 88000, end_time_ms: 92000, vocal_percentage: 100, vocal_ai_probability: 0.9066, vocal_ai_confidence: 0.9066, instrumental_percentage: 100, instrumental_ai_probability: 0.9888, instrumental_ai_confidence: 0.9775, silence_percentage: 0 },
+      { start_time_ms: 92000, end_time_ms: 96000, vocal_percentage: 100, vocal_ai_probability: null, vocal_ai_confidence: null, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 96000, end_time_ms: 100000, vocal_percentage: 100, vocal_ai_probability: null, vocal_ai_confidence: null, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 100000, end_time_ms: 104000, vocal_percentage: 100, vocal_ai_probability: 0.9492, vocal_ai_confidence: 0.9492, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 104000, end_time_ms: 108000, vocal_percentage: 100, vocal_ai_probability: null, vocal_ai_confidence: null, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 108000, end_time_ms: 112000, vocal_percentage: 100, vocal_ai_probability: 0.764, vocal_ai_confidence: 0.764, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 112000, end_time_ms: 116000, vocal_percentage: 100, vocal_ai_probability: 0.6844, vocal_ai_confidence: 0.6844, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
+      { start_time_ms: 116000, end_time_ms: 120000, vocal_percentage: 100, vocal_ai_probability: 0.9424, vocal_ai_confidence: 0.9424, instrumental_percentage: 100, instrumental_ai_probability: 0.011, instrumental_ai_confidence: 0.978, silence_percentage: 0 },
     ],
   };
 
@@ -589,14 +596,14 @@
       const aAudio = lastAimusicAudioUrl || DEMO_AIMUSIC_AUDIO_URL;
       currentData = aData;
       currentMeta = lastAimusicMeta || {
-        fileSize: 2124230,
+        fileSize: 2881302,
         fileType: 'audio/mpeg',
         httpStatus: 200,
         httpStatusText: 'OK',
         responseSize: JSON.stringify(DEMO_AIMUSIC_DATA).length,
         processingMs: DEMO_AIMUSIC_DATA.latency_ms || 0,
       };
-      resultsFilename.textContent = lastAimusicFilename || aData.filename || 'big-mac-papelao.mp3';
+      resultsFilename.textContent = lastAimusicFilename || aData.filename || 'ashes-in-my-mouth.mp3';
       resultsAudio.src = aAudio;
       renderAimusicResult(aData);
       refreshAimusicDemoLive();

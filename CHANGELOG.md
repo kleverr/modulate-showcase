@@ -2,6 +2,20 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.7.0] - 2026-08-06
+
+### Changed
+- **New AI Music demo song.** `big-mac-papelao.mp3` is replaced by
+  `ashes-in-my-mouth.mp3` (eng-provided track, trimmed to the first 120s with
+  a fade-out, 192 kbps MP3). Unlike the old track — whose instrumental lane
+  sat at a flat clamp-floor 0.011 on every window — this one actually
+  exercises the dual-lane UI: per-window instrumental AI spans 0.011 / 0.11 /
+  0.99, the intro is instrumental-only (vocal lane abstains, showing lane
+  independence), and vocal AI varies 0.51–0.97 with nulls in between.
+  Canned fixture regenerated from the released endpoint against the exact
+  shipped file (30 windows, `ai-vocal-music`, ~47% AI vocals / ~31% AI
+  instrumentals).
+
 ## [6.6.0] - 2026-08-04
 
 ### Changed
