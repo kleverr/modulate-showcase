@@ -1740,12 +1740,13 @@
         endpoint: endpoint,
       };
 
-      // vfast returns { text, duration_ms } — wrap into utterance format
+      // vfast returns { text, duration_ms, language } — wrap into utterance format
       if ((fast || multiFast) && !data.utterances && data.text) {
         data.utterances = [{ text: data.text, start_ms: 0, duration_ms: data.duration_ms || 0 }];
-        // The response carries no language field; when one was declared,
-        // reflect it in the transcript (auto-detect runs stay untagged).
-        if (multiFast && opts.language) data.utterances[0].language = opts.language;
+        // Multilingual vfast reports `language`: the declared value echoed
+        // back, or the auto-detected one when the request omitted it.
+        const lang = data.language || (multiFast ? opts.language : null);
+        if (lang) data.utterances[0].language = lang;
       }
       if (!data.filename) data.filename = file.name; // vfast responses carry no filename
       sttData = data;

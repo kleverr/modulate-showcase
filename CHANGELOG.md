@@ -2,6 +2,18 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.8.0] - 2026-08-06
+
+### Changed
+- **Fast (Multilingual) transcription now shows the language on every run.**
+  The released multilingual vfast batch endpoint now returns a `language`
+  field (the declared value echoed back, or the auto-detected one when the
+  request omits it). The transcript header chip and the Languages row in the
+  statistics panel now display it — same presentation as the standard
+  Multilingual model. Previously auto-detect runs stayed untagged because the
+  response carried no language field. Verified end-to-end against the live
+  endpoint (auto-detect on `demo.mp3` → "English" chip, `Languages: en`).
+
 ## [6.7.0] - 2026-08-06
 
 ### Changed
