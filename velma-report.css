@@ -3,26 +3,26 @@
    lives on .velma-report-view (NOT :root) and every selector is vr-prefixed.
    The report is deliberately its own brand (Proto Grotesk / Stratos, white
    paper) — it renders as a light document even in dark theme.
-   Fonts stay in /dt/fonts/ — @font-face fetches lazily on first use. */
+   Fonts live in /fonts/ — @font-face fetches lazily on first use. */
 
 @font-face {
   font-family: 'Stratos';
-  src: url('/dt/fonts/stratos-regular.woff2') format('woff2');
+  src: url('/fonts/stratos-regular.woff2') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Stratos';
-  src: url('/dt/fonts/stratos-medium.woff2') format('woff2');
+  src: url('/fonts/stratos-medium.woff2') format('woff2');
   font-weight: 500; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Proto Grotesk';
-  src: url('/dt/fonts/proto-grotesk-light.woff2') format('woff2');
+  src: url('/fonts/proto-grotesk-light.woff2') format('woff2');
   font-weight: 300; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: 'Proto Grotesk';
-  src: url('/dt/fonts/proto-grotesk-regular.woff2') format('woff2');
+  src: url('/fonts/proto-grotesk-regular.woff2') format('woff2');
   font-weight: 400; font-style: normal; font-display: swap;
 }
 

@@ -2,6 +2,16 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.9.0] - 2026-08-13
+
+### Removed
+- **`/dt` standalone page retired.** The Deeptalk-style Velma report demo at
+  `/dt` is gone — `/velma` now carries both designs, so the standalone page
+  was redundant. The route and the `dt/` directory (page, styles, renderer,
+  sample data) are deleted. The Stratos / Proto Grotesk webfonts that the
+  Velma Design 2 report still uses moved from `dt/fonts/` to the shared
+  `fonts/` directory, and `velma-report.css` now loads them from there.
+
 ## [6.8.0] - 2026-08-06
 
 ### Changed
