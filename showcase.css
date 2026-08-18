@@ -134,6 +134,36 @@
     color: var(--m__text-caption);
   }
 
+  /* Word-level timings — English Fast with `time_stamps` ───────────────── */
+  .pg-word {
+    cursor: pointer;
+    border-radius: var(--m__radius-xs);
+    /* Negative margin cancels the padding so word spacing is unchanged. */
+    padding: 0 0.1em;
+    margin: 0 -0.1em;
+    transition:
+      background-color var(--m__duration-base) var(--m__easing-base),
+      color var(--m__duration-base) var(--m__easing-base);
+  }
+  .pg-word:hover {
+    background-color: color-mix(in srgb, var(--m__bg-accent) 25%, transparent);
+    transition-duration: var(--m__duration-instant);
+  }
+  .pg-word.active {
+    background-color: var(--m__bg-accent);
+    color: var(--m__text-inverted);
+    transition-duration: var(--m__duration-instant);
+  }
+  /* Hover on the bubble recolors .pg-transcript-text; keep the lit word legible. */
+  .pg-transcript-utterance:hover .pg-word.active {
+    color: var(--m__text-inverted);
+  }
+  .pg-word.low-confidence {
+    text-decoration: underline dotted;
+    text-decoration-color: var(--m__text-caption);
+    text-underline-offset: 0.22em;
+  }
+
 /* ── from design page: transcription ─────────────────────────────── */
   .pg-transcription-transcript .pg-transcript-verdict {
     color: var(--m__text-caption);

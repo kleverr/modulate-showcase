@@ -677,12 +677,18 @@
   const optFastMulti = document.getElementById('opt-fast-multi');
   const optLanguage = document.getElementById('opt-language');
   const optLanguageWrap = document.getElementById('opt-language-wrap');
+  const optTimestamps = document.getElementById('opt-timestamps');
   const optDiarization = document.getElementById('opt-diarization');
   const optDeepfake = document.getElementById('opt-deepfake');
   const optEmotion = document.getElementById('opt-emotion');
   const optAccent = document.getElementById('opt-accent');
   const optPii = document.getElementById('opt-pii');
   const richOpts = [optDiarization, optDeepfake, optEmotion, optAccent, optPii];
+  // Since the vfast merge (ML-194) the English Fast endpoint takes
+  // `speaker_diarization` as well, so Diarization is no longer exclusive with
+  // it — only the enrichment signals are. `time_stamps` is English-Fast-only:
+  // the multilingual endpoint accepts the field and silently ignores it.
+  const enrichOpts = [optDeepfake, optEmotion, optAccent, optPii];
 
   // Fill the Multilingual Fast language selector ("Auto-detect" stays first).
   // The full model-supported list, shown alphabetically as "Name (code)".
@@ -727,6 +733,11 @@
   function syncSttFastUi() {
     const batchOnly = optFastMulti.checked;
     optLanguageWrap.hidden = !batchOnly;
+    // Word timestamps only exist on the English Fast batch endpoint.
+    if (optTimestamps) {
+      optTimestamps.disabled = !optFast.checked;
+      if (optTimestamps.disabled) optTimestamps.checked = false;
+    }
     if (recordAction) recordAction.disabled = batchOnly && currentMode === 'transcription';
     if (streamSplit) {
       const toggle = streamSplit.querySelector('.pg-upload-stream__toggle');
@@ -739,24 +750,32 @@
     }
   }
 
-  // The two fast models and the enrichment options are mutually exclusive.
+  // The two fast models are mutually exclusive with each other and with the
+  // enrichment signals. Diarization straddles English Fast and the full batch
+  // model, so selecting English Fast leaves it alone.
   optFast.addEventListener('change', () => {
-    if (optFast.checked) { optFastMulti.checked = false; richOpts.forEach(cb => { cb.checked = false; }); }
+    if (optFast.checked) { optFastMulti.checked = false; enrichOpts.forEach(cb => { cb.checked = false; }); }
     syncSttFastUi();
   });
   optFastMulti.addEventListener('change', () => {
     if (optFastMulti.checked) { optFast.checked = false; richOpts.forEach(cb => { cb.checked = false; }); }
     syncSttFastUi();
   });
-  richOpts.forEach(cb => {
+  enrichOpts.forEach(cb => {
     cb.addEventListener('change', () => {
       if (cb.checked) { optFast.checked = false; optFastMulti.checked = false; }
       syncSttFastUi();
     });
   });
+  // Diarization is unsupported on Multilingual Fast only.
+  optDiarization.addEventListener('change', () => {
+    if (optDiarization.checked) optFastMulti.checked = false;
+    syncSttFastUi();
+  });
 
   function isFastMode() { return optFast.checked; }
   function isMultiFastMode() { return optFastMulti.checked; }
+  function isTimestampMode() { return !!(optTimestamps && optTimestamps.checked && optFast.checked); }
 
   function getSttOptions() {
     // In Velma mode, the STT options come from velmaConfig.stt (set via the Velma editor),
@@ -1717,7 +1736,10 @@
         opts = optLanguage.value ? { language: optLanguage.value } : {};
       } else if (fast) {
         endpoint = '/api/velma-2-stt-batch-english-vfast';
+        // Both flags are optional and independent; omitted = false upstream.
         opts = {};
+        if (optDiarization.checked) opts.speaker_diarization = true;
+        if (isTimestampMode()) opts.time_stamps = true;
       } else {
         endpoint = '/api/velma-2-stt-batch';
         opts = getSttOptions();
@@ -1740,13 +1762,17 @@
         endpoint: endpoint,
       };
 
-      // vfast returns { text, duration_ms, language } — wrap into utterance format
+      // vfast returns { text, duration_ms, language } — wrap into utterance format.
+      // With `speaker_diarization` the English endpoint returns `utterances`
+      // directly, so this only fires on the undiarized path.
       if ((fast || multiFast) && !data.utterances && data.text) {
         data.utterances = [{ text: data.text, start_ms: 0, duration_ms: data.duration_ms || 0 }];
         // Multilingual vfast reports `language`: the declared value echoed
         // back, or the auto-detected one when the request omitted it.
         const lang = data.language || (multiFast ? opts.language : null);
         if (lang) data.utterances[0].language = lang;
+        // `words` covers the whole file when there is nothing to split it by.
+        if (Array.isArray(data.words) && data.words.length) data.utterances[0].words = data.words;
       }
       if (!data.filename) data.filename = file.name; // vfast responses carry no filename
       sttData = data;
@@ -3694,7 +3720,10 @@
     // Render the emotion clip strip — during live streams too, so the player
     // visualization fills in progressively as clips arrive.
     const opts2 = getSttOptions();
-    if (sttUtterances.length > 0 && opts2.speaker_diarization) {
+    // English Fast streaming carries no speaker field even when the Diarization
+    // box is ticked for batch — don't draw a phantom "Speaker 0" lane for it.
+    const hasSpeakers = sttUtterances.some(u => u.speaker != null);
+    if (sttUtterances.length > 0 && opts2.speaker_diarization && hasSpeakers) {
       renderSttChart();
     } else {
       sttChart.innerHTML = '';
@@ -3711,6 +3740,10 @@
 
   function setupTranscriptPlaybackTracking() {
     if (sttPlaybackTracker) cancelAnimationFrame(sttPlaybackTracker);
+    // Flatten the word spans once — the tick runs every animation frame.
+    const wordSpans = Array.from(transcriptList.querySelectorAll('.pg-word'));
+    const wordStartMs = wordSpans.map(el => parseFloat(el.dataset.start) * 1000);
+    let activeWordIdx = -1;
 
     function tick() {
       const currentMs = resultsAudio.currentTime * 1000;
@@ -3723,6 +3756,19 @@
       transcriptList.querySelectorAll('.pg-transcript-utterance').forEach((el, i) => {
         el.classList.toggle('active', i === activeIdx);
       });
+      // Same sticky rule one level down: the last word that has started stays
+      // lit through the silence after it, so gaps don't blink the highlight off.
+      if (wordSpans.length) {
+        let w = -1;
+        for (let i = wordStartMs.length - 1; i >= 0; i--) {
+          if (currentMs >= wordStartMs[i]) { w = i; break; }
+        }
+        if (w !== activeWordIdx) {
+          if (activeWordIdx >= 0) wordSpans[activeWordIdx].classList.remove('active');
+          if (w >= 0) wordSpans[w].classList.add('active');
+          activeWordIdx = w;
+        }
+      }
       sttPlaybackTracker = requestAnimationFrame(tick);
     }
     sttPlaybackTracker = requestAnimationFrame(tick);
@@ -3985,6 +4031,10 @@
     const p = document.createElement('p');
     if (opts.pii_phi_tagging && u.text && /<pii|<phi/i.test(u.text)) {
       p.innerHTML = renderPiiText(u.text);
+    } else if (!isPartial && Array.isArray(u.words) && u.words.length) {
+      // `words` only ever arrives on the English Fast batch path, which carries
+      // no PII tags — the two branches can't collide.
+      appendWordSpans(p, u.words);
     } else {
       p.textContent = u.text || '';
     }
@@ -3992,6 +4042,46 @@
     el.appendChild(text);
 
     return el;
+  }
+
+  // ── Word-level timings (English Fast + `time_stamps`) ────────────────────
+  // Alignment confidence ships from the live model as a log-probability (all
+  // values <= 0, e.g. -0.0001), while the published spec's examples show a 0-1
+  // probability (e.g. 0.9912). Accept either: <= 0 is a log-prob, > 0 is
+  // already a probability.
+  function wordConfidence(score) {
+    const n = Number(score);
+    if (score == null || !isFinite(n)) return null;
+    return n > 0 ? Math.min(n, 1) : Math.exp(n);
+  }
+
+  // Words the aligner was unsure of — ~4% of words on the demo clips — get a
+  // dotted underline, so alignment quality is visible rather than just claimed.
+  const WORD_LOW_CONFIDENCE = 0.5;
+
+  function appendWordSpans(p, words) {
+    words.forEach((w, i) => {
+      if (i > 0) p.appendChild(document.createTextNode(' '));
+      const span = document.createElement('span');
+      span.className = 'pg-word';
+      span.textContent = w.word;
+      const start = Number(w.start) || 0;
+      span.dataset.start = start;
+      const conf = wordConfidence(w.score);
+      if (conf != null) {
+        if (conf < WORD_LOW_CONFIDENCE) span.classList.add('low-confidence');
+        span.dataset.tooltip = start.toFixed(2) + 's \u2013 ' + (Number(w.end) || start).toFixed(2) +
+          's \u00b7 alignment ' + Math.round(conf * 100) + '%';
+      }
+      span.addEventListener('click', (e) => {
+        e.stopPropagation(); // the bubble also seeks — a word click is narrower
+        if (resultsAudio) {
+          resultsAudio.currentTime = start;
+          resultsAudio.play().catch(() => {});
+        }
+      });
+      p.appendChild(span);
+    });
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -4510,6 +4600,17 @@
       const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
       const fileType = m.fileType || (currentData.filename ? currentData.filename.split('.').pop().toUpperCase() : 'N/A');
 
+      // Word timings live at the top level, and again per utterance when
+      // diarization is on — count the top-level array, it covers the file.
+      const words = Array.isArray(currentData.words) ? currentData.words : [];
+      const wordConfs = words.map(w => wordConfidence(w.score)).filter(c => c != null).sort((a, b) => a - b);
+      const medianConf = wordConfs.length
+        ? (wordConfs.length % 2
+            ? wordConfs[(wordConfs.length - 1) / 2]
+            : (wordConfs[wordConfs.length / 2 - 1] + wordConfs[wordConfs.length / 2]) / 2)
+        : null;
+      const lowConf = wordConfs.filter(c => c < WORD_LOW_CONFIDENCE).length;
+
       const dfUtterances = utterances.filter(u => u.deepfake_score != null);
       const dfAvg = dfUtterances.length ? (dfUtterances.reduce((s, u) => s + u.deepfake_score, 0) / dfUtterances.length) : null;
       const dfMax = dfUtterances.length ? Math.max(...dfUtterances.map(u => u.deepfake_score)) : null;
@@ -4519,6 +4620,9 @@
           ['Model', 'velma-2-stt'],
           ['Utterances', String(utterances.length)],
           ['Speakers', speakers.length ? speakers.length.toString() : 'N/A'],
+          ['Words aligned', words.length ? String(words.length) : 'N/A'],
+          ['Median word alignment', medianConf != null ? (medianConf * 100).toFixed(1) + '%' : 'N/A'],
+          ['Low-confidence words', wordConfs.length ? lowConf + ' / ' + wordConfs.length : 'N/A'],
           ['Languages', languages.length ? languages.join(', ') : 'N/A'],
           ['Deepfake analyzed', dfUtterances.length ? dfUtterances.length + ' / ' + utterances.length + ' utterances' : 'N/A'],
           ['Avg deepfake score', dfAvg != null ? dfAvg.toFixed(4) : 'N/A'],

@@ -2,6 +2,48 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.10.0] - 2026-08-18
+
+### Added
+- **Word-level timestamps on Fast (English only)** (ML-211). The English Fast
+  batch endpoint gained a `time_stamps` flag; a new "Word timestamps" checkbox
+  sits next to the Fast toggles and is enabled only while Fast (English only)
+  is selected — the flag exists on no other STT endpoint (Multilingual Fast
+  accepts the field and silently ignores it, so it stays off there).
+  With the flag on, the transcript renders one span per word instead of a flat
+  paragraph: the spoken word lights up in sync with playback, clicking any word
+  seeks straight to it, and hovering shows its start/end time and alignment
+  confidence. Word highlighting uses the same sticky rule as the utterance
+  highlight — the last word to have started stays lit through the silence
+  after it, so pauses don't blink the highlight off.
+- Words the aligner was unsure of (confidence < 0.5, ~4% of words on the demo
+  clips) carry a dotted underline, so alignment quality is visible on the page
+  rather than only in the JSON.
+- Transcription stats report **Words aligned**, **Median word alignment**, and
+  **Low-confidence words**.
+
+### Changed
+- **Diarization is no longer mutually exclusive with Fast (English only)**
+  (ML-194). Since the vfast merge, the one English endpoint serves the plain,
+  diarized, timestamped, and both-flags shapes, so selecting Fast (English)
+  now leaves the Diarization checkbox alone and passes `speaker_diarization`
+  through — Fast mode gets speaker bubbles and the speaker lane strip for the
+  first time. Only the enrichment signals (Deepfake, Emotions, Accent,
+  PII/PHI) still switch the model back to full batch. Multilingual Fast is
+  unchanged: it supports neither flag and still clears every option.
+- Alignment confidence is normalized before display. The live model returns
+  `score` as a log-probability (all values ≤ 0, e.g. `-0.0001`) while the
+  published spec's examples show a 0–1 probability (e.g. `0.9912`); the UI
+  accepts either — ≤ 0 is treated as a log-prob and exponentiated, > 0 is
+  taken as already a probability.
+
+### Fixed
+- The speaker lane strip no longer draws a phantom "Speaker 0" lane. Now that
+  Diarization can stay ticked while Fast (English) is selected, an English Fast
+  *streaming* session — which carries no speaker field — would have rendered
+  one bogus lane; the strip now requires real speaker data, not just the
+  checkbox.
+
 ## [6.9.0] - 2026-08-13
 
 ### Removed
