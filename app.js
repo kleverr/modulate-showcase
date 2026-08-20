@@ -3883,18 +3883,20 @@
       return;
     }
 
-    // Word timings were asked for but none came back. Today the model withholds
-    // them past 15 minutes of audio and returns no reason (ML-268), so say so
-    // rather than quietly rendering a plain transcript and looking like the
-    // checkbox did nothing.
+    // Word timings were asked for but none came back. Since the ML-268 fix the
+    // response says why: `words_unavailable` carries a UI-safe `message` and an
+    // `alternative` suggestion (may be an empty string — that's a normal value).
+    // The generic fallback only fires if the API breaks its exactly-one-of
+    // words/words_unavailable contract.
     if (sttTimestampsRequested && !isRecording && sttUtterances.length &&
         !sttUtterances.some(u => Array.isArray(u.words) && u.words.length)) {
+      const wu = sttData && sttData.words_unavailable;
       const note = document.createElement('div');
       note.className = 'pg-transcript-note';
-      const mins = (sttData && sttData.duration_ms) ? sttData.duration_ms / 60000 : 0;
-      note.textContent = mins > 15
-        ? 'No word timings returned \u2014 the model withholds them for audio over 15 minutes. Diarization has no length limit.'
+      note.textContent = wu
+        ? [wu.message, wu.alternative].filter(Boolean).join(' ')
         : 'No word timings returned for this audio.';
+      if (wu && wu.reason) note.dataset.tooltip = 'Reason: ' + wu.reason;
       transcriptList.appendChild(note);
     }
 
@@ -4259,20 +4261,22 @@
   }
 
   // ── Word-level timings (English Fast + `time_stamps`) ────────────────────
-  // `words` is NOT a reliable source for the transcript text: the model can
-  // omit entries (numbers and hyphenated words today — ML-266), so rendering
-  // straight from the array silently drops those words off the page. Walk the
-  // utterance's own `text` instead and attach a timing wherever one lines up.
-  // Tokens without a timing still render, just not seekable — text
-  // completeness beats timing coverage.
+  // Since the ML-266/267 release the spec guarantees `words` covers every
+  // whitespace token of `text` exactly once, in order, so pairing is by index.
+  // The walk-with-lookahead fallback stays for responses that violate that
+  // guarantee (or pre-release cached fixtures): a token the array can't match
+  // still renders as plain text — text completeness beats timing coverage.
   //
-  // `score` is deliberately not surfaced: it currently ships as a
-  // log-probability and ML confirmed the value is miscalculated as well. Both
-  // are fixed together under ML-267, which also renames the field, so there is
-  // nothing worth reading here until that lands.
+  // Each word carries `timing`: `aligned` (measured), `partial` (end
+  // approximate — untimeable trailing characters like the digits in
+  // "COVID-19"), or `estimated` (nothing measured; start/end bracket the gap
+  // between timed neighbours). `confidence` is 0-1 alignment quality — how
+  // well the word was LOCATED, not whether it is correct — and is absent on
+  // `estimated` words, so its absence is expected there, never an error.
   function appendWordSpans(p, text, words) {
     const tokens = String(text || '').split(/\s+/).filter(Boolean);
     const list = Array.isArray(words) ? words : [];
+    const oneToOne = list.length === tokens.length;
     let wi = 0;
     let timed = 0;
 
@@ -4280,7 +4284,9 @@
       if (i > 0) p.appendChild(document.createTextNode(' '));
 
       let w = null;
-      if (wi < list.length) {
+      if (oneToOne) {
+        w = list[i];
+      } else if (wi < list.length) {
         if (list[wi].word === token) {
           w = list[wi++];
         } else {
@@ -4301,7 +4307,16 @@
         timed++;
         const start = Number(w.start) || 0;
         span.dataset.start = start;
-        span.dataset.tooltip = start.toFixed(2) + 's \u2013 ' + (Number(w.end) || start).toFixed(2) + 's';
+        const range = start.toFixed(2) + 's \u2013 ' + (Number(w.end) || start).toFixed(2) + 's';
+        if (w.timing === 'estimated') {
+          span.classList.add('estimated');
+          span.dataset.tooltip = '~' + range + ' \u00b7 estimated \u2014 bracketed between neighbouring words, not measured';
+        } else if (w.timing === 'partial') {
+          span.classList.add('partial');
+          span.dataset.tooltip = range + ' (end approximate) \u00b7 alignment ' + confPct(w.confidence);
+        } else {
+          span.dataset.tooltip = range + ' \u00b7 alignment ' + confPct(w.confidence);
+        }
         span.addEventListener('click', (e) => {
           e.stopPropagation(); // the bubble also seeks — a word click is narrower
           if (resultsAudio) {
@@ -4314,6 +4329,13 @@
     });
 
     return { tokens: tokens.length, timed };
+  }
+
+  // "99.1%" from a 0-1 confidence; "n/a" when the field is absent (estimated
+  // words never carry one).
+  function confPct(c) {
+    const n = Number(c);
+    return (c == null || !isFinite(n)) ? 'n/a' : (n * 100).toFixed(1) + '%';
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -4869,10 +4891,22 @@
 
       // Word timings live at the top level, and again per utterance when
       // diarization is on — count the top-level array, it covers the file.
-      // Reported against the transcript's token count so missing timings
-      // (ML-266) are visible rather than silently absent.
+      // Reported against the transcript's token count: the spec guarantees
+      // they match, so a mismatch here is a bug worth seeing.
       const words = Array.isArray(currentData.words) ? currentData.words : [];
       const textTokens = String(currentData.text || '').split(/\s+/).filter(Boolean).length;
+      const timingCounts = { aligned: 0, partial: 0, estimated: 0 };
+      words.forEach(w => { if (timingCounts[w.timing] != null) timingCounts[w.timing]++; });
+      const timingStr = ['aligned', 'partial', 'estimated']
+        .filter(k => timingCounts[k] > 0)
+        .map(k => timingCounts[k] + ' ' + k)
+        .join(' \u00b7 ');
+      const confs = words.map(w => Number(w.confidence)).filter(isFinite).sort((a, b) => a - b);
+      const medianConf = confs.length
+        ? (confs.length % 2 ? confs[(confs.length - 1) / 2]
+                            : (confs[confs.length / 2 - 1] + confs[confs.length / 2]) / 2)
+        : null;
+      const wu = currentData.words_unavailable;
 
       const dfUtterances = utterances.filter(u => u.deepfake_score != null);
       const dfAvg = dfUtterances.length ? (dfUtterances.reduce((s, u) => s + u.deepfake_score, 0) / dfUtterances.length) : null;
@@ -4883,7 +4917,10 @@
           ['Model', 'velma-2-stt'],
           ['Utterances', String(utterances.length)],
           ['Speakers', speakers.length ? speakers.length.toString() : 'N/A'],
-          ['Words timed', words.length ? words.length + ' / ' + textTokens + ' tokens' : 'N/A'],
+          ['Words timed', words.length ? words.length + ' / ' + textTokens + ' tokens'
+                          : (wu ? 'withheld \u2014 ' + wu.reason : 'N/A')],
+          ['Word timing quality', timingStr || 'N/A'],
+          ['Median alignment confidence', medianConf != null ? (medianConf * 100).toFixed(1) + '%' : 'N/A'],
           ['Languages', languages.length ? languages.join(', ') : 'N/A'],
           ['Deepfake analyzed', dfUtterances.length ? dfUtterances.length + ' / ' + utterances.length + ' utterances' : 'N/A'],
           ['Avg deepfake score', dfAvg != null ? dfAvg.toFixed(4) : 'N/A'],

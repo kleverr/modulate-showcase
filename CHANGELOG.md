@@ -2,6 +2,34 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.13.0] - 2026-08-20
+
+### Changed
+- **Adopt the ML-266/267/268 release on English Fast word timestamps**,
+  verified against the live endpoint before shipping (`score` gone,
+  `confidence` 0-1 on every measured word, `timing` on all words, `words`
+  exactly 1:1 with the transcript tokens).
+- Word tooltips show alignment confidence again — the new 0-1 `confidence`
+  field, shown as a percentage. It scores how well the word was *located*,
+  not whether it is correct; `estimated` words carry none by design and show
+  "n/a". The old `score` field is not read anywhere (the showcase was already
+  clean of it, which is why the breaking rename shipped without a hotfix).
+- Words are marked by timing quality: `partial` (end approximate — e.g. the
+  digits in "COVID-19") get a dotted underline, `estimated` (bracketed
+  between neighbours, nothing measured — e.g. "2024") get a dashed underline
+  and a `~` on the tooltip range. Subtle on purpose; tooltips explain.
+- Withheld word timings now surface the API's own explanation. The response's
+  `words_unavailable.message` + `alternative` render under the transcript
+  (reason code on hover) instead of the retired hard-coded "over 15 minutes"
+  text — the ceiling is deployment-specific now (default one hour), so the
+  client no longer assumes one.
+- Word↔token pairing is by index when the counts match (the spec now
+  guarantees 1:1 coverage in order); the lookahead walk survives only as a
+  fallback for contract violations.
+- Transcription stats: "Words timed" shows `withheld — <reason>` when
+  timings were refused, plus new "Word timing quality" (aligned/partial/
+  estimated breakdown) and "Median alignment confidence" rows.
+
 ## [6.12.0] - 2026-08-20
 
 ### Added
