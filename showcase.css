@@ -158,10 +158,18 @@
   .pg-transcript-utterance:hover .pg-word.active {
     color: var(--m__text-inverted);
   }
-  .pg-word.low-confidence {
-    text-decoration: underline dotted;
-    text-decoration-color: var(--m__text-caption);
-    text-underline-offset: 0.22em;
+  /* Tokens the model returned no timing for (ML-266). They must still read as
+     ordinary transcript text — only the seek affordance goes away. */
+  .pg-word.untimed {
+    cursor: default;
+  }
+  .pg-word.untimed:hover {
+    background-color: transparent;
+  }
+  .pg-transcript-note {
+    margin-top: var(--m__spacer-xs);
+    color: var(--m__text-caption);
+    font-size: var(--m__font-size-s);
   }
 
 /* ── from design page: transcription ─────────────────────────────── */

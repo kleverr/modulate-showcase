@@ -2,6 +2,44 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.11.0] - 2026-08-20
+
+Follow-up to 6.10.0 after ML's review of the release probing (Angel, eng
+channel 2026-08-20): three upstream defects confirmed — ML-266 (numbers and
+hyphenated words dropped from word timings), ML-267 (`score` is a
+log-probability AND miscalculated; will become a renamed 0-1 field),
+ML-268 (timings silently withheld past 15 minutes).
+
+### Fixed
+- **Dropped timings no longer drop words from the page.** The word-span
+  renderer built the paragraph from the `words` array alone, so any word the
+  model omits from the timings (ML-266) vanished from the displayed
+  transcript. The renderer now walks the utterance's own `text` and attaches
+  timings where they line up: every word always renders, and a word without a
+  timing is simply not seekable. A small look-ahead keeps one mismatched entry
+  from desyncing the rest of the utterance.
+- **Fast-model progress estimates match ML's measured latency curve.** The
+  flat 60x-realtime guess was only right for long audio — measured RTFx is
+  ~9x at 30s, ~63x at 15m, ~84x at 1h (latency is dominated by the parallel
+  transcriber fan-out, so the factor climbs with length). Short uploads now
+  estimate ~8x, stepping up for longer files.
+
+### Removed
+- **Alignment-confidence UI, per ML's explicit request.** The low-confidence
+  dotted underline, the confidence percentage in word tooltips, and the
+  "Median word alignment" / "Low-confidence words" stats rows are gone: the
+  live `score` value is miscalculated today, so the 0.5 cutoff was reading
+  noise. Returns when ML-267 lands (0-1 value, renamed field). Word tooltips
+  now show start/end times only; the stats card reports "Words timed"
+  against the transcript's token count instead.
+
+### Added
+- **Withheld-timings notice** (ML-268). When word timestamps were requested
+  but none come back, the transcript now says so — including the 15-minute
+  cutoff and the no-length-limit diarization alternative when the audio is
+  long enough for that to be the cause — instead of quietly rendering a plain
+  transcript that looks like the checkbox did nothing.
+
 ## [6.10.0] - 2026-08-18
 
 ### Added

@@ -347,6 +347,9 @@
   let sttUtterances = [];
   let sttPartial = null;
   let sttData = null;
+  // Whether the last run asked for word timings — needed to tell "timestamps
+  // off" apart from "timestamps requested but withheld" (ML-268).
+  let sttTimestampsRequested = false;
 
   // ── Design-chrome DOM refs ──────────────────────────────────────────────────
   const pageTitleEl     = document.getElementById('pg-page-title');
@@ -799,8 +802,21 @@
   }
 
   // Speed factor for transcription: all 4 checked = 8x, just diarization = 20x, any 3 = 15x
-  function getSttSpeedFactor() {
-    if (isFastMode() || isMultiFastMode()) return 60; // vfast models are ~60x realtime
+  //
+  // The flat 60x the fast models used to assume was only ever right for long
+  // audio. ML's measured server-side RTFx (dedicated box, single request,
+  // upload excluded) is ~9x at 30s, ~63x at 15m, ~84x at 1h — latency is
+  // dominated by the parallel fan-out to the transcribers, so the factor
+  // climbs steeply with length rather than staying constant. A 30s clip was
+  // being estimated at 500ms against a ~3s reality. These sit deliberately
+  // below ML's figures: the showcase goes through the shared endpoint under
+  // concurrent load and pays upload time on top.
+  function getSttSpeedFactor(durationMs) {
+    if (isFastMode() || isMultiFastMode()) {
+      if (!durationMs || durationMs < 120000) return 8;
+      if (durationMs < 1200000) return 40;
+      return 60;
+    }
     const opts = getSttOptions();
     const count = [opts.emotion_signal, opts.accent_signal, opts.pii_phi_tagging].filter(Boolean).length;
     if (count >= 3) return 8;
@@ -1721,7 +1737,7 @@
     isAnalyzing = true;
     const durationMs = await getAudioDuration(file);
     showOverlay(file.name, 'Analyzing audio');
-    const speedFactor = getSttSpeedFactor();
+    const speedFactor = getSttSpeedFactor(durationMs);
     const estimatedMs = Math.max(MIN_PROGRESS_MS, (durationMs / speedFactor));
     startProgress(estimatedMs);
 
@@ -1740,10 +1756,12 @@
         opts = {};
         if (optDiarization.checked) opts.speaker_diarization = true;
         if (isTimestampMode()) opts.time_stamps = true;
+        sttTimestampsRequested = !!opts.time_stamps;
       } else {
         endpoint = '/api/velma-2-stt-batch';
         opts = getSttOptions();
       }
+      if (!fast) sttTimestampsRequested = false;
       const { data, meta } = await uploadAndAnalyze(file, endpoint, opts);
       const processingMs = Date.now() - startedAt;
       await finishProgress();
@@ -3684,6 +3702,21 @@
       return;
     }
 
+    // Word timings were asked for but none came back. Today the model withholds
+    // them past 15 minutes of audio and returns no reason (ML-268), so say so
+    // rather than quietly rendering a plain transcript and looking like the
+    // checkbox did nothing.
+    if (sttTimestampsRequested && !isRecording && sttUtterances.length &&
+        !sttUtterances.some(u => Array.isArray(u.words) && u.words.length)) {
+      const note = document.createElement('div');
+      note.className = 'pg-transcript-note';
+      const mins = (sttData && sttData.duration_ms) ? sttData.duration_ms / 60000 : 0;
+      note.textContent = mins > 15
+        ? 'No word timings returned \u2014 the model withholds them for audio over 15 minutes. Diarization has no length limit.'
+        : 'No word timings returned for this audio.';
+      transcriptList.appendChild(note);
+    }
+
     const opts = getSttOptions();
     // Only cluster during streaming to merge overlapping partials;
     // batch results are already clean so render them as-is. But always
@@ -3741,7 +3774,7 @@
   function setupTranscriptPlaybackTracking() {
     if (sttPlaybackTracker) cancelAnimationFrame(sttPlaybackTracker);
     // Flatten the word spans once — the tick runs every animation frame.
-    const wordSpans = Array.from(transcriptList.querySelectorAll('.pg-word'));
+    const wordSpans = Array.from(transcriptList.querySelectorAll('.pg-word[data-start]'));
     const wordStartMs = wordSpans.map(el => parseFloat(el.dataset.start) * 1000);
     let activeWordIdx = -1;
 
@@ -4034,7 +4067,7 @@
     } else if (!isPartial && Array.isArray(u.words) && u.words.length) {
       // `words` only ever arrives on the English Fast batch path, which carries
       // no PII tags — the two branches can't collide.
-      appendWordSpans(p, u.words);
+      appendWordSpans(p, u.text, u.words);
     } else {
       p.textContent = u.text || '';
     }
@@ -4045,43 +4078,61 @@
   }
 
   // ── Word-level timings (English Fast + `time_stamps`) ────────────────────
-  // Alignment confidence ships from the live model as a log-probability (all
-  // values <= 0, e.g. -0.0001), while the published spec's examples show a 0-1
-  // probability (e.g. 0.9912). Accept either: <= 0 is a log-prob, > 0 is
-  // already a probability.
-  function wordConfidence(score) {
-    const n = Number(score);
-    if (score == null || !isFinite(n)) return null;
-    return n > 0 ? Math.min(n, 1) : Math.exp(n);
-  }
+  // `words` is NOT a reliable source for the transcript text: the model can
+  // omit entries (numbers and hyphenated words today — ML-266), so rendering
+  // straight from the array silently drops those words off the page. Walk the
+  // utterance's own `text` instead and attach a timing wherever one lines up.
+  // Tokens without a timing still render, just not seekable — text
+  // completeness beats timing coverage.
+  //
+  // `score` is deliberately not surfaced: it currently ships as a
+  // log-probability and ML confirmed the value is miscalculated as well. Both
+  // are fixed together under ML-267, which also renames the field, so there is
+  // nothing worth reading here until that lands.
+  function appendWordSpans(p, text, words) {
+    const tokens = String(text || '').split(/\s+/).filter(Boolean);
+    const list = Array.isArray(words) ? words : [];
+    let wi = 0;
+    let timed = 0;
 
-  // Words the aligner was unsure of — ~4% of words on the demo clips — get a
-  // dotted underline, so alignment quality is visible rather than just claimed.
-  const WORD_LOW_CONFIDENCE = 0.5;
-
-  function appendWordSpans(p, words) {
-    words.forEach((w, i) => {
+    tokens.forEach((token, i) => {
       if (i > 0) p.appendChild(document.createTextNode(' '));
-      const span = document.createElement('span');
-      span.className = 'pg-word';
-      span.textContent = w.word;
-      const start = Number(w.start) || 0;
-      span.dataset.start = start;
-      const conf = wordConfidence(w.score);
-      if (conf != null) {
-        if (conf < WORD_LOW_CONFIDENCE) span.classList.add('low-confidence');
-        span.dataset.tooltip = start.toFixed(2) + 's \u2013 ' + (Number(w.end) || start).toFixed(2) +
-          's \u00b7 alignment ' + Math.round(conf * 100) + '%';
-      }
-      span.addEventListener('click', (e) => {
-        e.stopPropagation(); // the bubble also seeks — a word click is narrower
-        if (resultsAudio) {
-          resultsAudio.currentTime = start;
-          resultsAudio.play().catch(() => {});
+
+      let w = null;
+      if (wi < list.length) {
+        if (list[wi].word === token) {
+          w = list[wi++];
+        } else {
+          // One entry whose form differs from the transcript token would
+          // otherwise desync every word after it — look a couple ahead so a
+          // single mismatch costs one word's timing, not the whole utterance.
+          for (let k = wi + 1; k < Math.min(wi + 3, list.length); k++) {
+            if (list[k].word === token) { w = list[k]; wi = k + 1; break; }
+          }
         }
-      });
+      }
+
+      const span = document.createElement('span');
+      span.className = 'pg-word' + (w ? '' : ' untimed');
+      span.textContent = token;
+
+      if (w) {
+        timed++;
+        const start = Number(w.start) || 0;
+        span.dataset.start = start;
+        span.dataset.tooltip = start.toFixed(2) + 's \u2013 ' + (Number(w.end) || start).toFixed(2) + 's';
+        span.addEventListener('click', (e) => {
+          e.stopPropagation(); // the bubble also seeks — a word click is narrower
+          if (resultsAudio) {
+            resultsAudio.currentTime = start;
+            resultsAudio.play().catch(() => {});
+          }
+        });
+      }
       p.appendChild(span);
     });
+
+    return { tokens: tokens.length, timed };
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -4602,14 +4653,10 @@
 
       // Word timings live at the top level, and again per utterance when
       // diarization is on — count the top-level array, it covers the file.
+      // Reported against the transcript's token count so missing timings
+      // (ML-266) are visible rather than silently absent.
       const words = Array.isArray(currentData.words) ? currentData.words : [];
-      const wordConfs = words.map(w => wordConfidence(w.score)).filter(c => c != null).sort((a, b) => a - b);
-      const medianConf = wordConfs.length
-        ? (wordConfs.length % 2
-            ? wordConfs[(wordConfs.length - 1) / 2]
-            : (wordConfs[wordConfs.length / 2 - 1] + wordConfs[wordConfs.length / 2]) / 2)
-        : null;
-      const lowConf = wordConfs.filter(c => c < WORD_LOW_CONFIDENCE).length;
+      const textTokens = String(currentData.text || '').split(/\s+/).filter(Boolean).length;
 
       const dfUtterances = utterances.filter(u => u.deepfake_score != null);
       const dfAvg = dfUtterances.length ? (dfUtterances.reduce((s, u) => s + u.deepfake_score, 0) / dfUtterances.length) : null;
@@ -4620,9 +4667,7 @@
           ['Model', 'velma-2-stt'],
           ['Utterances', String(utterances.length)],
           ['Speakers', speakers.length ? speakers.length.toString() : 'N/A'],
-          ['Words aligned', words.length ? String(words.length) : 'N/A'],
-          ['Median word alignment', medianConf != null ? (medianConf * 100).toFixed(1) + '%' : 'N/A'],
-          ['Low-confidence words', wordConfs.length ? lowConf + ' / ' + wordConfs.length : 'N/A'],
+          ['Words timed', words.length ? words.length + ' / ' + textTokens + ' tokens' : 'N/A'],
           ['Languages', languages.length ? languages.join(', ') : 'N/A'],
           ['Deepfake analyzed', dfUtterances.length ? dfUtterances.length + ' / ' + utterances.length + ' utterances' : 'N/A'],
           ['Avg deepfake score', dfAvg != null ? dfAvg.toFixed(4) : 'N/A'],
