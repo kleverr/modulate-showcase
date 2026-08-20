@@ -1209,3 +1209,191 @@ body[data-mode="velma"].velma-design2 #pg-bottom-columns {
   body[data-mode="events"] .pg-player-dataviz {
     display: none;
   }
+
+/* ── Voice Matching mode ─────────────────────────────────────────────── */
+/* The shared plate/player are single-file surfaces; voice mode swaps in a
+   two-slot picker and renders its own pair of mini-players in the panel. */
+body[data-mode="voice"] .pg-upload-actions {
+  display: none;
+}
+.pg-voice-actions {
+  display: none;
+}
+body[data-mode="voice"] .pg-voice-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m__gap-m);
+}
+/* Collapsed ("New analysis") plate hides the picker like the standard actions row */
+.pg-upload-plate[data-state="uploaded"] .pg-voice-actions {
+  display: none;
+}
+body[data-mode="voice"] #pg-player-output {
+  display: none;
+}
+
+.vm-slots {
+  display: flex;
+  align-items: stretch;
+  gap: var(--m__gap-m);
+  flex-wrap: wrap;
+}
+.vm-vs {
+  align-self: center;
+}
+.vm-slot {
+  flex: 1 1 260px;
+  border: var(--m__border-width-s) dashed var(--m__border);
+  border-radius: var(--m__radius-m);
+  padding: var(--m__spacer-s);
+  display: flex;
+  flex-direction: column;
+  gap: var(--m__gap-s);
+  align-items: flex-start;
+  transition: border-color var(--m__duration-fast) var(--m__easing-base);
+}
+.vm-slot.drag-over {
+  border-color: var(--m__success);
+}
+.vm-slot.vm-slot-has-file {
+  border-style: solid;
+}
+.vm-slot-empty {
+  display: flex;
+  gap: var(--m__gap-s);
+  flex-wrap: wrap;
+}
+.vm-slot-empty[hidden] {
+  display: none;
+}
+.vm-slot-record.vm-recording {
+  color: var(--m__error);
+  border-color: var(--m__error);
+}
+.vm-slot-filled {
+  display: flex;
+  align-items: center;
+  gap: var(--m__gap-s);
+  min-width: 0;
+  max-width: 100%;
+}
+.vm-slot-filled[hidden] {
+  display: none;
+}
+.vm-slot-name {
+  font-weight: var(--m__font-weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vm-slot-clear {
+  border: none;
+  background: transparent;
+  color: var(--m__text-caption);
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+.vm-slot-clear:hover {
+  color: var(--m__error);
+}
+.vm-actions-row {
+  display: flex;
+  align-items: center;
+  gap: var(--m__gap-s);
+  flex-wrap: wrap;
+}
+.vm-hint {
+  margin-left: auto;
+}
+
+/* Similarity scale: 0–1 with the showcase's interpretation bands
+   (< 0.5 different · 0.5–0.7 inconclusive · ≥ 0.7 same) */
+.vm-scale-wrap {
+  max-width: 620px;
+  margin-bottom: var(--m__spacer-m);
+}
+.vm-scale-track {
+  position: relative;
+  padding-top: 1.4rem;
+}
+.vm-scale {
+  display: flex;
+  height: 10px;
+  border-radius: var(--m__radius-pill);
+  overflow: hidden;
+}
+.vm-scale-band-diff {
+  flex: 0 0 50%;
+  background: color-mix(in srgb, var(--m__text-caption) 22%, transparent);
+}
+.vm-scale-band-mid {
+  flex: 0 0 20%;
+  background: color-mix(in srgb, var(--m__text-caption) 40%, transparent);
+}
+.vm-scale-band-match {
+  flex: 0 0 30%;
+  background: color-mix(in srgb, var(--m__success) 55%, transparent);
+}
+.vm-scale-marker {
+  position: absolute;
+  top: 1.1rem;
+  bottom: -3px;
+  width: 3px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: translateX(-50%);
+  transition: left var(--m__duration-fast) var(--m__easing-base);
+}
+.vm-scale-marker-value {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--m__font-family-semi-mono);
+  font-size: var(--m__font-size-xs);
+  white-space: nowrap;
+}
+.vm-scale-legend {
+  display: flex;
+  margin-top: 0.35rem;
+}
+.vm-legend-diff { flex: 0 0 50%; }
+.vm-legend-mid { flex: 0 0 20%; }
+.vm-legend-match { flex: 0 0 30%; text-align: right; }
+
+.vm-clips {
+  display: flex;
+  gap: var(--m__gap-m);
+  flex-wrap: wrap;
+  margin-bottom: var(--m__spacer-s);
+}
+.vm-clip {
+  flex: 1 1 280px;
+  border: var(--m__border-width-s) solid var(--m__border);
+  border-radius: var(--m__radius-m);
+  padding: var(--m__spacer-s);
+  display: flex;
+  flex-direction: column;
+  gap: var(--m__gap-s);
+  min-width: 0;
+}
+.vm-clip-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--m__gap-s);
+  min-width: 0;
+}
+.vm-clip-title {
+  font-weight: var(--m__font-weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vm-clip audio {
+  width: 100%;
+  height: 36px;
+}
+.vm-caveat {
+  max-width: 620px;
+}

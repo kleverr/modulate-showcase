@@ -301,6 +301,8 @@
   const eventsContent        = document.getElementById('events-content');
   const eventsSidebar        = document.getElementById('results-events-verdict');
   const eventsTbody          = document.getElementById('events-tbody');
+  const voiceContent         = document.getElementById('voice-content');
+  const voiceSidebar         = document.getElementById('results-voice-verdict');
 
   // Redaction elements
   const redactionContent        = document.getElementById('redaction-content');
@@ -352,6 +354,11 @@
   let lastEventsAudioUrl = null;
   let lastEventsMeta = null;
   let lastEventsFilename = null;
+
+  let lastVoiceData = null;
+  let lastVoiceMeta = null;
+  let lastVoicePair = null;       // [{name, url}, {name, url}] for the results mini-players
+  let lastVoicePairLabel = null;
   let musicPlaybackTracker = null;
   let aimusicPlaybackTracker = null;
   let isAnalyzing = false;
@@ -471,6 +478,13 @@
       streaming: false,
       stages: ['Analyzing audio'],
     },
+    voice: {
+      path: '/voice-matching', title: 'Voice Matching', plateTitle: 'Compare two voices',
+      optionsRow: () => plateHeader, verdict: () => voiceSidebar,
+      panels: () => [voiceContent],
+      streaming: false,
+      stages: ['Analyzing voices'],
+    },
   };
 
   function setPageTitle(text) {
@@ -526,7 +540,7 @@
      document.getElementById('results-redaction-verdict'),
      document.getElementById('results-emotion-verdict'),
      document.getElementById('results-accent-verdict'),
-     eventsSidebar].forEach(el => {
+     eventsSidebar, voiceSidebar].forEach(el => {
       if (el) el.hidden = true;
     });
     const verdictEl = cfg.verdict && cfg.verdict();
@@ -537,7 +551,7 @@
      musicContent, aimusicContent, languageContent,
      document.getElementById('emotion-content'),
      document.getElementById('accent-content'),
-     eventsContent].forEach(el => {
+     eventsContent, voiceContent].forEach(el => {
       if (el) el.classList.remove('visible');
     });
     (cfg.panels ? cfg.panels() : []).forEach(el => { if (el) el.classList.add('visible'); });
@@ -555,6 +569,7 @@
     if (aimusicPlaybackTracker) { cancelAnimationFrame(aimusicPlaybackTracker); aimusicPlaybackTracker = null; }
 
     if (isRecording) stopRecording();
+    stopVoiceRecordingIfActive();
     setPlateState('initial');
 
     if (isDeepfake) {
@@ -650,6 +665,19 @@
       resultsFilename.textContent = lastEventsFilename || DEMO_EVENTS_FILENAME;
       resultsAudio.src = lastEventsAudioUrl || DEMO_EVENTS_AUDIO_URL;
       renderEventsResult(eData);
+    } else if (mode === 'voice') {
+      const vData = lastVoiceData || DEMO_VOICE_DATA;
+      const vPair = lastVoicePair || VOICE_DEMO_PAIRS.same.clips.map(c => ({ name: c.name, url: c.url }));
+      currentData = vData;
+      currentMeta = lastVoiceMeta || {
+        fileSize: VOICE_DEMO_PAIRS.same.clips.reduce((t, c) => t + c.size, 0),
+        fileType: 'audio/mpeg',
+        httpStatus: 200, httpStatusText: 'OK',
+        responseSize: JSON.stringify(DEMO_VOICE_DATA).length,
+        processingMs: DEMO_VOICE_PROCESSING_MS,
+      };
+      resultsFilename.textContent = lastVoicePairLabel || (vPair[0].name + ' vs ' + vPair[1].name);
+      renderVoiceResult(vData, vPair);
     } else if (isLanguage) {
       const lData = lastLanguageData || DEMO_LANGUAGE_DATA;
       currentData = lData;
@@ -1014,6 +1042,7 @@
     else if (currentMode === 'aimusic') startAimusicAnalysis(file);
     else if (currentMode === 'language') startLanguageDetection(file);
     else if (currentMode === 'events') startEventsAnalysis(file);
+    else if (currentMode === 'voice') addDroppedVoiceClip(file);
     else if (currentMode === 'emotion' || currentMode === 'accent') startEaDetection(currentMode, file);
     else if (currentMode === 'velma') startVelmaBatch(file);
     else startTranscriptionBatch(file);
@@ -2446,6 +2475,334 @@
     clearPlayerStrips();
     sttChart.innerHTML = '';
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── VOICE MATCHING MODE ───────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  // Compares the voices in two clips via /api/velma-2-voice-matching-batch
+  // (server.js proxies to the ML preview box running the new proprietary
+  // model). Response: {similarity, duration_ms_1, duration_ms_2} — cosine
+  // similarity in -1..1, higher = more similar voices.
+  //
+  // The verdict bands are OURS, not the API's (official threshold guidance
+  // requested from ML). Measured on the preview model 2026-08-20:
+  // same-speaker real-audio pairs 0.73-0.80, different-speaker pairs
+  // 0.18-0.48 — with the high end of "different" coming from two speakers on
+  // the SAME call, i.e. shared channel/codec conditions push scores up.
+  const VOICE_MATCH_FLOOR = 0.7;   // >= this: likely the same voice
+  const VOICE_DIFFER_CEIL = 0.5;   // <  this: likely different voices
+  const VOICE_MIN_CLIP_MS = 5000;  // API minimum per clip (new model; prod's old model wants 8 s)
+  const VOICE_REC_MAX_MS = 30000;  // mic recording cap
+
+  // Demo fixtures: single-speaker segments cut from the deepfake demo calls
+  // (picked via diarization). Both "same speaker" clips are the irate caller
+  // from different parts of one call; the "different speakers" partner is the
+  // customer from an unrelated recording.
+  const VOICE_DEMO_PAIRS = {
+    same: {
+      label: 'Same speaker',
+      clips: [
+        { url: '/voice/irate-caller-early.mp3', name: 'irate-caller-early.mp3', size: 158313 },
+        { url: '/voice/irate-caller-later.mp3', name: 'irate-caller-later.mp3', size: 164269 },
+      ],
+    },
+    diff: {
+      label: 'Different speakers',
+      clips: [
+        { url: '/voice/irate-caller-early.mp3', name: 'irate-caller-early.mp3', size: 158313 },
+        { url: '/voice/order-status-customer.mp3', name: 'order-status-customer.mp3', size: 188126 },
+      ],
+    },
+  };
+
+  // Pre-baked result for the "same speaker" demo pair (measured against the
+  // preview box 2026-08-20) so the tab shows a real result before any live run.
+  const DEMO_VOICE_DATA = { similarity: 0.801246702671051, duration_ms_1: 13100, duration_ms_2: 13600 };
+  const DEMO_VOICE_PROCESSING_MS = 1400;
+
+  const VOICE_VERDICT_RULES_HTML =
+    '<p>The API returns one number: the cosine similarity between the two clips’ speaker embeddings ' +
+    '(−1 to 1, higher = more similar voices). It compares voice characteristics, not words.</p>' +
+    '<p>The verdict bands are applied by this showcase, not the API: ≥ 0.70 reads as the same voice, ' +
+    'below 0.50 as different voices, anything between as inconclusive. On our test material ' +
+    'same-speaker pairs landed at 0.73–0.80 and different-speaker pairs at 0.18–0.48 — recording ' +
+    'conditions shift scores (two speakers on one call score closer than speakers from unrelated ' +
+    'recordings), so treat values near a boundary with care.</p>';
+
+  const voiceActionsEl = document.getElementById('voice-actions');
+  const vmCompareBtn = document.getElementById('vm-compare-btn');
+  const voiceSlotEls = voiceActionsEl ? Array.from(voiceActionsEl.querySelectorAll('.vm-slot')) : [];
+  const voiceSlots = [null, null]; // {file, name, url (objectUrl), durationMs}
+
+  let vmRecorder = null;
+  let vmRecordingSlot = -1;
+  let vmRecTimer = null;
+  let vmRecStart = 0;
+
+  function updateVoiceCompareState() {
+    if (vmCompareBtn) vmCompareBtn.disabled = !(voiceSlots[0] && voiceSlots[1]) || isAnalyzing;
+  }
+
+  function syncVoiceSlotUi(i) {
+    const slotEl = voiceSlotEls[i];
+    if (!slotEl) return;
+    const slot = voiceSlots[i];
+    const empty = slotEl.querySelector('.vm-slot-empty');
+    const filled = slotEl.querySelector('.vm-slot-filled');
+    slotEl.classList.toggle('vm-slot-has-file', !!slot);
+    if (empty) empty.hidden = !!slot;
+    if (filled) {
+      filled.hidden = !slot;
+      if (slot) {
+        filled.querySelector('.vm-slot-name').textContent = slot.name;
+        filled.querySelector('.vm-slot-dur').textContent = formatDuration(slot.durationMs);
+      }
+    }
+  }
+
+  // knownDurationMs skips metadata sniffing — mic recordings report
+  // duration=Infinity in some browsers, but we know the elapsed time.
+  async function setVoiceSlot(i, file, knownDurationMs) {
+    const durationMs = knownDurationMs || await getAudioDuration(file);
+    if (durationMs < VOICE_MIN_CLIP_MS) {
+      showError('“' + truncate(file.name, 40) + '” is shorter than 5 seconds — the model needs at least 5 seconds per clip.');
+      return;
+    }
+    const prev = voiceSlots[i];
+    if (prev && prev.url && !(lastVoicePair && lastVoicePair.some(c => c.url === prev.url))) {
+      URL.revokeObjectURL(prev.url);
+    }
+    voiceSlots[i] = { file, name: file.name, url: URL.createObjectURL(file), durationMs };
+    syncVoiceSlotUi(i);
+    updateVoiceCompareState();
+  }
+
+  function clearVoiceSlot(i) {
+    const slot = voiceSlots[i];
+    if (slot && slot.url && !(lastVoicePair && lastVoicePair.some(c => c.url === slot.url))) {
+      URL.revokeObjectURL(slot.url);
+    }
+    voiceSlots[i] = null;
+    syncVoiceSlotUi(i);
+    updateVoiceCompareState();
+  }
+
+  // Plate-level drops land here: fill the first empty slot, else replace clip 1.
+  function addDroppedVoiceClip(file) {
+    const idx = !voiceSlots[0] ? 0 : (!voiceSlots[1] ? 1 : 0);
+    setVoiceSlot(idx, file);
+  }
+
+  function syncVoiceRecordButton(i, elapsedMs) {
+    const slotEl = voiceSlotEls[i];
+    const btn = slotEl && slotEl.querySelector('.vm-slot-record');
+    if (!btn) return;
+    if (vmRecordingSlot === i) {
+      const secs = Math.floor((elapsedMs || 0) / 1000);
+      btn.classList.add('vm-recording');
+      btn.textContent = 'Stop · 0:' + String(secs).padStart(2, '0');
+    } else {
+      btn.classList.remove('vm-recording');
+      btn.textContent = 'Record mic';
+    }
+  }
+
+  function stopVoiceRecording() {
+    if (vmRecorder && vmRecorder.state !== 'inactive') vmRecorder.stop();
+  }
+
+  function stopVoiceRecordingIfActive() {
+    if (vmRecordingSlot !== -1) stopVoiceRecording();
+  }
+
+  function toggleVoiceRecording(i) {
+    if (vmRecordingSlot === i) { stopVoiceRecording(); return; }
+    if (vmRecordingSlot !== -1) return; // one recording at a time
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showError('Microphone recording is not supported in this browser.');
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      const mimeCandidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
+      const mimeType = mimeCandidates.find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m));
+      vmRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      const chunks = [];
+      vmRecorder.addEventListener('dataavailable', (e) => { if (e.data && e.data.size) chunks.push(e.data); });
+      vmRecorder.addEventListener('stop', () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (vmRecTimer) { clearInterval(vmRecTimer); vmRecTimer = null; }
+        const slot = vmRecordingSlot;
+        vmRecordingSlot = -1;
+        const elapsedMs = Date.now() - vmRecStart;
+        syncVoiceRecordButton(slot);
+        if (elapsedMs < VOICE_MIN_CLIP_MS) {
+          showError('Recording was shorter than 5 seconds — the model needs at least 5 seconds per clip.');
+          return;
+        }
+        const type = vmRecorder.mimeType || 'audio/webm';
+        const ext = type.includes('mp4') ? 'm4a' : 'webm';
+        const file = new File(chunks, 'mic-clip-' + (slot + 1) + '.' + ext, { type });
+        setVoiceSlot(slot, file, elapsedMs);
+      });
+      vmRecordingSlot = i;
+      vmRecStart = Date.now();
+      vmRecorder.start();
+      syncVoiceRecordButton(i, 0);
+      vmRecTimer = setInterval(() => {
+        const el = Date.now() - vmRecStart;
+        syncVoiceRecordButton(i, el);
+        if (el >= VOICE_REC_MAX_MS) stopVoiceRecording();
+      }, 250);
+    }).catch(() => showError('Microphone access was denied.'));
+  }
+
+  async function runVoiceDemo(kind) {
+    if (isAnalyzing) return;
+    const pair = VOICE_DEMO_PAIRS[kind];
+    try {
+      const files = await Promise.all(pair.clips.map(async (c) => {
+        const resp = await fetch(c.url);
+        if (!resp.ok) throw new Error('Could not load the demo clips.');
+        const blob = await resp.blob();
+        return new File([blob], c.name, { type: blob.type || 'audio/mpeg' });
+      }));
+      await setVoiceSlot(0, files[0]);
+      await setVoiceSlot(1, files[1]);
+      startVoiceAnalysis();
+    } catch (err) {
+      showError(err.message || 'Could not load the demo clips.');
+    }
+  }
+
+  async function startVoiceAnalysis() {
+    const s1 = voiceSlots[0], s2 = voiceSlots[1];
+    if (!s1 || !s2 || isAnalyzing) return;
+    isAnalyzing = true;
+    updateVoiceCompareState();
+    const pairLabel = truncate(s1.name, 30) + ' vs ' + truncate(s2.name, 30);
+    showOverlay(pairLabel, 'Comparing voices');
+    // Warm requests return in under a second; a cold model load on the
+    // preview box has taken 7-13 s. Pace the stage strip in between.
+    startProgress(4000);
+
+    try {
+      const startedAt = Date.now();
+      const formData = new FormData();
+      formData.append('upload_file_1', s1.file);
+      formData.append('upload_file_2', s2.file);
+      const { data, meta } = await uploadAndAnalyze(formData, '/api/velma-2-voice-matching-batch');
+      const processingMs = Date.now() - startedAt;
+      await finishProgress();
+      hideOverlay();
+      isAnalyzing = false;
+
+      currentMeta = {
+        fileSize: s1.file.size + s2.file.size,
+        fileType: s1.file.type || 'audio',
+        httpStatus: meta.httpStatus,
+        httpStatusText: meta.httpStatusText,
+        responseSize: meta.responseSize,
+        processingMs,
+      };
+      lastVoiceData = data;
+      lastVoiceMeta = { ...currentMeta };
+      lastVoicePair = [{ name: s1.name, url: s1.url }, { name: s2.name, url: s2.url }];
+      lastVoicePairLabel = pairLabel;
+      currentData = data;
+      resultsFilename.textContent = pairLabel;
+      renderVoiceResult(data, lastVoicePair);
+      window.scrollTo(0, 0);
+      updateRateLimit();
+    } catch (err) {
+      showOverlayError(err.message || 'Voice matching failed. Please try again.', err.rawText);
+      isAnalyzing = false;
+    }
+    updateVoiceCompareState();
+  }
+
+  function voiceVerdictFor(s) {
+    if (typeof s !== 'number') return { variant: '', title: 'No result' };
+    if (s >= VOICE_MATCH_FLOOR) return { variant: 'success', title: 'Likely the same voice' };
+    if (s < VOICE_DIFFER_CEIL) return { variant: '', title: 'Likely different voices' };
+    return { variant: '', title: 'Inconclusive' };
+  }
+
+  function renderVoiceResult(data, pair) {
+    const s = typeof data.similarity === 'number' ? data.similarity : null;
+    const verdict = voiceVerdictFor(s);
+    const stats = [];
+    if (s != null) stats.push({ value: s.toFixed(3), label: 'cosine similarity' });
+    if (data.duration_ms_1) stats.push({ value: formatDuration(data.duration_ms_1), label: 'clip 1' });
+    if (data.duration_ms_2) stats.push({ value: formatDuration(data.duration_ms_2), label: 'clip 2' });
+    renderVerdictStatement('voice-verdict-statement', {
+      variant: verdict.variant,
+      title: verdict.title,
+      stats,
+      info: { label: 'How to read this score?', html: VOICE_VERDICT_RULES_HTML },
+    });
+
+    const marker = document.getElementById('vm-scale-marker');
+    const markerValue = document.getElementById('vm-scale-marker-value');
+    if (marker) {
+      marker.hidden = s == null;
+      if (s != null) {
+        marker.style.left = (Math.max(0, Math.min(1, s)) * 100) + '%';
+        if (markerValue) markerValue.textContent = s.toFixed(3);
+      }
+    }
+
+    const wrap = document.getElementById('vm-clips');
+    if (wrap) {
+      wrap.innerHTML = '';
+      const durs = [data.duration_ms_1, data.duration_ms_2];
+      (pair || []).forEach((c, i) => {
+        const card = document.createElement('div');
+        card.className = 'vm-clip';
+        const head = document.createElement('div');
+        head.className = 'vm-clip-head';
+        const title = document.createElement('span');
+        title.className = 'vm-clip-title';
+        title.textContent = 'Clip ' + (i + 1) + ' — ' + (c.name || '');
+        const dur = document.createElement('span');
+        dur.className = 'caption';
+        dur.textContent = durs[i] ? formatDuration(durs[i]) : '';
+        head.appendChild(title);
+        head.appendChild(dur);
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.preload = 'none';
+        audio.src = c.url;
+        card.appendChild(head);
+        card.appendChild(audio);
+        wrap.appendChild(card);
+      });
+    }
+
+    // Voice mode hides the shared player (body[data-mode] CSS); clear leftovers.
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
+  }
+
+  voiceSlotEls.forEach((slotEl, i) => {
+    const pick = slotEl.querySelector('.vm-slot-pick');
+    const input = slotEl.querySelector('.vm-slot-input');
+    const record = slotEl.querySelector('.vm-slot-record');
+    const clear = slotEl.querySelector('.vm-slot-clear');
+    if (pick && input) {
+      pick.addEventListener('click', () => input.click());
+      input.addEventListener('change', () => {
+        if (input.files.length > 0) setVoiceSlot(i, input.files[0]);
+        input.value = '';
+      });
+    }
+    if (record) record.addEventListener('click', () => toggleVoiceRecording(i));
+    if (clear) clear.addEventListener('click', () => clearVoiceSlot(i));
+  });
+  if (vmCompareBtn) vmCompareBtn.addEventListener('click', () => startVoiceAnalysis());
+  const vmDemoSameBtn = document.getElementById('vm-demo-same');
+  const vmDemoDiffBtn = document.getElementById('vm-demo-diff');
+  if (vmDemoSameBtn) vmDemoSameBtn.addEventListener('click', () => runVoiceDemo('same'));
+  if (vmDemoDiffBtn) vmDemoDiffBtn.addEventListener('click', () => runVoiceDemo('diff'));
 
   // ══════════════════════════════════════════════════════════════════════════
   // ── EMOTION / ACCENT DETECTION MODES ─────────────────────────────────────
@@ -4800,6 +5157,34 @@
           ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
         ]},
       ];
+    } else if (currentMode === 'voice') {
+      statsModalTitle.textContent = 'Voice Matching Statistics';
+      const s = typeof currentData.similarity === 'number' ? currentData.similarity : null;
+      const pair = lastVoicePair || VOICE_DEMO_PAIRS.same.clips;
+      const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
+      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
+
+      groups = [
+        { group: 'Detection', rows: [
+          ['Model', 'velma-2-voice-matching-batch'],
+          ['Similarity', s != null ? s.toFixed(4) : 'N/A'],
+          ['Reading', voiceVerdictFor(s).title],
+          ['Bands', '≥ 0.70 same · 0.50–0.70 inconclusive · < 0.50 different (set by this showcase, not the API)'],
+        ]},
+        { group: 'Audio', rows: [
+          ['Clip 1', (pair[0] ? pair[0].name + ' — ' : '') + (currentData.duration_ms_1 ? formatDuration(currentData.duration_ms_1) : 'N/A')],
+          ['Clip 2', (pair[1] ? pair[1].name + ' — ' : '') + (currentData.duration_ms_2 ? formatDuration(currentData.duration_ms_2) : 'N/A')],
+          ['Combined Size', m.fileSize ? formatBytes(m.fileSize) : 'N/A'],
+        ]},
+        { group: 'Performance', rows: [
+          ['Processing Time', procTimeStr],
+        ]},
+        { group: 'Request', rows: [
+          ['HTTP', httpStr],
+          ['Endpoint', '/api/velma-2-voice-matching-batch'],
+          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
+        ]},
+      ];
     } else if (currentMode === 'emotion' || currentMode === 'accent') {
       const cfg = EA_KINDS[currentMode];
       statsModalTitle.textContent = cfg.title + ' Statistics';
@@ -4979,9 +5364,17 @@
 
   // quiet: skip the analysisStatus progress text \u2014 for background requests
   // that run while no overlay is up (e.g. the live demo refresh).
+  // `file` may also be a prebuilt FormData for endpoints whose field layout
+  // differs from the standard single `upload_file` (e.g. voice matching's
+  // upload_file_1/_2 pair).
   async function uploadAndAnalyze(file, endpoint, extraFields, quiet) {
-    const formData = new FormData();
-    formData.append('upload_file', file);
+    let formData;
+    if (file instanceof FormData) {
+      formData = file;
+    } else {
+      formData = new FormData();
+      formData.append('upload_file', file);
+    }
     if (extraFields) {
       for (const [key, value] of Object.entries(extraFields)) {
         formData.append(key, String(value));
@@ -5161,6 +5554,14 @@
         if (eventsTbody) eventsTbody.innerHTML = '';
         emptyVerdict('events-verdict-statement');
         break;
+      case 'voice': {
+        const vmClips = document.getElementById('vm-clips');
+        if (vmClips) vmClips.innerHTML = '';
+        const vmMarker = document.getElementById('vm-scale-marker');
+        if (vmMarker) vmMarker.hidden = true;
+        emptyVerdict('voice-verdict-statement');
+        break;
+      }
       case 'redaction':
         renderRedactionTranscript([]);
         emptyVerdict('redaction-verdict-statement');
@@ -7751,6 +8152,7 @@
     if (path === '/ai-music') return 'aimusic';
     if (path === '/language') return 'language';
     if (path === '/events') return 'events';
+    if (path === '/voice-matching') return 'voice';
     if (path === '/emotion') return 'emotion';
     if (path === '/accent') return 'accent';
     if (path === '/transcription') return 'transcription';

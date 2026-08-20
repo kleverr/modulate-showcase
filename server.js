@@ -124,7 +124,7 @@ const ENDPOINT_UPLOAD_FIELD = {
 
 // ── Page-view tracking (client beacon for SPA tab switches) ─────────────────
 const TRACKABLE_PATHS = new Set([
-  '/', '/transcription', '/deepfake', '/redaction', '/music', '/ai-music', '/language', '/emotion', '/accent', '/events', '/velma',
+  '/', '/transcription', '/deepfake', '/redaction', '/music', '/ai-music', '/language', '/emotion', '/accent', '/events', '/velma', '/voice-matching',
 ]);
 
 app.post('/api/track-view', (req, res) => {
@@ -162,6 +162,100 @@ function handleUpload(req, res, next) {
     next();
   });
 }
+
+// ── Voice Matching batch proxy (two-file multipart) ─────────────────────────
+// The generic proxy is single-file; voice matching takes upload_file_1 + _2.
+// Upstream is the ML preview box serving the new proprietary model — flip
+// VOICE_MATCHING_UPSTREAM to https://platform.modulate.ai at release (the
+// prod path still serves the previous NVIDIA-based model, which also enforces
+// an 8 s per-clip minimum vs. the new model's 5 s).
+const VOICE_MATCHING_UPSTREAM = process.env.VOICE_MATCHING_UPSTREAM || 'http://13.222.238.212';
+const VOICE_MATCHING_ENDPOINT = '/api/velma-2-voice-matching-batch';
+
+function handleVoicePairUpload(req, res, next) {
+  upload.fields([
+    { name: 'upload_file_1', maxCount: 1 },
+    { name: 'upload_file_2', maxCount: 1 },
+  ])(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({
+          error: 'File too large',
+          message: `Maximum file size is ${MAX_FILE_SIZE_MB} MB.`,
+        });
+      }
+      return res.status(400).json({ error: 'Upload failed', message: err.message });
+    }
+    next();
+  });
+}
+
+app.post(VOICE_MATCHING_ENDPOINT, handleVoicePairUpload, async (req, res) => {
+  const ip = getClientIp(req);
+  const recentCount = countRecentByIp(ip, RATE_LIMIT_WINDOW_MINUTES);
+  if (recentCount >= RATE_LIMIT_MAX) {
+    return res.status(429).json({
+      error: 'Rate limit exceeded',
+      message: `Limit of ${RATE_LIMIT_MAX} transcriptions per ${RATE_LIMIT_WINDOW_MINUTES} minutes reached.`,
+      remaining: 0,
+      limit: RATE_LIMIT_MAX,
+    });
+  }
+
+  const f1 = req.files && req.files.upload_file_1 && req.files.upload_file_1[0];
+  const f2 = req.files && req.files.upload_file_2 && req.files.upload_file_2[0];
+  if (!f1 || !f2) {
+    return res.status(400).json({ error: 'Two files required', message: 'Voice matching needs both upload_file_1 and upload_file_2.' });
+  }
+
+  const name1 = sanitizeFilename(f1.originalname);
+  const name2 = sanitizeFilename(f2.originalname);
+  insertRequest(ip, VOICE_MATCHING_ENDPOINT, `${name1} vs ${name2}`, f1.size + f2.size);
+
+  try {
+    const boundary = '----ModulateProxy' + Date.now();
+    const parts = [];
+    for (const [field, file, name] of [['upload_file_1', f1, name1], ['upload_file_2', f2, name2]]) {
+      parts.push(
+        `--${boundary}\r\n` +
+        `Content-Disposition: form-data; name="${field}"; filename="${name}"\r\n` +
+        `Content-Type: ${file.mimetype || 'application/octet-stream'}\r\n\r\n`
+      );
+      parts.push(file.buffer);
+      parts.push('\r\n');
+    }
+    parts.push(`--${boundary}--\r\n`);
+    const body = Buffer.concat(parts.map(p => typeof p === 'string' ? Buffer.from(p) : p));
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 300_000); // 5 min timeout
+    const upstreamRes = await fetch(`${VOICE_MATCHING_UPSTREAM}${VOICE_MATCHING_ENDPOINT}`, {
+      method: 'POST',
+      headers: {
+        'X-API-KEY': API_KEY,
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+      },
+      body,
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    const responseBody = await upstreamRes.arrayBuffer();
+    res.status(upstreamRes.status);
+    const contentType = upstreamRes.headers.get('content-type');
+    if (contentType) res.set('Content-Type', contentType);
+    res.set('X-Upstream-Url', `${VOICE_MATCHING_UPSTREAM}${VOICE_MATCHING_ENDPOINT}`);
+    res.set('X-Rate-Limit-Remaining', String(Math.max(0, RATE_LIMIT_MAX - recentCount - 1)));
+    res.send(Buffer.from(responseBody));
+  } catch (err) {
+    console.error('Voice matching proxy error:', err.message);
+    if (err.name === 'AbortError') {
+      res.status(504).json({ error: 'Request timed out', message: 'The analysis took too long. Please try shorter audio files.' });
+    } else {
+      res.status(502).json({ error: 'Upstream request failed', message: err.message });
+    }
+  }
+});
 
 app.post('/api/:path(*)', handleUpload, async (req, res) => {
   const endpoint = req.path;
@@ -314,6 +408,11 @@ app.get('/accent', (req, res) => {
 });
 
 app.get('/events', (req, res) => {
+  logView(req);
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/voice-matching', (req, res) => {
   logView(req);
   res.sendFile(path.join(__dirname, 'index.html'));
 });

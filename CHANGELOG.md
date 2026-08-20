@@ -2,6 +2,34 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.14.0] - 2026-08-20
+
+### Added
+- **Voice Matching demo** at `/voice-matching` — the new proprietary
+  speaker-matching model (replaces the previous NVIDIA-based one; 5 s EER
+  0.365% vs 1.087%). Compare any two clips: upload, drag-drop, or record
+  both straight from the mic (webm/opus verified against the endpoint).
+  Results show the cosine similarity on a banded 0–1 scale with both clips
+  playable side by side.
+- Two one-click demo pairs — *same speaker* (irate caller, two parts of one
+  call → 0.80) and *different speakers* (irate caller vs the order-status
+  customer → 0.18). Fixtures are single-speaker segments cut from the
+  existing deepfake demo calls, located via diarization.
+- Server: dedicated two-file proxy route for `upload_file_1`/`upload_file_2`
+  multipart (the generic proxy is single-file). Upstream is the ML preview
+  box via `VOICE_MATCHING_UPSTREAM` — flip it to platform.modulate.ai when
+  the model releases there (prod still runs the old model with an 8 s
+  minimum; the new one takes 5 s).
+
+### Notes
+- Verdict bands (≥ 0.70 same · 0.50–0.70 inconclusive · < 0.50 different)
+  are set by this showcase, not the API — official threshold guidance is
+  requested from ML. Measured: same-speaker real audio 0.73–0.80,
+  different-speaker 0.18–0.48 (same-call channel conditions inflate
+  cross-speaker scores; the in-product caveat says so).
+- Streaming voice matching exists in the spec (5 s windows) but is not on
+  the preview box (WS handshake 403s), so the demo is batch-only for now.
+
 ## [6.13.0] - 2026-08-20
 
 ### Changed
