@@ -1159,3 +1159,39 @@ body[data-mode="velma"].velma-design2 #pg-bottom-columns {
 .pg-accent-options {
   gap: var(--m__gap-l);
 }
+
+/* ── Audio Event Detection (preview): ranked score table ─────────────── */
+  /* Same bar pattern as the AI-Music score cells, but single-hue: green is
+     "detected", not a good/bad verdict — under-floor rows just dim. */
+  .evt-detailed th:last-child { width: 60%; }
+  .evt-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--m__gap-s);
+  }
+  .evt-bar {
+    flex: 0 0 130px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--m__border);
+    overflow: hidden;
+  }
+  .evt-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--m__text-caption);
+  }
+  .evt-bar-fill-hit {
+    background: var(--m__success);
+  }
+  .evt-pct {
+    font-variant-numeric: tabular-nums;
+    min-width: 3.6em;
+  }
+  .evt-dim td {
+    color: var(--m__text-caption);
+  }
+  /* No time series to draw — hide the player dataviz like language mode. */
+  body[data-mode="events"] .pg-player-dataviz {
+    display: none;
+  }

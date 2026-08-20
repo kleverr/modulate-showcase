@@ -137,6 +137,18 @@
     duration_ms: 97698,
   };
 
+
+  // Pre-recorded Audio Event Detection response (actual API output from
+  // /api/velma-2-audio-event-classifier on the repo demo file). The clip is
+  // public-domain-equivalent (CC0): "Sound Effects - Applause after a concert"
+  // from Wikimedia Commons — picked because it fires two events at once
+  // (applause + laughter), which a single-event clip wouldn't demo.
+  const DEMO_EVENTS_AUDIO_URL = '/events/applause-after-concert.ogg';
+  const DEMO_EVENTS_FILENAME = 'applause-after-concert.ogg';
+  const DEMO_EVENTS_FILESIZE = 1793175;
+  const DEMO_EVENTS_PROCESSING_MS = 2240;
+  const DEMO_EVENTS_DATA = {"probs":{"cry":0.002,"Acoustic_guitar":0.0003,"Applause":0.9982,"Bark":0.0,"Bass_drum":0.0,"Burping_or_eructation":0.0002,"Bus":0.0005,"Cello":0.0,"Chime":0.0,"Clarinet":0.0,"Computer_keyboard":0.0,"Cough":0.0,"Cowbell":0.0,"Double_bass":0.0,"Drawer_open_or_close":0.0,"Electric_piano":0.0,"Fart":0.0,"Finger_snapping":0.0,"Fireworks":0.0,"Flute":0.0,"Glockenspiel":0.0,"Gong":0.0,"Gunshot_or_gunfire":0.0,"Harmonica":0.0,"Hi-hat":0.0,"Keys_jangling":0.0,"Knock":0.0,"Laughter":0.9455,"Meow":0.0,"Microwave_oven":0.0,"Oboe":0.0,"Saxophone":0.0,"Scissors":0.0,"Shatter":0.0,"Snare_drum":0.0,"Squeak":0.0,"Tambourine":0.0,"Tearing":0.0,"Telephone":0.0,"Trumpet":0.0002,"Violin_or_fiddle":0.0,"Writing":0.0},"duration_ms":58784};
+
   // Pre-recorded Emotion / Accent Detection responses (actual API output from
   // /api/velma-2-emotion-batch and /api/velma-2-accent-batch on the repo demo
   // files) so the tabs light up without an API call on first load.
@@ -286,6 +298,9 @@
   // Language Detection elements
   const languageContent      = document.getElementById('language-content');
   const languageSidebar      = document.getElementById('results-language-verdict');
+  const eventsContent        = document.getElementById('events-content');
+  const eventsSidebar        = document.getElementById('results-events-verdict');
+  const eventsTbody          = document.getElementById('events-tbody');
 
   // Redaction elements
   const redactionContent        = document.getElementById('redaction-content');
@@ -333,6 +348,10 @@
   let lastLanguageAudioUrl = null;
   let lastLanguageMeta = null;
   let lastLanguageFilename = null;
+  let lastEventsData = null;
+  let lastEventsAudioUrl = null;
+  let lastEventsMeta = null;
+  let lastEventsFilename = null;
   let musicPlaybackTracker = null;
   let aimusicPlaybackTracker = null;
   let isAnalyzing = false;
@@ -445,6 +464,13 @@
       streaming: false,
       stages: ['Analyzing audio'],
     },
+    events: {
+      path: '/events', title: 'Audio Event Detection', plateTitle: 'Detect audio events',
+      optionsRow: () => plateHeader, verdict: () => eventsSidebar,
+      panels: () => [eventsContent],
+      streaming: false,
+      stages: ['Analyzing audio'],
+    },
   };
 
   function setPageTitle(text) {
@@ -499,7 +525,8 @@
     [resultsVerdict, musicSidebar, aimusicSidebar, languageSidebar,
      document.getElementById('results-redaction-verdict'),
      document.getElementById('results-emotion-verdict'),
-     document.getElementById('results-accent-verdict')].forEach(el => {
+     document.getElementById('results-accent-verdict'),
+     eventsSidebar].forEach(el => {
       if (el) el.hidden = true;
     });
     const verdictEl = cfg.verdict && cfg.verdict();
@@ -509,7 +536,8 @@
     [velmaContent, transcriptContainer, deepfakeContent, redactionContent,
      musicContent, aimusicContent, languageContent,
      document.getElementById('emotion-content'),
-     document.getElementById('accent-content')].forEach(el => {
+     document.getElementById('accent-content'),
+     eventsContent].forEach(el => {
       if (el) el.classList.remove('visible');
     });
     (cfg.panels ? cfg.panels() : []).forEach(el => { if (el) el.classList.add('visible'); });
@@ -610,6 +638,18 @@
       resultsAudio.src = aAudio;
       renderAimusicResult(aData);
       refreshAimusicDemoLive();
+    } else if (mode === 'events') {
+      const eData = lastEventsData || DEMO_EVENTS_DATA;
+      currentData = eData;
+      currentMeta = lastEventsMeta || {
+        fileSize: DEMO_EVENTS_FILESIZE, fileType: 'audio/ogg',
+        httpStatus: 200, httpStatusText: 'OK',
+        responseSize: JSON.stringify(DEMO_EVENTS_DATA).length,
+        processingMs: DEMO_EVENTS_PROCESSING_MS,
+      };
+      resultsFilename.textContent = lastEventsFilename || DEMO_EVENTS_FILENAME;
+      resultsAudio.src = lastEventsAudioUrl || DEMO_EVENTS_AUDIO_URL;
+      renderEventsResult(eData);
     } else if (isLanguage) {
       const lData = lastLanguageData || DEMO_LANGUAGE_DATA;
       currentData = lData;
@@ -843,6 +883,8 @@
           startAimusicAnalysis(fileInput.files[0]);
         } else if (currentMode === 'language') {
           startLanguageDetection(fileInput.files[0]);
+        } else if (currentMode === 'events') {
+          startEventsAnalysis(fileInput.files[0]);
         } else if (currentMode === 'emotion' || currentMode === 'accent') {
           startEaDetection(currentMode, fileInput.files[0]);
         } else if (currentMode === 'velma') {
@@ -868,6 +910,7 @@
         else if (currentMode === 'music') startMusicAnalysis(e.dataTransfer.files[0]);
         else if (currentMode === 'aimusic') startAimusicAnalysis(e.dataTransfer.files[0]);
         else if (currentMode === 'language') startLanguageDetection(e.dataTransfer.files[0]);
+        else if (currentMode === 'events') startEventsAnalysis(e.dataTransfer.files[0]);
         else if (currentMode === 'velma') startVelmaBatch(e.dataTransfer.files[0]);
         else startTranscriptionBatch(e.dataTransfer.files[0]);
       }
@@ -970,6 +1013,7 @@
     else if (currentMode === 'music') startMusicAnalysis(file);
     else if (currentMode === 'aimusic') startAimusicAnalysis(file);
     else if (currentMode === 'language') startLanguageDetection(file);
+    else if (currentMode === 'events') startEventsAnalysis(file);
     else if (currentMode === 'emotion' || currentMode === 'accent') startEaDetection(currentMode, file);
     else if (currentMode === 'velma') startVelmaBatch(file);
     else startTranscriptionBatch(file);
@@ -2262,6 +2306,143 @@
     });
 
     // Language mode hides the dataviz (body[data-mode] CSS); clear any leftover strip.
+    clearPlayerStrips();
+    sttChart.innerHTML = '';
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── AUDIO EVENT DETECTION MODE (preview) ─────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  // Whole-clip scores over a fixed set of 42 event labels — one POST, no
+  // windows, no streaming. The published spec describes `cry` as an
+  // independent head and the other 41 as "a single shared distribution", but
+  // measured behavior disagrees: distinct events co-fire near 1.0 (the demo
+  // clip scores Applause 0.998 AND Laughter 0.946), so every label renders as
+  // its own 0-1 score and anything >= EVENTS_DETECTED_FLOOR counts as
+  // detected. There is also no "none of these" class: plain speech has no
+  // label of its own and the model smears mass over acoustic neighbors (a
+  // call-center clip scores Bus 0.47 / Telephone 0.47) — hence the floor and
+  // an honest "no supported event" verdict instead of always naming a winner.
+
+  const EVENTS_DETECTED_FLOOR = 0.5;
+
+  // API keys are Capitalized_snake_case (plus lowercase `cry` and `Hi-hat`).
+  function eventLabel(key) {
+    if (key === 'cry') return 'Crying';
+    return String(key).replace(/_/g, ' ');
+  }
+
+  // "Applause", "Applause and laughter", "Applause, laughter and crying"
+  function eventListPhrase(labels) {
+    const parts = labels.map((l, i) => (i === 0 ? l : l.toLowerCase()));
+    if (parts.length <= 1) return parts.join('');
+    return parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+  }
+
+  async function startEventsAnalysis(file) {
+    if (isAnalyzing) return;
+    isAnalyzing = true;
+    showOverlay(file.name, 'Detecting audio events');
+    // Single synchronous POST; measured ~1.6 s for 30 s and ~2.5 s for 4.5 min
+    // of audio, so latency is mostly upload + fixed cost. Pace to ~3.5 s.
+    startProgress(3500);
+
+    try {
+      const startedAt = Date.now();
+      const { data, meta } = await uploadAndAnalyze(file, '/api/velma-2-audio-event-classifier');
+      const processingMs = Date.now() - startedAt;
+      await finishProgress();
+      hideOverlay();
+      isAnalyzing = false;
+
+      if (lastEventsAudioUrl) URL.revokeObjectURL(lastEventsAudioUrl);
+      audioObjectUrl = URL.createObjectURL(file);
+
+      currentMeta = {
+        fileSize: file.size,
+        fileType: file.type || file.name.split('.').pop().toUpperCase(),
+        httpStatus: meta.httpStatus,
+        httpStatusText: meta.httpStatusText,
+        responseSize: meta.responseSize,
+        processingMs,
+      };
+
+      // The API doesn't echo the filename, so we keep it ourselves.
+      lastEventsData = data;
+      lastEventsAudioUrl = audioObjectUrl;
+      lastEventsMeta = { ...currentMeta };
+      lastEventsFilename = file.name;
+
+      currentData = data;
+      resultsFilename.textContent = file.name;
+      resultsAudio.src = audioObjectUrl;
+      renderEventsResult(data);
+      window.scrollTo(0, 0);
+      updateRateLimit();
+    } catch (err) {
+      showOverlayError(err.message || 'Audio event detection failed. Please try again.', err.rawText);
+      isAnalyzing = false;
+    }
+  }
+
+  // Probs sorted descending, cry included as a first-class row.
+  function eventEntries(data) {
+    return Object.entries((data && data.probs) || {})
+      .map(([key, v]) => ({ key, label: eventLabel(key), prob: typeof v === 'number' ? Math.max(0, Math.min(1, v)) : 0 }))
+      .sort((a, b) => b.prob - a.prob);
+  }
+
+  function renderEventsResult(data) {
+    const entries = eventEntries(data);
+    const detected = entries.filter(e => e.prob >= EVENTS_DETECTED_FLOOR);
+
+    let stats;
+    if (detected.length) {
+      stats = detected.map(e => ({ value: (e.prob * 100).toFixed(1) + '%', label: e.label.toLowerCase() }));
+    } else {
+      stats = [];
+      if (entries.length) {
+        stats.push({ value: (entries[0].prob * 100).toFixed(1) + '%', label: 'best match: ' + entries[0].label.toLowerCase() });
+      }
+      stats.push({ value: '', label: 'Nothing scored above the 50% detection floor' });
+    }
+    renderVerdictStatement('events-verdict-statement', {
+      variant: detected.length ? 'success' : '',
+      title: detected.length
+        ? eventListPhrase(detected.map(e => e.label)) + ' detected'
+        : 'No supported event detected',
+      stats: stats,
+    });
+
+    if (eventsTbody) {
+      eventsTbody.innerHTML = '';
+      entries.forEach(e => {
+        const tr = document.createElement('tr');
+        if (e.prob < EVENTS_DETECTED_FLOOR) tr.classList.add('evt-dim');
+        const tdLabel = document.createElement('td');
+        tdLabel.textContent = e.label;
+        const tdScore = document.createElement('td');
+        const wrap = document.createElement('div');
+        wrap.className = 'evt-cell';
+        const track = document.createElement('div');
+        track.className = 'evt-bar';
+        const fill = document.createElement('div');
+        fill.className = 'evt-bar-fill' + (e.prob >= EVENTS_DETECTED_FLOOR ? ' evt-bar-fill-hit' : '');
+        fill.style.width = (e.prob * 100) + '%';
+        track.appendChild(fill);
+        const txt = document.createElement('span');
+        txt.className = 'evt-pct';
+        txt.textContent = (e.prob * 100).toFixed(1) + '%';
+        wrap.appendChild(track);
+        wrap.appendChild(txt);
+        tdScore.appendChild(wrap);
+        tr.appendChild(tdLabel);
+        tr.appendChild(tdScore);
+        eventsTbody.appendChild(tr);
+      });
+    }
+
+    // Events mode hides the dataviz (body[data-mode] CSS); clear any leftover strip.
     clearPlayerStrips();
     sttChart.innerHTML = '';
   }
@@ -4562,6 +4743,41 @@
           ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
         ]},
       ];
+    } else if (currentMode === 'events') {
+      statsModalTitle.textContent = 'Audio Event Detection Statistics';
+      const entries = eventEntries(currentData);
+      const detected = entries.filter(e => e.prob >= EVENTS_DETECTED_FLOOR);
+      const durationMs = currentData.duration_ms || 0;
+      const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
+      const procFactor = m.processingMs && durationMs ? (durationMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
+      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
+      const evFilename = lastEventsFilename || DEMO_EVENTS_FILENAME;
+      const fileType = m.fileType || (evFilename ? evFilename.split('.').pop().toUpperCase() : 'N/A');
+
+      groups = [
+        { group: 'Detection', rows: [
+          ['Model', 'velma-2-audio-event-classifier'],
+          ['Detected events', detected.length ? detected.map(e => e.label).join(', ') : 'None at \u2265 50%'],
+          ['Top score', entries.length ? entries[0].label + ' \u2014 ' + (entries[0].prob * 100).toFixed(1) + '%' : 'N/A'],
+          ['Labels scored', String(entries.length)],
+          ['Detection floor', '50% (applied by this showcase, not the API)'],
+        ]},
+        { group: 'Audio', rows: [
+          ['File Name', evFilename || 'N/A'],
+          ['File Size', m.fileSize ? formatBytes(m.fileSize) : 'N/A'],
+          ['File Type', fileType],
+          ['Audio Duration', durationMs ? formatDuration(durationMs) : 'N/A'],
+        ]},
+        { group: 'Performance', rows: [
+          ['Processing Time', procTimeStr],
+          ['Processing Factor', procFactor],
+        ]},
+        { group: 'Request', rows: [
+          ['HTTP', httpStr],
+          ['Endpoint', '/api/velma-2-audio-event-classifier'],
+          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
+        ]},
+      ];
     } else if (currentMode === 'emotion' || currentMode === 'accent') {
       const cfg = EA_KINDS[currentMode];
       statsModalTitle.textContent = cfg.title + ' Statistics';
@@ -4903,6 +5119,10 @@
         break;
       case 'language':
         emptyVerdict('language-verdict-statement');
+        break;
+      case 'events':
+        if (eventsTbody) eventsTbody.innerHTML = '';
+        emptyVerdict('events-verdict-statement');
         break;
       case 'redaction':
         renderRedactionTranscript([]);
@@ -7493,6 +7713,7 @@
     if (path === '/music') return 'music';
     if (path === '/ai-music') return 'aimusic';
     if (path === '/language') return 'language';
+    if (path === '/events') return 'events';
     if (path === '/emotion') return 'emotion';
     if (path === '/accent') return 'accent';
     if (path === '/transcription') return 'transcription';

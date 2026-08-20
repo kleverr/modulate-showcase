@@ -2,6 +2,35 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.12.0] - 2026-08-20
+
+### Added
+- **Audio Event Detection (preview) on `/events`.** New Detection-group model
+  backed by `/api/velma-2-audio-event-classifier` (serves on the plain prod
+  path at platform.modulate.ai despite preview status). One synchronous POST,
+  whole-clip scores over a fixed set of 42 sound-event labels — no windows,
+  no streaming, matching the API. Verdict lists every event scoring ≥ 50%
+  ("Applause and laughter detected"); below the floor it says "No supported
+  event detected" with the best match shown dimmed, because the label set has
+  no "none of these" class and plain speech smears onto acoustic neighbors
+  (a call-center clip scores Bus 0.47 / Telephone 0.47). The floor is applied
+  by the showcase, not the API, and the stats card says so. Ranked 42-row
+  score table with bars; generic equalizer nav icon until the real one lands.
+  Note: the published spec calls the 41 non-`cry` labels "a single shared
+  distribution", but measured scores co-fire (Applause 0.998 + Laughter 0.946
+  on one clip) — the UI treats every label as an independent probability.
+- **Demo fixture `events/applause-after-concert.ogg`** (CC0, Wikimedia
+  Commons "Sound Effects - Applause after a concert"), picked over
+  single-event candidates because two events co-fire on it, demoing
+  multi-detection. Baked API response loads instantly on tab open like the
+  other detection tabs.
+
+### Fixed
+- **Internal docs no longer ship in the Docker image.** `docs/` (probe
+  matrices, Linear follow-up notes, marketing image sources) was absent from
+  .dockerignore's deny-list, so express.static served it publicly at
+  /docs/… in production. Added to the deny-list; the files stay local-only.
+
 ## [6.11.0] - 2026-08-20
 
 Follow-up to 6.10.0 after ML's review of the release probing (Angel, eng

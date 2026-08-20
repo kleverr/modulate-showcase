@@ -25,7 +25,9 @@ node_modules/
 Dockerfile
 fly.toml
 
-# Docs — not loaded at runtime
+# Docs — not loaded at runtime (docs/ holds internal probe notes;
+# express.static serves anything in the image, so keep it out)
+docs/
 CHANGELOG.md
 TODOS.md
 README.md

@@ -131,6 +131,9 @@
   <symbol id="language" viewBox="0 0 32 32" fill="currentColor">
     <path d="M21.675,28.104l-4.143-1.758c.006-.013.016-.036.029-.068,3.99-9.303,2.318-17.214.107-18.253-.974-.451-3.493,1.003-6.482,6.864-2.139,4.195-3.214,7.664-2.966,7.766.299.123,5.082-4.473,7.143-8.847l4.07,1.918c-2.52,5.35-8.073,11.511-12.015,11.799-1.331.1-2.518-.45-3.219-1.506-.984-1.484-1.536-4.322,2.978-13.175C12.449,2.511,17.213,2.841,19.583,3.952c3.815,1.793,5.466,7.71,4.677,14.575,1.735-1.026,3.829-1.731,6.308-1.731v4.5c-5.777,0-8.661,6.284-8.87,6.76-.007.016-.015.033-.021.049Z" />
   </symbol>
+  <symbol id="events" viewBox="0 0 32 32" fill="currentColor">
+    <rect x="5" y="12" width="4" height="8" rx="1"/><rect x="14" y="5" width="4" height="22" rx="1"/><rect x="23" y="9" width="4" height="14" rx="1"/>
+  </symbol>
   <symbol id="microsoft" viewBox="0 0 32 32">
     <rect fill="#f25022" x="4.975" y="4.975" width="10.445" height="10.445" />
       <rect fill="#00a4ef" x="4.975" y="16.58" width="10.445" height="10.445" />
@@ -315,6 +318,10 @@
             <a href="/emotion" data-mode="emotion" class="models-nav__link m__rounded">
               <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#emotions"></use></svg>
               <span>Emotions</span>
+            </a>
+            <a href="/events" data-mode="events" class="models-nav__link m__rounded">
+              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#events"></use></svg>
+              <span>Events</span>
             </a>
           </div>
         </div>
@@ -511,6 +518,9 @@
         </div>
         <div id="results-accent-verdict" hidden>
           <div class="pg-verdict-statement" id="accent-verdict-statement"></div>
+        </div>
+        <div id="results-events-verdict" hidden>
+          <div class="pg-verdict-statement" id="events-verdict-statement"></div>
         </div>
       </div>
 
@@ -805,6 +815,22 @@
           </div>
         </div>
 
+        <!-- Audio Event Detection content -->
+        <div id="events-content" class="pg-tab-panel">
+          <p class="caption" id="events-caveat">
+            Whole-clip scores over a fixed set of 42 sound-event labels — crowd reactions, animals,
+            instruments, household sounds. Each score is an independent probability, so several events can be
+            detected at once. Plain speech has no label of its own: a talk-only clip scores low everywhere.
+            Events at 50% or higher count as detected.
+          </p>
+          <div class="pg-results-table-section">
+            <table class="pg-segments-table evt-detailed">
+              <thead><tr><th>Event</th><th>Score</th></tr></thead>
+              <tbody id="events-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- PII/PHI Redaction content -->
         <div id="redaction-content" class="pg-tab-panel">
           
@@ -838,7 +864,7 @@
 
 <footer class="footer">
   <div class="footer-nav">
-    <div class="footer-nav-item caption" id="app-version">v6.11.0 · Aug 20, 2026</div>
+    <div class="footer-nav-item caption" id="app-version">v6.12.0 · Aug 20, 2026</div>
   </div>
 </footer>
 

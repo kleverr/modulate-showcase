@@ -69,6 +69,7 @@ const ALLOWED_ENDPOINTS = new Set([
   '/api/velma-2-language-detection-batch',
   '/api/velma-2-emotion-batch',
   '/api/velma-2-accent-batch',
+  '/api/velma-2-audio-event-classifier',
   '/api/velma-2-batch',
 ]);
 
@@ -97,6 +98,9 @@ const ENDPOINT_BASE_URL = {
   // 100.56.104.180 retired).
   '/api/velma-2-ai-music-detection-batch': 'https://platform.modulate.ai',
   '/api/velma-2-ai-music-detection-streaming': 'https://platform.modulate.ai',
+  // Audio Event Detection is in preview but already serves on the plain prod
+  // path at platform.modulate.ai (verified 2026-08-20) — no /api/preview/ remap.
+  '/api/velma-2-audio-event-classifier': 'https://platform.modulate.ai',
 };
 
 // Per-endpoint upstream path overrides — preview models live behind /api/preview/.
@@ -120,7 +124,7 @@ const ENDPOINT_UPLOAD_FIELD = {
 
 // ── Page-view tracking (client beacon for SPA tab switches) ─────────────────
 const TRACKABLE_PATHS = new Set([
-  '/', '/transcription', '/deepfake', '/redaction', '/music', '/ai-music', '/language', '/emotion', '/accent', '/velma',
+  '/', '/transcription', '/deepfake', '/redaction', '/music', '/ai-music', '/language', '/emotion', '/accent', '/events', '/velma',
 ]);
 
 app.post('/api/track-view', (req, res) => {
@@ -305,6 +309,11 @@ app.get('/emotion', (req, res) => {
 });
 
 app.get('/accent', (req, res) => {
+  logView(req);
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/events', (req, res) => {
   logView(req);
   res.sendFile(path.join(__dirname, 'index.html'));
 });
