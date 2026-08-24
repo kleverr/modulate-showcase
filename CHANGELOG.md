@@ -2,6 +2,33 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.14.1] - 2026-08-24
+
+### Changed
+- **Voice Matching verdict redesign** (design feedback): the verdict and the
+  score are one unit — words on top, then a single −1…+1 gradient spectrum
+  bar centered under them with the score on the marker, then the
+  "How to read this score?" popover under the bar. The old three-band strip
+  (which read like an audio timeline) and the duplicate stat/duration lines
+  are gone.
+- Clip cards are structural: fixed CLIP 1 / CLIP 2 kickers, filename as the
+  card title, duration beside it, player below.
+- "Cosine" removed from all user-facing copy — the caveat and popover explain
+  the score as comparing two voice fingerprints (−1 to 1); the technical term
+  survives as a parenthetical in the popover.
+- Pair-aware input: choosing or dropping two files at once fills both slots
+  and runs the comparison immediately (file dialogs are multi-select now, and
+  a two-file drop anywhere on the plate works). Single files still fill one
+  slot and wait for an explicit Compare.
+
+### Fixed
+- Clips of 3 min 42 s or longer made the API return HTTP 500 "Internal server
+  error" (measured boundary: 221 s OK, 222 s fails; duration-based, any
+  sample rate — bug reported to ML, no cap documented in the spec). The demo
+  now rejects clips over 3 min 40 s client-side with a clear message instead
+  of surfacing the 500. Remove `VOICE_MAX_CLIP_MS` when the upstream fix
+  lands.
+
 ## [6.14.0] - 2026-08-20
 
 ### Added

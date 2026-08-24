@@ -1042,7 +1042,7 @@
     else if (currentMode === 'aimusic') startAimusicAnalysis(file);
     else if (currentMode === 'language') startLanguageDetection(file);
     else if (currentMode === 'events') startEventsAnalysis(file);
-    else if (currentMode === 'voice') addDroppedVoiceClip(file);
+    else if (currentMode === 'voice') addVoiceClips([file]);
     else if (currentMode === 'emotion' || currentMode === 'accent') startEaDetection(currentMode, file);
     else if (currentMode === 'velma') startVelmaBatch(file);
     else startTranscriptionBatch(file);
@@ -1078,7 +1078,11 @@
       e.preventDefault();
       plateDragCtr = 0;
       if (uploadPlate.dataset.state === 'file-dropping') setPlateState('initial');
-      if (e.dataTransfer.files.length > 0) handleDroppedFile(e.dataTransfer.files[0]);
+      if (e.dataTransfer.files.length > 0) {
+        // Voice mode compares a pair — dropping two files at once fills both slots.
+        if (currentMode === 'voice') addVoiceClips(Array.from(e.dataTransfer.files));
+        else handleDroppedFile(e.dataTransfer.files[0]);
+      }
     });
 
     // Streaming split-button dropdown
@@ -2492,6 +2496,10 @@
   const VOICE_MATCH_FLOOR = 0.7;   // >= this: likely the same voice
   const VOICE_DIFFER_CEIL = 0.5;   // <  this: likely different voices
   const VOICE_MIN_CLIP_MS = 5000;  // API minimum per clip (new model; prod's old model wants 8 s)
+  // Upstream 500s on clips ≥ 222 s (measured 2026-08-24: 221 s OK, 222 s
+  // "Internal server error"; seconds-based — fails at any sample rate/size).
+  // Bug reported to ML; drop this guard when the fix lands.
+  const VOICE_MAX_CLIP_MS = 220000;
   const VOICE_REC_MAX_MS = 30000;  // mic recording cap
 
   // Demo fixtures: single-speaker segments cut from the deepfake demo calls
@@ -2521,9 +2529,11 @@
   const DEMO_VOICE_PROCESSING_MS = 1400;
 
   const VOICE_VERDICT_RULES_HTML =
-    '<p>The API returns one number: the cosine similarity between the two clips’ speaker embeddings ' +
-    '(−1 to 1, higher = more similar voices). It compares voice characteristics, not words.</p>' +
-    '<p>The verdict bands are applied by this showcase, not the API: ≥ 0.70 reads as the same voice, ' +
+    '<p>The model turns each clip into a compact voice fingerprint and returns one number: how ' +
+    'similar the two fingerprints are, from −1 to 1 — higher means more similar voices. ' +
+    '(Technically, the cosine similarity between speaker embeddings.) It compares how a voice ' +
+    'sounds, not what is said.</p>' +
+    '<p>The verdict is applied by this showcase, not the API: ≥ 0.70 reads as the same voice, ' +
     'below 0.50 as different voices, anything between as inconclusive. On our test material ' +
     'same-speaker pairs landed at 0.73–0.80 and different-speaker pairs at 0.18–0.48 — recording ' +
     'conditions shift scores (two speakers on one call score closer than speakers from unrelated ' +
@@ -2562,11 +2572,16 @@
 
   // knownDurationMs skips metadata sniffing — mic recordings report
   // duration=Infinity in some browsers, but we know the elapsed time.
+  // Returns true when the slot was filled (false = rejected with a toast).
   async function setVoiceSlot(i, file, knownDurationMs) {
     const durationMs = knownDurationMs || await getAudioDuration(file);
     if (durationMs < VOICE_MIN_CLIP_MS) {
       showError('“' + truncate(file.name, 40) + '” is shorter than 5 seconds — the model needs at least 5 seconds per clip.');
-      return;
+      return false;
+    }
+    if (durationMs > VOICE_MAX_CLIP_MS) {
+      showError('“' + truncate(file.name, 40) + '” is ' + formatDuration(durationMs) + ' long — clips over 3 min 40 s aren’t supported yet. Please trim it or pick a shorter clip.');
+      return false;
     }
     const prev = voiceSlots[i];
     if (prev && prev.url && !(lastVoicePair && lastVoicePair.some(c => c.url === prev.url))) {
@@ -2575,6 +2590,7 @@
     voiceSlots[i] = { file, name: file.name, url: URL.createObjectURL(file), durationMs };
     syncVoiceSlotUi(i);
     updateVoiceCompareState();
+    return true;
   }
 
   function clearVoiceSlot(i) {
@@ -2587,10 +2603,19 @@
     updateVoiceCompareState();
   }
 
-  // Plate-level drops land here: fill the first empty slot, else replace clip 1.
-  function addDroppedVoiceClip(file) {
+  // Plate-level drops and multi-file picks land here. Two files at once is an
+  // unambiguous intent — fill both slots and run the comparison immediately.
+  // A single file fills the first empty slot (or replaces clip 1), then waits
+  // for the second clip and an explicit Compare.
+  async function addVoiceClips(files) {
+    if (files.length >= 2) {
+      const ok1 = await setVoiceSlot(0, files[0]);
+      const ok2 = await setVoiceSlot(1, files[1]);
+      if (ok1 && ok2) startVoiceAnalysis();
+      return;
+    }
     const idx = !voiceSlots[0] ? 0 : (!voiceSlots[1] ? 1 : 0);
-    setVoiceSlot(idx, file);
+    setVoiceSlot(idx, files[0]);
   }
 
   function syncVoiceRecordButton(i, elapsedMs) {
@@ -2730,23 +2755,23 @@
   function renderVoiceResult(data, pair) {
     const s = typeof data.similarity === 'number' ? data.similarity : null;
     const verdict = voiceVerdictFor(s);
-    const stats = [];
-    if (s != null) stats.push({ value: s.toFixed(3), label: 'cosine similarity' });
-    if (data.duration_ms_1) stats.push({ value: formatDuration(data.duration_ms_1), label: 'clip 1' });
-    if (data.duration_ms_2) stats.push({ value: formatDuration(data.duration_ms_2), label: 'clip 2' });
+    // The verdict is words only — the spectrum below carries the number, and
+    // the "How to read this score?" popover sits statically under the bar.
     renderVerdictStatement('voice-verdict-statement', {
       variant: verdict.variant,
       title: verdict.title,
-      stats,
-      info: { label: 'How to read this score?', html: VOICE_VERDICT_RULES_HTML },
+      stats: [],
     });
 
+    const scaleWrap = document.getElementById('vm-scale-wrap');
     const marker = document.getElementById('vm-scale-marker');
     const markerValue = document.getElementById('vm-scale-marker-value');
+    if (scaleWrap) scaleWrap.hidden = s == null;
     if (marker) {
       marker.hidden = s == null;
       if (s != null) {
-        marker.style.left = (Math.max(0, Math.min(1, s)) * 100) + '%';
+        // The bar spans the full API range −1 … +1.
+        marker.style.left = ((Math.max(-1, Math.min(1, s)) + 1) / 2 * 100) + '%';
         if (markerValue) markerValue.textContent = s.toFixed(3);
       }
     }
@@ -2758,11 +2783,14 @@
       (pair || []).forEach((c, i) => {
         const card = document.createElement('div');
         card.className = 'vm-clip';
+        const kicker = document.createElement('span');
+        kicker.className = 'vm-clip-kicker';
+        kicker.textContent = 'Clip ' + (i + 1);
         const head = document.createElement('div');
         head.className = 'vm-clip-head';
         const title = document.createElement('span');
         title.className = 'vm-clip-title';
-        title.textContent = 'Clip ' + (i + 1) + ' — ' + (c.name || '');
+        title.textContent = c.name || '';
         const dur = document.createElement('span');
         dur.className = 'caption';
         dur.textContent = durs[i] ? formatDuration(durs[i]) : '';
@@ -2772,6 +2800,7 @@
         audio.controls = true;
         audio.preload = 'none';
         audio.src = c.url;
+        card.appendChild(kicker);
         card.appendChild(head);
         card.appendChild(audio);
         wrap.appendChild(card);
@@ -2790,15 +2819,37 @@
     const clear = slotEl.querySelector('.vm-slot-clear');
     if (pick && input) {
       pick.addEventListener('click', () => input.click());
-      input.addEventListener('change', () => {
-        if (input.files.length > 0) setVoiceSlot(i, input.files[0]);
+      input.addEventListener('change', async () => {
+        const files = Array.from(input.files);
         input.value = '';
+        if (!files.length) return;
+        if (files.length >= 2) {
+          // Both clips picked in one dialog: fill this slot with the first,
+          // the other slot with the second, and run.
+          const ok1 = await setVoiceSlot(i, files[0]);
+          const ok2 = await setVoiceSlot(1 - i, files[1]);
+          if (ok1 && ok2) startVoiceAnalysis();
+        } else {
+          setVoiceSlot(i, files[0]);
+        }
       });
     }
     if (record) record.addEventListener('click', () => toggleVoiceRecording(i));
     if (clear) clear.addEventListener('click', () => clearVoiceSlot(i));
   });
   if (vmCompareBtn) vmCompareBtn.addEventListener('click', () => startVoiceAnalysis());
+  // Static "How to read this score?" popover under the bar. The document-level
+  // outside-click/Escape close in closeVerdictInfoPops handles it by class.
+  const vmInfoLink = document.getElementById('vm-info-link');
+  const vmInfoPop = document.getElementById('vm-info-pop');
+  if (vmInfoLink && vmInfoPop) {
+    vmInfoPop.innerHTML = VOICE_VERDICT_RULES_HTML;
+    vmInfoLink.addEventListener('click', () => {
+      const open = vmInfoPop.hidden;
+      vmInfoPop.hidden = !open;
+      vmInfoLink.setAttribute('aria-expanded', String(open));
+    });
+  }
   const vmDemoSameBtn = document.getElementById('vm-demo-same');
   const vmDemoDiffBtn = document.getElementById('vm-demo-diff');
   if (vmDemoSameBtn) vmDemoSameBtn.addEventListener('click', () => runVoiceDemo('same'));
@@ -5557,8 +5608,8 @@
       case 'voice': {
         const vmClips = document.getElementById('vm-clips');
         if (vmClips) vmClips.innerHTML = '';
-        const vmMarker = document.getElementById('vm-scale-marker');
-        if (vmMarker) vmMarker.hidden = true;
+        const vmScaleWrap = document.getElementById('vm-scale-wrap');
+        if (vmScaleWrap) vmScaleWrap.hidden = true;
         emptyVerdict('voice-verdict-statement');
         break;
       }

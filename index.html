@@ -463,7 +463,7 @@
                   <div class="vm-slot-empty">
                     <button type="button" class="m__button-primary-outline M vm-slot-pick">Drop or choose clip…</button>
                     <button type="button" class="m__button-primary-outline M vm-slot-record">Record mic</button>
-                    <input type="file" class="pg-upload-file-input vm-slot-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.aiff,.mp4,.mov,.webm,.opus" hidden>
+                    <input type="file" class="pg-upload-file-input vm-slot-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.aiff,.mp4,.mov,.webm,.opus" multiple hidden>
                   </div>
                   <div class="vm-slot-filled" hidden>
                     <span class="vm-slot-name"></span>
@@ -477,7 +477,7 @@
                   <div class="vm-slot-empty">
                     <button type="button" class="m__button-primary-outline M vm-slot-pick">Drop or choose clip…</button>
                     <button type="button" class="m__button-primary-outline M vm-slot-record">Record mic</button>
-                    <input type="file" class="pg-upload-file-input vm-slot-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.aiff,.mp4,.mov,.webm,.opus" hidden>
+                    <input type="file" class="pg-upload-file-input vm-slot-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.aiff,.mp4,.mov,.webm,.opus" multiple hidden>
                   </div>
                   <div class="vm-slot-filled" hidden>
                     <span class="vm-slot-name"></span>
@@ -572,6 +572,24 @@
         </div>
         <div id="results-voice-verdict" hidden>
           <div class="pg-verdict-statement" id="voice-verdict-statement"></div>
+          <!-- The spectrum is part of the verdict: words above, illustration below -->
+          <div class="vm-scale-wrap" id="vm-scale-wrap" hidden>
+            <div class="vm-scale-track">
+              <div class="vm-scale"></div>
+              <div class="vm-scale-marker" id="vm-scale-marker"><span class="vm-scale-marker-value" id="vm-scale-marker-value"></span></div>
+            </div>
+            <div class="vm-scale-axis caption">
+              <span class="vm-axis-left">−1 · Different voices</span>
+              <span class="vm-axis-mid">0</span>
+              <span class="vm-axis-right">Same voice · +1</span>
+            </div>
+            <div class="vm-scale-info">
+              <div class="pg-verdict-info">
+                <button type="button" class="pg-verdict-info-link" id="vm-info-link" aria-expanded="false">How to read this score?</button>
+                <div class="pg-verdict-info-pop" id="vm-info-pop" hidden></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -884,28 +902,14 @@
 
         <!-- Voice Matching content -->
         <div id="voice-content" class="pg-tab-panel">
-          <div class="vm-scale-wrap">
-            <div class="vm-scale-track">
-              <div class="vm-scale">
-                <div class="vm-scale-band vm-scale-band-diff"></div>
-                <div class="vm-scale-band vm-scale-band-mid"></div>
-                <div class="vm-scale-band vm-scale-band-match"></div>
-              </div>
-              <div class="vm-scale-marker" id="vm-scale-marker"><span class="vm-scale-marker-value" id="vm-scale-marker-value"></span></div>
-            </div>
-            <div class="vm-scale-legend caption">
-              <span class="vm-legend-diff">Different voices</span>
-              <span class="vm-legend-mid">Inconclusive</span>
-              <span class="vm-legend-match">Same voice</span>
-            </div>
-          </div>
           <div class="vm-clips" id="vm-clips"></div>
           <p class="caption vm-caveat">
-            The score is a cosine similarity between speaker embeddings, so it compares voice
-            characteristics, not words — the same speaker saying different things still matches.
-            The bands above are set by this showcase, not the API; treat scores near a boundary as
-            inconclusive. Recording conditions matter: two speakers on the same call score closer
-            than two speakers from unrelated recordings.
+            The model turns each clip into a compact voice fingerprint and scores how similar the
+            two fingerprints are, from −1 to 1. It compares how a voice sounds, not what is said —
+            the same speaker saying different things still matches. The verdict is set by this
+            showcase, not the API; treat scores near a boundary as inconclusive. Recording
+            conditions matter: two speakers on the same call score closer than two speakers from
+            unrelated recordings.
           </p>
         </div>
 
@@ -942,7 +946,7 @@
 
 <footer class="footer">
   <div class="footer-nav">
-    <div class="footer-nav-item caption" id="app-version">v6.14.0 · Aug 20, 2026</div>
+    <div class="footer-nav-item caption" id="app-version">v6.14.1 · Aug 24, 2026</div>
   </div>
 </footer>
 
