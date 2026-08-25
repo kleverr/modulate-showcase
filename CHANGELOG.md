@@ -2,6 +2,18 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.14.2] - 2026-08-25
+
+### Changed
+- **Voice Matching is labeled a preview** — the model is pre-release and not
+  yet cleared for production, so instead of hiding the tab the demo sets
+  expectations: a "Preview" tag on the nav entry and a "Preview model" tag in
+  the plate header (driven by a `preview` flag in the MODES config, reusable
+  for future pre-release tabs).
+- Nav icon replaced with the official `#voice-match` symbol from
+  design.modulate.ai/design-system (mirrored waveforms, green bottom row);
+  the placeholder venn icon is retired.
+
 ## [6.14.1] - 2026-08-24
 
 ### Changed

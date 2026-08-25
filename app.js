@@ -482,7 +482,7 @@
       path: '/voice-matching', title: 'Voice Matching', plateTitle: 'Compare two voices',
       optionsRow: () => plateHeader, verdict: () => voiceSidebar,
       panels: () => [voiceContent],
-      streaming: false,
+      streaming: false, preview: true, // pre-release model, not cleared for production
       stages: ['Analyzing voices'],
     },
   };
@@ -529,6 +529,8 @@
     const activeRow = cfg.optionsRow && cfg.optionsRow();
     if (activeRow) activeRow.classList.add('visible');
     if (plateHeaderTitle) plateHeaderTitle.textContent = cfg.plateTitle || '';
+    const platePreviewBadge = document.getElementById('plate-preview-badge');
+    if (platePreviewBadge) platePreviewBadge.hidden = !cfg.preview;
 
     // Plate: actions
     if (streamSplit) streamSplit.style.display = cfg.streaming ? '' : 'none';

@@ -1409,3 +1409,29 @@ body[data-mode="voice"] #pg-player-output {
 .vm-caveat {
   max-width: 620px;
 }
+
+/* ── Preview-model badge (nav + plate header) ── */
+.pg-preview-badge {
+  font-size: var(--m__font-size-xs);
+  font-weight: var(--m__font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--m__text-caption);
+  border: var(--m__border-width-s) solid var(--m__border);
+  border-radius: var(--m__radius-pill);
+  padding: 0 0.4rem;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.pg-preview-badge[hidden] {
+  display: none;
+}
+.models-nav__link > span:not(.pg-preview-badge) {
+  white-space: nowrap;
+}
+.models-nav__link .pg-preview-badge {
+  margin-left: auto;
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  padding: 0 0.3rem;
+}

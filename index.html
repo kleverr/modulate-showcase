@@ -134,10 +134,16 @@
   <symbol id="events" viewBox="0 0 32 32" fill="currentColor">
     <rect x="5" y="12" width="4" height="8" rx="1"/><rect x="14" y="5" width="4" height="22" rx="1"/><rect x="23" y="9" width="4" height="14" rx="1"/>
   </symbol>
-  <!-- Placeholder icon — swap for the Voice Matching icon from the design repository when exported -->
-  <symbol id="voice-match" viewBox="0 0 32 32" fill="currentColor">
-    <circle cx="11.5" cy="16" r="8.5" fill-opacity="0.55"/>
-    <circle cx="20.5" cy="16" r="8.5" fill-opacity="0.55"/>
+  <!-- Official #voice-match icon from design.modulate.ai/design-system/#graphics -->
+  <symbol id="voice-match" viewBox="0 0 32 32">
+    <rect fill="currentColor" x="21.512" y="8.65" width="5.512" height="7.35" />
+      <rect fill="currentColor" x="10.487" y="8.65" width="5.512" height="7.35" />
+      <rect fill="currentColor" x="16" y="4.975" width="5.512" height="11.025" />
+      <rect fill="currentColor" x="4.975" y="12.325" width="5.512" height="3.675" />
+      <rect fill="var(--m__color-green-500)" x="21.512" y="19.675" width="5.512" height="7.35" />
+      <rect fill="var(--m__color-green-500)" x="10.487" y="19.675" width="5.512" height="7.35" />
+      <rect fill="var(--m__color-green-500)" x="16" y="16" width="5.512" height="11.025" />
+      <rect fill="var(--m__color-green-500)" x="4.975" y="23.35" width="5.512" height="3.675" />
   </symbol>
   <symbol id="microsoft" viewBox="0 0 32 32">
     <rect fill="#f25022" x="4.975" y="4.975" width="10.445" height="10.445" />
@@ -307,6 +313,7 @@
             <a href="/voice-matching" data-mode="voice" class="models-nav__link m__rounded">
               <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#voice-match"></use></svg>
               <span>Voice Matching</span>
+              <span class="pg-preview-badge">Preview</span>
             </a>
             <a href="/music" data-mode="music" class="models-nav__link m__rounded">
               <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#music"></use></svg>
@@ -428,6 +435,7 @@
           <!-- Generic plate header for detection modes -->
           <div class="pg-options-row pg-plate-header" id="plate-header">
             <span class="pg-plate-header__title" id="plate-header-title"></span>
+            <span class="pg-preview-badge" id="plate-preview-badge" hidden>Preview model</span>
           </div>
 
           <div class="pg-upload-plate-body">
@@ -946,7 +954,7 @@
 
 <footer class="footer">
   <div class="footer-nav">
-    <div class="footer-nav-item caption" id="app-version">v6.14.1 · Aug 24, 2026</div>
+    <div class="footer-nav-item caption" id="app-version">v6.14.2 · Aug 25, 2026</div>
   </div>
 </footer>
 
