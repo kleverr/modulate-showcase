@@ -2,6 +2,21 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.14.3] - 2026-09-09
+
+### Fixed
+- **Velma player clip strip no longer vanishes under a customized config.**
+  The Modulate-design report gated the colored clip strip (and transcript
+  bubble chips) on the *current* editor config's `stt` flags, coercing
+  omitted keys to false — while the API defaults omitted `stt` keys to ON.
+  A saved config whose `stt` block omitted (or disabled)
+  `speaker_diarization` therefore blanked the player for every conversation,
+  even though the response was fully diarized (lanes, behavior sparks and the
+  Speakers table kept rendering from that same data). Velma reports now
+  render purely from the response data — each chip/strip already checks its
+  own datum — and the config gates remain in effect only on the Transcription
+  tab, where the checkboxes are per-run visible UI.
+
 ## [6.14.2] - 2026-08-25
 
 ### Changed

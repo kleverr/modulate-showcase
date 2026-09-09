@@ -4276,6 +4276,17 @@
     currentData = sttData;
   }
 
+  // All-on render flags for Velma mode (see renderTranscript): the per-chip
+  // data checks (`u.emotion &&`, `u.deepfake_score != null`, …) remain the
+  // only gate, so the report shows exactly what the analyzed run returned.
+  const VELMA_RENDER_OPTS = {
+    speaker_diarization: true,
+    emotion_signal: true,
+    accent_signal: true,
+    deepfake_signal: true,
+    pii_phi_tagging: true,
+  };
+
   function renderTranscript() {
     transcriptList.innerHTML = '';
     // Sparks are repopulated by the Velma render after this returns; every
@@ -4310,7 +4321,14 @@
       transcriptList.appendChild(note);
     }
 
-    const opts = getSttOptions();
+    // Velma reports render whatever the response contains. The render must not
+    // consult the CURRENT editor config: the server defaults omitted stt keys
+    // to ON while `!!cfg.stt.<key>` coerces them to false, so a config whose
+    // stt block merely omits speaker_diarization blanked the player clip strip
+    // (and bubble chips) for every conversation — the data itself already says
+    // which signals are present, and every chip checks its datum before drawing.
+    const dataDriven = currentMode === 'velma';
+    const opts = dataDriven ? VELMA_RENDER_OPTS : getSttOptions();
     // Only cluster during streaming to merge overlapping partials;
     // batch results are already clean so render them as-is. But always
     // sort by start_ms — streaming utterances arrive out of order.
@@ -4345,7 +4363,7 @@
 
     // Render the emotion clip strip — during live streams too, so the player
     // visualization fills in progressively as clips arrive.
-    const opts2 = getSttOptions();
+    const opts2 = opts;
     // English Fast streaming carries no speaker field even when the Diarization
     // box is ticked for batch — don't draw a phantom "Speaker 0" lane for it.
     const hasSpeakers = sttUtterances.some(u => u.speaker != null);
