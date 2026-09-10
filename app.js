@@ -146,7 +146,6 @@
   const DEMO_EVENTS_AUDIO_URL = '/events/applause-after-concert.ogg';
   const DEMO_EVENTS_FILENAME = 'applause-after-concert.ogg';
   const DEMO_EVENTS_FILESIZE = 1793175;
-  const DEMO_EVENTS_PROCESSING_MS = 2240;
   const DEMO_EVENTS_DATA = {"probs":{"cry":0.002,"Acoustic_guitar":0.0003,"Applause":0.9982,"Bark":0.0,"Bass_drum":0.0,"Burping_or_eructation":0.0002,"Bus":0.0005,"Cello":0.0,"Chime":0.0,"Clarinet":0.0,"Computer_keyboard":0.0,"Cough":0.0,"Cowbell":0.0,"Double_bass":0.0,"Drawer_open_or_close":0.0,"Electric_piano":0.0,"Fart":0.0,"Finger_snapping":0.0,"Fireworks":0.0,"Flute":0.0,"Glockenspiel":0.0,"Gong":0.0,"Gunshot_or_gunfire":0.0,"Harmonica":0.0,"Hi-hat":0.0,"Keys_jangling":0.0,"Knock":0.0,"Laughter":0.9455,"Meow":0.0,"Microwave_oven":0.0,"Oboe":0.0,"Saxophone":0.0,"Scissors":0.0,"Shatter":0.0,"Snare_drum":0.0,"Squeak":0.0,"Tambourine":0.0,"Tearing":0.0,"Telephone":0.0,"Trumpet":0.0002,"Violin_or_fiddle":0.0,"Writing":0.0},"duration_ms":58784};
 
   // Pre-recorded Emotion / Accent Detection responses (actual API output from
@@ -577,13 +576,13 @@
     if (isDeepfake) {
       const dfData = lastDeepfakeData || DEMO_DATA;
       const dfAudio = lastDeepfakeAudioUrl || DEMO_AUDIO_URL;
+      // Canned demo result: no request was made from this browser, and the
+      // stats panel says so (`demo`) instead of inventing request stats.
       currentMeta = lastDeepfakeMeta || {
-        fileSize: 1.87 * 1024 * 1024,
+        demo: true,
+        fileSize: 1958055, // true size of /deepfake/demo.mp3
         fileType: 'audio/mpeg',
-        httpStatus: 200,
-        httpStatusText: 'OK',
-        responseSize: 4.2 * 1024,
-        processingMs: 2660,
+        responseSize: JSON.stringify(DEMO_DATA).length,
       };
       renderDeepfakeResults(dfData, dfAudio);
     } else if (isRedaction) {
@@ -608,12 +607,10 @@
         redactionData = rData;
         currentData = rData;
         currentMeta = {
-          fileSize: 1.87 * 1024 * 1024,
+          demo: true,
+          fileSize: 3255552, // true size of /deepfake/call-center-demo.mp3 (the input)
           fileType: 'audio/mpeg',
-          httpStatus: 200,
-          httpStatusText: 'OK',
           responseSize: JSON.stringify(DEMO_REDACTION_DATA).length,
-          processingMs: 2800,
         };
         resultsFilename.textContent = rData.filename || 'AIAgentFrustration.mp3';
         resultsAudio.src = rAudio;
@@ -631,12 +628,10 @@
       const mData = lastMusicData || DEMO_MUSIC_DATA;
       const mAudio = lastMusicAudioUrl || DEMO_MUSIC_AUDIO_URL;
       currentMeta = lastMusicMeta || {
-        fileSize: 243900,
+        demo: true,
+        fileSize: 118552, // true size of /music/case-of-spring-fever-1940.opus
         fileType: 'audio/opus',
-        httpStatus: 200,
-        httpStatusText: 'OK',
         responseSize: JSON.stringify(DEMO_MUSIC_DATA).length,
-        processingMs: DEMO_MUSIC_DATA.latency_ms || 0,
       };
       renderMusicResults(mData, mAudio);
     } else if (isAimusic) {
@@ -644,12 +639,10 @@
       const aAudio = lastAimusicAudioUrl || DEMO_AIMUSIC_AUDIO_URL;
       currentData = aData;
       currentMeta = lastAimusicMeta || {
-        fileSize: 2881302,
+        demo: true,
+        fileSize: 2881302, // true size of /ai-music/ashes-in-my-mouth.mp3
         fileType: 'audio/mpeg',
-        httpStatus: 200,
-        httpStatusText: 'OK',
         responseSize: JSON.stringify(DEMO_AIMUSIC_DATA).length,
-        processingMs: DEMO_AIMUSIC_DATA.latency_ms || 0,
       };
       resultsFilename.textContent = lastAimusicFilename || aData.filename || 'ashes-in-my-mouth.mp3';
       resultsAudio.src = aAudio;
@@ -659,10 +652,9 @@
       const eData = lastEventsData || DEMO_EVENTS_DATA;
       currentData = eData;
       currentMeta = lastEventsMeta || {
+        demo: true,
         fileSize: DEMO_EVENTS_FILESIZE, fileType: 'audio/ogg',
-        httpStatus: 200, httpStatusText: 'OK',
         responseSize: JSON.stringify(DEMO_EVENTS_DATA).length,
-        processingMs: DEMO_EVENTS_PROCESSING_MS,
       };
       resultsFilename.textContent = lastEventsFilename || DEMO_EVENTS_FILENAME;
       resultsAudio.src = lastEventsAudioUrl || DEMO_EVENTS_AUDIO_URL;
@@ -672,11 +664,10 @@
       const vPair = lastVoicePair || VOICE_DEMO_PAIRS.same.clips.map(c => ({ name: c.name, url: c.url }));
       currentData = vData;
       currentMeta = lastVoiceMeta || {
+        demo: true,
         fileSize: VOICE_DEMO_PAIRS.same.clips.reduce((t, c) => t + c.size, 0),
         fileType: 'audio/mpeg',
-        httpStatus: 200, httpStatusText: 'OK',
         responseSize: JSON.stringify(DEMO_VOICE_DATA).length,
-        processingMs: DEMO_VOICE_PROCESSING_MS,
       };
       resultsFilename.textContent = lastVoicePairLabel || (vPair[0].name + ' vs ' + vPair[1].name);
       renderVoiceResult(vData, vPair);
@@ -684,10 +675,9 @@
       const lData = lastLanguageData || DEMO_LANGUAGE_DATA;
       currentData = lData;
       currentMeta = lastLanguageMeta || {
-        fileSize: 1.87 * 1024 * 1024, fileType: 'audio/mpeg',
-        httpStatus: 200, httpStatusText: 'OK',
+        demo: true,
+        fileSize: 1958055, fileType: 'audio/mpeg', // true size of /deepfake/demo.mp3
         responseSize: JSON.stringify(DEMO_LANGUAGE_DATA).length,
-        processingMs: 1100,
       };
       resultsFilename.textContent = lastLanguageFilename || DEMO_LANGUAGE_FILENAME;
       resultsAudio.src = lastLanguageAudioUrl || DEMO_LANGUAGE_AUDIO_URL;
@@ -715,13 +705,10 @@
       sttUtterances = sData.utterances || [];
       sttPartial = null;
       currentMeta = lastSttMeta || {
-        fileSize: 1.87 * 1024 * 1024,
+        demo: true,
+        fileSize: 1958055, // true size of /deepfake/demo.mp3
         fileType: 'audio/mpeg',
-        httpStatus: 200,
-        httpStatusText: 'OK',
         responseSize: JSON.stringify(DEMO_STT_DATA).length,
-        processingMs: 2660,
-        endpoint: '/api/velma-2-stt-batch',
       };
       resultsFilename.textContent = sData.filename || 'Irate_Caller_Final.mp3';
       resultsAudio.src = sAudio;
@@ -953,6 +940,13 @@
   let audioContext = null;
   let scriptProcessor = null;
   let recordingWs = null;
+  // Path of the WebSocket most recently opened. Streaming stats read this, so
+  // the endpoint shown in the panel is always the one actually connected to.
+  let lastWsEndpoint = null;
+  function trackWsEndpoint(wsUrlOrPath) {
+    lastWsEndpoint = String(wsUrlOrPath).replace(/^wss?:\/\/[^/]+/i, '').split('?')[0] || null;
+    return lastWsEndpoint;
+  }
   let liveFrames = [];
   let liveMusicFrames = [];
   let liveAimusicWindows = [];   // accumulated `window` messages during AI-music streaming
@@ -1361,11 +1355,9 @@
       audioObjectUrl = URL.createObjectURL(file);
 
       currentMeta = {
+        ...meta,
         fileSize: file.size,
         fileType: file.type || file.name.split('.').pop().toUpperCase(),
-        httpStatus: meta.httpStatus,
-        httpStatusText: meta.httpStatusText,
-        responseSize: meta.responseSize,
         processingMs: processingMs,
       };
 
@@ -1477,6 +1469,7 @@
 
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = proto + '//' + location.host + '/api/velma-2-synthetic-voice-detection-streaming?audio_format=s16le&sample_rate=16000&num_channels=1';
+    trackWsEndpoint(wsUrl);
     recordingWs = new WebSocket(wsUrl);
     recordingWs.binaryType = 'arraybuffer';
     endFrameSent = false;
@@ -1551,6 +1544,7 @@
       duration_ms: durationMs,
     };
     currentMeta = {
+      endpoint: lastWsEndpoint, transport: 'streaming',
       fileSize: 0, fileType: 'PCM 16kHz', httpStatus: 101, httpStatusText: 'Switching Protocols',
       responseSize: JSON.stringify(data).length, processingMs: Date.now() - recordingStartTime,
     };
@@ -1850,13 +1844,10 @@
       audioObjectUrl = URL.createObjectURL(file);
 
       currentMeta = {
+        ...meta,
         fileSize: file.size,
         fileType: file.type || file.name.split('.').pop().toUpperCase(),
-        httpStatus: meta.httpStatus,
-        httpStatusText: meta.httpStatusText,
-        responseSize: meta.responseSize,
         processingMs: processingMs,
-        endpoint: endpoint,
       };
 
       // vfast returns { text, duration_ms, language } — wrap into utterance format.
@@ -1988,7 +1979,14 @@
         resolve({
           metadata,
           audioBlob: new Blob([parts.audio], { type: 'audio/mpeg' }),
-          meta: { httpStatus: xhr.status, httpStatusText: xhr.statusText, responseSize: xhr.response.byteLength },
+          meta: {
+            endpoint: endpoint,
+            transport: 'batch',
+            httpStatus: xhr.status,
+            httpStatusText: xhr.statusText,
+            responseSize: xhr.response.byteLength,
+            upstreamUrl: xhr.getResponseHeader('X-Upstream-Url') || null,
+          },
         });
       });
       xhr.addEventListener('error', () => { const err = new Error('Network error — could not reach server'); err.rawText = ''; reject(err); });
@@ -2025,11 +2023,9 @@
       metadata.filename = file.name;
 
       currentMeta = {
+        ...meta,
         fileSize: file.size,
         fileType: file.type || file.name.split('.').pop().toUpperCase(),
-        httpStatus: meta.httpStatus,
-        httpStatusText: meta.httpStatusText,
-        responseSize: meta.responseSize,
         processingMs,
       };
 
@@ -2235,11 +2231,9 @@
       audioObjectUrl = URL.createObjectURL(file);
 
       currentMeta = {
+        ...meta,
         fileSize: file.size,
         fileType: file.type || file.name.split('.').pop().toUpperCase(),
-        httpStatus: meta.httpStatus,
-        httpStatusText: meta.httpStatusText,
-        responseSize: meta.responseSize,
         processingMs,
       };
 
@@ -2293,11 +2287,9 @@
       audioObjectUrl = URL.createObjectURL(file);
 
       currentMeta = {
+        ...meta,
         fileSize: file.size,
         fileType: file.type || file.name.split('.').pop().toUpperCase(),
-        httpStatus: meta.httpStatus,
-        httpStatusText: meta.httpStatusText,
-        responseSize: meta.responseSize,
         processingMs,
       };
 
@@ -2394,11 +2386,9 @@
       audioObjectUrl = URL.createObjectURL(file);
 
       currentMeta = {
+        ...meta,
         fileSize: file.size,
         fileType: file.type || file.name.split('.').pop().toUpperCase(),
-        httpStatus: meta.httpStatus,
-        httpStatusText: meta.httpStatusText,
-        responseSize: meta.responseSize,
         processingMs,
       };
 
@@ -2528,7 +2518,6 @@
   // Pre-baked result for the "same speaker" demo pair (measured against the
   // preview box 2026-08-20) so the tab shows a real result before any live run.
   const DEMO_VOICE_DATA = { similarity: 0.801246702671051, duration_ms_1: 13100, duration_ms_2: 13600 };
-  const DEMO_VOICE_PROCESSING_MS = 1400;
 
   const VOICE_VERDICT_RULES_HTML =
     '<p>The model turns each clip into a compact voice fingerprint and returns one number: how ' +
@@ -2724,11 +2713,9 @@
       isAnalyzing = false;
 
       currentMeta = {
+        ...meta,
         fileSize: s1.file.size + s2.file.size,
         fileType: s1.file.type || 'audio',
-        httpStatus: meta.httpStatus,
-        httpStatusText: meta.httpStatusText,
-        responseSize: meta.responseSize,
         processingMs,
       };
       lastVoiceData = data;
@@ -2886,7 +2873,6 @@
       demoAudioUrl: DEMO_EMOTION_AUDIO_URL,
       demoFilename: DEMO_EMOTION_FILENAME,
       demoFileSize: DEMO_EMOTION_FILESIZE,
-      demoProcessingMs: 4340,
     },
     accent: {
       field: 'accent',
@@ -2908,7 +2894,6 @@
       demoAudioUrl: DEMO_ACCENT_AUDIO_URL,
       demoFilename: DEMO_ACCENT_FILENAME,
       demoFileSize: DEMO_ACCENT_FILESIZE,
-      demoProcessingMs: 4110,
       // Accent batch accepts use_ensemble (a more thorough analysis that may
       // change the returned labels and takes longer). Omitted when off — the
       // API defaults to false.
@@ -2947,11 +2932,9 @@
       audioObjectUrl = URL.createObjectURL(file);
 
       currentMeta = {
+        ...meta,
         fileSize: file.size,
         fileType: file.type || file.name.split('.').pop().toUpperCase(),
-        httpStatus: meta.httpStatus,
-        httpStatusText: meta.httpStatusText,
-        responseSize: meta.responseSize,
         processingMs,
         useEnsemble: !!(extra && extra.use_ensemble),
       };
@@ -3098,10 +3081,9 @@
     const data = cfg.last.data || cfg.demoData;
     currentData = data;
     currentMeta = cfg.last.meta || {
+      demo: true,
       fileSize: cfg.demoFileSize, fileType: 'audio/mpeg',
-      httpStatus: 200, httpStatusText: 'OK',
       responseSize: JSON.stringify(cfg.demoData).length,
-      processingMs: cfg.demoProcessingMs,
     };
     resultsFilename.textContent = cfg.last.filename || cfg.demoFilename;
     resultsAudio.src = cfg.last.audioUrl || cfg.demoAudioUrl;
@@ -3129,12 +3111,9 @@
       lastAimusicAudioUrl = DEMO_AIMUSIC_AUDIO_URL;
       lastAimusicFilename = name;
       lastAimusicMeta = {
+        ...meta,
         fileSize: file.size,
         fileType: 'audio/mpeg',
-        httpStatus: meta.httpStatus,
-        httpStatusText: meta.httpStatusText,
-        responseSize: meta.responseSize,
-        upstreamUrl: meta.upstreamUrl,
         processingMs: Date.now() - startedAt,
       };
       if (currentMode === 'aimusic' && !isAnalyzing) {
@@ -3171,12 +3150,9 @@
       audioObjectUrl = URL.createObjectURL(file);
 
       currentMeta = {
+        ...meta,
         fileSize: file.size,
         fileType: file.type || file.name.split('.').pop().toUpperCase(),
-        httpStatus: meta.httpStatus,
-        httpStatusText: meta.httpStatusText,
-        responseSize: meta.responseSize,
-        upstreamUrl: meta.upstreamUrl,
         processingMs,
       };
 
@@ -3542,6 +3518,7 @@
 
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = proto + '//' + location.host + '/api/velma-2-ai-music-detection-streaming?audio_format=s16le&sample_rate=16000&num_channels=1';
+    trackWsEndpoint(wsUrl);
     recordingWs = new WebSocket(wsUrl);
     recordingWs.binaryType = 'arraybuffer';
     endFrameSent = false;
@@ -3636,6 +3613,7 @@
 
     currentData = data;
     currentMeta = {
+      endpoint: lastWsEndpoint, transport: 'streaming',
       fileSize: 0, fileType: 'PCM 16kHz', httpStatus: 101, httpStatusText: 'Switching Protocols',
       responseSize: JSON.stringify(data).length, processingMs: Date.now() - recordingStartTime,
     };
@@ -3795,6 +3773,7 @@
 
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = proto + '//' + location.host + '/api/velma-2-music-detection-streaming?audio_format=s16le&sample_rate=16000&num_channels=1';
+    trackWsEndpoint(wsUrl);
     recordingWs = new WebSocket(wsUrl);
     recordingWs.binaryType = 'arraybuffer';
     endFrameSent = false;
@@ -3856,6 +3835,7 @@
         lastMusicData = data;
         lastMusicAudioUrl = url;
         currentMeta = {
+          endpoint: lastWsEndpoint, transport: 'streaming',
           fileSize: 0, fileType: 'PCM 16kHz', httpStatus: 101, httpStatusText: 'Switching Protocols',
           responseSize: JSON.stringify(data).length, processingMs: Date.now() - recordingStartTime,
         };
@@ -4169,6 +4149,7 @@
 
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = proto + '//' + location.host + sttStreamingPath() + '?' + sttStreamingQuery();
+    trackWsEndpoint(wsUrl);
     recordingWs = new WebSocket(wsUrl);
     recordingWs.binaryType = 'arraybuffer';
     endFrameSent = false;
@@ -4786,6 +4767,7 @@
 
       const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = proto + '//' + location.host + wsPath;
+      trackWsEndpoint(wsPath);
       recordingWs = new WebSocket(wsUrl);
       recordingWs.binaryType = 'arraybuffer';
       endFrameSent = false;
@@ -4898,6 +4880,7 @@
       const durationMs = Date.now() - recordingStartTime;
       const data = computeMusicSummary(liveMusicFrames, { filename: resultsFilename.textContent });
       currentMeta = {
+        endpoint: lastWsEndpoint, transport: 'streaming',
         fileSize: 0, fileType: 'PCM 16kHz', httpStatus: 101, httpStatusText: 'Switching Protocols',
         responseSize: JSON.stringify(data).length, processingMs: durationMs,
       };
@@ -4914,11 +4897,11 @@
     } else if (currentMode === 'transcription') {
       const durationMs = Date.now() - recordingStartTime;
       currentMeta = {
+        endpoint: lastWsEndpoint || sttStreamingPath(), transport: 'streaming',
         fileSize: sttStreamSource ? sttStreamSource.size : 0,
         fileType: sttStreamSource ? (sttStreamSource.type || '') : 'PCM 16kHz',
         httpStatus: 101, httpStatusText: 'Switching Protocols',
         responseSize: sttData ? JSON.stringify(sttData).length : 0, processingMs: durationMs,
-        endpoint: sttStreamingPath(),
       };
       // Keep sttPartial visible until finals arrive from the server.
       // The 'done' handler will promote any lingering partial to a final utterance.
@@ -5055,6 +5038,35 @@
     document.body.removeChild(ta);
   }
 
+  // ── Stats truthfulness helpers ────────────────────────────────────────────
+  // Request rows come ONLY from metadata recorded at the moment the request was
+  // actually made (uploadAndAnalyze / uploadAndAnalyzeMultipart / the WebSocket
+  // openers via trackWsEndpoint). A canned demo result made no API request from
+  // this browser and says so, instead of inventing one.
+  function requestRows(m) {
+    if (m.demo) {
+      return [
+        ['Source', 'Precomputed demo result — no API request from this browser'],
+        ['Result Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
+      ];
+    }
+    return [
+      ['HTTP', m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A'],
+      ['Endpoint', m.endpoint || 'N/A'],
+      ...(m.upstreamUrl ? [['Upstream', m.upstreamUrl]] : []),
+      [m.transport === 'streaming' ? 'Result Size (assembled)' : 'Response Size',
+       m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
+    ];
+  }
+
+  // Model = the API route actually called (endpoint minus the /api/ prefix);
+  // for canned demos, the model family the fixture came from.
+  function modelRow(m, demoFallback) {
+    return ['Model', m.endpoint
+      ? m.endpoint.replace(/^\/api\//, '')
+      : demoFallback + (m.demo ? ' (demo)' : '')];
+  }
+
   function showStatsModal() {
     if (!currentData) return;
     const m = currentMeta;
@@ -5067,7 +5079,6 @@
       const durationMs = durationS * 1000;
       const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
       const procFactor = m.processingMs && durationMs ? (durationMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
-      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
       const fileType = m.fileType || (currentData.filename ? currentData.filename.split('.').pop().toUpperCase() : 'N/A');
       const avgMusic  = frames.length ? frames.reduce((s, f) => s + (f.music_prob  || 0), 0) / frames.length : 0;
       const avgSpeech = frames.length ? frames.reduce((s, f) => s + (f.speech_prob || 0), 0) / frames.length : 0;
@@ -5078,7 +5089,7 @@
 
       groups = [
         { group: 'Detection', rows: [
-          ['Model', 'velma-2-music-detection-batch'],
+          modelRow(m, 'velma-2-music-detection'),
           ['Primary label', (currentData.primary_label || 'unknown').replace(/^./, c => c.toUpperCase())],
           ['Music coverage', (currentData.music_pct  != null ? currentData.music_pct.toFixed(1)  : '0.0') + '%'],
           ['Speech coverage', (currentData.speech_pct != null ? currentData.speech_pct.toFixed(1) : '0.0') + '%'],
@@ -5093,7 +5104,9 @@
           ['File Type', fileType],
           ['Audio Duration', formatDuration(durationMs)],
           ['Total frames', String(frames.length)],
-          ['Frame resolution', '~0.192s'],
+          ['Frame resolution', frames.length && durationS
+            ? '~' + (durationS / frames.length).toFixed(3) + 's'
+            : 'N/A'],
         ]},
         { group: 'Performance', rows: [
           ['Server latency', serverLatency],
@@ -5102,11 +5115,7 @@
           ['Cost', costVal],
           ['Rate', '$0.001/hr'],
         ]},
-        { group: 'Request', rows: [
-          ['HTTP', httpStr],
-          ['Endpoint', '/api/velma-2-music-detection-batch'],
-          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
-        ]},
+        { group: 'Request', rows: requestRows(m) },
       ];
     } else if (currentMode === 'aimusic') {
       statsModalTitle.textContent = 'AI Music Detection Statistics';
@@ -5114,12 +5123,11 @@
       const durationMs = durationS * 1000;
       const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
       const procFactor = m.processingMs && durationMs ? (durationMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
-      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
       const fileType = m.fileType || (currentData.filename ? currentData.filename.split('.').pop().toUpperCase() : 'N/A');
       const serverLatency = currentData.latency_ms != null ? formatDuration(currentData.latency_ms) : 'N/A';
       const verdictMap = { 'ai-vocal-music': 'AI Vocal Music', 'ai-instrumental': 'AI Instrumental', 'not-ai-music': 'Not AI Music' };
       const verdictLabel = verdictMap[currentData.primary_verdict] || currentData.primary_verdict || 'Unknown';
-      const isStream = m.httpStatus === 101;
+      const isStream = m.transport === 'streaming' || m.httpStatus === 101;
       const num = (x) => (typeof x === 'number' && isFinite(x)) ? x : null;
       const pct = (x) => num(x) != null ? num(x).toFixed(1) + '%' : '—';
       const conf = (x) => (num(x) != null && num(x) > 0) ? num(x).toFixed(4) : '—';
@@ -5128,7 +5136,7 @@
 
       groups = [
         { group: 'Detection', rows: [
-          ['Model', isStream ? 'velma-2-ai-music-detection-streaming' : 'velma-2-ai-music-detection-batch'],
+          modelRow(m, 'velma-2-ai-music-detection'),
           ['Primary verdict', verdictLabel],
           ['Vocal AI coverage', pct(currentData.vocal_ai_percentage)],
           ['Vocal AI confidence', conf(currentData.vocal_ai_confidence)],
@@ -5152,25 +5160,20 @@
           ['Round-trip time', procTimeStr],
           ['Processing Factor', procFactor],
         ]},
-        { group: 'Request', rows: [
-          ['HTTP', httpStr],
-          ['Endpoint', m.upstreamUrl || (isStream ? '/api/velma-2-ai-music-detection-streaming' : '/api/velma-2-ai-music-detection-batch')],
-          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
-        ]},
+        { group: 'Request', rows: requestRows(m) },
       ];
     } else if (currentMode === 'language') {
       statsModalTitle.textContent = 'Language Detection Statistics';
       const durationMs = currentData.duration_ms || 0;
       const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
       const procFactor = m.processingMs && durationMs ? (durationMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
-      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
       const fileType = m.fileType || (lastLanguageFilename ? lastLanguageFilename.split('.').pop().toUpperCase() : 'N/A');
       const conf = currentData.confidence;
       const analyzedMs = Math.min(durationMs, 30000);
 
       groups = [
         { group: 'Detection', rows: [
-          ['Model', 'velma-2-language-detection-batch'],
+          modelRow(m, 'velma-2-language-detection'),
           ['Predicted language', currentData.predicted_language || 'N/A'],
           ['ISO 639-1 code', currentData.predicted_language_code || 'N/A'],
           ['Confidence', typeof conf === 'number' ? (conf * 100).toFixed(2) + '%' : 'N/A'],
@@ -5187,11 +5190,7 @@
           ['Processing Time', procTimeStr],
           ['Processing Factor', procFactor],
         ]},
-        { group: 'Request', rows: [
-          ['HTTP', httpStr],
-          ['Endpoint', '/api/velma-2-language-detection-batch'],
-          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
-        ]},
+        { group: 'Request', rows: requestRows(m) },
       ];
     } else if (currentMode === 'events') {
       statsModalTitle.textContent = 'Audio Event Detection Statistics';
@@ -5200,13 +5199,12 @@
       const durationMs = currentData.duration_ms || 0;
       const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
       const procFactor = m.processingMs && durationMs ? (durationMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
-      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
       const evFilename = lastEventsFilename || DEMO_EVENTS_FILENAME;
       const fileType = m.fileType || (evFilename ? evFilename.split('.').pop().toUpperCase() : 'N/A');
 
       groups = [
         { group: 'Detection', rows: [
-          ['Model', 'velma-2-audio-event-classifier'],
+          modelRow(m, 'velma-2-audio-event-classifier'),
           ['Detected events', detected.length ? detected.map(e => e.label).join(', ') : 'None at \u2265 50%'],
           ['Top score', entries.length ? entries[0].label + ' \u2014 ' + (entries[0].prob * 100).toFixed(1) + '%' : 'N/A'],
           ['Labels scored', String(entries.length)],
@@ -5222,22 +5220,17 @@
           ['Processing Time', procTimeStr],
           ['Processing Factor', procFactor],
         ]},
-        { group: 'Request', rows: [
-          ['HTTP', httpStr],
-          ['Endpoint', '/api/velma-2-audio-event-classifier'],
-          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
-        ]},
+        { group: 'Request', rows: requestRows(m) },
       ];
     } else if (currentMode === 'voice') {
       statsModalTitle.textContent = 'Voice Matching Statistics';
       const s = typeof currentData.similarity === 'number' ? currentData.similarity : null;
       const pair = lastVoicePair || VOICE_DEMO_PAIRS.same.clips;
       const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
-      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
 
       groups = [
         { group: 'Detection', rows: [
-          ['Model', 'velma-2-voice-matching-batch'],
+          modelRow(m, 'velma-2-voice-matching'),
           ['Similarity', s != null ? s.toFixed(4) : 'N/A'],
           ['Reading', voiceVerdictFor(s).title],
           ['Bands', '≥ 0.70 same · 0.50–0.70 inconclusive · < 0.50 different (set by this showcase, not the API)'],
@@ -5250,11 +5243,7 @@
         { group: 'Performance', rows: [
           ['Processing Time', procTimeStr],
         ]},
-        { group: 'Request', rows: [
-          ['HTTP', httpStr],
-          ['Endpoint', '/api/velma-2-voice-matching-batch'],
-          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
-        ]},
+        { group: 'Request', rows: requestRows(m) },
       ];
     } else if (currentMode === 'emotion' || currentMode === 'accent') {
       const cfg = EA_KINDS[currentMode];
@@ -5264,18 +5253,18 @@
       const distinct = [...new Set(windows.map(w => w[cfg.field]).filter(Boolean))];
       const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
       const procFactor = m.processingMs && analyzedMs ? (analyzedMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
-      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
       const eaFilename = cfg.last.filename || cfg.demoFilename;
       const fileType = m.fileType || (eaFilename ? eaFilename.split('.').pop().toUpperCase() : 'N/A');
+      const winLenMs = windows.length ? Math.max(...windows.map(w => w.duration_ms || 0)) : 0;
 
       groups = [
         { group: 'Detection', rows: [
-          ['Model', cfg.model],
+          modelRow(m, cfg.model.replace(/-batch$/, '')),
           // use_ensemble is an accent-batch-only request flag.
           ...(currentMode === 'accent' ? [['Ensemble', m.useEnsemble ? 'On' : 'Off']] : []),
           ['Whole-file ' + cfg.field, currentData[cfg.field] || 'N/A'],
           ['Windows analyzed', String(windows.length)],
-          ['Window length', '15 s'],
+          ['Window length', winLenMs ? formatDuration(winLenMs) : 'N/A'],
           ['Distinct ' + cfg.field + ' labels', distinct.length ? distinct.join(', ') : 'N/A'],
         ]},
         { group: 'Audio', rows: [
@@ -5288,11 +5277,7 @@
           ['Processing Time', procTimeStr],
           ['Processing Factor', procFactor],
         ]},
-        { group: 'Request', rows: [
-          ['HTTP', httpStr],
-          ['Endpoint', cfg.endpoint],
-          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
-        ]},
+        { group: 'Request', rows: requestRows(m) },
       ];
     } else if (currentMode === 'deepfake') {
       statsModalTitle.textContent = 'Detection Statistics';
@@ -5304,12 +5289,11 @@
       const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
       const procFactor = m.processingMs && durationMs ? (durationMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
       const costVal = durationMs ? '$' + (durationMs / 3600000 * 0.25).toFixed(4) : 'N/A';
-      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
       const fileType = m.fileType || (currentData.filename ? currentData.filename.split('.').pop().toUpperCase() : 'N/A');
 
       groups = [
         { group: 'Detection', rows: [
-          ['Model', 'velma-2-synthetic-voice-detection'],
+          modelRow(m, 'velma-2-synthetic-voice-detection'),
           ['Verdict', isSyn ? 'Deepfake detected' : 'Authentic'],
           ['Deepfake segments', synFrames.length + ' / ' + frames.length],
           ['Avg deepfake confidence', synFrames.length ? (avgSynConf * 100).toFixed(1) + '%' : 'N/A'],
@@ -5328,11 +5312,40 @@
           ['Cost', costVal],
           ['Rate', '$0.25/hr'],
         ]},
-        { group: 'Request', rows: [
-          ['HTTP', httpStr],
-          ['Endpoint', '/api/velma-2-synthetic-voice-detection-batch'],
-          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
+        { group: 'Request', rows: requestRows(m) },
+      ];
+    } else if (currentMode === 'redaction') {
+      statsModalTitle.textContent = 'Redaction Statistics';
+      const utterances = currentData.utterances || [];
+      const ranges = currentData.redaction_ranges || [];
+      // Ranges are [start_ms, end_ms] pairs.
+      const redactedMs = ranges.reduce((s, r) => s + Math.max(0, (r[1] || 0) - (r[0] || 0)), 0);
+      const durationMs = currentData.duration_ms || 0;
+      const speakers = [...new Set(utterances.map(u => u.speaker).filter(s => s != null))];
+      const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
+      const procFactor = m.processingMs && durationMs ? (durationMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
+      const fileType = m.fileType || (currentData.filename ? currentData.filename.split('.').pop().toUpperCase() : 'N/A');
+
+      groups = [
+        { group: 'Redaction', rows: [
+          modelRow(m, 'velma-2-pii-phi-redaction'),
+          ['Redacted ranges', String(ranges.length)],
+          ['Redacted audio', formatDuration(redactedMs)
+            + (durationMs ? ' (' + (redactedMs / durationMs * 100).toFixed(1) + '% of the file)' : '')],
+          ['Utterances', String(utterances.length)],
+          ['Speakers', speakers.length ? String(speakers.length) : 'N/A'],
         ]},
+        { group: 'Audio', rows: [
+          ['File Name', currentData.filename || 'N/A'],
+          ['File Size', m.fileSize ? formatBytes(m.fileSize) : 'N/A'],
+          ['File Type', fileType],
+          ['Audio Duration', formatDuration(durationMs)],
+        ]},
+        { group: 'Performance', rows: [
+          ['Processing Time', procTimeStr],
+          ['Processing Factor', procFactor],
+        ]},
+        { group: 'Request', rows: requestRows(m) },
       ];
     } else {
       statsModalTitle.textContent = 'Transcription Statistics';
@@ -5342,7 +5355,6 @@
       const speakers = [...new Set(utterances.map(u => u.speaker).filter(s => s != null))];
       const procTimeStr = m.processingMs ? formatDuration(m.processingMs) : 'N/A';
       const procFactor = m.processingMs && durationMs ? (durationMs / m.processingMs).toFixed(1) + 'x real-time' : 'N/A';
-      const httpStr = m.httpStatus ? m.httpStatus + (m.httpStatusText ? ' ' + m.httpStatusText : '') : 'N/A';
       const fileType = m.fileType || (currentData.filename ? currentData.filename.split('.').pop().toUpperCase() : 'N/A');
 
       // Word timings live at the top level, and again per utterance when
@@ -5370,7 +5382,7 @@
 
       groups = [
         { group: 'Transcription', rows: [
-          ['Model', 'velma-2-stt'],
+          modelRow(m, 'velma-2-stt'),
           ['Utterances', String(utterances.length)],
           ['Speakers', speakers.length ? speakers.length.toString() : 'N/A'],
           ['Words timed', words.length ? words.length + ' / ' + textTokens + ' tokens'
@@ -5392,11 +5404,7 @@
           ['Processing Time', procTimeStr],
           ['Processing Factor', procFactor],
         ]},
-        { group: 'Request', rows: [
-          ['HTTP', httpStr],
-          ['Endpoint', m.endpoint || (m.httpStatus === 101 ? '/api/velma-2-stt-streaming' : '/api/velma-2-stt-batch')],
-          ['Response Size', m.responseSize ? formatBytes(m.responseSize) : 'N/A'],
-        ]},
+        { group: 'Request', rows: requestRows(m) },
       ];
     }
 
@@ -5491,6 +5499,10 @@
         resolve({
           data,
           meta: {
+            // Recorded at the moment of the request — the stats panel shows
+            // these instead of re-stating (and possibly mis-stating) them.
+            endpoint: endpoint,
+            transport: 'batch',
             httpStatus: xhr.status,
             httpStatusText: xhr.statusText,
             responseSize: responseText.length,
@@ -6080,12 +6092,10 @@
     velmaData = DEMO_VELMA_DATA;
     currentData = DEMO_VELMA_DATA;
     currentMeta = {
-      fileSize: 2807818,
+      demo: true,
+      fileSize: 2807818, // true size of /deepfake/order-status-demo.mp3
       fileType: 'audio/mpeg',
-      httpStatus: 200,
-      httpStatusText: 'OK',
       responseSize: JSON.stringify(DEMO_VELMA_DATA).length,
-      processingMs: 42000,
     };
     resultsFilename.textContent = DEMO_VELMA_DATA.filename || 'Order-status.mp3';
     resultsAudio.src = DEMO_VELMA_AUDIO_URL;
@@ -6136,11 +6146,9 @@
       const audioUrl = URL.createObjectURL(file);
 
       currentMeta = {
+        ...meta,
         fileSize: file.size,
         fileType: file.type || file.name.split('.').pop().toUpperCase(),
-        httpStatus: meta.httpStatus,
-        httpStatusText: meta.httpStatusText,
-        responseSize: meta.responseSize,
         processingMs,
       };
 
@@ -6281,6 +6289,7 @@
     currentData = velmaStreamData;
     lastVelmaData = velmaStreamData;
     currentMeta = {
+      endpoint: lastWsEndpoint, transport: 'streaming',
       fileSize: 0,
       fileType: 'PCM 16 kHz mono',
       httpStatus: 101,
@@ -6367,6 +6376,7 @@
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = proto + '//' + location.host +
       '/api/velma-2-streaming?audio_format=s16le&sample_rate=16000&num_channels=1';
+    trackWsEndpoint(wsUrl);
     recordingWs = new WebSocket(wsUrl);
     recordingWs.binaryType = 'arraybuffer';
     endFrameSent = false;
@@ -8199,13 +8209,13 @@
       ['Behaviors errored', errored],
       ['Topics', (data.topics || []).length],
       ['Topic sentiments', (data.topic_sentiments || []).length],
-      ['Server processing', meta && meta.processingMs ? (meta.processingMs / 1000).toFixed(1) + ' s' : '—'],
-      ['Response size', meta && meta.responseSize ? Math.round(meta.responseSize / 1024) + ' KB' : '—'],
-      ['HTTP', meta && meta.httpStatus ? meta.httpStatus + ' ' + (meta.httpStatusText || '') : '—'],
     ];
     return statsCardsHtml([
-      { group: 'General Statistics', rows: rows.slice(0, 10) },
-      { group: 'Request', rows: rows.slice(10) },
+      { group: 'General Statistics', rows: rows },
+      { group: 'Request', rows: [
+        ['Processing time', meta && meta.processingMs ? (meta.processingMs / 1000).toFixed(1) + ' s' : '—'],
+        ...requestRows(meta || {}),
+      ]},
     ]);
   }
 

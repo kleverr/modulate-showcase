@@ -2,6 +2,46 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.15.0] - 2026-09-10
+
+### Fixed
+- **The stats panel can no longer misreport the request.** Request metadata
+  (endpoint, transport, HTTP status, upstream URL, response size) is now
+  recorded once at the transport layer — `uploadAndAnalyze`, the multipart
+  redaction uploader, and every WebSocket opener — and the stats panel only
+  displays what was recorded; it never re-states endpoints or model names at
+  render time. This fixes the reported bug where a deepfake *streaming* run
+  showed `Endpoint /api/velma-2-synthetic-voice-detection-batch`: all
+  streaming runs (deepfake, music, AI music, STT, Velma) now show the
+  streaming endpoint actually connected to.
+- **Canned demo results no longer fabricate request stats.** The pre-cached
+  demos on every tab used to claim `HTTP 200 OK`, invented processing times
+  (e.g. 2.66 s deepfake, 42 s Velma), an invented response size, and — on
+  some tabs — wrong file sizes (music demo claimed 238 KB for a 116 KB opus;
+  redaction claimed 1.87 MB for a 3.1 MB input). Demos are now flagged as
+  such: the Request card reads "Precomputed demo result — no API request from
+  this browser", the model row is suffixed "(demo)", timing shows N/A, and
+  all demo file sizes match the real assets on disk.
+- **Redaction stats got their own truthful card.** The redaction tab
+  previously fell into the transcription branch, titling itself
+  "Transcription Statistics" and claiming model `velma-2-stt` with endpoint
+  `/api/velma-2-stt-batch`. It now reports `velma-2-pii-phi-redaction`, the
+  real endpoint, redacted-range count and redacted-audio share.
+
+### Changed
+- The Model row now names the API route actually called (e.g.
+  `velma-2-stt-batch-english-vfast`, `velma-2-synthetic-voice-detection-streaming`)
+  instead of a hardcoded family name.
+- When the server reports the upstream it proxied to (`X-Upstream-Url`), the
+  Request card shows it on every tab (previously AI Music only).
+- Derived rows replace hardcoded spec claims: music frame resolution is
+  computed from the response (duration ÷ frames), emotion/accent window
+  length from the returned windows.
+- Streaming runs label their size row "Result Size (assembled)" since the
+  value is the client-assembled result, not a single HTTP response body.
+- Velma's stats Request card now includes the endpoint and HTTP status for
+  live runs (batch and streaming).
+
 ## [6.14.3] - 2026-09-09
 
 ### Fixed
