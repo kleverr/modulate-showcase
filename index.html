@@ -6,8 +6,8 @@
   <title>Models Preview</title>
   <meta name="description" content="Try voice intelligence models on your own audio" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%23430f92'/%3E%3Cstop offset='.5' stop-color='%23fb3958'/%3E%3Cstop offset='1' stop-color='%23fc7856'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='%23120021'/%3E%3Cg stroke='url(%23g)' stroke-width='2.5' stroke-linecap='round' fill='none'%3E%3Cline x1='6' y1='13' x2='6' y2='19'/%3E%3Cline x1='10.5' y1='9' x2='10.5' y2='23'/%3E%3Cline x1='15' y1='5' x2='15' y2='27'/%3E%3Cline x1='19.5' y1='10' x2='19.5' y2='22'/%3E%3Cline x1='24' y1='7' x2='24' y2='25'/%3E%3Cline x1='28.5' y1='12' x2='28.5' y2='20'/%3E%3C/g%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="/styles.css?v=1" />
-  <link rel="stylesheet" href="/showcase.css?v=6" />
+  <link rel="stylesheet" href="/styles.css?v=2" />
+  <link rel="stylesheet" href="/showcase.css?v=7" />
   <link rel="stylesheet" href="/velma-report.css?v=1" />
 </head>
 <body data-theme-storage-key="prototype-theme">
@@ -134,17 +134,6 @@
   <symbol id="events" viewBox="0 0 32 32" fill="currentColor">
     <rect x="5" y="12" width="4" height="8" rx="1"/><rect x="14" y="5" width="4" height="22" rx="1"/><rect x="23" y="9" width="4" height="14" rx="1"/>
   </symbol>
-  <!-- Official #voice-match icon from design.modulate.ai/design-system/#graphics -->
-  <symbol id="voice-match" viewBox="0 0 32 32">
-    <rect fill="currentColor" x="21.512" y="8.65" width="5.512" height="7.35" />
-      <rect fill="currentColor" x="10.487" y="8.65" width="5.512" height="7.35" />
-      <rect fill="currentColor" x="16" y="4.975" width="5.512" height="11.025" />
-      <rect fill="currentColor" x="4.975" y="12.325" width="5.512" height="3.675" />
-      <rect fill="var(--m__color-green-500)" x="21.512" y="19.675" width="5.512" height="7.35" />
-      <rect fill="var(--m__color-green-500)" x="10.487" y="19.675" width="5.512" height="7.35" />
-      <rect fill="var(--m__color-green-500)" x="16" y="16" width="5.512" height="11.025" />
-      <rect fill="var(--m__color-green-500)" x="4.975" y="23.35" width="5.512" height="3.675" />
-  </symbol>
   <symbol id="microsoft" viewBox="0 0 32 32">
     <rect fill="#f25022" x="4.975" y="4.975" width="10.445" height="10.445" />
       <rect fill="#00a4ef" x="4.975" y="16.58" width="10.445" height="10.445" />
@@ -237,16 +226,6 @@
       <polygon fill="currentColor" points="23.383 4.183 8.616 4.183 12.559 16 19.441 16 23.383 4.183" />
       <polygon fill="currentColor" points="25.642 4.183 21.7 16 27.817 16 27.817 4.183 25.642 4.183" />
   </symbol>
-  <symbol id="voice-match" viewBox="0 0 32 32">
-    <rect fill="currentColor" x="21.512" y="8.65" width="5.512" height="7.35" />
-      <rect fill="currentColor" x="10.487" y="8.65" width="5.512" height="7.35" />
-      <rect fill="currentColor" x="16" y="4.975" width="5.512" height="11.025" />
-      <rect fill="currentColor" x="4.975" y="12.325" width="5.512" height="3.675" />
-      <rect fill="var(--m__color-green-500)" x="21.512" y="19.675" width="5.512" height="7.35" />
-      <rect fill="var(--m__color-green-500)" x="10.487" y="19.675" width="5.512" height="7.35" />
-      <rect fill="var(--m__color-green-500)" x="16" y="16" width="5.512" height="11.025" />
-      <rect fill="var(--m__color-green-500)" x="4.975" y="23.35" width="5.512" height="3.675" />
-  </symbol>
 </svg>
 
 
@@ -309,11 +288,6 @@
             <a href="/deepfake" data-mode="deepfake" class="models-nav__link m__rounded">
               <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#deepfake"></use></svg>
               <span>Deepfake</span>
-            </a>
-            <a href="/voice-matching" data-mode="voice" class="models-nav__link m__rounded">
-              <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#voice-match"></use></svg>
-              <span>Voice Matching</span>
-              <span class="pg-preview-badge">Preview</span>
             </a>
             <a href="/music" data-mode="music" class="models-nav__link m__rounded">
               <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#music"></use></svg>
@@ -421,6 +395,12 @@
                 <span class="pg-pad-unit">ms</span>
               </span>
             </span>
+            <span class="pg-stt-option pg-lang-field" data-tooltip="Optional language hint. Auto-detect picks the language per utterance">
+              <label for="redact-opt-language">Language</label>
+              <select id="redact-opt-language">
+                <option value="" selected>Auto-detect</option>
+              </select>
+            </span>
           </div>
 
           <!-- Accent options row -->
@@ -461,45 +441,6 @@
                 <input type="file" class="pg-upload-file-input" id="results-stream-file-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.aiff,.mp4,.mov,.webm,.opus" hidden>
               </div>
               <button type="button" class="m__button-primary-outline M" id="velma-demo-action">Try demo audio</button>
-            </div>
-
-            <!-- Voice Matching: two-clip picker (voice mode only; replaces the single-file actions) -->
-            <div class="pg-voice-actions" id="voice-actions">
-              <div class="vm-slots">
-                <div class="vm-slot" data-slot="0">
-                  <span class="vm-slot-label caption">Clip 1</span>
-                  <div class="vm-slot-empty">
-                    <button type="button" class="m__button-primary-outline M vm-slot-pick">Drop or choose clip…</button>
-                    <button type="button" class="m__button-primary-outline M vm-slot-record">Record mic</button>
-                    <input type="file" class="pg-upload-file-input vm-slot-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.aiff,.mp4,.mov,.webm,.opus" multiple hidden>
-                  </div>
-                  <div class="vm-slot-filled" hidden>
-                    <span class="vm-slot-name"></span>
-                    <span class="vm-slot-dur caption"></span>
-                    <button type="button" class="vm-slot-clear" aria-label="Remove clip">✕</button>
-                  </div>
-                </div>
-                <span class="vm-vs caption">vs</span>
-                <div class="vm-slot" data-slot="1">
-                  <span class="vm-slot-label caption">Clip 2</span>
-                  <div class="vm-slot-empty">
-                    <button type="button" class="m__button-primary-outline M vm-slot-pick">Drop or choose clip…</button>
-                    <button type="button" class="m__button-primary-outline M vm-slot-record">Record mic</button>
-                    <input type="file" class="pg-upload-file-input vm-slot-input" accept="audio/*,.wav,.mp3,.ogg,.flac,.aac,.aiff,.mp4,.mov,.webm,.opus" multiple hidden>
-                  </div>
-                  <div class="vm-slot-filled" hidden>
-                    <span class="vm-slot-name"></span>
-                    <span class="vm-slot-dur caption"></span>
-                    <button type="button" class="vm-slot-clear" aria-label="Remove clip">✕</button>
-                  </div>
-                </div>
-              </div>
-              <div class="vm-actions-row">
-                <button type="button" class="m__button-primary-outline M" id="vm-compare-btn" disabled>Compare voices</button>
-                <button type="button" class="m__button-primary-outline M" id="vm-demo-same">Demo: same speaker</button>
-                <button type="button" class="m__button-primary-outline M" id="vm-demo-diff">Demo: different speakers</button>
-                <span class="caption vm-hint">Single-speaker clips, at least 5 seconds each</span>
-              </div>
             </div>
 
             <div class="pg-upload-overlay pg-upload-overlay--dragging" aria-hidden="true">
@@ -578,27 +519,6 @@
         <div id="results-events-verdict" hidden>
           <div class="pg-verdict-statement" id="events-verdict-statement"></div>
         </div>
-        <div id="results-voice-verdict" hidden>
-          <div class="pg-verdict-statement" id="voice-verdict-statement"></div>
-          <!-- The spectrum is part of the verdict: words above, illustration below -->
-          <div class="vm-scale-wrap" id="vm-scale-wrap" hidden>
-            <div class="vm-scale-track">
-              <div class="vm-scale"></div>
-              <div class="vm-scale-marker" id="vm-scale-marker"><span class="vm-scale-marker-value" id="vm-scale-marker-value"></span></div>
-            </div>
-            <div class="vm-scale-axis caption">
-              <span class="vm-axis-left">−1 · Different voices</span>
-              <span class="vm-axis-mid">0</span>
-              <span class="vm-axis-right">Same voice · +1</span>
-            </div>
-            <div class="vm-scale-info">
-              <div class="pg-verdict-info">
-                <button type="button" class="pg-verdict-info-link" id="vm-info-link" aria-expanded="false">How to read this score?</button>
-                <div class="pg-verdict-info-pop" id="vm-info-pop" hidden></div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- PLAYER + OUTPUT -->
@@ -654,8 +574,8 @@
           <div class="pg-media-position-line" aria-hidden="true"></div>
         </div>
         <div hidden>
-          <div id="player-entry-original"><audio id="original-audio" preload="auto"></audio></div>
-          <div id="player-entry-redacted"><span id="redacted-label" hidden></span><audio id="results-audio" preload="auto"></audio></div>
+          <div id="player-entry-original"><audio id="original-audio" preload="metadata"></audio></div>
+          <div id="player-entry-redacted"><span id="redacted-label" hidden></span><audio id="results-audio" preload="metadata"></audio></div>
         </div>
       </div>
 
@@ -756,7 +676,7 @@
             <ul class="vr-transcript-chat" id="vr-transcript-list"></ul>
           </section>
         </div>
-        <audio id="vr-audio" preload="auto"></audio>
+        <audio id="vr-audio" preload="metadata"></audio>
       </section>
 
       <div class="m__space M"></div>
@@ -908,19 +828,6 @@
           </div>
         </div>
 
-        <!-- Voice Matching content -->
-        <div id="voice-content" class="pg-tab-panel">
-          <div class="vm-clips" id="vm-clips"></div>
-          <p class="caption vm-caveat">
-            The model turns each clip into a compact voice fingerprint and scores how similar the
-            two fingerprints are, from −1 to 1. It compares how a voice sounds, not what is said —
-            the same speaker saying different things still matches. The verdict is set by this
-            showcase, not the API; treat scores near a boundary as inconclusive. Recording
-            conditions matter: two speakers on the same call score closer than two speakers from
-            unrelated recordings.
-          </p>
-        </div>
-
         <!-- PII/PHI Redaction content -->
         <div id="redaction-content" class="pg-tab-panel">
           
@@ -954,7 +861,7 @@
 
 <footer class="footer">
   <div class="footer-nav">
-    <div class="footer-nav-item caption" id="app-version">v6.15.0 · Sep 10, 2026</div>
+    <div class="footer-nav-item caption" id="app-version">v6.16.0 · Sep 23, 2026</div>
   </div>
 </footer>
 
@@ -1080,7 +987,7 @@
 <div class="m__tooltip" hidden></div>
 
 <script src="/velma-report.js?v=1"></script>
-<script src="/app.js?v=11"></script>
+<script src="/app.js?v=12"></script>
 <script src="/assets/components/tooltip.js"></script>
 <script>
   // Skip the HubSpot embed on localhost — the preview sandbox blocks

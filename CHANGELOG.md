@@ -2,6 +2,36 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.16.0] - 2026-09-23
+
+### Removed
+- **Voice Matching demo taken off the site.** Its new model is still
+  pre-release: it serves only from the ML preview box, the prod path
+  (platform.modulate.ai) still runs the old model (it rejects clips under 8 s),
+  and it's not in docs.modulate.ai. Removed the nav entry, tab, two-slot
+  picker, server proxy (`VOICE_MATCHING_UPSTREAM`) and `voice/` fixtures.
+  `/voice-matching` now 301-redirects to `/`. The reusable `preview` badge
+  mechanism stays for future pre-release models. Restore from 6.15.0 when the
+  model ships on prod.
+
+### Added
+- **PII/PHI Redaction language hint.** The redaction options row has a
+  Language selector (Auto-detect + the same list as Multilingual Fast) that
+  sends the new optional `language` field from the updated batch spec.
+  Auto-detect omits the field, so the default behavior is unchanged. The stats
+  panel shows the hint that was sent.
+
+### Performance
+- **No more cold starts.** Fly was stopping the only machine after ~7 min
+  idle, so the first visitor waited ~4.5 s for boot (from the logs:
+  "machine became reachable in 4.2–4.5 s"). `min_machines_running = 1` keeps
+  one machine warm.
+- The landing page no longer downloads the full 2.7 MB Velma demo MP3: the
+  audio elements use `preload="metadata"` instead of `auto`, and playback
+  streams on demand.
+- Inter is now served as woff2 (349 KB, down from an 855 KB TTF, or 433 KB
+  over the wire with brotli). The TTF stays as a fallback.
+
 ## [6.15.0] - 2026-09-10
 
 ### Fixed

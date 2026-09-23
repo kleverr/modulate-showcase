@@ -89,7 +89,9 @@ img {
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
-  src: url("fonts/Inter-VariableFont_opsz,wght.ttf") format("truetype");
+  src:
+    url("fonts/Inter-VariableFont_opsz,wght.woff2") format("woff2"),
+    url("fonts/Inter-VariableFont_opsz,wght.ttf") format("truetype");
 }
 
 
