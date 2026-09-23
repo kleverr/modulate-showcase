@@ -2,6 +2,41 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.17.0] - 2026-09-23
+
+### Added
+- **Transcription model picker.** The "Fast (English only)" / "Fast
+  (Multilingual)" toggles, which switched each other and the enrichment boxes
+  off, are replaced by one three-way picker: **Multilingual Fast** (default),
+  **English Fast**, and **Multilingual Full** (tagged Legacy — being
+  deprecated, but still the only model with emotion, accent, deepfake and
+  PII/PHI). Each model shows only the options it accepts. An option that works
+  on one transport only stays visible with a "batch only" / "streaming only"
+  note, so testers can see how the models differ. `?model=english-fast` /
+  `?model=full` selects a model from a link.
+- **Multilingual Fast streaming** (`velma-2-stt-streaming-multilingual-vfast`),
+  with `diarize` (up to 4 speakers) and `endpointing`. Streaming is no longer
+  disabled for Multilingual Fast.
+- **Endpointing toggle** for both fast streaming models, on by default, so the
+  transcript arrives segment by segment instead of as one block at the end.
+- **Speaker reliability chips** on fast-streaming utterances: "Mixed speakers"
+  when `speaker_purity` < 0.8 (the segment spans a speaker change) and
+  "Speakers capped" when `speakers_capped` is true.
+
+### Fixed
+- **English Fast streaming now sends `diarize`.** The client sent no options
+  to `english-v2`, so ticking Diarization did nothing while streaming.
+- **Fast-streaming segments are no longer merged away.** The full model's
+  streaming clustering (keep the longest final within 4 s) dropped real
+  segments that start less than 4 s apart. It now runs for the full model only.
+- **Fast streaming speakers count from 1**, like every batch path. The
+  streaming endpoints are zero-based.
+- Rendering follows the model that produced the result, not the picker's
+  current selection. The built-in demo result is a full-model response and
+  keeps its emotion, accent and deepfake chips.
+- Page renamed from "Multilingual Transcription" to "Transcription", and the
+  nav item to "Speech-to-Text".
+
 ## [6.16.1] - 2026-09-23
 
 ### Fixed

@@ -91,8 +91,9 @@ const ENDPOINT_BASE_URL = {
   // documented one (it's also measurably faster).
   '/api/velma-2-emotion-batch': 'https://platform.modulate.ai',
   '/api/velma-2-accent-batch': 'https://platform.modulate.ai',
-  // Multilingual Fast batch spec also gives platform.modulate.ai as the server.
+  // Multilingual Fast batch + streaming specs also give platform.modulate.ai.
   '/api/velma-2-stt-batch-multilingual-vfast': 'https://platform.modulate.ai',
+  '/api/velma-2-stt-streaming-multilingual-vfast': 'https://platform.modulate.ai',
   // AI Music Detection released: the published batch + streaming specs give
   // platform.modulate.ai as the server (AIMUSIC_BATCH_UPSTREAM eng test box
   // 100.56.104.180 retired).
@@ -380,6 +381,7 @@ server.on('upgrade', (req, socket, head) => {
   const ALLOWED_WS_PATHS = new Set([
     '/api/velma-2-stt-streaming',
     '/api/velma-2-stt-streaming-english-v2',
+    '/api/velma-2-stt-streaming-multilingual-vfast',
     '/api/velma-2-synthetic-voice-detection-streaming',
     '/api/velma-2-music-detection-streaming',
     '/api/velma-2-ai-music-detection-streaming',

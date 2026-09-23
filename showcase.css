@@ -59,6 +59,36 @@
     font-weight: var(--m__font-weight-medium);
   }
 
+  /* Transcription model picker + per-model options ───────────────────── */
+  #stt-options-row {
+    flex-wrap: wrap;
+    gap: var(--m__gap-xs) var(--m__gap-l);
+  }
+  .pg-stt-model {
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .pg-stt-model label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--m__gap-xxxs);
+    white-space: nowrap;
+  }
+  .pg-stt-model .pg-preview-badge {
+    font-size: 0.625rem;
+    padding: 0 0.3rem;
+  }
+  .pg-stt-options [hidden] {
+    display: none !important;
+  }
+  /* Option that exists on one transport only */
+  .pg-stt-scope {
+    color: var(--m__text-caption);
+    font-size: var(--m__font-size-xs);
+    font-weight: var(--m__font-weight-regular, 400);
+    white-space: nowrap;
+  }
+
   /* Language selector (Multilingual Fast + Redaction options rows) ─────── */
   .pg-lang-field {
     display: inline-flex;

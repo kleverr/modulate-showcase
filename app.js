@@ -331,6 +331,7 @@
   let lastDeepfakeAudioUrl = null;
   let lastDeepfakeMeta = null;
   let lastSttData = null;
+  let lastSttModel = null;
   let lastSttAudioUrl = null;
   let lastSttMeta = null;
   let lastRedactionData = null;
@@ -677,6 +678,7 @@
       updateVelmaConfigSummary();
     } else {
       const sData = lastSttData || DEMO_STT_DATA;
+      sttRunModel = lastSttData ? lastSttModel : 'full'; // the fixture is a full-model response
       const sAudio = lastSttAudioUrl || DEMO_STT_AUDIO_URL;
       sttData = sData;
       currentData = sData;
@@ -1877,6 +1879,7 @@
       sttPartial = null;
 
       lastSttData = data;
+      lastSttModel = model;
       lastSttAudioUrl = audioObjectUrl;
       lastSttMeta = { ...currentMeta };
       resultsFilename.textContent = data.filename || file.name || 'Audio file';
