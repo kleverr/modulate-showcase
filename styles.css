@@ -12936,10 +12936,13 @@ h6 {
 .pg-transcript-list > .pg-transcript-utterance:nth-of-type(even) {
   align-self: flex-end;
 }
-.pg-transcript-utterance.speaker-left {
+/* Speaker side must beat the positional nth-of-type fallback above (same
+   specificity, later in the file) — otherwise consecutive utterances from one
+   speaker zig-zag between columns. */
+.pg-transcript-list > .pg-transcript-utterance.speaker-left {
   align-self: flex-start;
 }
-.pg-transcript-utterance.speaker-right {
+.pg-transcript-list > .pg-transcript-utterance.speaker-right {
   align-self: flex-end;
 }
 .pg-transcript-utterance:hover {

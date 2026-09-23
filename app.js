@@ -370,6 +370,9 @@
   // Whether the last run asked for word timings — needed to tell "timestamps
   // off" apart from "timestamps requested but withheld" (ML-268).
   let sttTimestampsRequested = false;
+  // STT_MODELS key of the run on screen — rendering follows the model that
+  // produced the data, not whatever the picker says now.
+  let sttRunModel = null;
 
   // ── Design-chrome DOM refs ──────────────────────────────────────────────────
   const pageTitleEl     = document.getElementById('pg-page-title');
@@ -407,7 +410,7 @@
       stages: ['Transcript', 'Speakers', 'Emotions', 'Roles', 'Behaviors', 'Summary'],
     },
     transcription: {
-      path: '/transcription', title: 'Multilingual Transcription',
+      path: '/transcription', title: 'Transcription',
       optionsRow: () => sttOptionsRow, verdict: null,
       panels: () => [transcriptContainer],
       streaming: true,
@@ -522,7 +525,7 @@
     // Plate: actions
     if (streamSplit) streamSplit.style.display = cfg.streaming ? '' : 'none';
     if (velmaDemoBtn) velmaDemoBtn.style.display = cfg.demoButton ? '' : 'none';
-    syncSttFastUi(); // stream buttons re-enable outside transcription (batch-only Fast Multilingual)
+    syncSttModelUi(); // option visibility + ?model= only apply on the transcription page
 
     // Verdict slot: unhide only this mode's statement container
     [resultsVerdict, musicSidebar, aimusicSidebar, languageSidebar,
@@ -708,24 +711,53 @@
   });
 
   // ── STT Options Helper ──────────────────────────────────────────────────────
-  const optFast = document.getElementById('opt-fast');
-  const optFastMulti = document.getElementById('opt-fast-multi');
+  // Three transcription models, one picked at a time. What each accepts
+  // (published specs, verified live 2026-09-23):
+  //   multi-fast   — Batch: any supported language, optional `language` hint,
+  //                  returns the detected `language`, no speakers. Streaming:
+  //                  25 European languages, `diarize` (≤4 speakers) +
+  //                  `endpointing`, no language field.
+  //   english-fast — Batch: `speaker_diarization` + `time_stamps`. Streaming
+  //                  (english-v2): `diarize` (≤10 speakers) + `endpointing`.
+  //   full         — the original model, being deprecated: 100 languages plus
+  //                  the emotion/accent/deepfake/PII signals, batch + streaming.
+  // `segmented`: fast streaming finals are authoritative, non-overlapping
+  // segments — they must not go through the full model's partial clustering.
+  const STT_MODELS = {
+    'multi-fast': {
+      label: 'Multilingual Fast',
+      batch: '/api/velma-2-stt-batch-multilingual-vfast',
+      stream: '/api/velma-2-stt-streaming-multilingual-vfast',
+      diarization: 'streaming', enrich: false, segmented: true,
+    },
+    'english-fast': {
+      label: 'English Fast',
+      batch: '/api/velma-2-stt-batch-english-vfast',
+      stream: '/api/velma-2-stt-streaming-english-v2',
+      diarization: 'both', enrich: false, segmented: true,
+    },
+    'full': {
+      label: 'Multilingual Full',
+      batch: '/api/velma-2-stt-batch',
+      stream: '/api/velma-2-stt-streaming',
+      diarization: 'both', enrich: true, segmented: false,
+    },
+  };
+  const DEFAULT_STT_MODEL = 'multi-fast';
+  const sttModelInputs = Array.from(document.querySelectorAll('input[name="stt-model"]'));
+  const sttOptionEls = Array.from(document.querySelectorAll('#stt-options [data-stt-models]'));
   const optLanguage = document.getElementById('opt-language');
-  const optLanguageWrap = document.getElementById('opt-language-wrap');
   const optTimestamps = document.getElementById('opt-timestamps');
   const optDiarization = document.getElementById('opt-diarization');
+  const optDiarizationScope = document.getElementById('opt-diarization-scope');
+  const optEndpointing = document.getElementById('opt-endpointing');
   const optDeepfake = document.getElementById('opt-deepfake');
   const optEmotion = document.getElementById('opt-emotion');
   const optAccent = document.getElementById('opt-accent');
   const optPii = document.getElementById('opt-pii');
-  const richOpts = [optDiarization, optDeepfake, optEmotion, optAccent, optPii];
-  // Since the vfast merge (ML-194) the English Fast endpoint takes
-  // `speaker_diarization` as well, so Diarization is no longer exclusive with
-  // it — only the enrichment signals are. `time_stamps` is English-Fast-only:
-  // the multilingual endpoint accepts the field and silently ignores it.
-  const enrichOpts = [optDeepfake, optEmotion, optAccent, optPii];
 
   // Fill the language selectors ("Auto-detect" stays first): Multilingual Fast
+  // batch
   // and the PII/PHI Redaction `language` hint. The full model-supported list,
   // shown alphabetically as "Name (code)".
   (function populateLanguageOptions() {
@@ -768,54 +800,42 @@
     });
   })();
 
-  // Multilingual Fast has no streaming endpoint — gray out the streaming
-  // controls while it's selected, and show/hide its language selector.
-  function syncSttFastUi() {
-    const batchOnly = optFastMulti.checked;
-    optLanguageWrap.hidden = !batchOnly;
-    // Word timestamps only exist on the English Fast batch endpoint.
-    if (optTimestamps) {
-      optTimestamps.disabled = !optFast.checked;
-      if (optTimestamps.disabled) optTimestamps.checked = false;
-    }
-    if (recordAction) recordAction.disabled = batchOnly && currentMode === 'transcription';
-    if (streamSplit) {
-      const toggle = streamSplit.querySelector('.pg-upload-stream__toggle');
-      if (toggle) toggle.disabled = batchOnly && currentMode === 'transcription';
-      if (batchOnly && currentMode === 'transcription') {
-        streamSplit.dataset.tooltip = 'Fast (Multilingual) is batch-only — upload a file instead';
-      } else {
-        delete streamSplit.dataset.tooltip;
-      }
+  function getSttModel() {
+    const checked = sttModelInputs.find(r => r.checked);
+    return checked && STT_MODELS[checked.value] ? checked.value : DEFAULT_STT_MODEL;
+  }
+
+  // Show only the selected model's options. Options that exist on one
+  // transport only stay visible with a "batch only"/"streaming only" note —
+  // the differences between models are part of what testers are comparing.
+  function syncSttModelUi() {
+    const model = getSttModel();
+    const cfg = STT_MODELS[model];
+    sttOptionEls.forEach(el => {
+      el.hidden = !el.dataset.sttModels.split(' ').includes(model);
+    });
+    // Diarization's scope depends on the model (Multilingual Fast batch has
+    // no speakers at all).
+    optDiarizationScope.hidden = cfg.diarization !== 'streaming';
+    // ?model= keeps a test setup shareable as a link; other pages drop it.
+    const params = new URLSearchParams(location.search);
+    const want = currentMode === 'transcription' && model !== DEFAULT_STT_MODEL ? model : null;
+    if (params.get('model') !== want) {
+      if (want) params.set('model', want); else params.delete('model');
+      const qs = params.toString();
+      history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : ''));
     }
   }
 
-  // The two fast models are mutually exclusive with each other and with the
-  // enrichment signals. Diarization straddles English Fast and the full batch
-  // model, so selecting English Fast leaves it alone.
-  optFast.addEventListener('change', () => {
-    if (optFast.checked) { optFastMulti.checked = false; enrichOpts.forEach(cb => { cb.checked = false; }); }
-    syncSttFastUi();
-  });
-  optFastMulti.addEventListener('change', () => {
-    if (optFastMulti.checked) { optFast.checked = false; richOpts.forEach(cb => { cb.checked = false; }); }
-    syncSttFastUi();
-  });
-  enrichOpts.forEach(cb => {
-    cb.addEventListener('change', () => {
-      if (cb.checked) { optFast.checked = false; optFastMulti.checked = false; }
-      syncSttFastUi();
-    });
-  });
-  // Diarization is unsupported on Multilingual Fast only.
-  optDiarization.addEventListener('change', () => {
-    if (optDiarization.checked) optFastMulti.checked = false;
-    syncSttFastUi();
-  });
+  (function initSttModel() {
+    const fromUrl = new URLSearchParams(location.search).get('model');
+    if (fromUrl && STT_MODELS[fromUrl]) {
+      sttModelInputs.forEach(r => { r.checked = r.value === fromUrl; });
+    }
+    sttModelInputs.forEach(r => r.addEventListener('change', syncSttModelUi));
+  })();
 
-  function isFastMode() { return optFast.checked; }
-  function isMultiFastMode() { return optFastMulti.checked; }
-  function isTimestampMode() { return !!(optTimestamps && optTimestamps.checked && optFast.checked); }
+  function isTimestampMode() { return getSttModel() === 'english-fast' && optTimestamps.checked; }
 
   function getSttOptions() {
     // In Velma mode, the STT options come from velmaConfig.stt (set via the Velma editor),
@@ -838,6 +858,18 @@
     };
   }
 
+  // Render flags for the transcription page. The fast models return no
+  // enrichment signals, and their speaker labels are gated by the data itself
+  // (a speaker field is present only when diarization ran).
+  function sttRenderOpts() {
+    const model = sttRunModel || getSttModel();
+    if (STT_MODELS[model].enrich) return getSttOptions();
+    return {
+      speaker_diarization: true,
+      deepfake_signal: false, emotion_signal: false, accent_signal: false, pii_phi_tagging: false,
+    };
+  }
+
   // Speed factor for transcription: all 4 checked = 8x, just diarization = 20x, any 3 = 15x
   //
   // The flat 60x the fast models used to assume was only ever right for long
@@ -849,7 +881,7 @@
   // below ML's figures: the showcase goes through the shared endpoint under
   // concurrent load and pays upload time on top.
   function getSttSpeedFactor(durationMs) {
-    if (isFastMode() || isMultiFastMode()) {
+    if (getSttModel() !== 'full') {
       if (!durationMs || durationMs < 120000) return 8;
       if (durationMs < 1200000) return 40;
       return 60;
@@ -1793,26 +1825,25 @@
 
     try {
       const startedAt = Date.now();
-      const fast = isFastMode();
-      const multiFast = isMultiFastMode();
-      let endpoint, opts;
+      const model = getSttModel();
+      const fast = model === 'english-fast';
+      const multiFast = model === 'multi-fast';
+      const endpoint = STT_MODELS[model].batch;
+      let opts;
       if (multiFast) {
-        endpoint = '/api/velma-2-stt-batch-multilingual-vfast';
         // Declaring the language takes the fastest path; omitted = auto-detect.
         opts = optLanguage.value ? { language: optLanguage.value } : {};
       } else if (fast) {
-        endpoint = '/api/velma-2-stt-batch-english-vfast';
         // Both flags are optional and independent; omitted = false upstream.
         opts = {};
         if (optDiarization.checked) opts.speaker_diarization = true;
         if (isTimestampMode()) opts.time_stamps = true;
-        sttTimestampsRequested = !!opts.time_stamps;
       } else {
-        endpoint = '/api/velma-2-stt-batch';
         opts = getSttOptions();
       }
-      if (!fast) sttTimestampsRequested = false;
+      sttTimestampsRequested = !!opts.time_stamps;
       const { data, meta } = await uploadAndAnalyze(file, endpoint, opts);
+      sttRunModel = model;
       const processingMs = Date.now() - startedAt;
       await finishProgress();
       hideOverlay();
@@ -2079,9 +2110,18 @@
     });
   }
 
+  // Column for a transcript bubble — shared by every diarized transcript
+  // (STT batch/streaming, Velma, Redaction). Side follows the speaker, never row
+  // position: odd speakers left, even right, so one speaker's consecutive
+  // utterances stay in one column. Speakers are 1-indexed (API spec; Velma
+  // renumbers its labels by first appearance). No speaker → left.
+  function speakerSide(speaker) {
+    return (speaker != null && speaker % 2 === 0) ? 'speaker-right' : 'speaker-left';
+  }
+
   function buildRedactionUtteranceEl(u, showDiarization) {
     const el = document.createElement('div');
-    const side = (u.speaker != null && u.speaker % 2 === 0) ? 'speaker-right' : 'speaker-left';
+    const side = speakerSide(u.speaker);
     el.className = 'pg-transcript-utterance ' + side;
     if (u.start_ms != null) {
       el.addEventListener('click', () => {
@@ -3632,26 +3672,37 @@
     return params;
   }
 
-  // v2 (vfast) streaming accepts no feature toggles — just raw PCM format params.
-  function buildSttStreamingV2Params() {
+  // Both fast streaming endpoints take the same two optional, independent
+  // flags — `diarize` and `endpointing` — and nothing else. Omitted = false.
+  function buildSttStreamingFastParams() {
     const params = new URLSearchParams();
     params.set('audio_format', 's16le');
     params.set('sample_rate', '16000');
     params.set('num_channels', '1');
+    if (optDiarization.checked) params.set('diarize', 'true');
+    if (optEndpointing.checked) params.set('endpointing', 'true');
     return params;
   }
 
   function sttStreamingPath() {
-    return isFastMode() ? '/api/velma-2-stt-streaming-english-v2' : '/api/velma-2-stt-streaming';
+    return STT_MODELS[getSttModel()].stream;
   }
 
   function sttStreamingQuery() {
-    return (isFastMode() ? buildSttStreamingV2Params() : buildSttStreamingParams()).toString();
+    return (getSttModel() === 'full' ? buildSttStreamingParams() : buildSttStreamingFastParams()).toString();
+  }
+
+  // Fast streaming speakers are zero-based; every batch path (and the rest of
+  // the UI) counts from 1. Normalize on arrival so "Speaker 1" means the same
+  // thing across models.
+  function normalizeStreamUtterance(u) {
+    if (sttRunModel !== 'full' && typeof u.speaker === 'number') u.speaker += 1;
+    return u;
   }
 
   function handleTranscriptionStreamMessage(msg) {
     if (msg?.type === 'utterance' && msg.utterance) {
-      sttUtterances.push(msg.utterance);
+      sttUtterances.push(normalizeStreamUtterance(msg.utterance));
       deduplicateUtterances();
       sttPartial = null;
       updateSttData();
@@ -3685,7 +3736,8 @@
   }
 
   function startTranscriptionRecording() {
-    if (isMultiFastMode()) { showError('Fast (Multilingual) is batch-only — upload a file instead.'); return; }
+    sttRunModel = getSttModel();
+    sttTimestampsRequested = false;
     sttUtterances = [];
     sttPartial = null;
     sttData = null;
@@ -3722,7 +3774,8 @@
   async function startTranscriptionStreamFromUrl(url, filename, isUserFile) {
     if (isRecording) return;
     if (currentMode !== 'transcription') return;
-    if (isMultiFastMode()) { showError('Fast (Multilingual) is batch-only — upload a file instead.'); return; }
+    sttRunModel = getSttModel();
+    sttTimestampsRequested = false;
 
     sttUtterances = [];
     sttPartial = null;
@@ -3836,8 +3889,14 @@
   // Groups consecutive utterances within 4s of each other (using the max start_ms
   // in each group for chaining), keeps only the longest text per group.
   // Operates on a copy — never mutates sttUtterances.
+  // The full model's streaming re-sends overlapping finals for the same
+  // speech, so nearby ones collapse to the longest. Fast-model finals are
+  // distinct segments that can start < 4s apart — clustering would drop them.
   function clusterUtterances(utterances) {
     if (utterances.length < 2) return utterances.slice();
+    if (currentMode === 'transcription' && sttRunModel && STT_MODELS[sttRunModel].segmented) {
+      return utterances.slice().sort((a, b) => a.start_ms - b.start_ms);
+    }
     const sorted = utterances.slice().sort((a, b) => a.start_ms - b.start_ms);
     const groups = [[sorted[0]]];
     for (let i = 1; i < sorted.length; i++) {
@@ -3918,7 +3977,7 @@
     // (and bubble chips) for every conversation — the data itself already says
     // which signals are present, and every chip checks its datum before drawing.
     const dataDriven = currentMode === 'velma';
-    const opts = dataDriven ? VELMA_RENDER_OPTS : getSttOptions();
+    const opts = dataDriven ? VELMA_RENDER_OPTS : sttRenderOpts();
     // Only cluster during streaming to merge overlapping partials;
     // batch results are already clean so render them as-is. But always
     // sort by start_ms — streaming utterances arrive out of order.
@@ -4186,8 +4245,7 @@
 
   function buildUtteranceEl(u, opts, isPartial, index) {
     const el = document.createElement('div');
-    // Side follows the actual speaker (not row parity): odd speakers left, even right.
-    const side = (u.speaker != null && u.speaker % 2 === 0) ? 'speaker-right' : 'speaker-left';
+    const side = speakerSide(u.speaker);
     el.className = 'pg-transcript-utterance ' + side + ' ec-' +
       emotionSlug(u.emotion && opts.emotion_signal ? u.emotion : 'neutral');
 
@@ -4217,6 +4275,28 @@
       sp.className = 'pg-transcript-speaker';
       sp.textContent = u.speaker_label || ('Speaker ' + u.speaker);
       header.appendChild(sp);
+    }
+
+    // Fast-streaming reliability signals (present only with `diarize=true`).
+    // `speaker_purity` < 1 means the segment spans a speaker change and the
+    // label names only the majority; `speakers_capped` means the connection
+    // ran out of speaker slots, so later labels may be merged.
+    if (!isPartial && opts.speaker_diarization && u.speaker != null) {
+      const warnings = [];
+      if (typeof u.speaker_purity === 'number' && u.speaker_purity < 0.8) {
+        warnings.push(['Mixed speakers', Math.round(u.speaker_purity * 100) +
+          '% of this segment is Speaker ' + u.speaker + ' — it spans a speaker change']);
+      }
+      if (u.speakers_capped) {
+        warnings.push(['Speakers capped', 'All speaker slots are in use — further speakers are merged into existing labels']);
+      }
+      warnings.forEach(([label, tip]) => {
+        const w = document.createElement('span');
+        w.className = 'pg-transcript-accent';
+        w.textContent = label;
+        w.dataset.tooltip = tip;
+        header.appendChild(w);
+      });
     }
 
     // Emotion inline (colored via the utterance's ec-* class)

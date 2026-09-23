@@ -6,7 +6,7 @@
   <title>Models Preview</title>
   <meta name="description" content="Try voice intelligence models on your own audio" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%23430f92'/%3E%3Cstop offset='.5' stop-color='%23fb3958'/%3E%3Cstop offset='1' stop-color='%23fc7856'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='7' fill='%23120021'/%3E%3Cg stroke='url(%23g)' stroke-width='2.5' stroke-linecap='round' fill='none'%3E%3Cline x1='6' y1='13' x2='6' y2='19'/%3E%3Cline x1='10.5' y1='9' x2='10.5' y2='23'/%3E%3Cline x1='15' y1='5' x2='15' y2='27'/%3E%3Cline x1='19.5' y1='10' x2='19.5' y2='22'/%3E%3Cline x1='24' y1='7' x2='24' y2='25'/%3E%3Cline x1='28.5' y1='12' x2='28.5' y2='20'/%3E%3C/g%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="/styles.css?v=2" />
+  <link rel="stylesheet" href="/styles.css?v=3" />
   <link rel="stylesheet" href="/showcase.css?v=7" />
   <link rel="stylesheet" href="/velma-report.css?v=1" />
 </head>
@@ -278,7 +278,7 @@
           <div class="models-nav__models">
             <a href="/transcription" data-mode="transcription" class="models-nav__link m__rounded">
               <svg class="models-nav__link-icon" viewBox="0 0 32 32" aria-hidden="true"><use href="#transcript"></use></svg>
-              <span>Multilingual</span>
+              <span>Speech-to-Text</span>
             </a>
           </div>
         </div>
@@ -340,37 +340,47 @@
 
           <!-- Transcription options row -->
           <div class="pg-options-row" id="stt-options-row">
+            <!-- One model at a time; each option lists the models it applies to
+                 (data-stt-models) and app.js hides the rest. A .pg-stt-scope
+                 note marks an option that works on batch or streaming only. -->
+            <div class="m__segmented-control-secondary pg-stt-model" id="stt-model" role="radiogroup" aria-label="Transcription model">
+              <label data-tooltip="Fast multilingual transcription, language auto-detected. Streaming covers 25 European languages">
+                <input type="radio" name="stt-model" value="multi-fast" checked />Multilingual Fast
+              </label>
+              <label data-tooltip="English only, lowest latency. Batch + streaming">
+                <input type="radio" name="stt-model" value="english-fast" />English Fast
+              </label>
+              <label data-tooltip="100 languages with emotion, accent, deepfake and PII/PHI signals. Being deprecated">
+                <input type="radio" name="stt-model" value="full" />Multilingual Full <span class="pg-preview-badge">Legacy</span>
+              </label>
+            </div>
             <div class="pg-stt-options" id="stt-options">
-              <label class="m__toggle-secondary pg-stt-option" data-tooltip="Fast transcription, English only">
-                <input type="checkbox" id="opt-fast" />
-                Fast (English only)
-              </label>
-              <label class="m__toggle-secondary pg-stt-option" data-tooltip="Fast transcription in any supported language — batch only">
-                <input type="checkbox" id="opt-fast-multi" />
-                Fast (Multilingual)
-              </label>
-              <span class="pg-stt-option pg-lang-field" id="opt-language-wrap" hidden data-tooltip="Declare the spoken language for the fastest path, or let the model detect it automatically">
+              <span class="pg-stt-option pg-lang-field" id="opt-language-wrap" data-stt-models="multi-fast" data-tooltip="Declare the spoken language for the fastest path, or let the model detect it automatically. Streaming always auto-detects">
                 <label for="opt-language">Language</label>
                 <select id="opt-language">
                   <option value="" selected>Auto-detect</option>
                 </select>
+                <span class="pg-stt-scope">batch only</span>
               </span>
-              <label class="m__checkbox-secondary pg-stt-option" id="opt-timestamps-wrap" data-tooltip="Word-level start/end times, aligned against the audio — Fast (English only)">
-                <input type="checkbox" id="opt-timestamps" disabled /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Word timestamps
+              <label class="m__checkbox-secondary pg-stt-option" id="opt-timestamps-wrap" data-stt-models="english-fast" data-tooltip="Word-level start/end times, aligned against the audio">
+                <input type="checkbox" id="opt-timestamps" /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Word timestamps <span class="pg-stt-scope">batch only</span>
               </label>
-              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Identify different speakers in the audio">
-                <input type="checkbox" id="opt-diarization" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Diarization
+              <label class="m__checkbox-secondary pg-stt-option" id="opt-diarization-wrap" data-stt-models="multi-fast english-fast full" data-tooltip="Identify different speakers in the audio">
+                <input type="checkbox" id="opt-diarization" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Diarization <span class="pg-stt-scope" id="opt-diarization-scope">streaming only</span>
               </label>
-              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Detect synthetic/AI-generated voice (deepfake) per utterance">
+              <label class="m__checkbox-secondary pg-stt-option" data-stt-models="multi-fast english-fast" data-tooltip="Split the live transcript into segments at pauses. Off = one transcript at the end of the stream">
+                <input type="checkbox" id="opt-endpointing" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Endpointing <span class="pg-stt-scope">streaming only</span>
+              </label>
+              <label class="m__checkbox-secondary pg-stt-option" data-stt-models="full" data-tooltip="Detect synthetic/AI-generated voice (deepfake) per utterance">
                 <input type="checkbox" id="opt-deepfake" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Deepfake
               </label>
-              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Detect emotional tone (e.g. Calm, Happy, Frustrated)">
+              <label class="m__checkbox-secondary pg-stt-option" data-stt-models="full" data-tooltip="Detect emotional tone (e.g. Calm, Happy, Frustrated)">
                 <input type="checkbox" id="opt-emotion" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Emotions
               </label>
-              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Detect speaker accent (e.g. American, British)">
+              <label class="m__checkbox-secondary pg-stt-option" data-stt-models="full" data-tooltip="Detect speaker accent (e.g. American, British)">
                 <input type="checkbox" id="opt-accent" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> Accent
               </label>
-              <label class="m__checkbox-secondary pg-stt-option" data-tooltip="Tag personally identifiable and health information">
+              <label class="m__checkbox-secondary pg-stt-option" data-stt-models="full" data-tooltip="Tag personally identifiable and health information">
                 <input type="checkbox" id="opt-pii" checked /><svg aria-hidden="true"><use href="#checkmark"></use></svg> PII/PHI
               </label>
             </div>
@@ -861,7 +871,7 @@
 
 <footer class="footer">
   <div class="footer-nav">
-    <div class="footer-nav-item caption" id="app-version">v6.16.0 · Sep 23, 2026</div>
+    <div class="footer-nav-item caption" id="app-version">v6.16.1 · Sep 23, 2026</div>
   </div>
 </footer>
 
@@ -987,7 +997,7 @@
 <div class="m__tooltip" hidden></div>
 
 <script src="/velma-report.js?v=1"></script>
-<script src="/app.js?v=12"></script>
+<script src="/app.js?v=13"></script>
 <script src="/assets/components/tooltip.js"></script>
 <script>
   // Skip the HubSpot embed on localhost — the preview sandbox blocks

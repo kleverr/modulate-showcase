@@ -2,6 +2,20 @@
 
 All notable changes to the Modulate Models Playground.
 
+## [6.16.1] - 2026-09-23
+
+### Fixed
+- **Transcript bubbles now follow the speaker, in every diarized transcript.**
+  A positional CSS rule (`.pg-transcript-list > .pg-transcript-utterance:nth-of-type(odd|even)`)
+  outranked the speaker classes, so bubbles alternated left/right by row
+  instead of by speaker. Consecutive lines from one speaker zig-zagged, e.g. a
+  "Speaker 1" line sitting in the right column. It went unnoticed while models
+  returned long alternating turns, and surfaced once PII/PHI Redaction switched
+  to per-sentence utterances. The rule now holds for STT batch and streaming,
+  Velma, and Redaction: odd speakers on the left, even on the right, the same
+  speaker always in the same column, and no speaker on the left. It is defined
+  once in `speakerSide()` (app.js) and wins in CSS.
+
 ## [6.16.0] - 2026-09-23
 
 ### Removed
