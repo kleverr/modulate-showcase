@@ -11,3 +11,7 @@ node_modules/
 .claude/worktrees/
 marketing-graphics/
 weather-clips/
+
+# Local notes and scratch files — not part of the app
+docs/
+velma-top50-config.json
